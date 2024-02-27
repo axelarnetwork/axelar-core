@@ -21,3 +21,39 @@ message PendingIBCTransferCountResponse {
 message ParamsRequest {}
 
 message ParamsResponse { Params params = 1 [ (gogoproto.nullable) = false ]; }
+
+enum ChainStatus {
+  option (gogoproto.goproto_enum_prefix) = false;
+
+  CHAIN_STATUS_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "StatusUnspecified" ];
+  CHAIN_STATUS_ACTIVATED = 1 [ (gogoproto.enumvalue_customname) = "Activated" ];
+  CHAIN_STATUS_DEACTIVATED = 2
+      [ (gogoproto.enumvalue_customname) = "Deactivated" ];
+}
+
+// ChainsRequest represents a message that queries all registered cosmos chains
+// by status
+message ChainsRequest { ChainStatus status = 1; }
+
+message ChainsResponse {
+  repeated string chains = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
+
+// IBCPathRequest represents a message that queries the IBC path registered for
+// a given chain
+message IBCPathRequest { string chain = 1; }
+
+message IBCPathResponse { string ibc_path = 1 [ (gogoproto.customname) = "IBCPath" ]; }
+
+// ChainByIBCPathRequest represents a message that queries the chain that an IBC
+// path is registered to
+message ChainByIBCPathRequest { string ibc_path = 1; }
+
+message ChainByIBCPathResponse {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}

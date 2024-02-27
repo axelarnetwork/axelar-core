@@ -10,6 +10,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusTypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 var _ types.QueryServiceServer = Querier{}
@@ -65,4 +67,48 @@ func (q Querier) Params(c context.Context, req *types.ParamsRequest) (*types.Par
 	return &types.ParamsResponse{
 		Params: params,
 	}, nil
+}
+
+// Chains returns the available cosmos chains
+func (q Querier) Chains(c context.Context, req *types.ChainsRequest) (*types.ChainsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chains := q.keeper.GetCosmosChains(ctx)
+
+	switch req.Status {
+	case types.Activated:
+		chains = slices.Filter(chains, func(chain nexus.ChainName) bool {
+			return q.nexus.IsChainActivated(ctx, funcs.MustOk(q.nexus.GetChain(ctx, chain)))
+		})
+	case types.Deactivated:
+		chains = slices.Filter(chains, func(chain nexus.ChainName) bool {
+			return !q.nexus.IsChainActivated(ctx, funcs.MustOk(q.nexus.GetChain(ctx, chain)))
+		})
+	}
+
+	return &types.ChainsResponse{Chains: chains}, nil
+}
+
+// IBCPath returns the IBC path registered to the given cosmos chain
+func (q Querier) IBCPath(c context.Context, req *types.IBCPathRequest) (*types.IBCPathResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.keeper.GetIBCPath(ctx, nexus.ChainName(req.Chain))
+	if !ok {
+		return nil, fmt.Errorf("no IBC path registered for chain %s", req.Chain)
+	}
+
+	return &types.IBCPathResponse{IBCPath: chain}, nil
+}
+
+// ChainByIBCPath returns the Cosmos chain name registered to the given IBC path
+func (q Querier) ChainByIBCPath(c context.Context, req *types.ChainByIBCPathRequest) (*types.ChainByIBCPathResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.keeper.GetChainNameByIBCPath(ctx, req.IbcPath)
+	if !ok {
+		return nil, fmt.Errorf("no cosmos chain registered for IBC path %s", req.IbcPath)
+	}
+
+	return &types.ChainByIBCPathResponse{Chain: chain}, nil
 }
