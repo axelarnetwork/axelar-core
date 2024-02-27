@@ -48,6 +48,7 @@ import (
 	ibcclienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	ibchost "github.com/cosmos/ibc-go/v4/modules/core/24-host"
 	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
+	"github.com/spf13/cast"
 	"golang.org/x/mod/semver"
 
 	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
@@ -166,7 +167,7 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 	wasmConfig := mustReadWasmConfig(appOpts)
 
 	if wasmDir == "" {
-		wasmDir = filepath.Join(homePath, "wasm")
+		wasmDir = filepath.Join(homePath, cast.ToString(appOpts.Get("db_dir")), "wasm")
 	}
 
 	// The last arguments can contain custom message handlers, and custom query handlers,
