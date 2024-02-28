@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -162,8 +161,7 @@ func InitStakingKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, ke
 	return &stakingK
 }
 
-func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *KeeperCache, bApp *bam.BaseApp, appOpts types.AppOptions, wasmOpts []wasm.Option, homePath string) *wasm.Keeper {
-	wasmDir := filepath.Join(homePath, "wasm")
+func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *KeeperCache, bApp *bam.BaseApp, appOpts types.AppOptions, wasmOpts []wasm.Option, wasmDir string) *wasm.Keeper {
 	wasmConfig := mustReadWasmConfig(appOpts)
 
 	// The last arguments can contain custom message handlers, and custom query handlers,
