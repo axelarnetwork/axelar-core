@@ -119,13 +119,11 @@ func isIBCSendPacketMsg(msg wasmvmtypes.CosmosMsg) bool {
 
 type WasmAppModuleBasicOverride struct {
 	wasm.AppModuleBasic
-	uploader sdk.AccAddress
 }
 
-func NewWasmAppModuleBasicOverride(wasmModule wasm.AppModuleBasic, uploader sdk.AccAddress) WasmAppModuleBasicOverride {
+func NewWasmAppModuleBasicOverride(wasmModule wasm.AppModuleBasic) WasmAppModuleBasicOverride {
 	return WasmAppModuleBasicOverride{
 		AppModuleBasic: wasmModule,
-		uploader:       uploader,
 	}
 }
 
@@ -134,8 +132,8 @@ func NewWasmAppModuleBasicOverride(wasmModule wasm.AppModuleBasic, uploader sdk.
 func (m WasmAppModuleBasicOverride) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 	return cdc.MustMarshalJSON(&wasm.GenesisState{
 		Params: wasmtypes.Params{
-			CodeUploadAccess:             wasmtypes.AccessTypeAnyOfAddresses.With(m.uploader),
-			InstantiateDefaultPermission: wasmtypes.AccessTypeAnyOfAddresses,
+			CodeUploadAccess:             wasmtypes.AllowNobody,
+			InstantiateDefaultPermission: wasmtypes.AccessTypeNobody,
 		},
 	})
 }
