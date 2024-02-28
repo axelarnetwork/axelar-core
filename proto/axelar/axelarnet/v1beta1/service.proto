@@ -104,12 +104,6 @@ service QueryService {
     };
   }
 
-  rpc Chains(ChainsRequest) returns (ChainsResponse) {
-    option (google.api.http) = {
-      get : "/axelar/axelarnet/v1beta1/chains"
-    };
-  }
-
   rpc IBCPath(IBCPathRequest) returns (IBCPathResponse) {
     option (google.api.http) = {
       get : "/axelar/axelarnet/v1beta1/ibc_path/{chain}"

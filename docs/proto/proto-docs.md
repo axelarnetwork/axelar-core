@@ -114,8 +114,6 @@
 - [axelar/axelarnet/v1beta1/query.proto](#axelar/axelarnet/v1beta1/query.proto)
     - [ChainByIBCPathRequest](#axelar.axelarnet.v1beta1.ChainByIBCPathRequest)
     - [ChainByIBCPathResponse](#axelar.axelarnet.v1beta1.ChainByIBCPathResponse)
-    - [ChainsRequest](#axelar.axelarnet.v1beta1.ChainsRequest)
-    - [ChainsResponse](#axelar.axelarnet.v1beta1.ChainsResponse)
     - [IBCPathRequest](#axelar.axelarnet.v1beta1.IBCPathRequest)
     - [IBCPathResponse](#axelar.axelarnet.v1beta1.IBCPathResponse)
     - [ParamsRequest](#axelar.axelarnet.v1beta1.ParamsRequest)
@@ -123,8 +121,6 @@
     - [PendingIBCTransferCountRequest](#axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest)
     - [PendingIBCTransferCountResponse](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse)
     - [PendingIBCTransferCountResponse.TransfersByChainEntry](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry)
-  
-    - [ChainStatus](#axelar.axelarnet.v1beta1.ChainStatus)
   
 - [axelar/permission/exported/v1beta1/types.proto](#axelar/permission/exported/v1beta1/types.proto)
     - [Role](#axelar.permission.exported.v1beta1.Role)
@@ -2142,37 +2138,6 @@ path is registered to
 
 
 
-<a name="axelar.axelarnet.v1beta1.ChainsRequest"></a>
-
-### ChainsRequest
-ChainsRequest represents a message that queries all registered cosmos chains
-by status
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `status` | [ChainStatus](#axelar.axelarnet.v1beta1.ChainStatus) |  |  |
-
-
-
-
-
-
-<a name="axelar.axelarnet.v1beta1.ChainsResponse"></a>
-
-### ChainsResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `chains` | [string](#string) | repeated |  |
-
-
-
-
-
-
 <a name="axelar.axelarnet.v1beta1.IBCPathRequest"></a>
 
 ### IBCPathRequest
@@ -2270,19 +2235,6 @@ ParamsRequest represents a message that queries the params
 
 
  <!-- end messages -->
-
-
-<a name="axelar.axelarnet.v1beta1.ChainStatus"></a>
-
-### ChainStatus
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| CHAIN_STATUS_UNSPECIFIED | 0 |  |
-| CHAIN_STATUS_ACTIVATED | 1 |  |
-| CHAIN_STATUS_DEACTIVATED | 2 |  |
-
 
  <!-- end enums -->
 
@@ -2700,7 +2652,6 @@ QueryService defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `PendingIBCTransferCount` | [PendingIBCTransferCountRequest](#axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest) | [PendingIBCTransferCountResponse](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse) | PendingIBCTransferCount queries the pending ibc transfers for all chains | GET|/axelar/axelarnet/v1beta1/ibc_transfer_count|
 | `Params` | [ParamsRequest](#axelar.axelarnet.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.axelarnet.v1beta1.ParamsResponse) |  | GET|/axelar/axelarnet/v1beta1/params|
-| `Chains` | [ChainsRequest](#axelar.axelarnet.v1beta1.ChainsRequest) | [ChainsResponse](#axelar.axelarnet.v1beta1.ChainsResponse) |  | GET|/axelar/axelarnet/v1beta1/chains|
 | `IBCPath` | [IBCPathRequest](#axelar.axelarnet.v1beta1.IBCPathRequest) | [IBCPathResponse](#axelar.axelarnet.v1beta1.IBCPathResponse) |  | GET|/axelar/axelarnet/v1beta1/ibc_path/{chain}|
 | `ChainByIBCPath` | [ChainByIBCPathRequest](#axelar.axelarnet.v1beta1.ChainByIBCPathRequest) | [ChainByIBCPathResponse](#axelar.axelarnet.v1beta1.ChainByIBCPathResponse) |  | GET|/axelar/axelarnet/v1beta1/chain_by_ibc_path/{ibc_path}|
 

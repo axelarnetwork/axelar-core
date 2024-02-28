@@ -29,7 +29,6 @@ func GetQueryCmd() *cobra.Command {
 	queryCmd.AddCommand(
 		GetCmdPendingIBCTransfersCount(),
 		getParams(),
-		getCmdChains(),
 		getCmdIBCPath(),
 		getCmdChainByIBCPath(),
 	)
@@ -85,51 +84,6 @@ func getParams() *cobra.Command {
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
-}
-
-// getCmdChains returns the query to get all Cosmos chains
-func getCmdChains() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "chains",
-		Short: "Return the supported Cosmos chains by status",
-		Args:  cobra.ExactArgs(0),
-	}
-
-	status := cmd.Flags().String("status", "", fmt.Sprintf("the chain status [%s|%s]", activated, deactivated))
-
-	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		clientCtx, err := client.GetClientQueryContext(cmd)
-		if err != nil {
-			return err
-		}
-
-		queryClient := types.NewQueryServiceClient(clientCtx)
-
-		var chainStatus types.ChainStatus
-		switch *status {
-		case "":
-			chainStatus = types.StatusUnspecified
-		case activated:
-			chainStatus = types.Activated
-		case deactivated:
-			chainStatus = types.Deactivated
-		default:
-			return fmt.Errorf("unrecognized chain status %s", *status)
-		}
-
-		res, err := queryClient.Chains(cmd.Context(), &types.ChainsRequest{
-			Status: chainStatus,
-		})
-		if err != nil {
-			return err
-		}
-
-		return clientCtx.PrintProto(res)
-	}
-
-	flags.AddQueryFlagsToCmd(cmd)
-
 	return cmd
 }
 

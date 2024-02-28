@@ -32,7 +32,6 @@
       - [params](axelard_query_auth_params.md)	 - Query the current auth parameters
     - [axelarnet](axelard_query_axelarnet.md)	 - Querying commands for the axelarnet module
       - [chain-by-ibc-path \[ibc path\]](axelard_query_axelarnet_chain-by-ibc-path.md)	 - Returns the Cosmos chain for the given IBC path
-      - [chains](axelard_query_axelarnet_chains.md)	 - Return the supported Cosmos chains by status
       - [ibc-path \[chain\]](axelard_query_axelarnet_ibc-path.md)	 - Returns the registered IBC path for the given Cosmos chain
       - [ibc-transfer-count](axelard_query_axelarnet_ibc-transfer-count.md)	 - returns the number of pending IBC transfers per chain
       - [params](axelard_query_axelarnet_params.md)	 - Returns the params for the axelarnet module
