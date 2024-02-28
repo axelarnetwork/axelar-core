@@ -338,9 +338,9 @@ func NewAxelarApp(
 
 	app.SetAnteHandler(initAnteHandlers(encodingConfig, keys, keepers, appOpts))
 
-	// Register snapshot extensions
+	// Register wasm snapshot extension for state-sync compatibility
 	// MUST be done before loading the version
-	app.registerSnapshotExtensions(keepers)
+	app.registerWasmSnapshotExtension(keepers)
 
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {
@@ -451,7 +451,7 @@ func initMessageRouter(keepers *KeeperCache) nexusTypes.MessageRouter {
 	return messageRouter
 }
 
-func (app *AxelarApp) registerSnapshotExtensions(keepers *KeeperCache) {
+func (app *AxelarApp) registerWasmSnapshotExtension(keepers *KeeperCache) {
 	// Register wasm snapshot extension to enable state-sync compatibility for wasm.
 	// MUST be done before loading the version
 	// Requires the snapshot store to be created and registered as a BaseAppOption
