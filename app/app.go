@@ -341,12 +341,14 @@ func NewAxelarApp(
 	// Register snapshot extensions to enable state-sync for wasm.
 	// MUST be done before loading the version
 	// Requires the snapshot store to be created and registered as a BaseAppOption
-	if manager := app.SnapshotManager(); manager != nil {
-		err := manager.RegisterExtensions(
-			wasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), getKeeper[wasm.Keeper](keepers)),
-		)
-		if err != nil {
-			panic(fmt.Errorf("failed to register snapshot extension: %s", err))
+	if IsWasmEnabled() {
+		if manager := app.SnapshotManager(); manager != nil {
+			err := manager.RegisterExtensions(
+				wasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), getKeeper[wasm.Keeper](keepers)),
+			)
+			if err != nil {
+				panic(fmt.Errorf("failed to register snapshot extension: %s", err))
+			}
 		}
 	}
 
