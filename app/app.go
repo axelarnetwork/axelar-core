@@ -270,7 +270,7 @@ func NewAxelarApp(
 		// Migrate wasm dir from old path to new path
 		// TODO: Remove this once nodes have migrated
 		oldWasmDir := filepath.Join(homePath, "wasm")
-		funcs.MustNoErr(migrateWasmDir(oldWasmDir, wasmDir))
+		funcs.MustNoErr(migrateWasmDir(oldWasmDir, wasmPath))
 
 		SetKeeper(keepers, initWasmKeeper(encodingConfig, keys, keepers, bApp, appOpts, wasmOpts, wasmPath))
 		SetKeeper(keepers, initWasmContractKeeper(keepers))
