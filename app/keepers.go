@@ -165,41 +165,20 @@ func InitStakingKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, ke
 	return &stakingK
 }
 
-// expandPath resolves paths containing the "~" character to the user's home directory.
-func expandPath(path string) string {
-	if !strings.HasPrefix(path, "~/") {
-		return path
-	}
-
-	homeDir := funcs.Must(os.UserHomeDir())
-
-	return filepath.Join(homeDir, path[2:])
-}
-
 func migrateWasmDir(oldWasmDir, newWasmDir string) error {
-	// Resolve paths
-	oldWasmPath, err := filepath.Abs(expandPath(oldWasmDir))
-	if err != nil {
-		return fmt.Errorf("failed to resolve absolute path for old wasm dir %s: %v", oldWasmDir, err)
-	}
-	newWasmPath, err := filepath.Abs(expandPath(newWasmDir))
-	if err != nil {
-		return fmt.Errorf("failed to resolve absolute path for new wasm dir %s: %v", newWasmDir, err)
-	}
-
 	// If the new wasm dir exists, there's nothing to do
-	if _, err := os.Stat(newWasmPath); err == nil {
+	if _, err := os.Stat(newWasmDir); err == nil {
 		return nil
 	}
 
 	// If the old wasm dir doesn't exist, there's nothing to do
-	if _, err := os.Stat(oldWasmPath); err != nil && os.IsNotExist(err) {
+	if _, err := os.Stat(oldWasmDir); err != nil && os.IsNotExist(err) {
 		return nil
 	}
 
 	// Move the wasm dir from old path to new path
-	if err := os.Rename(oldWasmPath, newWasmPath); err != nil {
-		return fmt.Errorf("failed to move wasm directory from %s to %s: %v", oldWasmPath, newWasmPath, err)
+	if err := os.Rename(oldWasmDir, newWasmDir); err != nil {
+		return fmt.Errorf("failed to move wasm directory from %s to %s: %v", oldWasmDir, newWasmDir, err)
 	}
 
 	return nil

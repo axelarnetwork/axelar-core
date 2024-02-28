@@ -214,6 +214,15 @@ func NewAxelarApp(
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
+	if wasmDir != "" {
+		wasmPath, err := filepath.Abs(wasmDir)
+		if err != nil {
+			panic(fmt.Sprintf("failed to resolve absolute path for new wasm dir %s: %v", wasmDir, err))
+		}
+
+		wasmDir = wasmPath
+	}
+
 	keepers := NewKeeperCache()
 	SetKeeper(keepers, InitParamsKeeper(encodingConfig, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
 
