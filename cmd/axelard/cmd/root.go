@@ -47,7 +47,10 @@ import (
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 )
 
-var minGasPrice = "0.007" + axelarnet.NativeAsset
+var (
+	minGasPrice = "0.007" + axelarnet.NativeAsset
+	wasmDirFlag = "wasm-dir"
+)
 
 // NewRootCmd creates a new root command for axelard. It is called once in the
 // main function.
@@ -201,7 +204,12 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		SetGenesisAuthCmd(app.DefaultNodeHome),
 	)
 
-	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, export(encodingConfig), crisis.AddModuleInitFlags)
+	starterFlags := func(startCmd *cobra.Command) {
+		crisis.AddModuleInitFlags(startCmd)
+		startCmd.Flags().String(wasmDirFlag, "", "path to the wasm directory, by default set to 'wasm' directory inside the '--db_dir' directory")
+	}
+
+	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, export(encodingConfig), starterFlags)
 
 	// add keybase, auxiliary RPC, query, and tx child commands
 	rootCmd.AddCommand(
@@ -264,6 +272,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts serverty
 	return app.NewAxelarApp(
 		logger, db, traceStore, true, skipUpgradeHeights,
 		cast.ToString(appOpts.Get(flags.FlagHome)),
+		cast.ToString(appOpts.Get(wasmDirFlag)),
 		cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)),
 		app.MakeEncodingConfig(),
 		appOpts,
@@ -291,7 +300,8 @@ func export(encCfg params.EncodingConfig) servertypes.AppExporter {
 			return servertypes.ExportedApp{}, errors.New("application home not set")
 		}
 
-		aApp := app.NewAxelarApp(logger, db, traceStore, height == -1, map[int64]bool{}, homePath,
+		wasmdir := cast.ToString(appOpts.Get(wasmDirFlag))
+		aApp := app.NewAxelarApp(logger, db, traceStore, height == -1, map[int64]bool{}, homePath, wasmdir,
 			cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)), encCfg, appOpts, []wasm.Option{})
 		if height != -1 {
 			if err := aApp.LoadHeight(height); err != nil {
