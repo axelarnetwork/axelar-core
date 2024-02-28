@@ -129,6 +129,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote"
 	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/utils/funcs"
 
 	// Override with generated statik docs
 	_ "github.com/axelarnetwork/axelar-core/client/docs/statik"
@@ -202,6 +203,7 @@ func NewAxelarApp(
 	loadLatest bool,
 	skipUpgradeHeights map[int64]bool,
 	homePath string,
+	wasmDir string,
 	invCheckPeriod uint,
 	encodingConfig axelarParams.EncodingConfig,
 	appOpts servertypes.AppOptions,
@@ -255,7 +257,22 @@ func NewAxelarApp(
 	SetKeeper(keepers, initAxelarIBCKeeper(keepers))
 
 	if IsWasmEnabled() {
-		SetKeeper(keepers, initWasmKeeper(encodingConfig, keys, keepers, bApp, appOpts, wasmOpts, homePath))
+		if wasmDir == "" {
+			dbDir := cast.ToString(appOpts.Get("db_dir"))
+			wasmDir = filepath.Join(homePath, dbDir, "wasm")
+		}
+
+		wasmPath, err := filepath.Abs(wasmDir)
+		if err != nil {
+			panic(fmt.Sprintf("failed to resolve absolute path for new wasm dir %s: %v", wasmDir, err))
+		}
+
+		// Migrate wasm dir from old path to new path
+		// TODO: Remove this once nodes have migrated
+		oldWasmDir := filepath.Join(homePath, "wasm")
+		funcs.MustNoErr(migrateWasmDir(oldWasmDir, wasmPath))
+
+		SetKeeper(keepers, initWasmKeeper(encodingConfig, keys, keepers, bApp, appOpts, wasmOpts, wasmPath))
 		SetKeeper(keepers, initWasmContractKeeper(keepers))
 
 		// set the contract keeper for the Ics20WasmHooks
@@ -337,6 +354,10 @@ func NewAxelarApp(
 	app.SetEndBlocker(app.EndBlocker)
 
 	app.SetAnteHandler(initAnteHandlers(encodingConfig, keys, keepers, appOpts))
+
+	// Register wasm snapshot extension for state-sync compatibility
+	// MUST be done before loading the version
+	app.registerWasmSnapshotExtension(keepers)
 
 	if loadLatest {
 		if err := app.LoadLatestVersion(); err != nil {
@@ -445,6 +466,41 @@ func initMessageRouter(keepers *KeeperCache) nexusTypes.MessageRouter {
 		))
 	}
 	return messageRouter
+}
+
+func migrateWasmDir(oldWasmDir, newWasmDir string) error {
+	// If the new wasm dir exists, there's nothing to do
+	if _, err := os.Stat(newWasmDir); err == nil {
+		return nil
+	}
+
+	// If the old wasm dir doesn't exist, there's nothing to do
+	if _, err := os.Stat(oldWasmDir); err != nil && os.IsNotExist(err) {
+		return nil
+	}
+
+	// Move the wasm dir from old path to new path
+	if err := os.Rename(oldWasmDir, newWasmDir); err != nil {
+		return fmt.Errorf("failed to move wasm directory from %s to %s: %v", oldWasmDir, newWasmDir, err)
+	}
+
+	return nil
+}
+
+func (app *AxelarApp) registerWasmSnapshotExtension(keepers *KeeperCache) {
+	// Register wasm snapshot extension to enable state-sync compatibility for wasm.
+	// MUST be done before loading the version
+	// Requires the snapshot store to be created and registered as a BaseAppOption
+	if IsWasmEnabled() {
+		if manager := app.SnapshotManager(); manager != nil {
+			err := manager.RegisterExtensions(
+				wasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), getKeeper[wasm.Keeper](keepers)),
+			)
+			if err != nil {
+				panic(fmt.Errorf("failed to register snapshot extension: %s", err))
+			}
+		}
+	}
 }
 
 func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keepers *KeeperCache) {
