@@ -29,6 +29,9 @@ func GetQueryCmd() *cobra.Command {
 	queryCmd.AddCommand(
 		GetCmdPendingIBCTransfersCount(),
 		getParams(),
+		getCmdChains(),
+		getCmdIBCPath(),
+		getCmdChainByIBCPath(),
 	)
 
 	return queryCmd
@@ -130,7 +133,7 @@ func getCmdChains() *cobra.Command {
 	return cmd
 }
 
-func getIBCPath() *cobra.Command {
+func getCmdIBCPath() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ibc-path [chain]",
 		Short: "Returns the registered IBC path for the given Cosmos chain",
@@ -158,7 +161,7 @@ func getIBCPath() *cobra.Command {
 	return cmd
 }
 
-func getChainByIBCPath() *cobra.Command {
+func getCmdChainByIBCPath() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "chain-by-ibc-path [ibc path]",
 		Short: "Returns the Cosmos chain for the given IBC path",
