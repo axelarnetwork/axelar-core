@@ -15,8 +15,7 @@
         "rename": {
           "Link": "AxelarnetLink",
           "ConfirmDeposit": "AxelarnetConfirmDeposit",
-          "Params": "AxelarnetParams",
-          "Chains": "AxelarnetChains"
+          "Params": "AxelarnetParams"
         }
       }
     },
