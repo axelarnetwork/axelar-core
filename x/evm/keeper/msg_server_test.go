@@ -653,7 +653,7 @@ func TestLink_DuplicateLabel(t *testing.T) {
 	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
 }
 
-func TestLink_Success(t *testing.T) {
+func TestLink_SuccessLabel(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
 	ctx := rand.Context(fake.NewMultiStore())
 	chain := nexus.ChainName("Ethereum")
@@ -717,7 +717,7 @@ func TestLink_Success(t *testing.T) {
 	assert.EqualValues(t, expected, actual)
 }
 
-func TestLink_SuccessNoLabel(t *testing.T) {
+func TestLink_Success(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
 	ctx := rand.Context(fake.NewMultiStore())
 	chain := nexus.ChainName("Ethereum")
