@@ -368,10 +368,10 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("provided both burner address and label info")
 	} else if req.LabelInfo != nil {
 		burnerAddr, err := keeper.GetLabeledBurnerAddress(ctx, *req.LabelInfo)
-		req.BurnerAddress = burnerAddr
 		if err != nil {
 			return nil, fmt.Errorf("could not get labeled address: %s", err.Error())
 		}
+		req.BurnerAddress = burnerAddr
 	}
 
 	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnerAddress)
