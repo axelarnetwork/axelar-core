@@ -216,6 +216,28 @@ func (k Keeper) GetChains(ctx sdk.Context) (chains []exported.Chain) {
 	return chains
 }
 
+// GetChainNamesByType retrieves the supported chain names by status and module
+func (k Keeper) GetChainNamesByType(ctx sdk.Context, status exported.ChainStatus, module string) []exported.ChainName {
+	chains := k.GetChains(ctx)
+
+	if module != "" {
+		chains = slices.Filter(chains, func(chain exported.Chain) bool { return chain.Module == module })
+	}
+
+	isActivated := func(chain exported.Chain) bool { return k.IsChainActivated(ctx, chain) }
+
+	switch status {
+	case exported.Activated:
+		chains = slices.Filter(chains, isActivated)
+	case exported.Deactivated:
+		chains = slices.Filter(chains, funcs.Not(isActivated))
+	}
+
+	chainNames := slices.Map(chains, exported.Chain.GetName)
+
+	return chainNames
+}
+
 // GetChain retrieves the specification for a supported blockchain
 func (k Keeper) GetChain(ctx sdk.Context, chainName exported.ChainName) (chain exported.Chain, ok bool) {
 	return chain, k.getStore(ctx).Get(chainPrefix.Append(utils.LowerCaseKey(chainName.String())), &chain)

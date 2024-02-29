@@ -10,10 +10,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
-	"github.com/axelarnetwork/utils/slices"
 )
 
 var _ types.QueryServiceServer = Querier{}
@@ -135,7 +135,7 @@ func (q Querier) TransferFee(c context.Context, req *types.TransferFeeRequest) (
 	// When source chain is another cosmos chain, use axelarnet for fee info where deposit address is generated on
 	feeCalcSourceChain := sourceChain
 	if q.axelarnet.IsCosmosChain(ctx, feeCalcSourceChain.Name) {
-		feeCalcSourceChain = exported.Axelarnet
+		feeCalcSourceChain = axelarnet.Axelarnet
 	}
 
 	fee, err := q.keeper.ComputeTransferFee(ctx, feeCalcSourceChain, destinationChain, amount)
@@ -150,18 +150,13 @@ func (q Querier) TransferFee(c context.Context, req *types.TransferFeeRequest) (
 func (q Querier) Chains(c context.Context, req *types.ChainsRequest) (*types.ChainsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chains := q.keeper.GetChains(ctx)
-
-	switch req.Status {
-	case types.Activated:
-		chains = slices.Filter(chains, func(chain nexus.Chain) bool { return q.keeper.IsChainActivated(ctx, chain) })
-	case types.Deactivated:
-		chains = slices.Filter(chains, func(chain nexus.Chain) bool { return !q.keeper.IsChainActivated(ctx, chain) })
+	if req.Module != "" && req.Module != axelarnet.ModuleName && req.Module != evm.ModuleName {
+		return nil, fmt.Errorf("module %s not found: can be either %s or %s", req.Module, axelarnet.ModuleName, evm.ModuleName)
 	}
 
-	chainNames := slices.Map(chains, nexus.Chain.GetName)
+	chains := q.keeper.GetChainNamesByType(ctx, req.Status, req.Module)
 
-	return &types.ChainsResponse{Chains: chainNames}, nil
+	return &types.ChainsResponse{Chains: chains}, nil
 }
 
 // Assets returns the registered assets of a chain

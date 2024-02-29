@@ -680,7 +680,7 @@ type QueryServiceClient interface {
 	DepositState(ctx context.Context, in *DepositStateRequest, opts ...grpc.CallOption) (*DepositStateResponse, error)
 	// PendingCommands queries the pending commands for the specified chain
 	PendingCommands(ctx context.Context, in *PendingCommandsRequest, opts ...grpc.CallOption) (*PendingCommandsResponse, error)
-	// Chains queries the available evm chains
+	// Deprecated: use nexus Chains query instead, deprecated in v0.35
 	Chains(ctx context.Context, in *ChainsRequest, opts ...grpc.CallOption) (*ChainsResponse, error)
 	// Command queries the command of a chain provided the command id
 	Command(ctx context.Context, in *CommandRequest, opts ...grpc.CallOption) (*CommandResponse, error)
@@ -850,7 +850,7 @@ type QueryServiceServer interface {
 	DepositState(context.Context, *DepositStateRequest) (*DepositStateResponse, error)
 	// PendingCommands queries the pending commands for the specified chain
 	PendingCommands(context.Context, *PendingCommandsRequest) (*PendingCommandsResponse, error)
-	// Chains queries the available evm chains
+	// Deprecated: use nexus Chains query instead, deprecated in v0.35
 	Chains(context.Context, *ChainsRequest) (*ChainsResponse, error)
 	// Command queries the command of a chain provided the command id
 	Command(context.Context, *CommandRequest) (*CommandResponse, error)

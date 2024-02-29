@@ -1,8 +1,10 @@
 package types
 
+import "github.com/axelarnetwork/axelar-core/x/evm/exported"
+
 const (
 	// ModuleName is the name of the module
-	ModuleName = "evm"
+	ModuleName = exported.ModuleName
 
 	// ChainNamespace differentiated the key space for chains from the default evm namespace
 	ChainNamespace = "chain"

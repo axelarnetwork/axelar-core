@@ -97,7 +97,10 @@ service QueryService {
 
   // Chains queries the chains registered on the network
   rpc Chains(ChainsRequest) returns (ChainsResponse) {
-    option (google.api.http).get = "/axelar/nexus/v1beta1/chains";
+    option (google.api.http) = {
+      get : "/axelar/nexus/v1beta1/chains"
+      additional_bindings : {get : "/axelar/nexus/v1beta1/chains/{module}"}
+    };
   }
 
   // Assets queries the assets registered for a chain

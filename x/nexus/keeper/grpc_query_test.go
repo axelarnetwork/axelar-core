@@ -137,7 +137,7 @@ func TestKeeper_Chains(t *testing.T) {
 		err             error
 	)
 
-	testChain := exported.Chain{Name: exported.ChainName("test")}
+	testCosmosChain := exported.Chain{Name: exported.ChainName("test"), Module: axelarnet.ModuleName}
 
 	Given("a nexus keeper", func() {
 		encCfg := app.MakeEncodingConfig()
@@ -154,27 +154,56 @@ func TestKeeper_Chains(t *testing.T) {
 			k.ActivateChain(ctx, evm.Ethereum)
 			k.SetChain(ctx, axelarnet.Axelarnet)
 			k.ActivateChain(ctx, axelarnet.Axelarnet)
-			k.SetChain(ctx, testChain)
+			k.SetChain(ctx, testCosmosChain)
 		}).
 		Branch(
 			Then("query all chains", func(t *testing.T) {
 				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{})
 				assert.NoError(t, err)
-				assert.Equal(t, response.Chains, []exported.ChainName{axelarnet.Axelarnet.Name, evm.Ethereum.Name, testChain.Name})
+				assert.Equal(t, response.Chains, []exported.ChainName{axelarnet.Axelarnet.Name, evm.Ethereum.Name, testCosmosChain.Name})
 			}),
 			Then("query only activated chains", func(t *testing.T) {
 				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{
-					Status: types.Activated,
+					Status: exported.Activated,
 				})
 				assert.NoError(t, err)
 				assert.Equal(t, response.Chains, []exported.ChainName{axelarnet.Axelarnet.Name, evm.Ethereum.Name})
 			}),
 			Then("query only deactivated chains", func(t *testing.T) {
 				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{
-					Status: types.Deactivated,
+					Status: exported.Deactivated,
 				})
 				assert.NoError(t, err)
-				assert.Equal(t, response.Chains, []exported.ChainName{testChain.Name})
+				assert.Equal(t, response.Chains, []exported.ChainName{testCosmosChain.Name})
+			}),
+			Then("query module specific chains", func(t *testing.T) {
+				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{
+					Module: evm.Ethereum.Module,
+				})
+				assert.NoError(t, err)
+				assert.Equal(t, response.Chains, []exported.ChainName{evm.Ethereum.Name})
+			}),
+			Then("query chains for non existent module", func(t *testing.T) {
+				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{
+					Module: "wasm",
+				})
+				assert.ErrorContains(t, err, "module wasm not found")
+			}),
+			Then("query only activated module specific chains", func(t *testing.T) {
+				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{
+					Status: exported.Activated,
+					Module: axelarnet.Axelarnet.Module,
+				})
+				assert.NoError(t, err)
+				assert.Equal(t, response.Chains, []exported.ChainName{axelarnet.Axelarnet.Name})
+			}),
+			Then("query only deactivated module specific chains", func(t *testing.T) {
+				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{
+					Status: exported.Deactivated,
+					Module: axelarnet.Axelarnet.Module,
+				})
+				assert.NoError(t, err)
+				assert.Equal(t, response.Chains, []exported.ChainName{testCosmosChain.Name})
 			}),
 		).Run(t)
 }

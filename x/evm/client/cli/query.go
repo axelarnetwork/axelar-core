@@ -10,10 +10,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -403,22 +405,23 @@ func getCmdChains() *cobra.Command {
 			return err
 		}
 
-		queryClient := types.NewQueryServiceClient(clientCtx)
+		nexusQueryClient := nexustypes.NewQueryServiceClient(clientCtx)
 
-		var chainStatus types.ChainStatus
+		var chainStatus nexus.ChainStatus
 		switch *status {
 		case "":
-			chainStatus = types.StatusUnspecified
+			chainStatus = nexus.StatusUnspecified
 		case activated:
-			chainStatus = types.Activated
+			chainStatus = nexus.Activated
 		case deactivated:
-			chainStatus = types.Deactivated
+			chainStatus = nexus.Deactivated
 		default:
 			return fmt.Errorf("unrecognized chain status %s", *status)
 		}
 
-		res, err := queryClient.Chains(cmd.Context(), &types.ChainsRequest{
+		res, err := nexusQueryClient.Chains(cmd.Context(), &nexustypes.ChainsRequest{
 			Status: chainStatus,
+			Module: exported.ModuleName,
 		})
 		if err != nil {
 			return err

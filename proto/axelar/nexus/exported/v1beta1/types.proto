@@ -19,6 +19,17 @@ message Chain {
   string module = 5;
 }
 
+// ChainStatus represents the status of a registered chain
+enum ChainStatus {
+  option (gogoproto.goproto_enum_prefix) = false;
+
+  CHAIN_STATUS_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "StatusUnspecified" ];
+  CHAIN_STATUS_ACTIVATED = 1 [ (gogoproto.enumvalue_customname) = "Activated" ];
+  CHAIN_STATUS_DEACTIVATED = 2
+      [ (gogoproto.enumvalue_customname) = "Deactivated" ];
+}
+
 // CrossChainAddress represents a generalized address on any registered chain
 message CrossChainAddress {
   Chain chain = 1 [ (gogoproto.nullable) = false ];
