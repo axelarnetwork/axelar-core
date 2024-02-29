@@ -6,6 +6,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
 import "gogoproto/gogo.proto";
 import "axelar/evm/v1beta1/types.proto";
 import "axelar/evm/v1beta1/params.proto";
+import "axelar/nexus/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -112,17 +113,11 @@ message EventResponse { Event event = 1; }
 
 message QueryBurnerAddressResponse { string address = 1; }
 
-enum ChainStatus {
-  option (gogoproto.goproto_enum_prefix) = false;
+message ChainsRequest {
+  option deprecated = true; // Deprecated in v0.35
 
-  CHAIN_STATUS_UNSPECIFIED = 0
-      [ (gogoproto.enumvalue_customname) = "StatusUnspecified" ];
-  CHAIN_STATUS_ACTIVATED = 1 [ (gogoproto.enumvalue_customname) = "Activated" ];
-  CHAIN_STATUS_DEACTIVATED = 2
-      [ (gogoproto.enumvalue_customname) = "Deactivated" ];
+  axelar.nexus.exported.v1beta1.ChainStatus status = 1;
 }
-
-message ChainsRequest { ChainStatus status = 1; }
 
 message ChainsResponse {
   repeated string chains = 1

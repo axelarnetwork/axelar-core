@@ -104,6 +104,7 @@ type Nexus interface {
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
 	GetChains(ctx sdk.Context) []nexus.Chain
+	GetChainNamesByType(ctx sdk.Context, status nexus.ChainStatus, module string) []nexus.ChainName
 	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
 	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
 	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Uint, window time.Duration) error

@@ -157,7 +157,7 @@ service QueryService {
         "/axelar/evm/v1beta1/pending_commands/{chain}";
   }
 
-  // Chains queries the available evm chains
+  // Deprecated: use nexus Chains query instead, deprecated in v0.35
   rpc Chains(ChainsRequest) returns (ChainsResponse) {
     option (google.api.http).get = "/axelar/evm/v1beta1/chains";
   }

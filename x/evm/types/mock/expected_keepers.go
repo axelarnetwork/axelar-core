@@ -131,6 +131,9 @@ var _ types.Nexus = &NexusMock{}
 //			GetChainMaintainersFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress {
 //				panic("mock out the GetChainMaintainers method")
 //			},
+//			GetChainNamesByTypeFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, status github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainStatus, module string) []github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
+//				panic("mock out the GetChainNamesByType method")
+//			},
 //			GetChainsFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain {
 //				panic("mock out the GetChains method")
 //			},
@@ -209,6 +212,9 @@ type NexusMock struct {
 
 	// GetChainMaintainersFunc mocks the GetChainMaintainers method.
 	GetChainMaintainersFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) []github_com_cosmos_cosmos_sdk_types.ValAddress
+
+	// GetChainNamesByTypeFunc mocks the GetChainNamesByType method.
+	GetChainNamesByTypeFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, status github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainStatus, module string) []github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
 
 	// GetChainsFunc mocks the GetChains method.
 	GetChainsFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) []github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
@@ -335,6 +341,15 @@ type NexusMock struct {
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		}
+		// GetChainNamesByType holds details about calls to the GetChainNamesByType method.
+		GetChainNamesByType []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// Status is the status argument value.
+			Status github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainStatus
+			// Module is the module argument value.
+			Module string
 		}
 		// GetChains holds details about calls to the GetChains method.
 		GetChains []struct {
@@ -463,6 +478,7 @@ type NexusMock struct {
 	lockGetChainByNativeAsset         sync.RWMutex
 	lockGetChainMaintainerState       sync.RWMutex
 	lockGetChainMaintainers           sync.RWMutex
+	lockGetChainNamesByType           sync.RWMutex
 	lockGetChains                     sync.RWMutex
 	lockGetProcessingMessages         sync.RWMutex
 	lockGetRecipient                  sync.RWMutex
@@ -860,6 +876,46 @@ func (mock *NexusMock) GetChainMaintainersCalls() []struct {
 	mock.lockGetChainMaintainers.RLock()
 	calls = mock.calls.GetChainMaintainers
 	mock.lockGetChainMaintainers.RUnlock()
+	return calls
+}
+
+// GetChainNamesByType calls GetChainNamesByTypeFunc.
+func (mock *NexusMock) GetChainNamesByType(ctx github_com_cosmos_cosmos_sdk_types.Context, status github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainStatus, module string) []github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName {
+	if mock.GetChainNamesByTypeFunc == nil {
+		panic("NexusMock.GetChainNamesByTypeFunc: method is nil but Nexus.GetChainNamesByType was just called")
+	}
+	callInfo := struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Status github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainStatus
+		Module string
+	}{
+		Ctx:    ctx,
+		Status: status,
+		Module: module,
+	}
+	mock.lockGetChainNamesByType.Lock()
+	mock.calls.GetChainNamesByType = append(mock.calls.GetChainNamesByType, callInfo)
+	mock.lockGetChainNamesByType.Unlock()
+	return mock.GetChainNamesByTypeFunc(ctx, status, module)
+}
+
+// GetChainNamesByTypeCalls gets all the calls that were made to GetChainNamesByType.
+// Check the length with:
+//
+//	len(mockedNexus.GetChainNamesByTypeCalls())
+func (mock *NexusMock) GetChainNamesByTypeCalls() []struct {
+	Ctx    github_com_cosmos_cosmos_sdk_types.Context
+	Status github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainStatus
+	Module string
+} {
+	var calls []struct {
+		Ctx    github_com_cosmos_cosmos_sdk_types.Context
+		Status github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainStatus
+		Module string
+	}
+	mock.lockGetChainNamesByType.RLock()
+	calls = mock.calls.GetChainNamesByType
+	mock.lockGetChainNamesByType.RUnlock()
 	return calls
 }
 

@@ -16,7 +16,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -126,10 +125,18 @@ func TestChains(t *testing.T) {
 
 	Given("an evm querier", func() {
 		nexusKeeper = &mock.NexusMock{
-			GetChainsFunc: func(ctx sdk.Context) []nexus.Chain {
-				return []nexus.Chain{exported.Ethereum, axelarnet.Axelarnet, avalanche}
-			},
 			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return !chain.Name.Equals(avalanche.Name) },
+			GetChainNamesByTypeFunc: func(ctx sdk.Context, status nexus.ChainStatus, module string) []nexus.ChainName {
+				assert.Equal(t, exported.ModuleName, module)
+
+				if status == nexus.Activated {
+					return []nexus.ChainName{exported.Ethereum.Name}
+				} else if status == nexus.Deactivated {
+					return []nexus.ChainName{avalanche.Name}
+				} else {
+					return []nexus.ChainName{exported.Ethereum.Name, avalanche.Name}
+				}
+			},
 		}
 
 		q = evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, multisig)
@@ -145,14 +152,14 @@ func TestChains(t *testing.T) {
 			}),
 			Then("query only activated chains", func(t *testing.T) {
 				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{
-					Status: types.Activated,
+					Status: nexus.Activated,
 				})
 				assert.NoError(t, err)
 				assert.Equal(t, []nexus.ChainName{exported.Ethereum.Name}, response.Chains)
 			}),
 			Then("query only deactivated chains", func(t *testing.T) {
 				response, err = q.Chains(sdk.WrapSDKContext(ctx), &types.ChainsRequest{
-					Status: types.Deactivated,
+					Status: nexus.Deactivated,
 				})
 				assert.NoError(t, err)
 				assert.Equal(t, []nexus.ChainName{avalanche.Name}, response.Chains)

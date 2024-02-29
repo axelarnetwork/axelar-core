@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -41,10 +42,6 @@ func NewGRPCQuerier(k types.BaseKeeper, n types.Nexus, multisig types.MultisigKe
 	}
 }
 
-func getEVMChains(ctx sdk.Context, n types.Nexus) []nexustypes.Chain {
-	return slices.Filter(n.GetChains(ctx), types.IsEVMChain)
-}
-
 // Params returns the reward module params
 func (q Querier) Params(c context.Context, req *types.ParamsRequest) (*types.ParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
@@ -65,18 +62,9 @@ func (q Querier) Params(c context.Context, req *types.ParamsRequest) (*types.Par
 func (q Querier) Chains(c context.Context, req *types.ChainsRequest) (*types.ChainsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chains := getEVMChains(ctx, q.nexus)
+	chains := q.nexus.GetChainNamesByType(ctx, req.Status, exported.ModuleName)
 
-	switch req.Status {
-	case types.Activated:
-		chains = slices.Filter(chains, func(chain nexustypes.Chain) bool { return q.nexus.IsChainActivated(ctx, chain) })
-	case types.Deactivated:
-		chains = slices.Filter(chains, func(chain nexustypes.Chain) bool { return !q.nexus.IsChainActivated(ctx, chain) })
-	}
-
-	chainNames := slices.Map(chains, nexustypes.Chain.GetName)
-
-	return &types.ChainsResponse{Chains: chainNames}, nil
+	return &types.ChainsResponse{Chains: chains}, nil
 }
 
 // Command returns the command provided an id and a chain
@@ -116,17 +104,17 @@ func (q Querier) Command(c context.Context, req *types.CommandRequest) (*types.C
 func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	chains := getEVMChains(ctx, q.nexus)
+	chains := q.nexus.GetChainNamesByType(ctx, nexustypes.StatusUnspecified, exported.ModuleName)
 
 	for _, chain := range chains {
-		ck, err := q.keeper.ForChain(ctx, chain.Name)
+		ck, err := q.keeper.ForChain(ctx, chain)
 		if err != nil {
 			continue
 		}
 
 		burnerInfo := ck.GetBurnerInfo(ctx, req.Address)
 		if burnerInfo != nil {
-			return &types.BurnerInfoResponse{Chain: chain.Name, BurnerInfo: burnerInfo}, nil
+			return &types.BurnerInfoResponse{Chain: chain, BurnerInfo: burnerInfo}, nil
 		}
 	}
 
