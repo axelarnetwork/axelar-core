@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -243,6 +244,19 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 	symbol := token.GetDetails().Symbol
 	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
 
+	if len(req.Label) > 0 {
+		labelInfo := types.LabelInfo{
+			Label:            req.Label,
+			RecipientAddress: types.Address(common.HexToAddress(req.RecipientAddr)),
+			RecipientChain:   req.RecipientChain,
+			Asset:            req.Asset,
+		}
+		err = keeper.SetLabeledBurnerAddress(ctx, labelInfo, burnerAddress)
+		if err != nil {
+			return nil, fmt.Errorf("could not label address %s", err.Error())
+		}
+	}
+
 	err = s.nexus.LinkAddresses(ctx,
 		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddress.Hex()},
 		recipient)
@@ -348,6 +362,16 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("gateway address not set for chain %s", chain.Name)
+	}
+
+	if req.LabelInfo != nil && !req.BurnerAddress.IsZeroAddress() {
+		return nil, fmt.Errorf("provided both burner address and label info")
+	} else if req.LabelInfo != nil {
+		burnerAddr, err := keeper.GetLabeledBurnerAddress(ctx, *req.LabelInfo)
+		req.BurnerAddress = burnerAddr
+		if err != nil {
+			return nil, fmt.Errorf("could not get labeled address: %s", err.Error())
+		}
 	}
 
 	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnerAddress)

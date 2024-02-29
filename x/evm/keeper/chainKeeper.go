@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	gogoprototypes "github.com/gogo/protobuf/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -40,6 +41,7 @@ var (
 	burnerAddrPrefix       = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 1)
 	confirmedDepositPrefix = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 2)
 	burnedDepositPrefix    = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 3)
+	addressLabelPrefix     = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 4)
 )
 
 var _ types.ChainKeeper = chainKeeper{}
@@ -123,6 +125,34 @@ func (k chainKeeper) getBurnerInfos(ctx sdk.Context) []types.BurnerInfo {
 	}
 
 	return burners
+}
+
+func getAddressLabelKey(labelInfo types.LabelInfo) key.Key {
+	return addressLabelPrefix.
+		Append(key.FromStrHashed(labelInfo.RecipientAddress.Hex())).
+		Append(key.FromStrHashed(labelInfo.RecipientChain.String())).
+		Append(key.FromStrHashed(labelInfo.Label.String())).
+		Append(key.FromStrHashed(labelInfo.Asset))
+}
+
+func (k chainKeeper) GetLabeledBurnerAddress(ctx sdk.Context, labelInfo types.LabelInfo) (types.Address, error) {
+	var depositAddressBytes gogoprototypes.BytesValue
+	found := k.getStore(ctx).GetNew(getAddressLabelKey(labelInfo), &depositAddressBytes)
+	if !found {
+		return types.Address{}, fmt.Errorf("no deposit address with label '%s' found for recipient '%s' sent from chain '%s'", labelInfo.Label, labelInfo.RecipientAddress.Hex(), k.chain)
+	}
+	depositAddress := types.Address(depositAddressBytes.Value)
+	return depositAddress, nil
+}
+
+func (k chainKeeper) SetLabeledBurnerAddress(ctx sdk.Context, labelInfo types.LabelInfo, burnerAddr types.Address) error {
+	found := k.getStore(ctx).HasNew(getAddressLabelKey(labelInfo))
+	if found {
+		return fmt.Errorf("label '%s' for recipient '%s' sent from chain '%s' already set", labelInfo.Label, labelInfo.RecipientAddress.Hex(), k.chain)
+	} else {
+		k.getStore(ctx).SetRawNew(getAddressLabelKey(labelInfo), burnerAddr.Bytes())
+		return nil
+	}
 }
 
 // calculates the token address for some asset with the provided axelar gateway address

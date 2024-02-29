@@ -78,6 +78,19 @@ message ConfirmDepositRequest {
   ];
   bytes burner_address = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  LabelInfo label_info = 6;
+}
+
+message LabelInfo {
+  string label = 1 [
+    (gogoproto.casttype) = "github.com/axelarnetwork/axelar-core/x/nexus/exported.LabelName"
+  ];
+  bytes recipient_address = 2
+      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
+  string recipient_chain = 3
+  [ (gogoproto.casttype) =
+      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string asset = 4;
 }
 
 message ConfirmDepositResponse {}
@@ -132,6 +145,9 @@ message LinkRequest {
   string recipient_chain = 5
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string label = 6
+  [ (gogoproto.casttype) =
+      "github.com/axelarnetwork/axelar-core/x/nexus/exported.LabelName" ];
 }
 
 message LinkResponse { string deposit_addr = 1; }

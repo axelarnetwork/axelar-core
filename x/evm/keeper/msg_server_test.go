@@ -587,7 +587,137 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 	assert.Equal(t, 0, len(n.LinkAddressesCalls()))
 }
 
-func TestLink_Success(t *testing.T) {
+func TestLink_DuplicateLabel(t *testing.T) {
+	minConfHeight := rand.I64Between(1, 10)
+	ctx := rand.Context(fake.NewMultiStore())
+	chain := nexus.ChainName("Ethereum")
+	k := newKeeper(ctx, chain, minConfHeight)
+	tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(3))
+
+	chainKeeper := funcs.Must(k.ForChain(ctx, chain))
+	chainKeeper.SetGateway(ctx, types.Address(common.HexToAddress(gateway)))
+
+	token, err := chainKeeper.CreateERC20Token(ctx, axelarnet.NativeAsset, tokenDetails, types.ZeroAddress)
+	if err != nil {
+		panic(err)
+	}
+
+	err = token.RecordDeployment(types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))))
+	if err != nil {
+		panic(err)
+	}
+	err = token.ConfirmDeployment()
+	if err != nil {
+		panic(err)
+	}
+
+	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
+	salt := chainKeeper.GenerateSalt(ctx, recipient.Address)
+	burnAddr, err := chainKeeper.GetBurnerAddress(ctx, token, salt, types.Address(common.HexToAddress(gateway)))
+	if err != nil {
+		panic(err)
+	}
+	sender := nexus.CrossChainAddress{Address: burnAddr.Hex(), Chain: exported.Ethereum}
+
+	chains := map[nexus.ChainName]nexus.Chain{axelarnet.Axelarnet.Name: axelarnet.Axelarnet, exported.Ethereum.Name: exported.Ethereum}
+	n := &mock.NexusMock{
+		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
+		LinkAddressesFunc:    func(ctx sdk.Context, s nexus.CrossChainAddress, r nexus.CrossChainAddress) error { return nil },
+		GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+			c, ok := chains[chain]
+			return c, ok
+		},
+		IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
+	}
+	multisigKeeper := &mock.MultisigKeeperMock{
+		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+			return multisigTestUtils.KeyID(), true
+		},
+	}
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
+	label := nexus.LabelName(rand.StrBetween(5, 20))
+	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: axelarnet.NativeAsset, Label: label})
+	// succeeds
+	assert.NoError(t, err)
+
+	// re-link with same label
+	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: axelarnet.NativeAsset, Label: label})
+	// should fail
+	assert.Error(t, err)
+	// checks two times
+	assert.Equal(t, 2, len(n.IsAssetRegisteredCalls()))
+	assert.Equal(t, 4, len(n.GetChainCalls()))
+	// link only one time
+	assert.Equal(t, 1, len(n.LinkAddressesCalls()))
+	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
+	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
+}
+
+func TestLink_SuccessLabel(t *testing.T) {
+	minConfHeight := rand.I64Between(1, 10)
+	ctx := rand.Context(fake.NewMultiStore())
+	chain := nexus.ChainName("Ethereum")
+	k := newKeeper(ctx, chain, minConfHeight)
+	tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(3))
+	msg := createMsgSignDeploy(tokenDetails)
+
+	chainKeeper := funcs.Must(k.ForChain(ctx, chain))
+	chainKeeper.SetGateway(ctx, types.Address(common.HexToAddress(gateway)))
+
+	token, err := chainKeeper.CreateERC20Token(ctx, axelarnet.NativeAsset, tokenDetails, types.ZeroAddress)
+	if err != nil {
+		panic(err)
+	}
+
+	err = token.RecordDeployment(types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))))
+	if err != nil {
+		panic(err)
+	}
+	err = token.ConfirmDeployment()
+	if err != nil {
+		panic(err)
+	}
+
+	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
+	salt := chainKeeper.GenerateSalt(ctx, recipient.Address)
+	burnAddr, err := chainKeeper.GetBurnerAddress(ctx, token, salt, types.Address(common.HexToAddress(gateway)))
+	if err != nil {
+		panic(err)
+	}
+	sender := nexus.CrossChainAddress{Address: burnAddr.Hex(), Chain: exported.Ethereum}
+
+	chains := map[nexus.ChainName]nexus.Chain{axelarnet.Axelarnet.Name: axelarnet.Axelarnet, exported.Ethereum.Name: exported.Ethereum}
+	n := &mock.NexusMock{
+		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
+		LinkAddressesFunc:    func(ctx sdk.Context, s nexus.CrossChainAddress, r nexus.CrossChainAddress) error { return nil },
+		GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+			c, ok := chains[chain]
+			return c, ok
+		},
+		IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
+	}
+	multisigKeeper := &mock.MultisigKeeperMock{
+		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
+			return multisigTestUtils.KeyID(), true
+		},
+	}
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
+	label := nexus.LabelName(rand.StrBetween(5, 20))
+	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: axelarnet.NativeAsset, Label: label})
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
+	assert.Equal(t, 2, len(n.GetChainCalls()))
+	assert.Equal(t, 1, len(n.LinkAddressesCalls()))
+	assert.Equal(t, sender, n.LinkAddressesCalls()[0].Sender)
+	assert.Equal(t, recipient, n.LinkAddressesCalls()[0].Recipient)
+
+	expected := &types.BurnerInfo{BurnerAddress: burnAddr, TokenAddress: token.GetAddress(), DestinationChain: recipient.Chain.Name, Symbol: msg.TokenDetails.Symbol, Asset: axelarnet.NativeAsset, Salt: salt}
+	actual := chainKeeper.GetBurnerInfo(ctx, burnAddr)
+	assert.EqualValues(t, expected, actual)
+}
+
+func TestLink_SuccessNoLabel(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
 	ctx := rand.Context(fake.NewMultiStore())
 	chain := nexus.ChainName("Ethereum")
@@ -969,6 +1099,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		multisigKeeper *mock.MultisigKeeperMock
 		n              *mock.NexusMock
 		msg            *types.ConfirmDepositRequest
+		label          nexus.LabelName
+		burnerAddress  types.Address
 		server         types.MsgServiceServer
 	)
 
@@ -994,7 +1126,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 		salt := types.Hash(common.BytesToHash(rand.Bytes(common.HashLength)))
 		gatewayAddr := types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
-		burnerAddress := types.Address(crypto.CreateAddress2(common.Address(gatewayAddr), salt, funcs.MustOk(token.GetBurnerCodeHash()).Bytes()))
+		burnerAddress = types.Address(crypto.CreateAddress2(common.Address(gatewayAddr), salt, funcs.MustOk(token.GetBurnerCodeHash()).Bytes()))
+		label = nexus.LabelName(rand.StrBetween(5, 10))
 
 		chaink = &mock.ChainKeeperMock{
 			GetBurnerAddressFunc: func(ctx sdk.Context, token types.ERC20Token, salt types.Hash, gatewayAddr types.Address) (types.Address, error) {
@@ -1035,6 +1168,12 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			},
 			GetMinVoterCountFunc: func(sdk.Context) int64 { return 15 },
 			GetParamsFunc:        func(ctx sdk.Context) types.Params { return types.DefaultParams()[0] },
+			GetLabeledBurnerAddressFunc: func(ctx sdk.Context, labelInfo types.LabelInfo) (types.Address, error) {
+				if labelInfo.Label == nexus.LabelName(label) {
+					return burnerAddress, nil
+				}
+				return types.Address{}, fmt.Errorf("burnerAddress not found")
+			},
 		}
 		v = &mock.VoterMock{
 			InitializePollFunc: func(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) { return 0, nil },
@@ -1075,7 +1214,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	}
 
 	repeats := 20
-	t.Run("happy path confirm", testutils.Func(func(t *testing.T) {
+	t.Run("happy path confirm no label", testutils.Func(func(t *testing.T) {
 		setup()
 
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
@@ -1083,6 +1222,46 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == proto.MessageName(&types.ConfirmDepositStarted{}) }), 1)
 		assert.Equal(t, len(v.InitializePollCalls()), 1)
+	}).Repeat(repeats))
+
+	t.Run("happy path confirm label", testutils.Func(func(t *testing.T) {
+		setup()
+
+		msg.LabelInfo = &types.LabelInfo{
+			Label: label,
+		}
+		msg.BurnerAddress = types.Address{}
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
+		depositEvent := funcs.Must(sdk.ParseTypedEvent(ctx.EventManager().ABCIEvents()[0])).(*types.ConfirmDepositStarted)
+
+		assert.NoError(t, err)
+		assert.Len(t, testutils.Events(ctx.EventManager().ABCIEvents()).Filter(func(event abci.Event) bool { return event.Type == proto.MessageName(&types.ConfirmDepositStarted{}) }), 1)
+		assert.Equal(t, depositEvent.DepositAddress, burnerAddress)
+		assert.Equal(t, msg.BurnerAddress, burnerAddress)
+		assert.Equal(t, len(v.InitializePollCalls()), 1)
+	}).Repeat(repeats))
+
+	t.Run("provide both label and burner", testutils.Func(func(t *testing.T) {
+		setup()
+
+		msg.LabelInfo = &types.LabelInfo{
+			Label: label,
+		}
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
+
+		assert.ErrorContains(t, err, "provided both burner address and label info")
+	}).Repeat(repeats))
+
+	t.Run("unknown label", testutils.Func(func(t *testing.T) {
+		setup()
+
+		msg.LabelInfo = &types.LabelInfo{
+			Label: nexus.LabelName(rand.StrBetween(5, 20)),
+		}
+		msg.BurnerAddress = types.Address{}
+		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
+
+		assert.ErrorContains(t, err, "burnerAddress not found")
 	}).Repeat(repeats))
 
 	t.Run("unknown chain", testutils.Func(func(t *testing.T) {

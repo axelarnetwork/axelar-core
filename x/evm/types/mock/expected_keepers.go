@@ -1788,6 +1788,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 //			GetGatewayAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.Address, bool) {
 //				panic("mock out the GetGatewayAddress method")
 //			},
+//			GetLabeledBurnerAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, labelInfo types.LabelInfo) (types.Address, error) {
+//				panic("mock out the GetLabeledBurnerAddress method")
+//			},
 //			GetLatestCommandBatchFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch {
 //				panic("mock out the GetLatestCommandBatch method")
 //			},
@@ -1847,6 +1850,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 //			},
 //			SetGatewayFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address)  {
 //				panic("mock out the SetGateway method")
+//			},
+//			SetLabeledBurnerAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, labelInfo types.LabelInfo, burnerAddr types.Address) error {
+//				panic("mock out the SetLabeledBurnerAddress method")
 //			},
 //			SetLatestSignedCommandBatchIDFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte)  {
 //				panic("mock out the SetLatestSignedCommandBatchID method")
@@ -1927,6 +1933,9 @@ type ChainKeeperMock struct {
 	// GetGatewayAddressFunc mocks the GetGatewayAddress method.
 	GetGatewayAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.Address, bool)
 
+	// GetLabeledBurnerAddressFunc mocks the GetLabeledBurnerAddress method.
+	GetLabeledBurnerAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, labelInfo types.LabelInfo) (types.Address, error)
+
 	// GetLatestCommandBatchFunc mocks the GetLatestCommandBatch method.
 	GetLatestCommandBatchFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch
 
@@ -1986,6 +1995,9 @@ type ChainKeeperMock struct {
 
 	// SetGatewayFunc mocks the SetGateway method.
 	SetGatewayFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, address types.Address)
+
+	// SetLabeledBurnerAddressFunc mocks the SetLabeledBurnerAddress method.
+	SetLabeledBurnerAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, labelInfo types.LabelInfo, burnerAddr types.Address) error
 
 	// SetLatestSignedCommandBatchIDFunc mocks the SetLatestSignedCommandBatchID method.
 	SetLatestSignedCommandBatchIDFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, id []byte)
@@ -2153,6 +2165,13 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx github_com_cosmos_cosmos_sdk_types.Context
 		}
+		// GetLabeledBurnerAddress holds details about calls to the GetLabeledBurnerAddress method.
+		GetLabeledBurnerAddress []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// LabelInfo is the labelInfo argument value.
+			LabelInfo types.LabelInfo
+		}
 		// GetLatestCommandBatch holds details about calls to the GetLatestCommandBatch method.
 		GetLatestCommandBatch []struct {
 			// Ctx is the ctx argument value.
@@ -2271,6 +2290,15 @@ type ChainKeeperMock struct {
 			// Address is the address argument value.
 			Address types.Address
 		}
+		// SetLabeledBurnerAddress holds details about calls to the SetLabeledBurnerAddress method.
+		SetLabeledBurnerAddress []struct {
+			// Ctx is the ctx argument value.
+			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			// LabelInfo is the labelInfo argument value.
+			LabelInfo types.LabelInfo
+			// BurnerAddr is the burnerAddr argument value.
+			BurnerAddr types.Address
+		}
 		// SetLatestSignedCommandBatchID holds details about calls to the SetLatestSignedCommandBatchID method.
 		SetLatestSignedCommandBatchID []struct {
 			// Ctx is the ctx argument value.
@@ -2302,6 +2330,7 @@ type ChainKeeperMock struct {
 	lockGetERC20TokenBySymbol         sync.RWMutex
 	lockGetEvent                      sync.RWMutex
 	lockGetGatewayAddress             sync.RWMutex
+	lockGetLabeledBurnerAddress       sync.RWMutex
 	lockGetLatestCommandBatch         sync.RWMutex
 	lockGetLegacyDeposit              sync.RWMutex
 	lockGetMinVoterCount              sync.RWMutex
@@ -2322,6 +2351,7 @@ type ChainKeeperMock struct {
 	lockSetEventCompleted             sync.RWMutex
 	lockSetEventFailed                sync.RWMutex
 	lockSetGateway                    sync.RWMutex
+	lockSetLabeledBurnerAddress       sync.RWMutex
 	lockSetLatestSignedCommandBatchID sync.RWMutex
 }
 
@@ -3153,6 +3183,42 @@ func (mock *ChainKeeperMock) GetGatewayAddressCalls() []struct {
 	return calls
 }
 
+// GetLabeledBurnerAddress calls GetLabeledBurnerAddressFunc.
+func (mock *ChainKeeperMock) GetLabeledBurnerAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, labelInfo types.LabelInfo) (types.Address, error) {
+	if mock.GetLabeledBurnerAddressFunc == nil {
+		panic("ChainKeeperMock.GetLabeledBurnerAddressFunc: method is nil but ChainKeeper.GetLabeledBurnerAddress was just called")
+	}
+	callInfo := struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		LabelInfo types.LabelInfo
+	}{
+		Ctx:       ctx,
+		LabelInfo: labelInfo,
+	}
+	mock.lockGetLabeledBurnerAddress.Lock()
+	mock.calls.GetLabeledBurnerAddress = append(mock.calls.GetLabeledBurnerAddress, callInfo)
+	mock.lockGetLabeledBurnerAddress.Unlock()
+	return mock.GetLabeledBurnerAddressFunc(ctx, labelInfo)
+}
+
+// GetLabeledBurnerAddressCalls gets all the calls that were made to GetLabeledBurnerAddress.
+// Check the length with:
+//
+//	len(mockedChainKeeper.GetLabeledBurnerAddressCalls())
+func (mock *ChainKeeperMock) GetLabeledBurnerAddressCalls() []struct {
+	Ctx       github_com_cosmos_cosmos_sdk_types.Context
+	LabelInfo types.LabelInfo
+} {
+	var calls []struct {
+		Ctx       github_com_cosmos_cosmos_sdk_types.Context
+		LabelInfo types.LabelInfo
+	}
+	mock.lockGetLabeledBurnerAddress.RLock()
+	calls = mock.calls.GetLabeledBurnerAddress
+	mock.lockGetLabeledBurnerAddress.RUnlock()
+	return calls
+}
+
 // GetLatestCommandBatch calls GetLatestCommandBatchFunc.
 func (mock *ChainKeeperMock) GetLatestCommandBatch(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch {
 	if mock.GetLatestCommandBatchFunc == nil {
@@ -3825,6 +3891,46 @@ func (mock *ChainKeeperMock) SetGatewayCalls() []struct {
 	mock.lockSetGateway.RLock()
 	calls = mock.calls.SetGateway
 	mock.lockSetGateway.RUnlock()
+	return calls
+}
+
+// SetLabeledBurnerAddress calls SetLabeledBurnerAddressFunc.
+func (mock *ChainKeeperMock) SetLabeledBurnerAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, labelInfo types.LabelInfo, burnerAddr types.Address) error {
+	if mock.SetLabeledBurnerAddressFunc == nil {
+		panic("ChainKeeperMock.SetLabeledBurnerAddressFunc: method is nil but ChainKeeper.SetLabeledBurnerAddress was just called")
+	}
+	callInfo := struct {
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		LabelInfo  types.LabelInfo
+		BurnerAddr types.Address
+	}{
+		Ctx:        ctx,
+		LabelInfo:  labelInfo,
+		BurnerAddr: burnerAddr,
+	}
+	mock.lockSetLabeledBurnerAddress.Lock()
+	mock.calls.SetLabeledBurnerAddress = append(mock.calls.SetLabeledBurnerAddress, callInfo)
+	mock.lockSetLabeledBurnerAddress.Unlock()
+	return mock.SetLabeledBurnerAddressFunc(ctx, labelInfo, burnerAddr)
+}
+
+// SetLabeledBurnerAddressCalls gets all the calls that were made to SetLabeledBurnerAddress.
+// Check the length with:
+//
+//	len(mockedChainKeeper.SetLabeledBurnerAddressCalls())
+func (mock *ChainKeeperMock) SetLabeledBurnerAddressCalls() []struct {
+	Ctx        github_com_cosmos_cosmos_sdk_types.Context
+	LabelInfo  types.LabelInfo
+	BurnerAddr types.Address
+} {
+	var calls []struct {
+		Ctx        github_com_cosmos_cosmos_sdk_types.Context
+		LabelInfo  types.LabelInfo
+		BurnerAddr types.Address
+	}
+	mock.lockSetLabeledBurnerAddress.RLock()
+	calls = mock.calls.SetLabeledBurnerAddress
+	mock.lockSetLabeledBurnerAddress.RUnlock()
 	return calls
 }
 

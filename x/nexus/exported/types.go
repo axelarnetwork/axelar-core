@@ -203,6 +203,32 @@ func (m FeeInfo) Validate() error {
 	return nil
 }
 
+// LabelNameLengthMax bounds the max label name length
+const LabelNameLengthMax = 20
+
+// LabelName ensures a correctly formatted label
+type LabelName string
+
+func (l LabelName) Validate() error {
+	if err := utils.ValidateString(string(l)); err != nil {
+		return sdkerrors.Wrap(err, "invalid label name")
+	}
+
+	if len(l) > LabelNameLengthMax {
+		return fmt.Errorf("label name length %d is greater than %d", len(l), LabelNameLengthMax)
+	}
+
+	return nil
+}
+
+func (l LabelName) String() string {
+	return string(l)
+}
+
+func (l LabelName) Equals(l2 LabelName) bool {
+	return strings.EqualFold(l.String(), l2.String())
+}
+
 // ChainNameLengthMax bounds the max chain name length
 const ChainNameLengthMax = 20
 

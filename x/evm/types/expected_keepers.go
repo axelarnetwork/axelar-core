@@ -50,6 +50,8 @@ type ChainKeeper interface {
 	GenerateSalt(ctx sdk.Context, recipient string) Hash
 	GetBurnerAddress(ctx sdk.Context, token ERC20Token, salt Hash, gatewayAddr Address) (Address, error)
 	SetBurnerInfo(ctx sdk.Context, burnerInfo BurnerInfo)
+	GetLabeledBurnerAddress(ctx sdk.Context, labelInfo LabelInfo) (Address, error)
+	SetLabeledBurnerAddress(ctx sdk.Context, labelInfo LabelInfo, burnerAddr Address) error
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositStatus)
 	GetConfirmedDepositsPaginated(ctx sdk.Context, pageRequest *query.PageRequest) ([]ERC20Deposit, *query.PageResponse, error)
