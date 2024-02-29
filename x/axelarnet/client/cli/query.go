@@ -11,11 +11,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
-const (
-	activated   = "activated"
-	deactivated = "deactivated"
-)
-
 // GetQueryCmd returns the cli query commands for this module
 func GetQueryCmd() *cobra.Command {
 	queryCmd := &cobra.Command{
