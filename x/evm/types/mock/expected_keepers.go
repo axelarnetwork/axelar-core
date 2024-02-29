@@ -1788,7 +1788,7 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 //			GetGatewayAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.Address, bool) {
 //				panic("mock out the GetGatewayAddress method")
 //			},
-//			GetLabeledBurnerAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, labelInfo types.LabelInfo) (string, error) {
+//			GetLabeledBurnerAddressFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, labelInfo types.LabelInfo) (types.Address, error) {
 //				panic("mock out the GetLabeledBurnerAddress method")
 //			},
 //			GetLatestCommandBatchFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch {
@@ -1934,7 +1934,7 @@ type ChainKeeperMock struct {
 	GetGatewayAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) (types.Address, bool)
 
 	// GetLabeledBurnerAddressFunc mocks the GetLabeledBurnerAddress method.
-	GetLabeledBurnerAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, labelInfo types.LabelInfo) (string, error)
+	GetLabeledBurnerAddressFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, labelInfo types.LabelInfo) (types.Address, error)
 
 	// GetLatestCommandBatchFunc mocks the GetLatestCommandBatch method.
 	GetLatestCommandBatchFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context) types.CommandBatch
@@ -3184,7 +3184,7 @@ func (mock *ChainKeeperMock) GetGatewayAddressCalls() []struct {
 }
 
 // GetLabeledBurnerAddress calls GetLabeledBurnerAddressFunc.
-func (mock *ChainKeeperMock) GetLabeledBurnerAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, labelInfo types.LabelInfo) (string, error) {
+func (mock *ChainKeeperMock) GetLabeledBurnerAddress(ctx github_com_cosmos_cosmos_sdk_types.Context, labelInfo types.LabelInfo) (types.Address, error) {
 	if mock.GetLabeledBurnerAddressFunc == nil {
 		panic("ChainKeeperMock.GetLabeledBurnerAddressFunc: method is nil but ChainKeeper.GetLabeledBurnerAddress was just called")
 	}
