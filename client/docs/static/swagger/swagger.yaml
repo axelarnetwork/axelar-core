@@ -3166,6 +3166,16 @@ paths:
               burner_address:
                 type: string
                 format: byte
+              label_info:
+                type: object
+                properties:
+                  label:
+                    type: string
+                  recipient_address:
+                    type: string
+                    format: byte
+                  recipient_chain:
+                    type: string
             title: MsgConfirmDeposit represents an erc20 deposit confirmation message
       tags:
         - MsgService
@@ -5166,6 +5176,8 @@ paths:
               asset:
                 type: string
               recipient_chain:
+                type: string
+              label:
                 type: string
             title: >-
               MsgLink represents the message that links a cross chain address to
@@ -54288,6 +54300,16 @@ definitions:
       burner_address:
         type: string
         format: byte
+      label_info:
+        type: object
+        properties:
+          label:
+            type: string
+          recipient_address:
+            type: string
+            format: byte
+          recipient_chain:
+            type: string
     title: MsgConfirmDeposit represents an erc20 deposit confirmation message
   axelar.evm.v1beta1.ConfirmDepositResponse:
     type: object
@@ -54849,6 +54871,16 @@ definitions:
         type: string
       weight:
         type: string
+  axelar.evm.v1beta1.LabelInfo:
+    type: object
+    properties:
+      label:
+        type: string
+      recipient_address:
+        type: string
+        format: byte
+      recipient_chain:
+        type: string
   axelar.evm.v1beta1.LinkRequest:
     type: object
     properties:
@@ -54862,6 +54894,8 @@ definitions:
       asset:
         type: string
       recipient_chain:
+        type: string
+      label:
         type: string
     title: >-
       MsgLink represents the message that links a cross chain address to a
