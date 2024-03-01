@@ -31,6 +31,8 @@ type BaseKeeper interface {
 	GetEndBlockerLimit(ctx sdk.Context) uint64
 	GetCosmosChains(ctx sdk.Context) []nexus.ChainName
 	GetCosmosChainByName(ctx sdk.Context, chain nexus.ChainName) (CosmosChain, bool)
+	GetIBCPath(ctx sdk.Context, chain nexus.ChainName) (string, bool)
+	GetChainNameByIBCPath(ctx sdk.Context, ibcPath string) (nexus.ChainName, bool)
 	EnqueueIBCTransfer(ctx sdk.Context, transfer IBCTransfer) error
 	GetIBCTransferQueue(ctx sdk.Context) utils.KVQueue
 	SetSeqIDMapping(ctx sdk.Context, t IBCTransfer) error

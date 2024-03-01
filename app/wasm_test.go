@@ -9,7 +9,6 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
@@ -242,8 +241,7 @@ func TestMsgTypeBlacklistMessenger_DispatchMsg(t *testing.T) {
 }
 
 func TestNewWasmAppModuleBasicOverride(t *testing.T) {
-	uploader := authtypes.NewModuleAddress("allowed to upload")
-	wasmModule := app.NewWasmAppModuleBasicOverride(wasm.AppModuleBasic{}, uploader)
+	wasmModule := app.NewWasmAppModuleBasicOverride(wasm.AppModuleBasic{})
 	cdc := app.MakeEncodingConfig().Codec
 
 	genesis := wasmModule.DefaultGenesis(cdc)
@@ -252,9 +250,8 @@ func TestNewWasmAppModuleBasicOverride(t *testing.T) {
 	var state wasm.GenesisState
 	assert.NoError(t, cdc.UnmarshalJSON(genesis, &state))
 
-	assert.Equal(t, state.Params.InstantiateDefaultPermission, wasmtypes.AccessTypeAnyOfAddresses)
-	assert.True(t, state.Params.CodeUploadAccess.Allowed(uploader))
-	assert.Len(t, state.Params.CodeUploadAccess.AllAuthorizedAddresses(), 1)
+	assert.Equal(t, state.Params.InstantiateDefaultPermission, wasmtypes.AccessTypeNobody)
+	assert.True(t, state.Params.CodeUploadAccess.Equals(wasmtypes.AllowNobody))
 }
 
 func TestICSMiddleWare(t *testing.T) {
