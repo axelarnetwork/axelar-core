@@ -112,6 +112,10 @@
     - [ChainStatus](#axelar.nexus.v1beta1.ChainStatus)
   
 - [axelar/axelarnet/v1beta1/query.proto](#axelar/axelarnet/v1beta1/query.proto)
+    - [ChainByIBCPathRequest](#axelar.axelarnet.v1beta1.ChainByIBCPathRequest)
+    - [ChainByIBCPathResponse](#axelar.axelarnet.v1beta1.ChainByIBCPathResponse)
+    - [IBCPathRequest](#axelar.axelarnet.v1beta1.IBCPathRequest)
+    - [IBCPathResponse](#axelar.axelarnet.v1beta1.IBCPathResponse)
     - [ParamsRequest](#axelar.axelarnet.v1beta1.ParamsRequest)
     - [ParamsResponse](#axelar.axelarnet.v1beta1.ParamsResponse)
     - [PendingIBCTransferCountRequest](#axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest)
@@ -2103,6 +2107,68 @@ transfers for the specified chain
 
 
 
+<a name="axelar.axelarnet.v1beta1.ChainByIBCPathRequest"></a>
+
+### ChainByIBCPathRequest
+ChainByIBCPathRequest represents a message that queries the chain that an IBC
+path is registered to
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `ibc_path` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.ChainByIBCPathResponse"></a>
+
+### ChainByIBCPathResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.IBCPathRequest"></a>
+
+### IBCPathRequest
+IBCPathRequest represents a message that queries the IBC path registered for
+a given chain
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="axelar.axelarnet.v1beta1.IBCPathResponse"></a>
+
+### IBCPathResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `ibc_path` | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="axelar.axelarnet.v1beta1.ParamsRequest"></a>
 
 ### ParamsRequest
@@ -2586,6 +2652,8 @@ QueryService defines the gRPC querier service.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `PendingIBCTransferCount` | [PendingIBCTransferCountRequest](#axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest) | [PendingIBCTransferCountResponse](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse) | PendingIBCTransferCount queries the pending ibc transfers for all chains | GET|/axelar/axelarnet/v1beta1/ibc_transfer_count|
 | `Params` | [ParamsRequest](#axelar.axelarnet.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.axelarnet.v1beta1.ParamsResponse) |  | GET|/axelar/axelarnet/v1beta1/params|
+| `IBCPath` | [IBCPathRequest](#axelar.axelarnet.v1beta1.IBCPathRequest) | [IBCPathResponse](#axelar.axelarnet.v1beta1.IBCPathResponse) |  | GET|/axelar/axelarnet/v1beta1/ibc_path/{chain}|
+| `ChainByIBCPath` | [ChainByIBCPathRequest](#axelar.axelarnet.v1beta1.ChainByIBCPathRequest) | [ChainByIBCPathResponse](#axelar.axelarnet.v1beta1.ChainByIBCPathResponse) |  | GET|/axelar/axelarnet/v1beta1/chain_by_ibc_path/{ibc_path}|
 
  <!-- end services -->
 
