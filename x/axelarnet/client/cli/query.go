@@ -24,6 +24,8 @@ func GetQueryCmd() *cobra.Command {
 	queryCmd.AddCommand(
 		GetCmdPendingIBCTransfersCount(),
 		getParams(),
+		getCmdIBCPath(),
+		getCmdChainByIBCPath(),
 	)
 
 	return queryCmd
@@ -68,6 +70,62 @@ func getParams() *cobra.Command {
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
 			res, err := queryClient.Params(cmd.Context(), &types.ParamsRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+func getCmdIBCPath() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "ibc-path [chain]",
+		Short: "Returns the registered IBC path for the given Cosmos chain",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.IBCPath(cmd.Context(), &types.IBCPathRequest{
+				Chain: args[0],
+			})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+func getCmdChainByIBCPath() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "chain-by-ibc-path [ibc path]",
+		Short: "Returns the Cosmos chain for the given IBC path",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.ChainByIBCPath(cmd.Context(), &types.ChainByIBCPathRequest{
+				IbcPath: args[0],
+			})
 			if err != nil {
 				return err
 			}
