@@ -155,6 +155,20 @@
     - [MsgService](#axelar.axelarnet.v1beta1.MsgService)
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
   
+- [axelar/batcher/v1beta1/events.proto](#axelar/batcher/v1beta1/events.proto)
+    - [FailedMessages](#axelar.batcher.v1beta1.FailedMessages)
+    - [FailedMessages.FailedMessage](#axelar.batcher.v1beta1.FailedMessages.FailedMessage)
+  
+- [axelar/batcher/v1beta1/genesis.proto](#axelar/batcher/v1beta1/genesis.proto)
+    - [GenesisState](#axelar.batcher.v1beta1.GenesisState)
+  
+- [axelar/batcher/v1beta1/tx.proto](#axelar/batcher/v1beta1/tx.proto)
+    - [BatchRequest](#axelar.batcher.v1beta1.BatchRequest)
+    - [BatchResponse](#axelar.batcher.v1beta1.BatchResponse)
+  
+- [axelar/batcher/v1beta1/service.proto](#axelar/batcher/v1beta1/service.proto)
+    - [MsgService](#axelar.batcher.v1beta1.MsgService)
+  
 - [axelar/snapshot/exported/v1beta1/types.proto](#axelar/snapshot/exported/v1beta1/types.proto)
     - [Participant](#axelar.snapshot.exported.v1beta1.Participant)
     - [Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot)
@@ -2654,6 +2668,148 @@ QueryService defines the gRPC querier service.
 | `Params` | [ParamsRequest](#axelar.axelarnet.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.axelarnet.v1beta1.ParamsResponse) |  | GET|/axelar/axelarnet/v1beta1/params|
 | `IBCPath` | [IBCPathRequest](#axelar.axelarnet.v1beta1.IBCPathRequest) | [IBCPathResponse](#axelar.axelarnet.v1beta1.IBCPathResponse) |  | GET|/axelar/axelarnet/v1beta1/ibc_path/{chain}|
 | `ChainByIBCPath` | [ChainByIBCPathRequest](#axelar.axelarnet.v1beta1.ChainByIBCPathRequest) | [ChainByIBCPathResponse](#axelar.axelarnet.v1beta1.ChainByIBCPathResponse) |  | GET|/axelar/axelarnet/v1beta1/chain_by_ibc_path/{ibc_path}|
+
+ <!-- end services -->
+
+
+
+<a name="axelar/batcher/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/batcher/v1beta1/events.proto
+
+
+
+<a name="axelar.batcher.v1beta1.FailedMessages"></a>
+
+### FailedMessages
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `messages` | [FailedMessages.FailedMessage](#axelar.batcher.v1beta1.FailedMessages.FailedMessage) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.batcher.v1beta1.FailedMessages.FailedMessage"></a>
+
+### FailedMessages.FailedMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `index` | [int32](#int32) |  |  |
+| `error` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/batcher/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/batcher/v1beta1/genesis.proto
+
+
+
+<a name="axelar.batcher.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/batcher/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/batcher/v1beta1/tx.proto
+
+
+
+<a name="axelar.batcher.v1beta1.BatchRequest"></a>
+
+### BatchRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `must_succeed_messages` | [google.protobuf.Any](#google.protobuf.Any) | repeated |  |
+| `can_fail_messages` | [google.protobuf.Any](#google.protobuf.Any) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.batcher.v1beta1.BatchResponse"></a>
+
+### BatchResponse
+
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/batcher/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/batcher/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="axelar.batcher.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the nexus Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Batch` | [BatchRequest](#axelar.batcher.v1beta1.BatchRequest) | [BatchResponse](#axelar.batcher.v1beta1.BatchResponse) |  | POST|/axelar/batcher/batch|
 
  <!-- end services -->
 

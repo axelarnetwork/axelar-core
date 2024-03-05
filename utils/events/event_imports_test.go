@@ -4,6 +4,7 @@ package events_test
 import (
 	_ "github.com/axelarnetwork/axelar-core/x/ante/types"
 	_ "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	_ "github.com/axelarnetwork/axelar-core/x/batcher/types"
 	_ "github.com/axelarnetwork/axelar-core/x/evm/types"
 	_ "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	_ "github.com/axelarnetwork/axelar-core/x/nexus/types"

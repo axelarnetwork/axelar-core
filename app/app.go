@@ -105,6 +105,8 @@ import (
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	axelarbankkeeper "github.com/axelarnetwork/axelar-core/x/bank/keeper"
+	"github.com/axelarnetwork/axelar-core/x/batcher"
+	batchertypes "github.com/axelarnetwork/axelar-core/x/batcher/types"
 	"github.com/axelarnetwork/axelar-core/x/evm"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -657,7 +659,9 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 			bApp.Router(),
 		),
 		permission.NewAppModule(*getKeeper[permissionKeeper.Keeper](keepers)),
+		batcher.NewAppModule(encodingConfig.Codec, bApp.MsgServiceRouter(), initMessageAnteDecorators(encodingConfig, keepers)),
 	)
+
 	return appModules
 }
 
@@ -789,6 +793,7 @@ func orderMigrations() []string {
 		permissionTypes.ModuleName,
 		snapTypes.ModuleName,
 		axelarnetTypes.ModuleName,
+		batchertypes.ModuleName,
 	)
 	return migrationOrder
 }
@@ -839,6 +844,7 @@ func orderBeginBlockers() []string {
 		snapTypes.ModuleName,
 		axelarnetTypes.ModuleName,
 		voteTypes.ModuleName,
+		batchertypes.ModuleName,
 	)
 	return beginBlockerOrder
 }
@@ -884,6 +890,7 @@ func orderEndBlockers() []string {
 		axelarnetTypes.ModuleName,
 		permissionTypes.ModuleName,
 		voteTypes.ModuleName,
+		batchertypes.ModuleName,
 	)
 	return endBlockerOrder
 }
@@ -932,6 +939,7 @@ func orderModulesForGenesis() []string {
 		axelarnetTypes.ModuleName,
 		rewardTypes.ModuleName,
 		permissionTypes.ModuleName,
+		batchertypes.ModuleName,
 	)
 	return genesisOrder
 }
@@ -1102,6 +1110,7 @@ func GetModuleBasics() module.BasicManager {
 		axelarnet.AppModuleBasic{},
 		reward.AppModuleBasic{},
 		permission.AppModuleBasic{},
+		batcher.AppModuleBasic{},
 	}
 
 	if IsWasmEnabled() {

@@ -1,0 +1,20 @@
+syntax = "proto3";
+package axelar.batcher.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/batcher/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "axelar/batcher/v1beta1/tx.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the nexus Msg service.
+service MsgService {
+  rpc Batch(BatchRequest) returns (BatchResponse) {
+    option (google.api.http) = {
+      post : "/axelar/batcher/batch"
+      body : "*"
+    };
+  }
+}
