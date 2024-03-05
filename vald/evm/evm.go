@@ -82,40 +82,6 @@ func (mgr Mgr) isFinalized(chain nexus.ChainName, txReceipt geth.Receipt, confHe
 	return true, nil
 }
 
-// func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, confHeight uint64) (*geth.Receipt, error) {
-// 	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
-// 	if !ok {
-// 		return nil, fmt.Errorf("rpc client not found for chain %s", chain.String())
-// 	}
-
-// 	txReceipt, err := client.TransactionReceipt(context.Background(), txID)
-// 	keyvals := []interface{}{"chain", chain.String(), "tx_id", txID.Hex()}
-// 	logger := mgr.logger(keyvals...)
-// 	if err == ethereum.NotFound {
-// 		logger.Debug(fmt.Sprintf("transaction receipt %s not found", txID.Hex()))
-// 		return nil, nil
-// 	}
-// 	if err != nil {
-// 		return nil, sdkerrors.Wrap(errors.With(err, keyvals...), "failed getting transaction receipt")
-// 	}
-
-// 	if txReceipt.Status != geth.ReceiptStatusSuccessful {
-// 		return nil, nil
-// 	}
-
-// 	isFinalized, err := mgr.isFinalized(chain, txReceipt, confHeight)
-// 	if err != nil {
-// 		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "cannot determine if the transaction %s is finalized", txID.Hex())
-// 	}
-// 	if !isFinalized {
-// 		logger.Debug(fmt.Sprintf("transaction %s in block %s not finalized", txID.Hex(), txReceipt.BlockNumber.String()))
-
-// 		return nil, nil
-// 	}
-
-// 	return txReceipt, nil
-// }
-
 // GetTxReceiptIfFinalized retrieves receipt for provided transaction ID.
 //
 // # Result is
