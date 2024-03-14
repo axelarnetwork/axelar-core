@@ -7,7 +7,6 @@ import (
 	"context"
 	"github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"math/big"
 	"sync"
 )
@@ -31,10 +30,7 @@ var _ rpc.Client = &ClientMock{}
 //			LatestFinalizedBlockNumberFunc: func(ctx context.Context, confirmations uint64) (*big.Int, error) {
 //				panic("mock out the LatestFinalizedBlockNumber method")
 //			},
-//			TransactionReceiptFunc: func(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-//				panic("mock out the TransactionReceipt method")
-//			},
-//			TransactionReceiptsFunc: func(ctx context.Context, txHashes []common.Hash) ([]rpc.Result, error) {
+//			TransactionReceiptsFunc: func(ctx context.Context, txHashes []common.Hash) ([]rpc.TxReceiptResult, error) {
 //				panic("mock out the TransactionReceipts method")
 //			},
 //		}
@@ -53,11 +49,8 @@ type ClientMock struct {
 	// LatestFinalizedBlockNumberFunc mocks the LatestFinalizedBlockNumber method.
 	LatestFinalizedBlockNumberFunc func(ctx context.Context, confirmations uint64) (*big.Int, error)
 
-	// TransactionReceiptFunc mocks the TransactionReceipt method.
-	TransactionReceiptFunc func(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
-
 	// TransactionReceiptsFunc mocks the TransactionReceipts method.
-	TransactionReceiptsFunc func(ctx context.Context, txHashes []common.Hash) ([]rpc.Result, error)
+	TransactionReceiptsFunc func(ctx context.Context, txHashes []common.Hash) ([]rpc.TxReceiptResult, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -78,13 +71,6 @@ type ClientMock struct {
 			// Confirmations is the confirmations argument value.
 			Confirmations uint64
 		}
-		// TransactionReceipt holds details about calls to the TransactionReceipt method.
-		TransactionReceipt []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// TxHash is the txHash argument value.
-			TxHash common.Hash
-		}
 		// TransactionReceipts holds details about calls to the TransactionReceipts method.
 		TransactionReceipts []struct {
 			// Ctx is the ctx argument value.
@@ -96,7 +82,6 @@ type ClientMock struct {
 	lockClose                      sync.RWMutex
 	lockHeaderByNumber             sync.RWMutex
 	lockLatestFinalizedBlockNumber sync.RWMutex
-	lockTransactionReceipt         sync.RWMutex
 	lockTransactionReceipts        sync.RWMutex
 }
 
@@ -199,44 +184,8 @@ func (mock *ClientMock) LatestFinalizedBlockNumberCalls() []struct {
 	return calls
 }
 
-// TransactionReceipt calls TransactionReceiptFunc.
-func (mock *ClientMock) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-	if mock.TransactionReceiptFunc == nil {
-		panic("ClientMock.TransactionReceiptFunc: method is nil but Client.TransactionReceipt was just called")
-	}
-	callInfo := struct {
-		Ctx    context.Context
-		TxHash common.Hash
-	}{
-		Ctx:    ctx,
-		TxHash: txHash,
-	}
-	mock.lockTransactionReceipt.Lock()
-	mock.calls.TransactionReceipt = append(mock.calls.TransactionReceipt, callInfo)
-	mock.lockTransactionReceipt.Unlock()
-	return mock.TransactionReceiptFunc(ctx, txHash)
-}
-
-// TransactionReceiptCalls gets all the calls that were made to TransactionReceipt.
-// Check the length with:
-//
-//	len(mockedClient.TransactionReceiptCalls())
-func (mock *ClientMock) TransactionReceiptCalls() []struct {
-	Ctx    context.Context
-	TxHash common.Hash
-} {
-	var calls []struct {
-		Ctx    context.Context
-		TxHash common.Hash
-	}
-	mock.lockTransactionReceipt.RLock()
-	calls = mock.calls.TransactionReceipt
-	mock.lockTransactionReceipt.RUnlock()
-	return calls
-}
-
 // TransactionReceipts calls TransactionReceiptsFunc.
-func (mock *ClientMock) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]rpc.Result, error) {
+func (mock *ClientMock) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]rpc.TxReceiptResult, error) {
 	if mock.TransactionReceiptsFunc == nil {
 		panic("ClientMock.TransactionReceiptsFunc: method is nil but Client.TransactionReceipts was just called")
 	}

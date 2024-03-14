@@ -1,6 +1,7 @@
 package evm_test
 
 import (
+	"bytes"
 	"context"
 	"math/big"
 	"strings"
@@ -22,6 +23,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/utils/monads/results"
+	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -144,11 +147,14 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 				HeaderByNumberFunc: func(context.Context, *big.Int) (*evmRpc.Header, error) {
 					return &evmRpc.Header{Transactions: []common.Hash{receipt.TxHash}}, nil
 				},
-				TransactionReceiptFunc: func(_ context.Context, txID common.Hash) (*geth.Receipt, error) {
-					if txID != receipt.TxHash {
-						return nil, ethereum.NotFound
-					}
-					return receipt, nil
+				TransactionReceiptsFunc: func(ctx context.Context, txHashes []common.Hash) ([]evmRpc.TxReceiptResult, error) {
+					return slices.Map(txHashes, func(txHash common.Hash) evmRpc.TxReceiptResult {
+						if bytes.Equal(txHash.Bytes(), receipt.TxHash.Bytes()) {
+							return evmRpc.TxReceiptResult(results.FromOk(*receipt))
+						}
+
+						return evmRpc.TxReceiptResult(results.FromErr[geth.Receipt](ethereum.NotFound))
+					}), nil
 				},
 				LatestFinalizedBlockNumberFunc: func(ctx context.Context, confirmations uint64) (*big.Int, error) {
 					return receipt.BlockNumber, nil
@@ -157,8 +163,10 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		}).
 		Branch(
 			Given("no deposit has been made", func() {
-				rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) {
-					return nil, ethereum.NotFound
+				rpc.TransactionReceiptsFunc = func(ctx context.Context, txHashes []common.Hash) ([]evmRpc.TxReceiptResult, error) {
+					return slices.Map(txHashes, func(hash common.Hash) evmRpc.TxReceiptResult {
+						return evmRpc.TxReceiptResult(results.FromErr[geth.Receipt](ethereum.NotFound))
+					}), nil
 				}
 			}).
 				When("confirming a random deposit on the correct chain", func() {
@@ -180,7 +188,6 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 					event.Participants = append(event.Participants, valAddr)
 
 					err = mgr.ProcessDepositConfirmation(&event)
-
 				}).
 				Then("return error", func(t *testing.T) {
 					assert.Error(t, err)

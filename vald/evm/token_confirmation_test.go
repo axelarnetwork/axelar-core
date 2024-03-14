@@ -1,6 +1,7 @@
 package evm_test
 
 import (
+	"bytes"
 	"context"
 	"math/big"
 	"testing"
@@ -23,6 +24,8 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/utils/monads/results"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 func TestMgr_ProccessTokenConfirmation(t *testing.T) {
@@ -33,7 +36,9 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		broadcaster      *broadcastmock.BroadcasterMock
 		gatewayAddrBytes []byte
 		valAddr          sdk.ValAddress
+		receipt          *geth.Receipt
 	)
+
 	setup := func() {
 		pollID := vote.PollID(rand.I64Between(10, 100))
 
@@ -44,21 +49,9 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 		symbol := rand.Denom(5, 20)
 		valAddr = rand.ValAddr()
-		event = &types.ConfirmTokenStarted{
-			TxID:               types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
-			Chain:              "Ethereum",
-			GatewayAddress:     types.Address(common.BytesToAddress(gatewayAddrBytes)),
-			TokenAddress:       types.Address(common.BytesToAddress(tokenAddrBytes)),
-			TokenDetails:       types.TokenDetails{Symbol: symbol},
-			ConfirmationHeight: uint64(confHeight),
-			PollParticipants: vote.PollParticipants{
-				PollID:       pollID,
-				Participants: []sdk.ValAddress{valAddr},
-			},
-		}
 
 		tx := geth.NewTransaction(0, common.BytesToAddress(rand.Bytes(common.HashLength)), big.NewInt(0), 21000, big.NewInt(1), []byte{})
-		receipt := &geth.Receipt{
+		receipt = &geth.Receipt{
 			TxHash:      tx.Hash(),
 			BlockNumber: big.NewInt(rand.I64Between(0, blockNumber-confHeight)),
 			Logs: createTokenLogs(
@@ -70,12 +63,31 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 			),
 			Status: 1,
 		}
+		event = &types.ConfirmTokenStarted{
+			TxID:               types.Hash(receipt.TxHash),
+			Chain:              "Ethereum",
+			GatewayAddress:     types.Address(common.BytesToAddress(gatewayAddrBytes)),
+			TokenAddress:       types.Address(common.BytesToAddress(tokenAddrBytes)),
+			TokenDetails:       types.TokenDetails{Symbol: symbol},
+			ConfirmationHeight: uint64(confHeight),
+			PollParticipants: vote.PollParticipants{
+				PollID:       pollID,
+				Participants: []sdk.ValAddress{valAddr},
+			},
+		}
+
 		rpc = &mock.ClientMock{
 			HeaderByNumberFunc: func(ctx context.Context, number *big.Int) (*evmrpc.Header, error) {
 				return &evmrpc.Header{Transactions: []common.Hash{receipt.TxHash}}, nil
 			},
-			TransactionReceiptFunc: func(context.Context, common.Hash) (*geth.Receipt, error) {
-				return receipt, nil
+			TransactionReceiptsFunc: func(ctx context.Context, txHashes []common.Hash) ([]evmrpc.TxReceiptResult, error) {
+				return slices.Map(txHashes, func(txHash common.Hash) evmrpc.TxReceiptResult {
+					if bytes.Equal(txHash.Bytes(), receipt.TxHash.Bytes()) {
+						return evmrpc.TxReceiptResult(results.FromOk(*receipt))
+					}
+
+					return evmrpc.TxReceiptResult(results.FromErr[geth.Receipt](ethereum.NotFound))
+				}), nil
 			},
 			LatestFinalizedBlockNumberFunc: func(ctx context.Context, confirmations uint64) (*big.Int, error) {
 				return receipt.BlockNumber, nil
@@ -110,7 +122,11 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 	t.Run("no tx receipt", testutils.Func(func(t *testing.T) {
 		setup()
-		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return nil, ethereum.NotFound }
+		rpc.TransactionReceiptsFunc = func(ctx context.Context, txHashes []common.Hash) ([]evmrpc.TxReceiptResult, error) {
+			return slices.Map(txHashes, func(txHash common.Hash) evmrpc.TxReceiptResult {
+				return evmrpc.TxReceiptResult(results.FromErr[geth.Receipt](ethereum.NotFound))
+			}), nil
+		}
 
 		err := mgr.ProcessTokenConfirmation(event)
 
@@ -126,7 +142,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 	t.Run("no deploy event", testutils.Func(func(t *testing.T) {
 		setup()
-		receipt, _ := rpc.TransactionReceipt(context.Background(), common.Hash{})
+
 		var correctLogIdx int
 		for i, l := range receipt.Logs {
 			if l.Address == common.BytesToAddress(gatewayAddrBytes) {
@@ -136,7 +152,6 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		}
 		// remove the deploy event
 		receipt.Logs = append(receipt.Logs[:correctLogIdx], receipt.Logs[correctLogIdx+1:]...)
-		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return receipt, nil }
 
 		err := mgr.ProcessTokenConfirmation(event)
 
@@ -153,14 +168,13 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 
 	t.Run("wrong deploy event", testutils.Func(func(t *testing.T) {
 		setup()
-		receipt, _ := rpc.TransactionReceipt(context.Background(), common.Hash{})
+
 		for _, l := range receipt.Logs {
 			if l.Address == common.BytesToAddress(gatewayAddrBytes) {
 				l.Data = rand.Bytes(int(rand.I64Between(0, 1000)))
 				break
 			}
 		}
-		rpc.TransactionReceiptFunc = func(context.Context, common.Hash) (*geth.Receipt, error) { return receipt, nil }
 
 		err := mgr.ProcessTokenConfirmation(event)
 

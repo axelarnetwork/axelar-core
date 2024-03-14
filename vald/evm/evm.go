@@ -8,7 +8,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
 
@@ -18,7 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/log"
-	rs "github.com/axelarnetwork/utils/monads/results"
+	"github.com/axelarnetwork/utils/monads/results"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -59,7 +58,7 @@ func (mgr Mgr) ProcessNewChain(event *types.ChainAdded) (err error) {
 	return nil
 }
 
-func (mgr Mgr) isTxReceiptFinalized(chain nexus.ChainName, txReceipt *geth.Receipt, confHeight uint64) (bool, error) {
+func (mgr Mgr) isFinalized(chain nexus.ChainName, txReceipt geth.Receipt, confHeight uint64) (bool, error) {
 	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
 	if !ok {
 		return false, fmt.Errorf("rpc client not found for chain %s", chain.String())
@@ -83,74 +82,78 @@ func (mgr Mgr) isTxReceiptFinalized(chain nexus.ChainName, txReceipt *geth.Recei
 	return true, nil
 }
 
-func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, confHeight uint64) (*geth.Receipt, error) {
-	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
-	if !ok {
-		return nil, fmt.Errorf("rpc client not found for chain %s", chain.String())
-	}
-
-	txReceipt, err := client.TransactionReceipt(context.Background(), txID)
-	keyvals := []interface{}{"chain", chain.String(), "tx_id", txID.Hex()}
-	logger := mgr.logger(keyvals...)
-	if err == ethereum.NotFound {
-		logger.Debug(fmt.Sprintf("transaction receipt %s not found", txID.Hex()))
-		return nil, nil
-	}
+// GetTxReceiptIfFinalized retrieves receipt for provided transaction ID.
+//
+// # Result is
+//
+// - Ok(receipt) if the transaction is finalized and successful
+//
+// - Err(ethereum.NotFound) if the transaction is not found
+//
+// - Err(ErrTxFailed) if the transaction is finalized but failed
+//
+// - Err(ErrNotFinalized) if the transaction is not finalized
+//
+// - Err(err) otherwise
+func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, confHeight uint64) (results.Result[geth.Receipt], error) {
+	txReceipts, err := mgr.GetTxReceiptsIfFinalized(chain, []common.Hash{txID}, confHeight)
 	if err != nil {
-		return nil, sdkerrors.Wrap(errors.With(err, keyvals...), "failed getting transaction receipt")
+		return results.Result[geth.Receipt]{}, err
 	}
 
-	if txReceipt.Status != geth.ReceiptStatusSuccessful {
-		return nil, nil
-	}
-
-	isFinalized, err := mgr.isTxReceiptFinalized(chain, txReceipt, confHeight)
-	if err != nil {
-		return nil, sdkerrors.Wrapf(errors.With(err, keyvals...), "cannot determine if the transaction %s is finalized", txID.Hex())
-	}
-	if !isFinalized {
-		logger.Debug(fmt.Sprintf("transaction %s in block %s not finalized", txID.Hex(), txReceipt.BlockNumber.String()))
-
-		return nil, nil
-	}
-
-	return txReceipt, nil
+	return txReceipts[0], err
 }
 
-// GetTxReceiptsIfFinalized retrieves receipts for provided transaction IDs, only if they're finalized.
-func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Hash, confHeight uint64) ([]rs.Result[*geth.Receipt], error) {
+// GetTxReceiptsIfFinalized retrieves receipts for provided transaction IDs.
+//
+// # Individual result is
+//
+// - Ok(receipt) if the transaction is finalized and successful
+//
+// - Err(ethereum.NotFound) if the transaction is not found
+//
+// - Err(ErrTxFailed) if the transaction is finalized but failed
+//
+// - Err(ErrNotFinalized) if the transaction is not finalized
+//
+// - Err(err) otherwise
+func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Hash, confHeight uint64) ([]results.Result[geth.Receipt], error) {
 	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
 	if !ok {
 		return nil, fmt.Errorf("rpc client not found for chain %s", chain.String())
 	}
 
-	results, err := client.TransactionReceipts(context.Background(), txIDs)
+	receipts, err := client.TransactionReceipts(context.Background(), txIDs)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(errors.With(err, "chain", chain.String(), "tx_ids", txIDs),
-			"cannot get transaction receipts")
-	}
-
-	isFinalized := func(receipt *geth.Receipt) rs.Result[*geth.Receipt] {
-		if receipt.Status != geth.ReceiptStatusSuccessful {
-			return rs.FromErr[*geth.Receipt](ErrTxFailed)
-		}
-
-		isFinalized, err := mgr.isTxReceiptFinalized(chain, receipt, confHeight)
-		if err != nil {
-			return rs.FromErr[*geth.Receipt](sdkerrors.Wrapf(errors.With(err, "chain", chain.String()),
-				"cannot determine if the transaction %s is finalized", receipt.TxHash.Hex()),
+		return slices.Map(txIDs, func(_ common.Hash) results.Result[geth.Receipt] {
+			return results.FromErr[geth.Receipt](
+				sdkerrors.Wrapf(
+					errors.With(err, "chain", chain.String(), "tx_ids", txIDs),
+					"cannot get transaction receipts"),
 			)
-		}
-
-		if !isFinalized {
-			return rs.FromErr[*geth.Receipt](ErrNotFinalized)
-		}
-
-		return rs.FromOk(receipt)
+		}), nil
 	}
 
-	return slices.Map(results, func(r rpc.Result) rs.Result[*geth.Receipt] {
-		return rs.Pipe(rs.Result[*geth.Receipt](r), isFinalized)
+	return slices.Map(receipts, func(receipt rpc.TxReceiptResult) results.Result[geth.Receipt] {
+		return results.Pipe(results.Result[geth.Receipt](receipt), func(receipt geth.Receipt) results.Result[geth.Receipt] {
+
+			isFinalized, err := mgr.isFinalized(chain, receipt, confHeight)
+			if err != nil {
+				return results.FromErr[geth.Receipt](sdkerrors.Wrapf(errors.With(err, "chain", chain.String()),
+					"cannot determine if the transaction %s is finalized", receipt.TxHash.Hex()),
+				)
+			}
+
+			if !isFinalized {
+				return results.FromErr[geth.Receipt](ErrNotFinalized)
+			}
+
+			if receipt.Status != geth.ReceiptStatusSuccessful {
+				return results.FromErr[geth.Receipt](ErrTxFailed)
+			}
+
+			return results.FromOk[geth.Receipt](receipt)
+		})
 	}), nil
 }
 

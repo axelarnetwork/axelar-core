@@ -20,21 +20,24 @@ func (mgr Mgr) ProcessGatewayTxConfirmation(event *types.ConfirmGatewayTxStarted
 		return nil
 	}
 
+	var vote *voteTypes.VoteRequest
+
 	txReceipt, err := mgr.GetTxReceiptIfFinalized(event.Chain, common.Hash(event.TxID), event.ConfirmationHeight)
 	if err != nil {
 		return err
 	}
-	if txReceipt == nil {
-		mgr.logger().Infof("broadcasting empty vote for poll %s", event.PollID.String())
-		_, err := mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.proxy, event.PollID, types.NewVoteEvents(event.Chain)))
+	if txReceipt.Err() != nil {
+		vote = voteTypes.NewVoteRequest(mgr.proxy, event.PollID, types.NewVoteEvents(event.Chain))
 
-		return err
+		mgr.logger().Infof("broadcasting empty vote for poll %s: %s", event.PollID.String(), txReceipt.Err().Error())
+	} else {
+		events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, txReceipt.Ok().Logs)
+		vote = voteTypes.NewVoteRequest(mgr.proxy, event.PollID, types.NewVoteEvents(event.Chain, events...))
+
+		mgr.logger().Infof("broadcasting vote %v for poll %s", events, event.PollID.String())
 	}
 
-	events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, txReceipt.Logs)
-
-	mgr.logger().Infof("broadcasting vote %v for poll %s", events, event.PollID.String())
-	_, err = mgr.broadcaster.Broadcast(context.TODO(), voteTypes.NewVoteRequest(mgr.proxy, event.PollID, types.NewVoteEvents(event.Chain, events...)))
+	_, err = mgr.broadcaster.Broadcast(context.TODO(), vote)
 
 	return err
 }

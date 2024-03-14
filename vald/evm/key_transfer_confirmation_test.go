@@ -1,12 +1,14 @@
 package evm_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math/big"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -25,6 +27,8 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/monads/results"
+	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -67,12 +71,14 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 			Status:      1,
 		}
 
-		rpc.TransactionReceiptFunc = func(ctx context.Context, txHash common.Hash) (*geth.Receipt, error) {
-			if txHash == common.Hash(txID) {
-				return txReceipt, nil
-			}
+		rpc.TransactionReceiptsFunc = func(ctx context.Context, txHashes []common.Hash) ([]evmrpc.TxReceiptResult, error) {
+			return slices.Map(txHashes, func(hash common.Hash) evmrpc.TxReceiptResult {
+				if bytes.Equal(hash.Bytes(), txID.Bytes()) {
+					return evmrpc.TxReceiptResult(results.FromOk(*txReceipt))
+				}
 
-			return nil, fmt.Errorf("not found")
+				return evmrpc.TxReceiptResult(results.FromErr[geth.Receipt](ethereum.NotFound))
+			}), nil
 		}
 		rpc.HeaderByNumberFunc = func(ctx context.Context, number *big.Int) (*evmrpc.Header, error) {
 			if number.Cmp(txReceipt.BlockNumber) == 0 {
