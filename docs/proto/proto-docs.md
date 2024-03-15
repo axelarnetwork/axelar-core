@@ -2762,8 +2762,7 @@ GenesisState represents the genesis state
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `must_succeed_messages` | [google.protobuf.Any](#google.protobuf.Any) | repeated |  |
-| `can_fail_messages` | [google.protobuf.Any](#google.protobuf.Any) | repeated |  |
+| `messages` | [google.protobuf.Any](#google.protobuf.Any) | repeated |  |
 
 
 
@@ -2774,6 +2773,11 @@ GenesisState represents the genesis state
 
 ### BatchResponse
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `results` | [cosmos.base.abci.v1beta1.Result](#cosmos.base.abci.v1beta1.Result) | repeated |  |
 
 
 

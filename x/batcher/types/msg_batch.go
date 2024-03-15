@@ -12,7 +12,7 @@ import (
 )
 
 // NewBatchRequest is the constructor for BatchRequest
-func NewBatchRequest(sender sdk.AccAddress, mustSucceedMessages []sdk.Msg, canFailMessages []sdk.Msg) *BatchRequest {
+func NewBatchRequest(sender sdk.AccAddress, messages []sdk.Msg) *BatchRequest {
 	f := func(msg sdk.Msg) types.Any {
 		messageAny, err := cdctypes.NewAnyWithValue(msg)
 		if err != nil {
@@ -22,9 +22,8 @@ func NewBatchRequest(sender sdk.AccAddress, mustSucceedMessages []sdk.Msg, canFa
 	}
 
 	return &BatchRequest{
-		Sender:              sender,
-		MustSucceedMessages: slices.Map(mustSucceedMessages, f),
-		CanFailMessages:     slices.Map(canFailMessages, f),
+		Sender:   sender,
+		Messages: slices.Map(messages, f),
 	}
 }
 
@@ -44,7 +43,7 @@ func (m BatchRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
 	}
 
-	if len(m.MustSucceedMessages) == 0 && len(m.CanFailMessages) == 0 {
+	if len(m.Messages) == 0 {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "empty batch")
 	}
 

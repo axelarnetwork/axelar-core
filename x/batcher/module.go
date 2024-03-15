@@ -17,7 +17,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils/grpc"
-	"github.com/axelarnetwork/axelar-core/x/ante"
 	"github.com/axelarnetwork/axelar-core/x/batcher/keeper"
 	"github.com/axelarnetwork/axelar-core/x/batcher/types"
 )
@@ -70,17 +69,15 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command { return nil }
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	cdc        codec.Codec
-	router     *baseapp.MsgServiceRouter
-	anteHandle ante.MessageAnteHandler
+	cdc    codec.Codec
+	router *baseapp.MsgServiceRouter
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(cdc codec.Codec, router *baseapp.MsgServiceRouter, anteHandle ante.MessageAnteHandler) AppModule {
+func NewAppModule(cdc codec.Codec, router *baseapp.MsgServiceRouter) AppModule {
 	return AppModule{
-		cdc:        cdc,
-		router:     router,
-		anteHandle: anteHandle,
+		cdc:    cdc,
+		router: router,
 	}
 }
 
@@ -122,7 +119,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 		return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 	}
 
-	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrBatcher, Logger: logger}, keeper.NewMsgServer(am.cdc, am.router, am.anteHandle))
+	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrBatcher, Logger: logger}, keeper.NewMsgServer(am.cdc, am.router))
 }
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block

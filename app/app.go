@@ -659,7 +659,7 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 			bApp.Router(),
 		),
 		permission.NewAppModule(*getKeeper[permissionKeeper.Keeper](keepers)),
-		batcher.NewAppModule(encodingConfig.Codec, bApp.MsgServiceRouter(), initMessageAnteDecorators(encodingConfig, keepers)),
+		batcher.NewAppModule(encodingConfig.Codec, bApp.MsgServiceRouter()),
 	)
 
 	return appModules
@@ -715,6 +715,9 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 		ante.NewAnteHandlerDecorator(
 			initMessageAnteDecorators(encodingConfig, keepers).ToAnteHandler()),
 	)
+
+	batchAntehandler := sdk.ChainAnteDecorators(anteDecorators...)
+	anteDecorators = append(anteDecorators, ante.NewBatchDecorator(encodingConfig.Codec, batchAntehandler))
 
 	return sdk.ChainAnteDecorators(anteDecorators...)
 }

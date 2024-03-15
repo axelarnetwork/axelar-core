@@ -5,6 +5,7 @@ import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
 
 import "axelar/permission/exported/v1beta1/types.proto";
+import "cosmos/base/abci/v1beta1/abci.proto";
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/batcher/types";
 
@@ -13,10 +14,10 @@ message BatchRequest {
 
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  repeated google.protobuf.Any must_succeed_messages = 2
-      [ (gogoproto.nullable) = false ];
-  repeated google.protobuf.Any can_fail_messages = 3
+  repeated google.protobuf.Any messages = 2
       [ (gogoproto.nullable) = false ];
 }
 
-message BatchResponse {}
+message BatchResponse {
+  repeated cosmos.base.abci.v1beta1.Result  results = 1;
+}
