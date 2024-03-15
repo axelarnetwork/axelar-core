@@ -10,42 +10,19 @@ import (
 	batchertypes "github.com/axelarnetwork/axelar-core/x/batcher/types"
 )
 
-// messageWrapper implements the Tx interface for a slice of sdk messages
-type messageWrapper struct {
-	messages []sdk.Msg
-}
-
-func (m messageWrapper) ValidateBasic() error {
-	for _, message := range m.messages {
-		if err := message.ValidateBasic(); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m messageWrapper) GetMsgs() []sdk.Msg {
-	return m.messages
-}
-
-func (m messageWrapper) Append(msg sdk.Msg) messageWrapper {
-	m.messages = append(m.messages, msg)
-
-	return m
-}
-
-// BatchDecorator runs anteHandler on the inner messages of a batch request
+// BatchDecorator implements the Tx interface and runs anteHandler on the inner messages of a batch request
 type BatchDecorator struct {
-	cdc         codec.Codec
 	anteHandler sdk.AnteHandler
+	cdc         codec.Codec
+	messages    []sdk.Msg
 }
 
 // NewBatchDecorator is the constructor for BatchDecorator
 func NewBatchDecorator(cdc codec.Codec, anteHandler sdk.AnteHandler) BatchDecorator {
 	return BatchDecorator{
-		cdc,
 		anteHandler,
+		cdc,
+		[]sdk.Msg{},
 	}
 }
 
@@ -56,7 +33,6 @@ func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, ne
 	for _, msg := range msgs {
 		switch req := msg.(type) {
 		case *batchertypes.BatchRequest:
-			var messages messageWrapper
 			var err error
 
 			for _, m := range req.Messages {
@@ -69,10 +45,10 @@ func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, ne
 					return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("message signer mismatch"))
 				}
 
-				messages = messages.Append(sdkMsg)
+				b.messages = append(b.messages, sdkMsg)
 			}
 
-			ctx, err = b.anteHandler(ctx, messages, simulate)
+			ctx, err = b.anteHandler(ctx, b, simulate)
 			if err != nil {
 				return ctx, err
 			}
@@ -83,4 +59,18 @@ func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, ne
 	}
 
 	return next(ctx, tx, simulate)
+}
+
+func (b BatchDecorator) ValidateBasic() error {
+	for _, message := range b.messages {
+		if err := message.ValidateBasic(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (b BatchDecorator) GetMsgs() []sdk.Msg {
+	return b.messages
 }
