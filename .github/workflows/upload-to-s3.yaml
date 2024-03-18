@@ -1,0 +1,46 @@
+name: Upload Binaries to S3
+
+on:
+  push:
+
+jobs:
+  release-binaries:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        go-version:
+          - 1.21
+        os: [ubuntu-20.04]
+        arch: [amd64]
+
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+
+      - name: Configure AWS credentials
+        run: |
+          cd $HOME; mkdir ~/.aws; touch ~/.aws/credentials; touch ~/.aws/config
+          echo "[default]
+          aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID_CF }}
+          aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY_CF }}" > ~/.aws/credentials
+          echo "[default]
+          region=auto
+          output=json"  > ~/.aws/config          
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          submodules: recursive
+
+      - name: Create a test file
+        run: |
+          touch test.txt
+
+      - name: Upload to S3
+        run: |
+            cd ~/
+            aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key "axelard/test.txt" --body "axelard/test.txt"
