@@ -38,9 +38,12 @@ jobs:
 
       - name: Create a test file
         run: |
+          cd ~/
+          mkdir axelard
           touch test.txt
+          mv test.txt axelard
 
       - name: Upload to S3
         run: |
-            cd ~/
-            aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key "axelard/test.txt" --body "axelard/test.txt"
+          cd ~/
+          aws s3api put-object --endpoint-url ${{ secrets.S3_BIN }} --bucket axelar-static --key "axelard/test.txt" --body "axelard/test.txt"
