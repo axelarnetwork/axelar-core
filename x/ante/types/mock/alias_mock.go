@@ -104,6 +104,250 @@ func (mock *TxMock) ValidateBasicCalls() []struct {
 	return calls
 }
 
+// Ensure, that FeeTxMock does implement FeeTx.
+// If this is not the case, regenerate this file with moq.
+var _ FeeTx = &FeeTxMock{}
+
+// FeeTxMock is a mock implementation of FeeTx.
+//
+//	func TestSomethingThatUsesFeeTx(t *testing.T) {
+//
+//		// make and configure a mocked FeeTx
+//		mockedFeeTx := &FeeTxMock{
+//			FeeGranterFunc: func() sdk.AccAddress {
+//				panic("mock out the FeeGranter method")
+//			},
+//			FeePayerFunc: func() sdk.AccAddress {
+//				panic("mock out the FeePayer method")
+//			},
+//			GetFeeFunc: func() sdk.Coins {
+//				panic("mock out the GetFee method")
+//			},
+//			GetGasFunc: func() uint64 {
+//				panic("mock out the GetGas method")
+//			},
+//			GetMsgsFunc: func() []sdk.Msg {
+//				panic("mock out the GetMsgs method")
+//			},
+//			ValidateBasicFunc: func() error {
+//				panic("mock out the ValidateBasic method")
+//			},
+//		}
+//
+//		// use mockedFeeTx in code that requires FeeTx
+//		// and then make assertions.
+//
+//	}
+type FeeTxMock struct {
+	// FeeGranterFunc mocks the FeeGranter method.
+	FeeGranterFunc func() sdk.AccAddress
+
+	// FeePayerFunc mocks the FeePayer method.
+	FeePayerFunc func() sdk.AccAddress
+
+	// GetFeeFunc mocks the GetFee method.
+	GetFeeFunc func() sdk.Coins
+
+	// GetGasFunc mocks the GetGas method.
+	GetGasFunc func() uint64
+
+	// GetMsgsFunc mocks the GetMsgs method.
+	GetMsgsFunc func() []sdk.Msg
+
+	// ValidateBasicFunc mocks the ValidateBasic method.
+	ValidateBasicFunc func() error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// FeeGranter holds details about calls to the FeeGranter method.
+		FeeGranter []struct {
+		}
+		// FeePayer holds details about calls to the FeePayer method.
+		FeePayer []struct {
+		}
+		// GetFee holds details about calls to the GetFee method.
+		GetFee []struct {
+		}
+		// GetGas holds details about calls to the GetGas method.
+		GetGas []struct {
+		}
+		// GetMsgs holds details about calls to the GetMsgs method.
+		GetMsgs []struct {
+		}
+		// ValidateBasic holds details about calls to the ValidateBasic method.
+		ValidateBasic []struct {
+		}
+	}
+	lockFeeGranter    sync.RWMutex
+	lockFeePayer      sync.RWMutex
+	lockGetFee        sync.RWMutex
+	lockGetGas        sync.RWMutex
+	lockGetMsgs       sync.RWMutex
+	lockValidateBasic sync.RWMutex
+}
+
+// FeeGranter calls FeeGranterFunc.
+func (mock *FeeTxMock) FeeGranter() sdk.AccAddress {
+	if mock.FeeGranterFunc == nil {
+		panic("FeeTxMock.FeeGranterFunc: method is nil but FeeTx.FeeGranter was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockFeeGranter.Lock()
+	mock.calls.FeeGranter = append(mock.calls.FeeGranter, callInfo)
+	mock.lockFeeGranter.Unlock()
+	return mock.FeeGranterFunc()
+}
+
+// FeeGranterCalls gets all the calls that were made to FeeGranter.
+// Check the length with:
+//
+//	len(mockedFeeTx.FeeGranterCalls())
+func (mock *FeeTxMock) FeeGranterCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockFeeGranter.RLock()
+	calls = mock.calls.FeeGranter
+	mock.lockFeeGranter.RUnlock()
+	return calls
+}
+
+// FeePayer calls FeePayerFunc.
+func (mock *FeeTxMock) FeePayer() sdk.AccAddress {
+	if mock.FeePayerFunc == nil {
+		panic("FeeTxMock.FeePayerFunc: method is nil but FeeTx.FeePayer was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockFeePayer.Lock()
+	mock.calls.FeePayer = append(mock.calls.FeePayer, callInfo)
+	mock.lockFeePayer.Unlock()
+	return mock.FeePayerFunc()
+}
+
+// FeePayerCalls gets all the calls that were made to FeePayer.
+// Check the length with:
+//
+//	len(mockedFeeTx.FeePayerCalls())
+func (mock *FeeTxMock) FeePayerCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockFeePayer.RLock()
+	calls = mock.calls.FeePayer
+	mock.lockFeePayer.RUnlock()
+	return calls
+}
+
+// GetFee calls GetFeeFunc.
+func (mock *FeeTxMock) GetFee() sdk.Coins {
+	if mock.GetFeeFunc == nil {
+		panic("FeeTxMock.GetFeeFunc: method is nil but FeeTx.GetFee was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetFee.Lock()
+	mock.calls.GetFee = append(mock.calls.GetFee, callInfo)
+	mock.lockGetFee.Unlock()
+	return mock.GetFeeFunc()
+}
+
+// GetFeeCalls gets all the calls that were made to GetFee.
+// Check the length with:
+//
+//	len(mockedFeeTx.GetFeeCalls())
+func (mock *FeeTxMock) GetFeeCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetFee.RLock()
+	calls = mock.calls.GetFee
+	mock.lockGetFee.RUnlock()
+	return calls
+}
+
+// GetGas calls GetGasFunc.
+func (mock *FeeTxMock) GetGas() uint64 {
+	if mock.GetGasFunc == nil {
+		panic("FeeTxMock.GetGasFunc: method is nil but FeeTx.GetGas was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetGas.Lock()
+	mock.calls.GetGas = append(mock.calls.GetGas, callInfo)
+	mock.lockGetGas.Unlock()
+	return mock.GetGasFunc()
+}
+
+// GetGasCalls gets all the calls that were made to GetGas.
+// Check the length with:
+//
+//	len(mockedFeeTx.GetGasCalls())
+func (mock *FeeTxMock) GetGasCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetGas.RLock()
+	calls = mock.calls.GetGas
+	mock.lockGetGas.RUnlock()
+	return calls
+}
+
+// GetMsgs calls GetMsgsFunc.
+func (mock *FeeTxMock) GetMsgs() []sdk.Msg {
+	if mock.GetMsgsFunc == nil {
+		panic("FeeTxMock.GetMsgsFunc: method is nil but FeeTx.GetMsgs was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetMsgs.Lock()
+	mock.calls.GetMsgs = append(mock.calls.GetMsgs, callInfo)
+	mock.lockGetMsgs.Unlock()
+	return mock.GetMsgsFunc()
+}
+
+// GetMsgsCalls gets all the calls that were made to GetMsgs.
+// Check the length with:
+//
+//	len(mockedFeeTx.GetMsgsCalls())
+func (mock *FeeTxMock) GetMsgsCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetMsgs.RLock()
+	calls = mock.calls.GetMsgs
+	mock.lockGetMsgs.RUnlock()
+	return calls
+}
+
+// ValidateBasic calls ValidateBasicFunc.
+func (mock *FeeTxMock) ValidateBasic() error {
+	if mock.ValidateBasicFunc == nil {
+		panic("FeeTxMock.ValidateBasicFunc: method is nil but FeeTx.ValidateBasic was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockValidateBasic.Lock()
+	mock.calls.ValidateBasic = append(mock.calls.ValidateBasic, callInfo)
+	mock.lockValidateBasic.Unlock()
+	return mock.ValidateBasicFunc()
+}
+
+// ValidateBasicCalls gets all the calls that were made to ValidateBasic.
+// Check the length with:
+//
+//	len(mockedFeeTx.ValidateBasicCalls())
+func (mock *FeeTxMock) ValidateBasicCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockValidateBasic.RLock()
+	calls = mock.calls.ValidateBasic
+	mock.lockValidateBasic.RUnlock()
+	return calls
+}
+
 // Ensure, that MsgMock does implement Msg.
 // If this is not the case, regenerate this file with moq.
 var _ Msg = &MsgMock{}
