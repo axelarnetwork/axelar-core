@@ -105,8 +105,8 @@ import (
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	axelarbankkeeper "github.com/axelarnetwork/axelar-core/x/bank/keeper"
-	"github.com/axelarnetwork/axelar-core/x/batcher"
-	batchertypes "github.com/axelarnetwork/axelar-core/x/batcher/types"
+	"github.com/axelarnetwork/axelar-core/x/batch"
+	batchtypes "github.com/axelarnetwork/axelar-core/x/batch/types"
 	"github.com/axelarnetwork/axelar-core/x/evm"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -659,7 +659,7 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 			bApp.Router(),
 		),
 		permission.NewAppModule(*getKeeper[permissionKeeper.Keeper](keepers)),
-		batcher.NewAppModule(encodingConfig.Codec, bApp.MsgServiceRouter()),
+		batch.NewAppModule(encodingConfig.Codec, bApp.MsgServiceRouter()),
 	)
 
 	return appModules
@@ -690,6 +690,7 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 
 	anteDecorators := []sdk.AnteDecorator{
 		ante.NewAnteHandlerDecorator(baseAnteHandler),
+		ante.NewBatchDecorator(encodingConfig.Codec), // unwrap batch messages, must be done before any other decorators
 	}
 
 	// enforce wasm limits earlier in the ante handler chain
@@ -715,9 +716,6 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 		ante.NewAnteHandlerDecorator(
 			initMessageAnteDecorators(encodingConfig, keepers).ToAnteHandler()),
 	)
-
-	batchAntehandler := sdk.ChainAnteDecorators(anteDecorators...)
-	anteDecorators = append(anteDecorators, ante.NewBatchDecorator(encodingConfig.Codec, batchAntehandler))
 
 	return sdk.ChainAnteDecorators(anteDecorators...)
 }
@@ -796,7 +794,7 @@ func orderMigrations() []string {
 		permissionTypes.ModuleName,
 		snapTypes.ModuleName,
 		axelarnetTypes.ModuleName,
-		batchertypes.ModuleName,
+		batchtypes.ModuleName,
 	)
 	return migrationOrder
 }
@@ -847,7 +845,7 @@ func orderBeginBlockers() []string {
 		snapTypes.ModuleName,
 		axelarnetTypes.ModuleName,
 		voteTypes.ModuleName,
-		batchertypes.ModuleName,
+		batchtypes.ModuleName,
 	)
 	return beginBlockerOrder
 }
@@ -893,7 +891,7 @@ func orderEndBlockers() []string {
 		axelarnetTypes.ModuleName,
 		permissionTypes.ModuleName,
 		voteTypes.ModuleName,
-		batchertypes.ModuleName,
+		batchtypes.ModuleName,
 	)
 	return endBlockerOrder
 }
@@ -942,7 +940,7 @@ func orderModulesForGenesis() []string {
 		axelarnetTypes.ModuleName,
 		rewardTypes.ModuleName,
 		permissionTypes.ModuleName,
-		batchertypes.ModuleName,
+		batchtypes.ModuleName,
 	)
 	return genesisOrder
 }
@@ -1113,7 +1111,7 @@ func GetModuleBasics() module.BasicManager {
 		axelarnet.AppModuleBasic{},
 		reward.AppModuleBasic{},
 		permission.AppModuleBasic{},
-		batcher.AppModuleBasic{},
+		batch.AppModuleBasic{},
 	}
 
 	if IsWasmEnabled() {

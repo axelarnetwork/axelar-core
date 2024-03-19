@@ -1,26 +1,27 @@
 package ante
 
 import (
-	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	batchertypes "github.com/axelarnetwork/axelar-core/x/batcher/types"
+	batchtypes "github.com/axelarnetwork/axelar-core/x/batch/types"
 )
+
+var _ sdk.FeeTx = (*BatchDecorator)(nil)
 
 // BatchDecorator implements the Tx interface and runs anteHandler on the inner messages of a batch request
 type BatchDecorator struct {
-	anteHandler sdk.AnteHandler
-	cdc         codec.Codec
-	messages    []sdk.Msg
+	sdk.FeeTx
+
+	cdc      codec.Codec
+	messages []sdk.Msg
 }
 
 // NewBatchDecorator is the constructor for BatchDecorator
-func NewBatchDecorator(cdc codec.Codec, anteHandler sdk.AnteHandler) BatchDecorator {
+func NewBatchDecorator(cdc codec.Codec) BatchDecorator {
 	return BatchDecorator{
-		anteHandler,
+		nil,
 		cdc,
 		[]sdk.Msg{},
 	}
@@ -30,35 +31,34 @@ func NewBatchDecorator(cdc codec.Codec, anteHandler sdk.AnteHandler) BatchDecora
 func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	msgs := tx.GetMsgs()
 
+	if !anyBatch(msgs) {
+		return next(ctx, tx, simulate)
+	}
+
+	feeTx, ok := tx.(sdk.FeeTx)
+	if !ok {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx must be a FeeTx")
+	}
+
+	b.FeeTx = feeTx
+
 	for _, msg := range msgs {
 		switch req := msg.(type) {
-		case *batchertypes.BatchRequest:
-			var err error
-
-			for _, m := range req.Messages {
-				var sdkMsg sdk.Msg
-				if err = b.cdc.UnpackAny(&m, &sdkMsg); err != nil {
-					return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("unpack failed: %s", err))
-				}
-
-				if !msg.GetSigners()[0].Equals(req.Sender) {
-					return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("message signer mismatch"))
-				}
-
-				b.messages = append(b.messages, sdkMsg)
+		case *batchtypes.BatchRequest:
+			innerMsgs := req.UnwrapMessages()
+			if anyBatch(innerMsgs) {
+				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "nested batch requests are not allowed")
 			}
 
-			ctx, err = b.anteHandler(ctx, b, simulate)
-			if err != nil {
-				return ctx, err
-			}
+			b.messages = append(b.messages, innerMsgs...)
+
 		default:
-			continue
+			b.messages = append(b.messages, msg)
 		}
 
 	}
 
-	return next(ctx, tx, simulate)
+	return next(ctx, b, simulate)
 }
 
 func (b BatchDecorator) ValidateBasic() error {
@@ -73,4 +73,18 @@ func (b BatchDecorator) ValidateBasic() error {
 
 func (b BatchDecorator) GetMsgs() []sdk.Msg {
 	return b.messages
+}
+
+func anyBatch(msgs []sdk.Msg) bool {
+	if len(msgs) == 0 {
+		return false
+	}
+
+	for _, msg := range msgs {
+		switch msg.(type) {
+		case *batchtypes.BatchRequest:
+			return true
+		}
+	}
+	return false
 }

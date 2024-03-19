@@ -14,8 +14,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/x/batcher/keeper"
-	"github.com/axelarnetwork/axelar-core/x/batcher/types"
+	"github.com/axelarnetwork/axelar-core/x/batch/keeper"
+	"github.com/axelarnetwork/axelar-core/x/batch/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -31,7 +31,6 @@ func TestBatching(t *testing.T) {
 		msgServiceRouter *bam.MsgServiceRouter
 
 		batchRequest         *types.BatchRequest
-		antehandlerCalled    bool
 		messagehandlerCalled bool
 		sender               sdk.AccAddress
 		innerMessages        []sdk.Msg
@@ -41,29 +40,18 @@ func TestBatching(t *testing.T) {
 		ctx = rand2.Context(fake.NewMultiStore())
 		msgServiceRouter = bam.NewMsgServiceRouter()
 
-		antehandlerCalled = false
 		messagehandlerCalled = false
 		sender = rand.AccAddr()
 		innerMessages = slices.Expand2(func() sdk.Msg {
 			return votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3))))
 		}, int(rand2.I64Between(2, 10)))
 
-		anteHandler := func(ctx sdk.Context, msgs []sdk.Msg, simulate bool) (sdk.Context, error) {
-			antehandlerCalled = true
-			return ctx, nil
-		}
-		msgServer = keeper.NewMsgServer(appParams.MakeEncodingConfig().Codec, msgServiceRouter, anteHandler)
+		msgServer = keeper.NewMsgServer(appParams.MakeEncodingConfig().Codec, msgServiceRouter)
 	})
 
-	withMustSucceedMessage := func() GivenStatement {
-		return Given("must succeed messages", func() {
-			batchRequest = types.NewBatchRequest(sender, innerMessages, []sdk.Msg{})
-		})
-	}
-
-	withCanFailMessage := func() GivenStatement {
-		return Given("can fail messages", func() {
-			batchRequest = types.NewBatchRequest(sender, []sdk.Msg{}, innerMessages)
+	withBatchRequest := func() GivenStatement {
+		return Given("a batch request", func() {
+			batchRequest = types.NewBatchRequest(sender, innerMessages)
 		})
 
 	}
@@ -83,41 +71,13 @@ func TestBatching(t *testing.T) {
 
 	givenMsgServer.
 		Branch(
-			withMustSucceedMessage().
-				When("handler is not registered", func() {}).
-				Then("should fail batch message", func(t *testing.T) {
-					_, err := msgServer.Batch(sdk.WrapSDKContext(ctx), batchRequest)
-					assert.Error(t, err)
-				}),
-
-			withMustSucceedMessage().
-				When("failed to executed must succeed messages", func() {
-					registerTestService(msgServiceRouter, failedHandler)
-				}).
-				Then("should fail batch message", func(t *testing.T) {
-					_, err := msgServer.Batch(sdk.WrapSDKContext(ctx), batchRequest)
-					assert.Error(t, err)
-					println(err.Error())
-					assert.True(t, antehandlerCalled)
-					assert.True(t, messagehandlerCalled)
-				}),
-
-			withMustSucceedMessage().
-				When("must succeed messages executed", func() {
-					registerTestService(msgServiceRouter, succeededHandler)
-				}).
-				Then("should execute batch message", func(t *testing.T) {
-					_, err := msgServer.Batch(sdk.WrapSDKContext(ctx), batchRequest)
-					assert.NoError(t, err)
-					assert.True(t, antehandlerCalled)
-					assert.True(t, messagehandlerCalled)
-				}),
-
-			withCanFailMessage().
+			withBatchRequest().
 				When("handler is not registered", func() {}).
 				Then("should not revert batch message", func(t *testing.T) {
 					_, err := msgServer.Batch(sdk.WrapSDKContext(ctx), batchRequest)
 					assert.NoError(t, err)
+
+					assert.False(t, messagehandlerCalled)
 
 					events := ctx.EventManager().Events()
 					failedMessageEvent := types.FailedMessages{}
@@ -126,14 +86,14 @@ func TestBatching(t *testing.T) {
 
 				}),
 
-			withCanFailMessage().
+			withBatchRequest().
 				When("failed to executed can fail messages", func() {
 					registerTestService(msgServiceRouter, failedHandler)
 				}).
 				Then("should not revert batch message", func(t *testing.T) {
 					_, err := msgServer.Batch(sdk.WrapSDKContext(ctx), batchRequest)
 					assert.NoError(t, err)
-					assert.True(t, antehandlerCalled)
+					assert.True(t, messagehandlerCalled)
 
 					events := ctx.EventManager().Events()
 					failedMessageEvent := types.FailedMessages{}
@@ -141,17 +101,17 @@ func TestBatching(t *testing.T) {
 					assert.Equal(t, failedMessageEvent.XXX_MessageName(), events[0].Type)
 				}),
 
-			withCanFailMessage().
+			withBatchRequest().
 				When("executed can fail message", func() {
 					registerTestService(msgServiceRouter, succeededHandler)
 				}).
 				Then("should emit message execution events", func(t *testing.T) {
 					_, err := msgServer.Batch(sdk.WrapSDKContext(ctx), batchRequest)
 					assert.NoError(t, err)
-					assert.True(t, antehandlerCalled)
+					assert.True(t, messagehandlerCalled)
 
 					events := ctx.EventManager().Events()
-					assert.Equal(t, len(batchRequest.CanFailMessages), len(events))
+					assert.Equal(t, len(batchRequest.Messages), len(events))
 					assert.Equal(t, "executed", events[0].Type)
 
 				}),

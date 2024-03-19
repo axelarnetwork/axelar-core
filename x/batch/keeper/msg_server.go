@@ -6,11 +6,10 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
-	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/axelarnetwork/axelar-core/x/batcher/types"
-	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/axelar-core/utils/events"
+	"github.com/axelarnetwork/axelar-core/x/batch/types"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -33,10 +32,10 @@ func (s msgServer) Batch(c context.Context, req *types.BatchRequest) (*types.Bat
 	var results []*sdk.Result
 	var failedMessages []types.FailedMessages_FailedMessage
 
-	for i, message := range req.Messages {
+	for i, message := range req.UnwrapMessages() {
 		cacheCtx, writeCache := ctx.CacheContext()
 
-		res, err := s.processMessage(cacheCtx, &message)
+		res, err := s.processMessage(cacheCtx, message)
 		if err != nil {
 			failedMessages = append(failedMessages, types.FailedMessages_FailedMessage{
 				Index: int32(i),
@@ -51,9 +50,9 @@ func (s msgServer) Batch(c context.Context, req *types.BatchRequest) (*types.Bat
 	}
 
 	if len(failedMessages) > 0 {
-		funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.FailedMessages{
+		events.Emit(ctx, &types.FailedMessages{
 			Messages: failedMessages,
-		}))
+		})
 	}
 
 	return &types.BatchResponse{
@@ -61,29 +60,16 @@ func (s msgServer) Batch(c context.Context, req *types.BatchRequest) (*types.Bat
 	}, nil
 }
 
-func (s msgServer) processMessage(ctx sdk.Context, message *cdctypes.Any) (*sdk.Result, error) {
-	sdkMsg, err := unpackInnerMessage(s.cdc, message)
-	if err != nil {
-		return nil, fmt.Errorf("unpack failed: %s", err)
-	}
-
-	handler := s.router.Handler(sdkMsg)
+func (s msgServer) processMessage(ctx sdk.Context, message sdk.Msg) (*sdk.Result, error) {
+	handler := s.router.Handler(message)
 	if handler == nil {
-		return nil, fmt.Errorf("unrecognized message type: %s", sdk.MsgTypeURL(sdkMsg))
+		return nil, fmt.Errorf("unrecognized message type: %s", sdk.MsgTypeURL(message))
 	}
 
-	res, err := handler(ctx, sdkMsg)
+	res, err := handler(ctx, message)
 	if err != nil {
 		return nil, fmt.Errorf("execution failed: %s", err)
 	}
 
 	return res, nil
-}
-
-func unpackInnerMessage(cdc codec.Codec, any *cdctypes.Any) (sdk.Msg, error) {
-	var sdkMsg sdk.Msg
-	if err := cdc.UnpackAny(any, &sdkMsg); err != nil {
-		return nil, err
-	}
-	return sdkMsg, nil
 }

@@ -1,4 +1,4 @@
-package batcher
+package batch
 
 import (
 	"encoding/json"
@@ -17,8 +17,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils/grpc"
-	"github.com/axelarnetwork/axelar-core/x/batcher/keeper"
-	"github.com/axelarnetwork/axelar-core/x/batcher/types"
+	"github.com/axelarnetwork/axelar-core/x/batch/keeper"
+	"github.com/axelarnetwork/axelar-core/x/batch/types"
 )
 
 var (

@@ -155,19 +155,19 @@
     - [MsgService](#axelar.axelarnet.v1beta1.MsgService)
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
   
-- [axelar/batcher/v1beta1/events.proto](#axelar/batcher/v1beta1/events.proto)
-    - [FailedMessages](#axelar.batcher.v1beta1.FailedMessages)
-    - [FailedMessages.FailedMessage](#axelar.batcher.v1beta1.FailedMessages.FailedMessage)
+- [axelar/batch/v1beta1/events.proto](#axelar/batch/v1beta1/events.proto)
+    - [FailedMessages](#axelar.batch.v1beta1.FailedMessages)
+    - [FailedMessages.FailedMessage](#axelar.batch.v1beta1.FailedMessages.FailedMessage)
   
-- [axelar/batcher/v1beta1/genesis.proto](#axelar/batcher/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.batcher.v1beta1.GenesisState)
+- [axelar/batch/v1beta1/genesis.proto](#axelar/batch/v1beta1/genesis.proto)
+    - [GenesisState](#axelar.batch.v1beta1.GenesisState)
   
-- [axelar/batcher/v1beta1/tx.proto](#axelar/batcher/v1beta1/tx.proto)
-    - [BatchRequest](#axelar.batcher.v1beta1.BatchRequest)
-    - [BatchResponse](#axelar.batcher.v1beta1.BatchResponse)
+- [axelar/batch/v1beta1/tx.proto](#axelar/batch/v1beta1/tx.proto)
+    - [BatchRequest](#axelar.batch.v1beta1.BatchRequest)
+    - [BatchResponse](#axelar.batch.v1beta1.BatchResponse)
   
-- [axelar/batcher/v1beta1/service.proto](#axelar/batcher/v1beta1/service.proto)
-    - [MsgService](#axelar.batcher.v1beta1.MsgService)
+- [axelar/batch/v1beta1/service.proto](#axelar/batch/v1beta1/service.proto)
+    - [MsgService](#axelar.batch.v1beta1.MsgService)
   
 - [axelar/snapshot/exported/v1beta1/types.proto](#axelar/snapshot/exported/v1beta1/types.proto)
     - [Participant](#axelar.snapshot.exported.v1beta1.Participant)
@@ -2673,14 +2673,14 @@ QueryService defines the gRPC querier service.
 
 
 
-<a name="axelar/batcher/v1beta1/events.proto"></a>
+<a name="axelar/batch/v1beta1/events.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/batcher/v1beta1/events.proto
+## axelar/batch/v1beta1/events.proto
 
 
 
-<a name="axelar.batcher.v1beta1.FailedMessages"></a>
+<a name="axelar.batch.v1beta1.FailedMessages"></a>
 
 ### FailedMessages
 
@@ -2688,14 +2688,14 @@ QueryService defines the gRPC querier service.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `messages` | [FailedMessages.FailedMessage](#axelar.batcher.v1beta1.FailedMessages.FailedMessage) | repeated |  |
+| `messages` | [FailedMessages.FailedMessage](#axelar.batch.v1beta1.FailedMessages.FailedMessage) | repeated |  |
 
 
 
 
 
 
-<a name="axelar.batcher.v1beta1.FailedMessages.FailedMessage"></a>
+<a name="axelar.batch.v1beta1.FailedMessages.FailedMessage"></a>
 
 ### FailedMessages.FailedMessage
 
@@ -2720,14 +2720,14 @@ QueryService defines the gRPC querier service.
 
 
 
-<a name="axelar/batcher/v1beta1/genesis.proto"></a>
+<a name="axelar/batch/v1beta1/genesis.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/batcher/v1beta1/genesis.proto
+## axelar/batch/v1beta1/genesis.proto
 
 
 
-<a name="axelar.batcher.v1beta1.GenesisState"></a>
+<a name="axelar.batch.v1beta1.GenesisState"></a>
 
 ### GenesisState
 GenesisState represents the genesis state
@@ -2746,14 +2746,14 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar/batcher/v1beta1/tx.proto"></a>
+<a name="axelar/batch/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/batcher/v1beta1/tx.proto
+## axelar/batch/v1beta1/tx.proto
 
 
 
-<a name="axelar.batcher.v1beta1.BatchRequest"></a>
+<a name="axelar.batch.v1beta1.BatchRequest"></a>
 
 ### BatchRequest
 
@@ -2769,7 +2769,7 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar.batcher.v1beta1.BatchResponse"></a>
+<a name="axelar.batch.v1beta1.BatchResponse"></a>
 
 ### BatchResponse
 
@@ -2793,10 +2793,10 @@ GenesisState represents the genesis state
 
 
 
-<a name="axelar/batcher/v1beta1/service.proto"></a>
+<a name="axelar/batch/v1beta1/service.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## axelar/batcher/v1beta1/service.proto
+## axelar/batch/v1beta1/service.proto
 
 
  <!-- end messages -->
@@ -2806,14 +2806,14 @@ GenesisState represents the genesis state
  <!-- end HasExtensions -->
 
 
-<a name="axelar.batcher.v1beta1.MsgService"></a>
+<a name="axelar.batch.v1beta1.MsgService"></a>
 
 ### MsgService
 Msg defines the nexus Msg service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Batch` | [BatchRequest](#axelar.batcher.v1beta1.BatchRequest) | [BatchResponse](#axelar.batcher.v1beta1.BatchResponse) |  | POST|/axelar/batcher/batch|
+| `Batch` | [BatchRequest](#axelar.batch.v1beta1.BatchRequest) | [BatchResponse](#axelar.batch.v1beta1.BatchResponse) |  | POST|/axelar/batch/batch|
 
  <!-- end services -->
 

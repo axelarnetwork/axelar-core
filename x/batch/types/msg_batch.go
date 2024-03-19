@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,6 +8,8 @@ import (
 
 	"github.com/axelarnetwork/utils/slices"
 )
+
+var _ types.UnpackInterfacesMessage = BatchRequest{}
 
 // NewBatchRequest is the constructor for BatchRequest
 func NewBatchRequest(sender sdk.AccAddress, messages []sdk.Msg) *BatchRequest {
@@ -47,6 +47,16 @@ func (m BatchRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "empty batch")
 	}
 
+	for _, msg := range m.UnwrapMessages() {
+		if !msg.GetSigners()[0].Equals(m.Sender) {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "message signer mismatch")
+		}
+
+		if err := msg.ValidateBasic(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -55,14 +65,21 @@ func (m BatchRequest) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }
 
-func (m BatchRequest) ValidateInnerMessage(msg sdk.Msg) error {
-	if !msg.GetSigners()[0].Equals(m.Sender) {
-		return fmt.Errorf("message signer %s does not match batch signer %s", msg.GetSigners()[0], m.Sender)
-	}
-
-	if err := msg.ValidateBasic(); err != nil {
-		return err
+// UnpackInterfaces implements UnpackInterfacesMessage
+func (m BatchRequest) UnpackInterfaces(unpacker cdctypes.AnyUnpacker) error {
+	for _, msg := range m.Messages {
+		var sdkMsg sdk.Msg
+		if err := unpacker.UnpackAny(&msg, &sdkMsg); err != nil {
+			return err
+		}
 	}
 
 	return nil
+}
+
+// UnwrapMessages unwrap the batch messages
+func (m BatchRequest) UnwrapMessages() []sdk.Msg {
+	return slices.Map(m.Messages, func(msg types.Any) sdk.Msg {
+		return msg.GetCachedValue().(sdk.Msg)
+	})
 }
