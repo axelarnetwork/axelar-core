@@ -22,7 +22,7 @@ jobs:
             
             - name: Create a test file
               run: |
-                touch /test.txt
+                sudo touch /test.txt
             
             - uses: ryand56/r2-upload-action@latest
               with:
