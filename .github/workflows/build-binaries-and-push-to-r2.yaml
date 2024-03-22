@@ -1,13 +1,13 @@
 name: Upload core binary to Cloudflare R2 bucket
 
-
 on:
-    push:
-
+  push:
+    branches:
+      - '*'
 
 jobs:
-    preparation:
-        name: Preparation
+    build-and-upload:
+        name: Build binary from current commit and push to R2
         runs-on: ubuntu-22.04
         permissions:
             contents: write
