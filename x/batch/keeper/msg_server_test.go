@@ -76,13 +76,14 @@ func TestBatching(t *testing.T) {
 				Then("should not revert batch message", func(t *testing.T) {
 					_, err := msgServer.Batch(sdk.WrapSDKContext(ctx), batchRequest)
 					assert.NoError(t, err)
-
 					assert.False(t, messagehandlerCalled)
 
 					events := ctx.EventManager().Events()
-					failedMessageEvent := types.FailedMessages{}
-					assert.Equal(t, 1, len(events))
-					assert.Equal(t, failedMessageEvent.XXX_MessageName(), events[0].Type)
+					failedMessageEvent := types.BatchedMessageFailed{}
+					assert.Equal(t, len(innerMessages), len(events))
+					assert.True(t, slices.All(events, func(event sdk.Event) bool {
+						return events[0].Type == failedMessageEvent.XXX_MessageName()
+					}))
 
 				}),
 
@@ -96,9 +97,12 @@ func TestBatching(t *testing.T) {
 					assert.True(t, messagehandlerCalled)
 
 					events := ctx.EventManager().Events()
-					failedMessageEvent := types.FailedMessages{}
-					assert.Equal(t, 1, len(events))
-					assert.Equal(t, failedMessageEvent.XXX_MessageName(), events[0].Type)
+					failedMessageEvent := types.BatchedMessageFailed{}
+					assert.Equal(t, len(innerMessages), len(events))
+					assert.True(t, slices.All(events, func(event sdk.Event) bool {
+						return events[0].Type == failedMessageEvent.XXX_MessageName()
+					}))
+
 				}),
 
 			withBatchRequest().

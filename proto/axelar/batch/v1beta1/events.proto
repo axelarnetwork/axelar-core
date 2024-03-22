@@ -6,10 +6,7 @@ option (gogoproto.messagename_all) = true;
 
 import "gogoproto/gogo.proto";
 
-message FailedMessages {
-  message FailedMessage {
+message BatchedMessageFailed {
     int32 index = 1;
     string error = 2;
-  }
-  repeated FailedMessage messages = 1 [ (gogoproto.nullable) = false,   (gogoproto.jsontag) = "messages,omitempty" ];
 }

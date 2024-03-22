@@ -29,34 +29,32 @@ func NewMsgServer(cdc codec.Codec, msgServiceRouter *baseapp.MsgServiceRouter) t
 func (s msgServer) Batch(c context.Context, req *types.BatchRequest) (*types.BatchResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	var results []*sdk.Result
-	var failedMessages []types.FailedMessages_FailedMessage
+	var results []types.BatchResponse_Response
 
 	for i, message := range req.UnwrapMessages() {
-		cacheCtx, writeCache := ctx.CacheContext()
+		var batchResponse types.BatchResponse_Response
 
+		cacheCtx, writeCache := ctx.CacheContext()
 		res, err := s.processMessage(cacheCtx, message)
 		if err != nil {
-			failedMessages = append(failedMessages, types.FailedMessages_FailedMessage{
+			batchResponse = types.BatchResponse_Response{Res: &types.BatchResponse_Response_Err{Err: err.Error()}}
+
+			events.Emit(ctx, &types.BatchedMessageFailed{
 				Index: int32(i),
 				Error: err.Error(),
 			})
 		} else {
+			batchResponse = types.BatchResponse_Response{Res: &types.BatchResponse_Response_Result{Result: res}}
+
 			writeCache()
 			ctx.EventManager().EmitEvents(res.GetEvents())
 		}
 
-		results = append(results, res)
-	}
-
-	if len(failedMessages) > 0 {
-		events.Emit(ctx, &types.FailedMessages{
-			Messages: failedMessages,
-		})
+		results = append(results, batchResponse)
 	}
 
 	return &types.BatchResponse{
-		Results: results,
+		Responses: results,
 	}, nil
 }
 

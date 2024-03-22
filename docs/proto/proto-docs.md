@@ -156,8 +156,7 @@
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
   
 - [axelar/batch/v1beta1/events.proto](#axelar/batch/v1beta1/events.proto)
-    - [FailedMessages](#axelar.batch.v1beta1.FailedMessages)
-    - [FailedMessages.FailedMessage](#axelar.batch.v1beta1.FailedMessages.FailedMessage)
+    - [BatchedMessageFailed](#axelar.batch.v1beta1.BatchedMessageFailed)
   
 - [axelar/batch/v1beta1/genesis.proto](#axelar/batch/v1beta1/genesis.proto)
     - [GenesisState](#axelar.batch.v1beta1.GenesisState)
@@ -165,6 +164,7 @@
 - [axelar/batch/v1beta1/tx.proto](#axelar/batch/v1beta1/tx.proto)
     - [BatchRequest](#axelar.batch.v1beta1.BatchRequest)
     - [BatchResponse](#axelar.batch.v1beta1.BatchResponse)
+    - [BatchResponse.Response](#axelar.batch.v1beta1.BatchResponse.Response)
   
 - [axelar/batch/v1beta1/service.proto](#axelar/batch/v1beta1/service.proto)
     - [MsgService](#axelar.batch.v1beta1.MsgService)
@@ -2680,24 +2680,9 @@ QueryService defines the gRPC querier service.
 
 
 
-<a name="axelar.batch.v1beta1.FailedMessages"></a>
+<a name="axelar.batch.v1beta1.BatchedMessageFailed"></a>
 
-### FailedMessages
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `messages` | [FailedMessages.FailedMessage](#axelar.batch.v1beta1.FailedMessages.FailedMessage) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.batch.v1beta1.FailedMessages.FailedMessage"></a>
-
-### FailedMessages.FailedMessage
+### BatchedMessageFailed
 
 
 
@@ -2777,7 +2762,23 @@ GenesisState represents the genesis state
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `results` | [cosmos.base.abci.v1beta1.Result](#cosmos.base.abci.v1beta1.Result) | repeated |  |
+| `responses` | [BatchResponse.Response](#axelar.batch.v1beta1.BatchResponse.Response) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.batch.v1beta1.BatchResponse.Response"></a>
+
+### BatchResponse.Response
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `result` | [cosmos.base.abci.v1beta1.Result](#cosmos.base.abci.v1beta1.Result) |  |  |
+| `err` | [string](#string) |  |  |
 
 
 

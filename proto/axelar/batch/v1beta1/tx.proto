@@ -19,5 +19,11 @@ message BatchRequest {
 }
 
 message BatchResponse {
-  repeated cosmos.base.abci.v1beta1.Result  results = 1;
+  message Response {
+    oneof res {
+      cosmos.base.abci.v1beta1.Result result = 1;
+      string err = 2;
+    }
+  }
+  repeated Response responses = 1  [ (gogoproto.nullable) = false ];
 }
