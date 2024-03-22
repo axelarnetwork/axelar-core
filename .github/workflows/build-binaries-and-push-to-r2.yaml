@@ -22,10 +22,7 @@ jobs:
             
             - name: Create a test file
               run: |
-                cd ~/
-                mkdir axelard
-                touch test.txt
-                mv test.txt axelard
+                touch /test.txt
             
             - uses: ryand56/r2-upload-action@latest
               with:
@@ -33,5 +30,5 @@ jobs:
                 r2-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_CF }}
                 r2-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CF }}
                 r2-bucket: ${{ secrets.R2_BUCKET }}
-                source-dir: axelard
+                source-dir: /test.txt
                 destination-dir: ./
