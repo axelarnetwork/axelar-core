@@ -1,0 +1,37 @@
+name: Upload core binary to Cloudflare R2 bucket
+
+
+on:
+    push:
+
+
+jobs:
+    preparation:
+        name: Preparation
+        runs-on: ubuntu-22.04
+        permissions:
+            contents: write
+            packages: write
+            id-token: write
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: "0"
+                submodules: recursive
+            
+            - name: Create a test file
+              run: |
+                cd ~/
+                mkdir axelard
+                touch test.txt
+                mv test.txt axelard
+            
+            - uses: ryand56/r2-upload-action@latest
+              with:
+                r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
+                r2-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_CF }}
+                r2-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CF }}
+                r2-bucket: ${{ secrets.R2_BUCKET }}
+                source-dir: axelard
+                destination-dir: ./
