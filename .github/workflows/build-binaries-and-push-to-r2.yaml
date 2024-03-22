@@ -24,14 +24,14 @@ jobs:
             - name: Build axelard binary with commit hash
               id: build-binary
               run: |
+                mkdir ./binary_file/
                 cd axelar-core
                 make build
                 commit_hash=$(git rev-parse --short HEAD)
                 echo "The commit hash: $commit_hash"
                 cd ..
-                mkdir ./axelard_$commit_hash/
-                sudo mv axelar-core/bin/axelard ./axelard_$commit_hash/
-                echo "binary-directory=./axelard_$commit_hash" >> $GITHUB_OUTPUT
+                sudo mv axelar-core/bin/axelard ./binary_file/axelard_$commit_hash
+                echo "binary-directory=./binary_file" >> $GITHUB_OUTPUT
               
             - name: List contents of root directory
               run: ls -la
@@ -43,4 +43,4 @@ jobs:
                 r2-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CF }}
                 r2-bucket: ${{ secrets.R2_BUCKET }}
                 source-dir: ${{ steps.build-binary.outputs.binary-directory }}
-                destination-dir: ./
+                destination-dir: ./pre-releases/axelard/
