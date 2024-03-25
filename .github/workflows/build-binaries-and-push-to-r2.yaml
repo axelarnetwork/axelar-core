@@ -29,7 +29,7 @@ jobs:
                 else
                   branch="${{ inputs.branch }}"
                 fi
-                echo "branch=branch" >> $GITHUB_OUTPUT
+                echo "branch=$branch" >> $GITHUB_OUTPUT
 
             - name: Checkout code
               uses: actions/checkout@v4
