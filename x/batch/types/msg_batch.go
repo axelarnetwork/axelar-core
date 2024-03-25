@@ -96,11 +96,7 @@ func equalAccAddresses(first, second []sdk.AccAddress) bool {
 // AnyBatch checks if any of the messages are a BatchRequest
 func AnyBatch(msgs []sdk.Msg) bool {
 	return slices.Any(msgs, func(msg sdk.Msg) bool {
-		switch msg.(type) {
-		case *BatchRequest:
-			return true
-		}
-
-		return false
+		_, ok := msg.(*BatchRequest)
+		return ok
 	})
 }

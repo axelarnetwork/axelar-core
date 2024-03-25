@@ -54,19 +54,24 @@ func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, ne
 	}
 
 	var unwrappedMsgs []sdk.Msg
-	for _, msg := range msgs {
-		unwrappedMsgs = append(unwrappedMsgs, msg)
+	start := 0
+	for i, msg := range msgs {
+		if batchReq, ok := msg.(*batchtypes.BatchRequest); ok {
+			// Bulk append messages, including the current batch request
+			unwrappedMsgs = append(unwrappedMsgs, msgs[start:i+1]...)
 
-		switch req := msg.(type) {
-		case *batchtypes.BatchRequest:
-			innerMsgs := req.UnwrapMessages()
+			innerMsgs := batchReq.UnwrapMessages()
 			if batchtypes.AnyBatch(innerMsgs) {
 				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "nested batch requests are not allowed")
 			}
-
 			unwrappedMsgs = append(unwrappedMsgs, innerMsgs...)
-		}
 
+			start = i + 1
+		}
+	}
+
+	if len(unwrappedMsgs) == 0 {
+		return next(ctx, tx, simulate)
 	}
 
 	return next(ctx, txWithUnwrappedMsgs{feeTx, unwrappedMsgs}, simulate)
