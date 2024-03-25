@@ -74,7 +74,7 @@ func TestBatch(t *testing.T) {
 				})
 
 			assert.NoError(t, err)
-			assert.Equal(t, 4, len(unwrappedMsgs))
+			assert.Equal(t, 6, len(unwrappedMsgs))
 		}).
 		Run(t)
 }

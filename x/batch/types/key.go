@@ -2,7 +2,7 @@ package types
 
 const (
 	// ModuleName is the name of the module
-	ModuleName = "batcher"
+	ModuleName = "batch"
 
 	// RouterKey to be used for routing msgs
 	RouterKey = ModuleName

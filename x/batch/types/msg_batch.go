@@ -9,7 +9,11 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-var _ cdctypes.UnpackInterfacesMessage = BatchRequest{}
+var (
+	_ sdk.Msg = &BatchRequest{}
+
+	_ cdctypes.UnpackInterfacesMessage = &BatchRequest{}
+)
 
 // NewBatchRequest is the constructor for BatchRequest
 func NewBatchRequest(sender sdk.AccAddress, messages []sdk.Msg) *BatchRequest {
@@ -17,16 +21,6 @@ func NewBatchRequest(sender sdk.AccAddress, messages []sdk.Msg) *BatchRequest {
 		Sender:   sender,
 		Messages: slices.Map(messages, func(msg sdk.Msg) cdctypes.Any { return *funcs.Must(cdctypes.NewAnyWithValue(msg)) }),
 	}
-}
-
-// Route returns the route for this message
-func (m BatchRequest) Route() string {
-	return RouterKey
-}
-
-// Type returns the type of the message
-func (m BatchRequest) Type() string {
-	return "Batch"
 }
 
 // ValidateBasic executes a stateless message validation
@@ -39,7 +33,15 @@ func (m BatchRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "empty batch")
 	}
 
+	if AnyBatch(m.UnwrapMessages()) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "nested batch requests are not allowed")
+	}
+
 	for _, msg := range m.UnwrapMessages() {
+		if !equalAccAddresses(msg.GetSigners(), m.GetSigners()) {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "message signer mismatch")
+		}
+
 		if !equalAccAddresses(msg.GetSigners(), m.GetSigners()) {
 			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "message signer mismatch")
 		}
@@ -89,4 +91,16 @@ func equalAccAddresses(first, second []sdk.AccAddress) bool {
 	}
 
 	return true
+}
+
+// AnyBatch checks if any of the messages are a BatchRequest
+func AnyBatch(msgs []sdk.Msg) bool {
+	return slices.Any(msgs, func(msg sdk.Msg) bool {
+		switch msg.(type) {
+		case *BatchRequest:
+			return true
+		}
+
+		return false
+	})
 }

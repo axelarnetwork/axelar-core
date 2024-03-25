@@ -119,7 +119,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 		return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 	}
 
-	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrBatcher, Logger: logger}, keeper.NewMsgServer(am.cdc, am.router))
+	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrBatch, Logger: logger}, keeper.NewMsgServer(am.cdc, am.router))
 }
 
 // BeginBlock executes all state transitions this module requires at the beginning of each new block
