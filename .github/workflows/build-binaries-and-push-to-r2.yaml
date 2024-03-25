@@ -5,22 +5,39 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      branch:
+        description: Github branch to checkout for build
+        required: true
+        default: main
+        type: string
 
 jobs:
     build-and-upload:
-        name: Build binary from current commit and push to R2
+        name: Build binary and push to R2
         runs-on: ubuntu-22.04
         permissions:
             contents: write
             packages: write
             id-token: write
         steps:
+            - name: Determine branch
+              id: get-branch-name
+              run: |
+                if [ "${{ github.event_name }}" == "push" ]; then
+                  branch="main"
+                else
+                  branch="${{ inputs.branch }}"
+                fi
+                echo "branch=branch" >> $GITHUB_OUTPUT
+
             - name: Checkout code
               uses: actions/checkout@v4
               with:
                 fetch-depth: "0"
                 path: axelar-core
                 submodules: recursive
+                ref: ${{ steps.get-branch-name.outputs.branch }}
             
             - name: Build axelard binary with version and commit hash
               id: build-binary
