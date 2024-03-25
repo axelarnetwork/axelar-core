@@ -44,11 +44,6 @@ func NewBatchDecorator(cdc codec.Codec) BatchDecorator {
 func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	msgs := tx.GetMsgs()
 
-	feeTx, ok := tx.(sdk.FeeTx)
-	if !ok {
-		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx must be a FeeTx")
-	}
-
 	var unwrappedMsgs []sdk.Msg
 	start := 0
 	for i, msg := range msgs {
@@ -68,6 +63,11 @@ func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, ne
 
 	if len(unwrappedMsgs) == 0 {
 		return next(ctx, tx, simulate)
+	}
+
+	feeTx, ok := tx.(sdk.FeeTx)
+	if !ok {
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx must be a FeeTx")
 	}
 
 	return next(ctx, txWithUnwrappedMsgs{feeTx, unwrappedMsgs}, simulate)
