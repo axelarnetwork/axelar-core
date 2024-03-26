@@ -54,6 +54,30 @@ func TestBatch(t *testing.T) {
 		Run(t)
 
 	givenBatchAnteHandler.
+		When("messages do not contain batch", func() {
+			tx = &mock.FeeTxMock{
+				GetMsgsFunc: func() []sdk.Msg {
+					return []sdk.Msg{
+						votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3)))),
+						votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3)))),
+						votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3)))),
+					}
+				},
+			}
+		}).
+		Then("should pass messages as it", func(t *testing.T) {
+			_, err := handler.AnteHandle(sdk.Context{}, tx, false,
+				func(_ sdk.Context, tx sdk.Tx, _ bool) (sdk.Context, error) {
+					unwrappedMsgs = tx.GetMsgs()
+					return sdk.Context{}, nil
+				})
+
+			assert.NoError(t, err)
+			assert.Equal(t, 3, len(unwrappedMsgs))
+		}).
+		Run(t)
+
+	givenBatchAnteHandler.
 		When("a Batch Request is valid", func() {
 			batchMsg = batchtypes.NewBatchRequest(sender, []sdk.Msg{
 				votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3)))),
@@ -63,7 +87,13 @@ func TestBatch(t *testing.T) {
 		Then("should unwrap inner message", func(t *testing.T) {
 			tx = &mock.FeeTxMock{
 				GetMsgsFunc: func() []sdk.Msg {
-					return []sdk.Msg{batchMsg, batchMsg}
+					return []sdk.Msg{
+						votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3)))),
+						batchMsg,
+						votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3)))),
+						batchMsg,
+						votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3)))),
+					}
 				},
 			}
 
@@ -74,7 +104,7 @@ func TestBatch(t *testing.T) {
 				})
 
 			assert.NoError(t, err)
-			assert.Equal(t, 6, len(unwrappedMsgs))
+			assert.Equal(t, 9, len(unwrappedMsgs))
 		}).
 		Run(t)
 }

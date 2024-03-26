@@ -42,27 +42,9 @@ func NewBatchDecorator(cdc codec.Codec) BatchDecorator {
 
 // AnteHandle record qualified refund for the multiSig and vote transactions
 func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	msgs := tx.GetMsgs()
-
-	var unwrappedMsgs []sdk.Msg
-	start := 0
-	for i, msg := range msgs {
-		if batchReq, ok := msg.(*batchtypes.BatchRequest); ok {
-			// Bulk append messages, including the current batch request
-			unwrappedMsgs = append(unwrappedMsgs, msgs[start:i+1]...)
-
-			innerMsgs := batchReq.UnwrapMessages()
-			if batchtypes.AnyBatch(innerMsgs) {
-				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "nested batch requests are not allowed")
-			}
-			unwrappedMsgs = append(unwrappedMsgs, innerMsgs...)
-
-			start = i + 1
-		}
-	}
-
-	if len(unwrappedMsgs) == 0 {
-		return next(ctx, tx, simulate)
+	unwrappedMsgs, err := unpackMsgs(tx.GetMsgs())
+	if err != nil {
+		return ctx, err
 	}
 
 	feeTx, ok := tx.(sdk.FeeTx)
@@ -71,4 +53,31 @@ func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, ne
 	}
 
 	return next(ctx, txWithUnwrappedMsgs{feeTx, unwrappedMsgs}, simulate)
+}
+
+func unpackMsgs(msgs []sdk.Msg) ([]sdk.Msg, error) {
+	var unpackedMsgs []sdk.Msg
+	idx := 0
+
+	for i, msg := range msgs {
+		if batchReq, ok := msg.(*batchtypes.BatchRequest); ok {
+			// Bulk append messages, including the current batch request
+			unpackedMsgs = append(unpackedMsgs, msgs[idx:i+1]...)
+
+			innerMsgs := batchReq.UnwrapMessages()
+			if batchtypes.AnyBatch(innerMsgs) {
+				return []sdk.Msg{}, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "nested batch requests are not allowed")
+			}
+			unpackedMsgs = append(unpackedMsgs, innerMsgs...)
+
+			idx = i + 1
+		}
+	}
+
+	// avoid copying the slice if there are no batch requests
+	if len(unpackedMsgs) == 0 {
+		return msgs, nil
+	}
+
+	return append(unpackedMsgs, msgs[idx:]...), nil
 }
