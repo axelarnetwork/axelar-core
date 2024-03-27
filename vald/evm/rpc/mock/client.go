@@ -30,7 +30,7 @@ var _ rpc.Client = &ClientMock{}
 //			LatestFinalizedBlockNumberFunc: func(ctx context.Context, confirmations uint64) (*big.Int, error) {
 //				panic("mock out the LatestFinalizedBlockNumber method")
 //			},
-//			TransactionReceiptsFunc: func(ctx context.Context, txHashes []common.Hash) ([]rpc.Result, error) {
+//			TransactionReceiptsFunc: func(ctx context.Context, txHashes []common.Hash) ([]rpc.TxReceiptResult, error) {
 //				panic("mock out the TransactionReceipts method")
 //			},
 //		}
@@ -50,7 +50,7 @@ type ClientMock struct {
 	LatestFinalizedBlockNumberFunc func(ctx context.Context, confirmations uint64) (*big.Int, error)
 
 	// TransactionReceiptsFunc mocks the TransactionReceipts method.
-	TransactionReceiptsFunc func(ctx context.Context, txHashes []common.Hash) ([]rpc.Result, error)
+	TransactionReceiptsFunc func(ctx context.Context, txHashes []common.Hash) ([]rpc.TxReceiptResult, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -185,7 +185,7 @@ func (mock *ClientMock) LatestFinalizedBlockNumberCalls() []struct {
 }
 
 // TransactionReceipts calls TransactionReceiptsFunc.
-func (mock *ClientMock) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]rpc.Result, error) {
+func (mock *ClientMock) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]rpc.TxReceiptResult, error) {
 	if mock.TransactionReceiptsFunc == nil {
 		panic("ClientMock.TransactionReceiptsFunc: method is nil but Client.TransactionReceipts was just called")
 	}

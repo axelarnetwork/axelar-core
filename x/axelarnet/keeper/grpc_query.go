@@ -66,3 +66,27 @@ func (q Querier) Params(c context.Context, req *types.ParamsRequest) (*types.Par
 		Params: params,
 	}, nil
 }
+
+// IBCPath returns the IBC path registered to the given cosmos chain
+func (q Querier) IBCPath(c context.Context, req *types.IBCPathRequest) (*types.IBCPathResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.keeper.GetIBCPath(ctx, nexus.ChainName(req.Chain))
+	if !ok {
+		return nil, fmt.Errorf("no IBC path registered for chain %s", req.Chain)
+	}
+
+	return &types.IBCPathResponse{IBCPath: chain}, nil
+}
+
+// ChainByIBCPath returns the Cosmos chain name registered to the given IBC path
+func (q Querier) ChainByIBCPath(c context.Context, req *types.ChainByIBCPathRequest) (*types.ChainByIBCPathResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	chain, ok := q.keeper.GetChainNameByIBCPath(ctx, req.IbcPath)
+	if !ok {
+		return nil, fmt.Errorf("no cosmos chain registered for IBC path %s", req.IbcPath)
+	}
+
+	return &types.ChainByIBCPathResponse{Chain: chain}, nil
+}

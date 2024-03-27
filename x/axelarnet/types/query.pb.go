@@ -5,6 +5,7 @@ package types
 
 import (
 	fmt "fmt"
+	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	_ "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	_ "github.com/cosmos/cosmos-sdk/types/query"
 	_ "github.com/gogo/protobuf/gogoproto"
@@ -172,12 +173,168 @@ func (m *ParamsResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ParamsResponse proto.InternalMessageInfo
 
+// IBCPathRequest represents a message that queries the IBC path registered for
+// a given chain
+type IBCPathRequest struct {
+	Chain string `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
+}
+
+func (m *IBCPathRequest) Reset()         { *m = IBCPathRequest{} }
+func (m *IBCPathRequest) String() string { return proto.CompactTextString(m) }
+func (*IBCPathRequest) ProtoMessage()    {}
+func (*IBCPathRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5ef850a4433bf2f6, []int{4}
+}
+func (m *IBCPathRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *IBCPathRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_IBCPathRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *IBCPathRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_IBCPathRequest.Merge(m, src)
+}
+func (m *IBCPathRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *IBCPathRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_IBCPathRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_IBCPathRequest proto.InternalMessageInfo
+
+type IBCPathResponse struct {
+	IBCPath string `protobuf:"bytes,1,opt,name=ibc_path,json=ibcPath,proto3" json:"ibc_path,omitempty"`
+}
+
+func (m *IBCPathResponse) Reset()         { *m = IBCPathResponse{} }
+func (m *IBCPathResponse) String() string { return proto.CompactTextString(m) }
+func (*IBCPathResponse) ProtoMessage()    {}
+func (*IBCPathResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5ef850a4433bf2f6, []int{5}
+}
+func (m *IBCPathResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *IBCPathResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_IBCPathResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *IBCPathResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_IBCPathResponse.Merge(m, src)
+}
+func (m *IBCPathResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *IBCPathResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_IBCPathResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_IBCPathResponse proto.InternalMessageInfo
+
+// ChainByIBCPathRequest represents a message that queries the chain that an IBC
+// path is registered to
+type ChainByIBCPathRequest struct {
+	IbcPath string `protobuf:"bytes,1,opt,name=ibc_path,json=ibcPath,proto3" json:"ibc_path,omitempty"`
+}
+
+func (m *ChainByIBCPathRequest) Reset()         { *m = ChainByIBCPathRequest{} }
+func (m *ChainByIBCPathRequest) String() string { return proto.CompactTextString(m) }
+func (*ChainByIBCPathRequest) ProtoMessage()    {}
+func (*ChainByIBCPathRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5ef850a4433bf2f6, []int{6}
+}
+func (m *ChainByIBCPathRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ChainByIBCPathRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ChainByIBCPathRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ChainByIBCPathRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChainByIBCPathRequest.Merge(m, src)
+}
+func (m *ChainByIBCPathRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ChainByIBCPathRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChainByIBCPathRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ChainByIBCPathRequest proto.InternalMessageInfo
+
+type ChainByIBCPathResponse struct {
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+}
+
+func (m *ChainByIBCPathResponse) Reset()         { *m = ChainByIBCPathResponse{} }
+func (m *ChainByIBCPathResponse) String() string { return proto.CompactTextString(m) }
+func (*ChainByIBCPathResponse) ProtoMessage()    {}
+func (*ChainByIBCPathResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5ef850a4433bf2f6, []int{7}
+}
+func (m *ChainByIBCPathResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ChainByIBCPathResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ChainByIBCPathResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ChainByIBCPathResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChainByIBCPathResponse.Merge(m, src)
+}
+func (m *ChainByIBCPathResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ChainByIBCPathResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChainByIBCPathResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ChainByIBCPathResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*PendingIBCTransferCountRequest)(nil), "axelar.axelarnet.v1beta1.PendingIBCTransferCountRequest")
 	proto.RegisterType((*PendingIBCTransferCountResponse)(nil), "axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse")
 	proto.RegisterMapType((map[string]uint32)(nil), "axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry")
 	proto.RegisterType((*ParamsRequest)(nil), "axelar.axelarnet.v1beta1.ParamsRequest")
 	proto.RegisterType((*ParamsResponse)(nil), "axelar.axelarnet.v1beta1.ParamsResponse")
+	proto.RegisterType((*IBCPathRequest)(nil), "axelar.axelarnet.v1beta1.IBCPathRequest")
+	proto.RegisterType((*IBCPathResponse)(nil), "axelar.axelarnet.v1beta1.IBCPathResponse")
+	proto.RegisterType((*ChainByIBCPathRequest)(nil), "axelar.axelarnet.v1beta1.ChainByIBCPathRequest")
+	proto.RegisterType((*ChainByIBCPathResponse)(nil), "axelar.axelarnet.v1beta1.ChainByIBCPathResponse")
 }
 
 func init() {
@@ -185,32 +342,38 @@ func init() {
 }
 
 var fileDescriptor_5ef850a4433bf2f6 = []byte{
-	// 389 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x92, 0xcf, 0x6b, 0xe2, 0x40,
-	0x14, 0xc7, 0x33, 0xba, 0x2b, 0xec, 0x88, 0xbb, 0x12, 0x5c, 0x08, 0x39, 0x8c, 0x41, 0x76, 0x41,
-	0x16, 0x36, 0x41, 0x17, 0x96, 0x65, 0x0f, 0x3d, 0x24, 0xf4, 0xd0, 0x53, 0x25, 0x78, 0xea, 0x45,
-	0x26, 0xe9, 0x34, 0x06, 0x75, 0x26, 0xce, 0x4c, 0xac, 0x39, 0xf7, 0x1f, 0xe8, 0x9f, 0xe5, 0xd1,
-	0x63, 0x4f, 0xa5, 0xd5, 0x6b, 0xff, 0x88, 0x62, 0x32, 0xda, 0x52, 0x4c, 0x7b, 0xca, 0xbc, 0xf7,
-	0x3e, 0xef, 0xfb, 0x7e, 0x05, 0xfe, 0xc0, 0x4b, 0x32, 0xc5, 0xdc, 0x29, 0x3e, 0x94, 0x48, 0x67,
-	0xd1, 0x0b, 0x88, 0xc4, 0x3d, 0x67, 0x9e, 0x12, 0x9e, 0xd9, 0x09, 0x67, 0x92, 0xe9, 0x46, 0x11,
-	0xb6, 0x0f, 0x94, 0xad, 0x28, 0xb3, 0x15, 0xb1, 0x88, 0xe5, 0x90, 0xb3, 0x7b, 0x15, 0xbc, 0x59,
-	0xae, 0x2a, 0xb3, 0x84, 0x08, 0x45, 0xfd, 0x0a, 0x99, 0x98, 0x31, 0xe1, 0x04, 0x58, 0x90, 0xa2,
-	0xdc, 0x01, 0x4b, 0x70, 0x14, 0x53, 0x2c, 0x63, 0x46, 0x15, 0x6b, 0x29, 0x45, 0x4a, 0x96, 0xa9,
-	0x38, 0xd6, 0xa3, 0xf9, 0xb3, 0xb4, 0x66, 0x82, 0x39, 0x9e, 0xa9, 0xa2, 0x1d, 0x0b, 0xa2, 0x01,
-	0xa1, 0x97, 0x31, 0x8d, 0xce, 0x5c, 0x6f, 0xc8, 0x31, 0x15, 0x57, 0x84, 0x7b, 0x2c, 0xa5, 0xd2,
-	0x27, 0xf3, 0x94, 0x08, 0xd9, 0x79, 0x02, 0xb0, 0x5d, 0x8a, 0x88, 0x84, 0x51, 0x41, 0xf4, 0x1b,
-	0x00, 0x75, 0xa9, 0x22, 0x62, 0x14, 0x64, 0xa3, 0x70, 0x8c, 0x63, 0x6a, 0x00, 0xab, 0xda, 0xad,
-	0xf7, 0xcf, 0xed, 0xb2, 0x75, 0xd9, 0x1f, 0xe8, 0xda, 0x7b, 0xaf, 0x70, 0x33, 0x6f, 0xa7, 0x78,
-	0x4a, 0x25, 0xcf, 0xdc, 0x4f, 0xab, 0xfb, 0xb6, 0xe6, 0x37, 0xe5, 0x9b, 0xa0, 0xe9, 0xc1, 0xef,
-	0x47, 0x13, 0xf4, 0x26, 0xac, 0x4e, 0x48, 0x66, 0x00, 0x0b, 0x74, 0xbf, 0xf8, 0xbb, 0xa7, 0xde,
-	0x82, 0x9f, 0x17, 0x78, 0x9a, 0x12, 0xa3, 0x62, 0x81, 0x6e, 0xc3, 0x2f, 0x8c, 0xff, 0x95, 0x7f,
-	0xa0, 0xf3, 0x0d, 0x36, 0x06, 0xf9, 0x82, 0xf6, 0xf3, 0x0f, 0xe0, 0xd7, 0xbd, 0x43, 0x4d, 0x7b,
-	0x02, 0x6b, 0xc5, 0x0e, 0x73, 0xc5, 0x7a, 0xdf, 0x7a, 0x67, 0xc0, 0x9c, 0x53, 0x1d, 0xab, 0x2c,
-	0x77, 0xb8, 0x7a, 0x44, 0xda, 0x6a, 0x83, 0xc0, 0x7a, 0x83, 0xc0, 0xc3, 0x06, 0x81, 0xdb, 0x2d,
-	0xd2, 0xd6, 0x5b, 0xa4, 0xdd, 0x6d, 0x91, 0x76, 0xf1, 0x37, 0x8a, 0xe5, 0x38, 0x0d, 0xec, 0x90,
-	0xcd, 0x5e, 0x8e, 0x77, 0xcd, 0xf8, 0x44, 0x59, 0xbf, 0x43, 0xc6, 0x89, 0xb3, 0x7c, 0x75, 0xd8,
-	0xfc, 0x27, 0x0a, 0x6a, 0xf9, 0x41, 0xff, 0x3c, 0x07, 0x00, 0x00, 0xff, 0xff, 0x70, 0x44, 0xdc,
-	0x06, 0xc3, 0x02, 0x00, 0x00,
+	// 489 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x93, 0xcf, 0x6e, 0xd3, 0x40,
+	0x10, 0xc6, 0xbd, 0x2d, 0xb4, 0xb0, 0x51, 0xff, 0xc8, 0x6a, 0x51, 0xc8, 0xc1, 0xb1, 0x2c, 0xa8,
+	0x22, 0x24, 0x6c, 0x35, 0x48, 0x08, 0x38, 0x80, 0x64, 0x8b, 0x43, 0x2f, 0x10, 0x45, 0xbd, 0xc0,
+	0x25, 0x5a, 0xbb, 0x83, 0x63, 0xb5, 0xd9, 0x75, 0x77, 0xd7, 0x25, 0x3e, 0xf3, 0x02, 0x3c, 0x56,
+	0x8e, 0x3d, 0x72, 0x8a, 0x20, 0xb9, 0xf2, 0x04, 0x9c, 0x90, 0x77, 0xd7, 0x89, 0x88, 0x12, 0xe0,
+	0xe4, 0xdd, 0x9d, 0xdf, 0x7c, 0xdf, 0xcc, 0x68, 0x8c, 0x1f, 0x91, 0x31, 0x5c, 0x11, 0x1e, 0xe8,
+	0x0f, 0x05, 0x19, 0xdc, 0x9c, 0xc6, 0x20, 0xc9, 0x69, 0x70, 0x5d, 0x00, 0x2f, 0xfd, 0x9c, 0x33,
+	0xc9, 0xec, 0xa6, 0x0e, 0xfb, 0x0b, 0xca, 0x37, 0x54, 0xeb, 0x28, 0x65, 0x29, 0x53, 0x50, 0x50,
+	0x9d, 0x34, 0xdf, 0xda, 0xac, 0x2a, 0xcb, 0x1c, 0x84, 0xa1, 0x9e, 0x24, 0x4c, 0x8c, 0x98, 0x08,
+	0x62, 0x22, 0x40, 0xdb, 0x2d, 0xb0, 0x9c, 0xa4, 0x19, 0x25, 0x32, 0x63, 0xd4, 0xb0, 0xae, 0x51,
+	0xa4, 0x30, 0x2e, 0xc4, 0xba, 0x1a, 0x5b, 0x8f, 0x37, 0x7a, 0xe6, 0x84, 0x93, 0x91, 0x31, 0xf5,
+	0x5c, 0xec, 0xf4, 0x80, 0x5e, 0x64, 0x34, 0x3d, 0x0b, 0xa3, 0x73, 0x4e, 0xa8, 0xf8, 0x04, 0x3c,
+	0x62, 0x05, 0x95, 0x7d, 0xb8, 0x2e, 0x40, 0x48, 0xef, 0x27, 0xc2, 0xed, 0x8d, 0x88, 0xc8, 0x19,
+	0x15, 0x60, 0x7f, 0x41, 0xd8, 0x96, 0x26, 0x22, 0x06, 0x71, 0x39, 0x48, 0x86, 0x24, 0xa3, 0x4d,
+	0xe4, 0x6e, 0x77, 0x1a, 0xdd, 0xf7, 0xfe, 0xa6, 0x71, 0xf9, 0xff, 0xd0, 0xf5, 0xeb, 0x57, 0x11,
+	0x96, 0x51, 0xa5, 0xf8, 0x96, 0x4a, 0x5e, 0x86, 0x77, 0x26, 0xd3, 0xb6, 0xd5, 0x3f, 0x94, 0x2b,
+	0xc1, 0x56, 0x84, 0x8f, 0xd7, 0x26, 0xd8, 0x87, 0x78, 0xfb, 0x12, 0xca, 0x26, 0x72, 0x51, 0xe7,
+	0x7e, 0xbf, 0x3a, 0xda, 0x47, 0xf8, 0xee, 0x0d, 0xb9, 0x2a, 0xa0, 0xb9, 0xe5, 0xa2, 0xce, 0x5e,
+	0x5f, 0x5f, 0x5e, 0x6d, 0xbd, 0x40, 0xde, 0x01, 0xde, 0xeb, 0xa9, 0x01, 0xd5, 0xfd, 0xf7, 0xf0,
+	0x7e, 0xfd, 0x60, 0xba, 0x7d, 0x8d, 0x77, 0xf4, 0x0c, 0x95, 0x62, 0xa3, 0xeb, 0xfe, 0xa5, 0x41,
+	0xc5, 0x99, 0x8a, 0x4d, 0x96, 0x77, 0x82, 0xf7, 0xcf, 0xc2, 0xa8, 0x47, 0xe4, 0xd0, 0x78, 0x54,
+	0xe5, 0xd4, 0x13, 0xab, 0x4a, 0xd4, 0x17, 0xef, 0x25, 0x3e, 0x58, 0x70, 0xc6, 0xfa, 0x04, 0xdf,
+	0xcb, 0xe2, 0x64, 0x90, 0x13, 0x39, 0xd4, 0x6c, 0xd8, 0x98, 0x4d, 0xdb, 0xbb, 0x35, 0xb6, 0x9b,
+	0xc5, 0x49, 0x75, 0xf0, 0xba, 0xf8, 0x58, 0xf5, 0x1f, 0x96, 0x2b, 0x4e, 0x0f, 0x57, 0x05, 0x96,
+	0x39, 0x02, 0x3f, 0x58, 0xcd, 0x31, 0xae, 0x1f, 0xfe, 0x28, 0x2f, 0x8c, 0x7e, 0x4d, 0xdb, 0x6f,
+	0xd2, 0x4c, 0x0e, 0x8b, 0xd8, 0x4f, 0xd8, 0x68, 0xb9, 0x62, 0x9f, 0x19, 0xbf, 0x34, 0xb7, 0xa7,
+	0x09, 0xe3, 0x10, 0x8c, 0xcd, 0x82, 0xc2, 0x38, 0x67, 0x5c, 0xc2, 0x85, 0xaf, 0x0c, 0xde, 0x91,
+	0x11, 0x98, 0x1e, 0xc3, 0xf3, 0xc9, 0x0f, 0xc7, 0x9a, 0xcc, 0x1c, 0x74, 0x3b, 0x73, 0xd0, 0xf7,
+	0x99, 0x83, 0xbe, 0xce, 0x1d, 0xeb, 0x76, 0xee, 0x58, 0xdf, 0xe6, 0x8e, 0xf5, 0xf1, 0xf9, 0x7f,
+	0xba, 0x2c, 0x97, 0x5c, 0xfd, 0x50, 0xf1, 0x8e, 0x5a, 0xee, 0x67, 0xbf, 0x03, 0x00, 0x00, 0xff,
+	0xff, 0x78, 0x5f, 0xc8, 0x81, 0xcf, 0x03, 0x00, 0x00,
 }
 
 func (m *PendingIBCTransferCountRequest) Marshal() (dAtA []byte, err error) {
@@ -332,6 +495,126 @@ func (m *ParamsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *IBCPathRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *IBCPathRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *IBCPathRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Chain) > 0 {
+		i -= len(m.Chain)
+		copy(dAtA[i:], m.Chain)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.Chain)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *IBCPathResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *IBCPathResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *IBCPathResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.IBCPath) > 0 {
+		i -= len(m.IBCPath)
+		copy(dAtA[i:], m.IBCPath)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.IBCPath)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ChainByIBCPathRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ChainByIBCPathRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ChainByIBCPathRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.IbcPath) > 0 {
+		i -= len(m.IbcPath)
+		copy(dAtA[i:], m.IbcPath)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.IbcPath)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ChainByIBCPathResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ChainByIBCPathResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ChainByIBCPathResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Chain) > 0 {
+		i -= len(m.Chain)
+		copy(dAtA[i:], m.Chain)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.Chain)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	offset -= sovQuery(v)
 	base := offset
@@ -386,6 +669,58 @@ func (m *ParamsResponse) Size() (n int) {
 	_ = l
 	l = m.Params.Size()
 	n += 1 + l + sovQuery(uint64(l))
+	return n
+}
+
+func (m *IBCPathRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Chain)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *IBCPathResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.IBCPath)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *ChainByIBCPathRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.IbcPath)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *ChainByIBCPathResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Chain)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
 	return n
 }
 
@@ -719,6 +1054,334 @@ func (m *ParamsResponse) Unmarshal(dAtA []byte) error {
 			if err := m.Params.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *IBCPathRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: IBCPathRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: IBCPathRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chain = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *IBCPathResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: IBCPathResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: IBCPathResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IBCPath", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IBCPath = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ChainByIBCPathRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ChainByIBCPathRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ChainByIBCPathRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IbcPath", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IbcPath = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ChainByIBCPathResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ChainByIBCPathResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ChainByIBCPathResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Chain = github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

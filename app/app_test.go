@@ -41,6 +41,7 @@ func TestNewAxelarApp(t *testing.T) {
 					true,
 					nil,
 					"",
+					"",
 					0,
 					app.MakeEncodingConfig(),
 					simapp.EmptyAppOptions{},
