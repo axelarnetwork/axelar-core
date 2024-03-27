@@ -1,15 +1,17 @@
 package keeper_test
 
 import (
-	"github.com/axelarnetwork/axelar-core/app"
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	"github.com/axelarnetwork/axelar-core/x/permission/exported"
-	"github.com/axelarnetwork/axelar-core/x/permission/keeper"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
-	"testing"
+
+	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/x/permission/exported"
+	"github.com/axelarnetwork/axelar-core/x/permission/keeper"
 )
 
 func TestKeeper_GetRole_nil_Address_Return_Unrestricted(t *testing.T) {
