@@ -24,20 +24,34 @@ func TestRestrictedTx(t *testing.T) {
 		handler    sdk.AnteDecorator
 		permission *mock.PermissionMock
 		tx         *mock.TxMock
+		signers    []sdk.AccAddress
 	)
 
 	signerAnyRole := func() {
+		signers = slices.Expand(func(_ int) sdk.AccAddress { return rand.AccAddr() }, int(rand.I64Between(1, 5)))
 		permission.GetRoleFunc = func(sdk.Context, sdk.AccAddress) exported.Role {
 			return exported.Role(rand.Of(maps.Keys(exported.Role_name)...))
 		}
 	}
 
 	signerIsNot := func(role exported.Role) func() {
+		signers = slices.Expand(func(_ int) sdk.AccAddress { return rand.AccAddr() }, int(rand.I64Between(1, 5)))
 		return func() {
 			permission.GetRoleFunc = func(sdk.Context, sdk.AccAddress) exported.Role {
 				filtered := slices.Filter(maps.Keys(exported.Role_name), func(k int32) bool { return k != int32(role) })
 				return exported.Role(rand.Of(filtered...))
 			}
+		}
+	}
+
+	noSigner := func() {
+		signers = []sdk.AccAddress{}
+		permission.GetRoleFunc = func(_ sdk.Context, addr sdk.AccAddress) exported.Role {
+			if len(addr) == 0 {
+				return exported.ROLE_UNRESTRICTED
+			}
+
+			return exported.Role(rand.Of(maps.Keys(exported.Role_name)...))
 		}
 	}
 
@@ -59,7 +73,7 @@ func TestRestrictedTx(t *testing.T) {
 				return slices.Expand(func(_ int) sdk.Msg {
 					return &mock.MsgMock{
 						GetSignersFunc: func() []sdk.AccAddress {
-							return slices.Expand(func(_ int) sdk.AccAddress { return rand.AccAddr() }, int(rand.I64Between(1, 5)))
+							return signers
 						},
 						DescriptorFunc: msg.Descriptor,
 					}
@@ -92,6 +106,22 @@ func TestRestrictedTx(t *testing.T) {
 
 		When("msg role is access control", msgRoleIsAccessControl).
 			When("signer is not access control", signerIsNot(exported.ROLE_ACCESS_CONTROL)).
+			Then("stop tx", stopTx),
+
+		When("msg role is unrestricted", msgRoleIsUnrestricted).
+			When("there is no signer", noSigner).
+			Then("let the msg through", letTxThrough),
+
+		When("msg role is unspecified", msgRoleIsUnspecified).
+			When("there is no signer", noSigner).
+			Then("let the msg through", letTxThrough),
+
+		When("msg role is chain management", msgRoleIsChainManagement).
+			When("there is no signer", noSigner).
+			Then("stop tx", stopTx),
+
+		When("msg role is access control", msgRoleIsAccessControl).
+			When("there is no signer", noSigner).
 			Then("stop tx", stopTx),
 	).Run(t, 20)
 }
