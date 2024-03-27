@@ -9,7 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils/events"
-	"github.com/axelarnetwork/axelar-core/x/batch/types"
+	"github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 )
 
 var _ types.MsgServiceServer = msgServer{}

@@ -4,6 +4,25 @@
 
 ## Table of Contents
 
+- [axelar/auxiliary/v1beta1/events.proto](#axelar/auxiliary/v1beta1/events.proto)
+    - [BatchedMessageFailed](#axelar.auxiliary.v1beta1.BatchedMessageFailed)
+  
+- [axelar/auxiliary/v1beta1/genesis.proto](#axelar/auxiliary/v1beta1/genesis.proto)
+    - [GenesisState](#axelar.auxiliary.v1beta1.GenesisState)
+  
+- [axelar/permission/exported/v1beta1/types.proto](#axelar/permission/exported/v1beta1/types.proto)
+    - [Role](#axelar.permission.exported.v1beta1.Role)
+  
+    - [File-level Extensions](#axelar/permission/exported/v1beta1/types.proto-extensions)
+  
+- [axelar/auxiliary/v1beta1/tx.proto](#axelar/auxiliary/v1beta1/tx.proto)
+    - [BatchRequest](#axelar.auxiliary.v1beta1.BatchRequest)
+    - [BatchResponse](#axelar.auxiliary.v1beta1.BatchResponse)
+    - [BatchResponse.Response](#axelar.auxiliary.v1beta1.BatchResponse.Response)
+  
+- [axelar/auxiliary/v1beta1/service.proto](#axelar/auxiliary/v1beta1/service.proto)
+    - [MsgService](#axelar.auxiliary.v1beta1.MsgService)
+  
 - [axelar/axelarnet/v1beta1/events.proto](#axelar/axelarnet/v1beta1/events.proto)
     - [AxelarTransferCompleted](#axelar.axelarnet.v1beta1.AxelarTransferCompleted)
     - [ContractCallSubmitted](#axelar.axelarnet.v1beta1.ContractCallSubmitted)
@@ -122,11 +141,6 @@
     - [PendingIBCTransferCountResponse](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse)
     - [PendingIBCTransferCountResponse.TransfersByChainEntry](#axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse.TransfersByChainEntry)
   
-- [axelar/permission/exported/v1beta1/types.proto](#axelar/permission/exported/v1beta1/types.proto)
-    - [Role](#axelar.permission.exported.v1beta1.Role)
-  
-    - [File-level Extensions](#axelar/permission/exported/v1beta1/types.proto-extensions)
-  
 - [axelar/axelarnet/v1beta1/tx.proto](#axelar/axelarnet/v1beta1/tx.proto)
     - [AddCosmosBasedChainRequest](#axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest)
     - [AddCosmosBasedChainResponse](#axelar.axelarnet.v1beta1.AddCosmosBasedChainResponse)
@@ -154,20 +168,6 @@
 - [axelar/axelarnet/v1beta1/service.proto](#axelar/axelarnet/v1beta1/service.proto)
     - [MsgService](#axelar.axelarnet.v1beta1.MsgService)
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
-  
-- [axelar/batch/v1beta1/events.proto](#axelar/batch/v1beta1/events.proto)
-    - [BatchedMessageFailed](#axelar.batch.v1beta1.BatchedMessageFailed)
-  
-- [axelar/batch/v1beta1/genesis.proto](#axelar/batch/v1beta1/genesis.proto)
-    - [GenesisState](#axelar.batch.v1beta1.GenesisState)
-  
-- [axelar/batch/v1beta1/tx.proto](#axelar/batch/v1beta1/tx.proto)
-    - [BatchRequest](#axelar.batch.v1beta1.BatchRequest)
-    - [BatchResponse](#axelar.batch.v1beta1.BatchResponse)
-    - [BatchResponse.Response](#axelar.batch.v1beta1.BatchResponse.Response)
-  
-- [axelar/batch/v1beta1/service.proto](#axelar/batch/v1beta1/service.proto)
-    - [MsgService](#axelar.batch.v1beta1.MsgService)
   
 - [axelar/snapshot/exported/v1beta1/types.proto](#axelar/snapshot/exported/v1beta1/types.proto)
     - [Participant](#axelar.snapshot.exported.v1beta1.Participant)
@@ -602,6 +602,191 @@
     - [QueryService](#axelar.vote.v1beta1.QueryService)
   
 - [Scalar Value Types](#scalar-value-types)
+
+
+
+<a name="axelar/auxiliary/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/auxiliary/v1beta1/events.proto
+
+
+
+<a name="axelar.auxiliary.v1beta1.BatchedMessageFailed"></a>
+
+### BatchedMessageFailed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `index` | [int32](#int32) |  |  |
+| `error` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/auxiliary/v1beta1/genesis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/auxiliary/v1beta1/genesis.proto
+
+
+
+<a name="axelar.auxiliary.v1beta1.GenesisState"></a>
+
+### GenesisState
+GenesisState represents the genesis state
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/permission/exported/v1beta1/types.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/permission/exported/v1beta1/types.proto
+
+
+ <!-- end messages -->
+
+
+<a name="axelar.permission.exported.v1beta1.Role"></a>
+
+### Role
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ROLE_UNSPECIFIED | 0 |  |
+| ROLE_UNRESTRICTED | 1 |  |
+| ROLE_CHAIN_MANAGEMENT | 2 |  |
+| ROLE_ACCESS_CONTROL | 3 |  |
+
+
+ <!-- end enums -->
+
+
+<a name="axelar/permission/exported/v1beta1/types.proto-extensions"></a>
+
+### File-level Extensions
+| Extension | Type | Base | Number | Description |
+| --------- | ---- | ---- | ------ | ----------- |
+| `permission_role` | Role | .google.protobuf.MessageOptions | 50000 | 50000-99999 reserved for use withing individual organizations |
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/auxiliary/v1beta1/tx.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/auxiliary/v1beta1/tx.proto
+
+
+
+<a name="axelar.auxiliary.v1beta1.BatchRequest"></a>
+
+### BatchRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sender` | [bytes](#bytes) |  |  |
+| `messages` | [google.protobuf.Any](#google.protobuf.Any) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.auxiliary.v1beta1.BatchResponse"></a>
+
+### BatchResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `responses` | [BatchResponse.Response](#axelar.auxiliary.v1beta1.BatchResponse.Response) | repeated |  |
+
+
+
+
+
+
+<a name="axelar.auxiliary.v1beta1.BatchResponse.Response"></a>
+
+### BatchResponse.Response
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `result` | [cosmos.base.abci.v1beta1.Result](#cosmos.base.abci.v1beta1.Result) |  |  |
+| `err` | [string](#string) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
+<a name="axelar/auxiliary/v1beta1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/auxiliary/v1beta1/service.proto
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="axelar.auxiliary.v1beta1.MsgService"></a>
+
+### MsgService
+Msg defines the nexus Msg service.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Batch` | [BatchRequest](#axelar.auxiliary.v1beta1.BatchRequest) | [BatchResponse](#axelar.auxiliary.v1beta1.BatchResponse) |  | POST|/axelar/auxiliary/batch|
+
+ <!-- end services -->
 
 
 
@@ -2258,44 +2443,6 @@ ParamsRequest represents a message that queries the params
 
 
 
-<a name="axelar/permission/exported/v1beta1/types.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/permission/exported/v1beta1/types.proto
-
-
- <!-- end messages -->
-
-
-<a name="axelar.permission.exported.v1beta1.Role"></a>
-
-### Role
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| ROLE_UNSPECIFIED | 0 |  |
-| ROLE_UNRESTRICTED | 1 |  |
-| ROLE_CHAIN_MANAGEMENT | 2 |  |
-| ROLE_ACCESS_CONTROL | 3 |  |
-
-
- <!-- end enums -->
-
-
-<a name="axelar/permission/exported/v1beta1/types.proto-extensions"></a>
-
-### File-level Extensions
-| Extension | Type | Base | Number | Description |
-| --------- | ---- | ---- | ------ | ----------- |
-| `permission_role` | Role | .google.protobuf.MessageOptions | 50000 | 50000-99999 reserved for use withing individual organizations |
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
 <a name="axelar/axelarnet/v1beta1/tx.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -2668,153 +2815,6 @@ QueryService defines the gRPC querier service.
 | `Params` | [ParamsRequest](#axelar.axelarnet.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.axelarnet.v1beta1.ParamsResponse) |  | GET|/axelar/axelarnet/v1beta1/params|
 | `IBCPath` | [IBCPathRequest](#axelar.axelarnet.v1beta1.IBCPathRequest) | [IBCPathResponse](#axelar.axelarnet.v1beta1.IBCPathResponse) |  | GET|/axelar/axelarnet/v1beta1/ibc_path/{chain}|
 | `ChainByIBCPath` | [ChainByIBCPathRequest](#axelar.axelarnet.v1beta1.ChainByIBCPathRequest) | [ChainByIBCPathResponse](#axelar.axelarnet.v1beta1.ChainByIBCPathResponse) |  | GET|/axelar/axelarnet/v1beta1/chain_by_ibc_path/{ibc_path}|
-
- <!-- end services -->
-
-
-
-<a name="axelar/batch/v1beta1/events.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/batch/v1beta1/events.proto
-
-
-
-<a name="axelar.batch.v1beta1.BatchedMessageFailed"></a>
-
-### BatchedMessageFailed
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `index` | [int32](#int32) |  |  |
-| `error` | [string](#string) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/batch/v1beta1/genesis.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/batch/v1beta1/genesis.proto
-
-
-
-<a name="axelar.batch.v1beta1.GenesisState"></a>
-
-### GenesisState
-GenesisState represents the genesis state
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/batch/v1beta1/tx.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/batch/v1beta1/tx.proto
-
-
-
-<a name="axelar.batch.v1beta1.BatchRequest"></a>
-
-### BatchRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
-| `messages` | [google.protobuf.Any](#google.protobuf.Any) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.batch.v1beta1.BatchResponse"></a>
-
-### BatchResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `responses` | [BatchResponse.Response](#axelar.batch.v1beta1.BatchResponse.Response) | repeated |  |
-
-
-
-
-
-
-<a name="axelar.batch.v1beta1.BatchResponse.Response"></a>
-
-### BatchResponse.Response
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `result` | [cosmos.base.abci.v1beta1.Result](#cosmos.base.abci.v1beta1.Result) |  |  |
-| `err` | [string](#string) |  |  |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="axelar/batch/v1beta1/service.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## axelar/batch/v1beta1/service.proto
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
-
-<a name="axelar.batch.v1beta1.MsgService"></a>
-
-### MsgService
-Msg defines the nexus Msg service.
-
-| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
-| ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Batch` | [BatchRequest](#axelar.batch.v1beta1.BatchRequest) | [BatchResponse](#axelar.batch.v1beta1.BatchResponse) |  | POST|/axelar/batch/batch|
 
  <!-- end services -->
 

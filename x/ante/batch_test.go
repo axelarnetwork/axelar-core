@@ -10,7 +10,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/ante"
 	"github.com/axelarnetwork/axelar-core/x/ante/types/mock"
-	batchtypes "github.com/axelarnetwork/axelar-core/x/batch/types"
+	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -22,7 +22,7 @@ func TestBatch(t *testing.T) {
 	var (
 		handler       sdk.AnteDecorator
 		tx            *mock.FeeTxMock
-		batchMsg      *batchtypes.BatchRequest
+		batchMsg      *auxiliarytypes.BatchRequest
 		unwrappedMsgs []sdk.Msg
 	)
 
@@ -35,10 +35,10 @@ func TestBatch(t *testing.T) {
 
 	givenBatchAnteHandler.
 		When("a BatchRequest contains nested batch message", func() {
-			req := batchtypes.NewBatchRequest(sender, []sdk.Msg{
+			req := auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{
 				votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3)))),
 			})
-			batchMsg = batchtypes.NewBatchRequest(sender, []sdk.Msg{req})
+			batchMsg = auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{req})
 		}).
 		Then("ante handler should return an error", func(t *testing.T) {
 			tx = &mock.FeeTxMock{
@@ -79,7 +79,7 @@ func TestBatch(t *testing.T) {
 
 	givenBatchAnteHandler.
 		When("a Batch Request is valid", func() {
-			batchMsg = batchtypes.NewBatchRequest(sender, []sdk.Msg{
+			batchMsg = auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{
 				votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3)))),
 				votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3)))),
 			})

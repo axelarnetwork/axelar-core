@@ -1,5 +1,5 @@
 syntax = "proto3";
-package axelar.batch.v1beta1;
+package axelar.auxiliary.v1beta1;
 
 import "google/protobuf/any.proto";
 import "gogoproto/gogo.proto";
@@ -8,7 +8,7 @@ import "axelar/permission/exported/v1beta1/types.proto";
 import "cosmos/base/abci/v1beta1/abci.proto";
 import "cosmos_proto/cosmos.proto";
 
-option go_package = "github.com/axelarnetwork/axelar-core/x/batch/types";
+option go_package = "github.com/axelarnetwork/axelar-core/x/auxiliary/types";
 
 message BatchRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;

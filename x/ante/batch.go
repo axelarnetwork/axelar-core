@@ -5,7 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	batchtypes "github.com/axelarnetwork/axelar-core/x/batch/types"
+	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 )
 
 // txWithUnwrappedMsgs implements the FeeTx interface
@@ -60,12 +60,12 @@ func unpackMsgs(msgs []sdk.Msg) ([]sdk.Msg, error) {
 	idx := 0
 
 	for i, msg := range msgs {
-		if batchReq, ok := msg.(*batchtypes.BatchRequest); ok {
+		if batchReq, ok := msg.(*auxiliarytypes.BatchRequest); ok {
 			// Bulk append messages, including the current batch request
 			unpackedMsgs = append(unpackedMsgs, msgs[idx:i+1]...)
 
 			innerMsgs := batchReq.UnwrapMessages()
-			if batchtypes.AnyBatch(innerMsgs) {
+			if auxiliarytypes.AnyBatch(innerMsgs) {
 				return []sdk.Msg{}, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "nested batch requests are not allowed")
 			}
 			unpackedMsgs = append(unpackedMsgs, innerMsgs...)

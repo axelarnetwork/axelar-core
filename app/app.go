@@ -100,13 +100,13 @@ import (
 
 	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/x/ante"
+	"github.com/axelarnetwork/axelar-core/x/auxiliary"
+	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
 	axelarnetclient "github.com/axelarnetwork/axelar-core/x/axelarnet/client"
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	axelarbankkeeper "github.com/axelarnetwork/axelar-core/x/bank/keeper"
-	"github.com/axelarnetwork/axelar-core/x/batch"
-	batchtypes "github.com/axelarnetwork/axelar-core/x/batch/types"
 	"github.com/axelarnetwork/axelar-core/x/evm"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -659,7 +659,7 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 			bApp.Router(),
 		),
 		permission.NewAppModule(*getKeeper[permissionKeeper.Keeper](keepers)),
-		batch.NewAppModule(encodingConfig.Codec, bApp.MsgServiceRouter()),
+		auxiliary.NewAppModule(encodingConfig.Codec, bApp.MsgServiceRouter()),
 	)
 
 	return appModules
@@ -794,7 +794,7 @@ func orderMigrations() []string {
 		permissionTypes.ModuleName,
 		snapTypes.ModuleName,
 		axelarnetTypes.ModuleName,
-		batchtypes.ModuleName,
+		auxiliarytypes.ModuleName,
 	)
 	return migrationOrder
 }
@@ -845,7 +845,7 @@ func orderBeginBlockers() []string {
 		snapTypes.ModuleName,
 		axelarnetTypes.ModuleName,
 		voteTypes.ModuleName,
-		batchtypes.ModuleName,
+		auxiliarytypes.ModuleName,
 	)
 	return beginBlockerOrder
 }
@@ -891,7 +891,7 @@ func orderEndBlockers() []string {
 		axelarnetTypes.ModuleName,
 		permissionTypes.ModuleName,
 		voteTypes.ModuleName,
-		batchtypes.ModuleName,
+		auxiliarytypes.ModuleName,
 	)
 	return endBlockerOrder
 }
@@ -940,7 +940,7 @@ func orderModulesForGenesis() []string {
 		axelarnetTypes.ModuleName,
 		rewardTypes.ModuleName,
 		permissionTypes.ModuleName,
-		batchtypes.ModuleName,
+		auxiliarytypes.ModuleName,
 	)
 	return genesisOrder
 }
@@ -1111,7 +1111,7 @@ func GetModuleBasics() module.BasicManager {
 		axelarnet.AppModuleBasic{},
 		reward.AppModuleBasic{},
 		permission.AppModuleBasic{},
-		batch.AppModuleBasic{},
+		auxiliary.AppModuleBasic{},
 	}
 
 	if IsWasmEnabled() {

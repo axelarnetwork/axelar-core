@@ -7,6 +7,6 @@ import (
 // module errors
 var (
 	// Code 1 is a reserved code for internal errors and should not be used for anything else
-	_        = sdkerrors.Register(ModuleName, 1, "internal error")
-	ErrBatch = sdkerrors.Register(ModuleName, 2, "batch module error")
+	_            = sdkerrors.Register(ModuleName, 1, "internal error")
+	ErrAuxiliary = sdkerrors.Register(ModuleName, 2, "auxiliary module error")
 )

@@ -14,8 +14,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/x/batch/keeper"
-	"github.com/axelarnetwork/axelar-core/x/batch/types"
+	"github.com/axelarnetwork/axelar-core/x/auxiliary/keeper"
+	"github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -36,7 +36,7 @@ func TestBatching(t *testing.T) {
 		innerMessages        []sdk.Msg
 	)
 
-	givenMsgServer := Given("a Batch msg server", func() {
+	givenMsgServer := Given("an Auxiliary msg server", func() {
 		ctx = rand2.Context(fake.NewMultiStore())
 		msgServiceRouter = bam.NewMsgServiceRouter()
 
