@@ -3,6 +3,7 @@ package events_test
 // add types packages for all modules here
 import (
 	_ "github.com/axelarnetwork/axelar-core/x/ante/types"
+	_ "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	_ "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	_ "github.com/axelarnetwork/axelar-core/x/evm/types"
 	_ "github.com/axelarnetwork/axelar-core/x/multisig/types"

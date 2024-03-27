@@ -1,0 +1,11 @@
+syntax = "proto3";
+package axelar.auxiliary.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/auxiliary/types";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// GenesisState represents the genesis state
+message GenesisState {}
