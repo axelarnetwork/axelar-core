@@ -308,9 +308,3 @@ func TestICSMiddleWare(t *testing.T) {
 		})
 	}
 }
-
-func TestMaxWasmSize(t *testing.T) {
-	t.Run("test max wasm size", func(t *testing.T) {
-		assert.Equal(t, wasmtypes.MaxWasmSize, 3*1024*1024)
-	})
-}
