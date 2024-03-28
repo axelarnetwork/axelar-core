@@ -15,7 +15,7 @@ name: Upload core binary to Cloudflare R2 bucket
 on:
   push:
     paths:
-      - '**.yaml'
+      - '**.yml'
     branches:
       - refactor/change-axelard-prerelase-r2-structure
 
