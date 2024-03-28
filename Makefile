@@ -9,14 +9,17 @@ HTTPS_GIT := https://github.com/axelarnetwork/axelar-core.git
 PUSH_DOCKER_IMAGE := true
 
 # Default values that can be overridden by the caller via `make VAR=value [target]`
+# NOTE: Avoid adding comments on the same line as the variable assignment since trailing spaces will be included in the variable by make
 WASM := true
-MAX_WASM_SIZE := $(shell echo "$$((3 * 1024 * 1024))")  # 3 MB max wasm bytecode size
+# 3 MB max wasm bytecode size
+MAX_WASM_SIZE := $(shell echo "$$((3 * 1024 * 1024))")
 IBC_WASM_HOOKS := false
 # Export env var to go build so Cosmos SDK can see it
 export CGO_ENABLED := 1
 
 $(info $$WASM is [${WASM}])
 $(info $$IBC_WASM_HOOKS is [${IBC_WASM_HOOKS}])
+$(info $$MAX_WASM_SIZE is [${MAX_WASM_SIZE}])
 $(info $$CGO_ENABLED is [${CGO_ENABLED}])
 
 ifndef $(WASM_CAPABILITIES)
