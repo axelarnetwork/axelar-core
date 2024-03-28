@@ -67,6 +67,10 @@ func (k Keeper) GetGovernanceKey(ctx sdk.Context) (multisig.LegacyAminoPubKey, b
 
 // GetRole returns the role of the given account address
 func (k Keeper) GetRole(ctx sdk.Context, address sdk.AccAddress) exported.Role {
+	if address.Empty() {
+		return exported.ROLE_UNRESTRICTED
+	}
+
 	govAccount, ok := k.getGovAccount(ctx, address)
 	if !ok {
 		return exported.ROLE_UNRESTRICTED
