@@ -1,4 +1,4 @@
-name: Upload core binary to Cloudflare R2 bucket
+name: Upload core binary to Cloudflare R2
 
 # on:
 #   push:
