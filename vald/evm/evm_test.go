@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
@@ -52,19 +53,24 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 				Status:      geth.ReceiptStatusFailed,
 			}
 
-			rpcClient.TransactionReceiptFunc = func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
-				if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
-					return receipt, nil
-				}
+			cache.GetFunc = func(_ nexus.ChainName) *big.Int {
+				return receipt.BlockNumber
+			}
+			rpcClient.TransactionReceiptsFunc = func(ctx context.Context, txHashes []common.Hash) ([]evmRpc.TxReceiptResult, error) {
+				return slices.Map(txHashes, func(hash common.Hash) evmRpc.TxReceiptResult {
+					if bytes.Equal(hash.Bytes(), tx.Hash().Bytes()) {
+						return evmRpc.TxReceiptResult(results.FromOk(*receipt))
+					}
 
-				return nil, fmt.Errorf("not found")
+					return evmRpc.TxReceiptResult(results.FromErr[geth.Receipt](ethereum.NotFound))
+				}), nil
 			}
 		}).
-		Then("tx is considered not finalized", func(t *testing.T) {
+		Then("tx is considered failed", func(t *testing.T) {
 			txReceipt, err := mgr.GetTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
 
 			assert.NoError(t, err)
-			assert.Nil(t, txReceipt)
+			assert.Equal(t, txReceipt.Err(), evm.ErrTxFailed)
 		}).
 		Run(t)
 
@@ -82,12 +88,14 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 				Status:      geth.ReceiptStatusSuccessful,
 			}
 
-			rpcClient.TransactionReceiptFunc = func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
-				if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
-					return receipt, nil
-				}
+			rpcClient.TransactionReceiptsFunc = func(ctx context.Context, txHashes []common.Hash) ([]evmRpc.TxReceiptResult, error) {
+				return slices.Map(txHashes, func(hash common.Hash) evmRpc.TxReceiptResult {
+					if bytes.Equal(hash.Bytes(), tx.Hash().Bytes()) {
+						return evmRpc.TxReceiptResult(results.FromOk(*receipt))
+					}
 
-				return nil, fmt.Errorf("not found")
+					return evmRpc.TxReceiptResult(results.FromErr[geth.Receipt](ethereum.NotFound))
+				}), nil
 			}
 			rpcClient.HeaderByNumberFunc = func(ctx context.Context, number *big.Int) (*evmRpc.Header, error) {
 				if number.Cmp(receipt.BlockNumber) == 0 {
@@ -104,7 +112,8 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 			txReceipt, err := mgr.GetTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
 
 			assert.NoError(t, err)
-			assert.NotNil(t, txReceipt)
+			assert.NoError(t, txReceipt.Err())
+			assert.NotNil(t, txReceipt.Ok())
 		}).
 		Run(t, 5)
 
@@ -121,12 +130,14 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 				Status:      geth.ReceiptStatusSuccessful,
 			}
 
-			rpcClient.TransactionReceiptFunc = func(_ context.Context, txHash common.Hash) (*geth.Receipt, error) {
-				if bytes.Equal(txHash.Bytes(), tx.Hash().Bytes()) {
-					return receipt, nil
-				}
+			rpcClient.TransactionReceiptsFunc = func(ctx context.Context, txHashes []common.Hash) ([]evmRpc.TxReceiptResult, error) {
+				return slices.Map(txHashes, func(hash common.Hash) evmRpc.TxReceiptResult {
+					if bytes.Equal(hash.Bytes(), tx.Hash().Bytes()) {
+						return evmRpc.TxReceiptResult(results.FromOk(*receipt))
+					}
 
-				return nil, fmt.Errorf("not found")
+					return evmRpc.TxReceiptResult(results.FromErr[geth.Receipt](ethereum.NotFound))
+				}), nil
 			}
 			rpcClient.HeaderByNumberFunc = func(ctx context.Context, number *big.Int) (*evmRpc.Header, error) {
 				if number.Cmp(receipt.BlockNumber) == 0 {
@@ -140,7 +151,8 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 			txReceipt, err := mgr.GetTxReceiptIfFinalized(chain, tx.Hash(), confHeight)
 
 			assert.NoError(t, err)
-			assert.NotNil(t, txReceipt)
+			assert.NoError(t, txReceipt.Err())
+			assert.NotNil(t, txReceipt.Ok())
 		}).
 		Run(t, 5)
 }
@@ -177,9 +189,9 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 			When("transactions failed", func() {
 				latestFinalizedBlockNumber = rand.I64Between(1000, 10000)
 
-				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.Result, error) {
-					return slices.Map(txHashes, func(hash common.Hash) evmRpc.Result {
-						return evmRpc.Result(results.FromOk(&geth.Receipt{
+				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.TxReceiptResult, error) {
+					return slices.Map(txHashes, func(hash common.Hash) evmRpc.TxReceiptResult {
+						return evmRpc.TxReceiptResult(results.FromOk(geth.Receipt{
 							BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
 							TxHash:      hash,
 							Status:      geth.ReceiptStatusFailed,
@@ -189,16 +201,17 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 			}).
 				Then("should not retrieve receipts", func(t *testing.T) {
 					receipts, err := mgr.GetTxReceiptsIfFinalized(chain, txHashes, confHeight)
+
 					assert.NoError(t, err)
-					slices.ForEach(receipts, func(result results.Result[*geth.Receipt]) { assert.Equal(t, result.Err(), evm.ErrTxFailed) })
+					slices.ForEach(receipts, func(result results.Result[geth.Receipt]) { assert.Equal(t, result.Err(), evm.ErrTxFailed) })
 				}),
 
 			When("transactions are finalized", func() {
 				latestFinalizedBlockNumber = rand.I64Between(1000, 10000)
 
-				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.Result, error) {
-					return slices.Map(txHashes, func(hash common.Hash) evmRpc.Result {
-						return evmRpc.Result(results.FromOk(&geth.Receipt{
+				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.TxReceiptResult, error) {
+					return slices.Map(txHashes, func(hash common.Hash) evmRpc.TxReceiptResult {
+						return evmRpc.TxReceiptResult(results.FromOk(geth.Receipt{
 							BlockNumber: big.NewInt(latestFinalizedBlockNumber - rand.I64Between(1, 100)),
 							TxHash:      hash,
 							Status:      geth.ReceiptStatusSuccessful,
@@ -208,14 +221,15 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 			}).
 				Then("should return receipt results", func(t *testing.T) {
 					receipts, err := mgr.GetTxReceiptsIfFinalized(chain, txHashes, confHeight)
+
 					assert.NoError(t, err)
-					assert.True(t, slices.All(receipts, func(result results.Result[*geth.Receipt]) bool { return result.Err() == nil }))
+					assert.True(t, slices.All(receipts, func(result results.Result[geth.Receipt]) bool { return result.Err() == nil }))
 				}),
 
 			When("some transactions are not finalized", func() {
-				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.Result, error) {
+				evmClient.TransactionReceiptsFunc = func(_ context.Context, _ []common.Hash) ([]evmRpc.TxReceiptResult, error) {
 					i := 0
-					return slices.Map(txHashes, func(hash common.Hash) evmRpc.Result {
+					return slices.Map(txHashes, func(hash common.Hash) evmRpc.TxReceiptResult {
 						var blockNumber *big.Int
 						// half of the transactions are finalized
 						if i < len(txHashes)/2 {
@@ -225,7 +239,7 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 						}
 						i++
 
-						return evmRpc.Result(results.FromOk(&geth.Receipt{
+						return evmRpc.TxReceiptResult(results.FromOk(geth.Receipt{
 							BlockNumber: blockNumber,
 							TxHash:      hash,
 							Status:      geth.ReceiptStatusSuccessful,
@@ -235,13 +249,13 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 			}).
 				Then("should return error results for not found", func(t *testing.T) {
 					receipts, err := mgr.GetTxReceiptsIfFinalized(chain, txHashes, confHeight)
-					assert.NoError(t, err)
 
+					assert.NoError(t, err)
 					finalized := receipts[:len(txHashes)/2]
 					notFinalized := receipts[len(txHashes)/2:]
 
-					assert.True(t, slices.All(finalized, func(result results.Result[*geth.Receipt]) bool { return result.Err() == nil }))
-					assert.True(t, slices.All(notFinalized, func(result results.Result[*geth.Receipt]) bool { return result.Err() == evm.ErrNotFinalized }))
+					assert.True(t, slices.All(finalized, func(result results.Result[geth.Receipt]) bool { return result.Err() == nil }))
+					assert.True(t, slices.All(notFinalized, func(result results.Result[geth.Receipt]) bool { return result.Err() == evm.ErrNotFinalized }))
 				}),
 		).
 		Run(t, 5)
