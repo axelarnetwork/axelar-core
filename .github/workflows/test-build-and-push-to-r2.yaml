@@ -14,10 +14,6 @@ name: Test upload core binary to R2
 
 on:
   push:
-    paths:
-      - '**.yml'
-    branches:
-      - refactor/r2-binary-saving-structure
 
 
 jobs:
