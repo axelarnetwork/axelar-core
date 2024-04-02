@@ -130,6 +130,16 @@ jobs:
           S3_PATH: s3://axelar-releases/axelard/${{ github.event.inputs.tag }}
         run: |
           aws s3 cp ./bin ${S3_PATH}/ --recursive
+      
+      - name: Upload binaries to Cloudflare R2
+        uses: ryand56/r2-upload-action@latest
+        with:
+          r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          r2-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_CF }}
+          r2-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CF }}
+          r2-bucket: ${{ secrets.R2_BUCKET }}
+          source-dir: ./bin
+          destination-dir: ./releases/axelard/
 
   release-docker:
 

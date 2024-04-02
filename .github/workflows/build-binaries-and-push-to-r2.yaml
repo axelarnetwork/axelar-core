@@ -1,0 +1,65 @@
+name: Upload core binary to Cloudflare R2 bucket
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Github branch to checkout for build
+        required: true
+        default: main
+        type: string
+
+jobs:
+    build-and-upload:
+        name: Build binary and push to R2
+        runs-on: ubuntu-20.04
+        permissions:
+            contents: write
+            packages: write
+            id-token: write
+        steps:
+            - name: Determine branch
+              id: get-branch-name
+              run: |
+                if [ "${{ github.event_name }}" == "push" ]; then
+                  branch="main"
+                else
+                  branch="${{ inputs.branch }}"
+                fi
+                echo "branch=$branch" >> $GITHUB_OUTPUT
+
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: "0"
+                path: axelar-core
+                submodules: recursive
+                ref: ${{ steps.get-branch-name.outputs.branch }}
+            
+            - name: Build axelard binary with version and commit hash
+              id: build-binary
+              run: |
+                cd axelar-core
+                make build
+                semver=$(git describe --tags)
+                commit_hash=$(git rev-parse --short HEAD)
+                echo "Semantic Version of current binary: $semver"
+                cd ..
+                mkdir -p ./binary_file/$commit_hash/
+                sudo mv axelar-core/bin/axelard ./binary_file/$commit_hash/axelard-linux-amd64-$semver
+                echo "binary-directory=./binary_file" >> $GITHUB_OUTPUT
+              
+            - name: List contents of root directory
+              run: ls -la
+          
+            - uses: ryand56/r2-upload-action@latest
+              with:
+                r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
+                r2-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_CF }}
+                r2-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CF }}
+                r2-bucket: ${{ secrets.R2_BUCKET }}
+                source-dir: ${{ steps.build-binary.outputs.binary-directory }}
+                destination-dir: ./pre-releases/axelard/
