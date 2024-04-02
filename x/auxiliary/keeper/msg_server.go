@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -15,13 +14,11 @@ import (
 var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
-	cdc    codec.Codec
 	router *baseapp.MsgServiceRouter
 }
 
-func NewMsgServer(cdc codec.Codec, msgServiceRouter *baseapp.MsgServiceRouter) types.MsgServiceServer {
+func NewMsgServer(msgServiceRouter *baseapp.MsgServiceRouter) types.MsgServiceServer {
 	return msgServer{
-		cdc,
 		msgServiceRouter,
 	}
 }

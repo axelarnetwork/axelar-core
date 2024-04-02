@@ -42,10 +42,6 @@ func (m BatchRequest) ValidateBasic() error {
 			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "message signer mismatch")
 		}
 
-		if !equalAccAddresses(msg.GetSigners(), m.GetSigners()) {
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "message signer mismatch")
-		}
-
 		if err := msg.ValidateBasic(); err != nil {
 			return err
 		}

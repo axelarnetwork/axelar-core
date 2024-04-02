@@ -46,7 +46,7 @@ func TestBatching(t *testing.T) {
 			return votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3))))
 		}, int(rand2.I64Between(2, 10)))
 
-		msgServer = keeper.NewMsgServer(appParams.MakeEncodingConfig().Codec, msgServiceRouter)
+		msgServer = keeper.NewMsgServer(msgServiceRouter)
 	})
 
 	withBatchRequest := func() GivenStatement {
