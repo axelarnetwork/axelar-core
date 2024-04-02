@@ -46,13 +46,13 @@ jobs:
             - name: Build axelard binary with version and commit hash
               id: build-binary
               run: |
-                commit_hash=$(git rev-parse --short HEAD)
-                mkdir -p ./binary_file/$commit_hash/
                 cd axelar-core
                 make build
                 semver=$(git describe --tags)
+                commit_hash=$(git rev-parse --short HEAD)
                 echo "Semantic Version of current binary: $semver"
                 cd ..
+                mkdir -p ./binary_file/$commit_hash/
                 sudo mv axelar-core/bin/axelard ./binary_file/$commit_hash/axelard-linux-amd64-$semver
                 echo "binary-directory=./binary_file" >> $GITHUB_OUTPUT
               
