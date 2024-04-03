@@ -226,7 +226,7 @@ jobs:
           SEMVER: ${{ github.event.inputs.tag }}
 
       - name: Sign the images with GitHub OIDC
-        run: cosign sign --oidc-issuer https://token.actions.githubusercontent.com ${TAGS}
+        run: cosign sign -y --oidc-issuer https://token.actions.githubusercontent.com ${TAGS}
         env:
           TAGS: axelarnet/axelar-core:${{ github.event.inputs.tag }}
           COSIGN_EXPERIMENTAL: 1
