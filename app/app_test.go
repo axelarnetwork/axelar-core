@@ -1,10 +1,12 @@
 package app_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -48,6 +50,34 @@ func TestNewAxelarApp(t *testing.T) {
 					[]wasm.Option{},
 				)
 			})
+		})
+	}
+}
+
+func TestMaxWasmSizeOverride(t *testing.T) {
+	version.Version = "0.27.0"
+
+	testCases := []int{1, 100, 3 * 1024 * 1024}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("max wasm code size: %d", testCase), func(t *testing.T) {
+			app.MaxWasmSize = fmt.Sprintf("%d", testCase)
+
+			app.NewAxelarApp(
+				log.TestingLogger(),
+				dbm.NewMemDB(),
+				nil,
+				true,
+				nil,
+				"",
+				"",
+				0,
+				app.MakeEncodingConfig(),
+				simapp.EmptyAppOptions{},
+				[]wasm.Option{},
+			)
+
+			assert.Equal(t, testCase, wasmtypes.MaxWasmSize)
 		})
 	}
 }
