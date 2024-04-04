@@ -101,7 +101,7 @@ func (d CheckRefundFeeDecorator) validateRefundQualification(ctx sdk.Context, ms
 				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "signer is not associated with a validator")
 			}
 		default:
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("message type %T is not refundable", msg))
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("all messages in a transaction must be refundable, message type %T is not refundable", msg))
 		}
 	}
 
