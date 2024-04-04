@@ -2,30 +2,30 @@ package app_test
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/app/params"
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/axelarnetwork/utils/funcs"
-	"github.com/cosmos/cosmos-sdk/simapp/helpers"
-	"github.com/cosmos/cosmos-sdk/testutil/testdata"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-	abci "github.com/tendermint/tendermint/proto/tendermint/types"
 	"testing"
 	"time"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
+	"github.com/cosmos/cosmos-sdk/simapp/helpers"
+	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/stretchr/testify/assert"
+	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+	abci "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc/encoding"
 	encproto "google.golang.org/grpc/encoding/proto"
 
 	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/types"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 func TestNewAxelarApp(t *testing.T) {
