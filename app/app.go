@@ -156,6 +156,10 @@ var (
 	// WasmCapabilities specifies the capabilities of the wasm vm
 	// capabilities are detailed here: https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
 	WasmCapabilities = ""
+
+	// MaxWasmSize specifies the maximum wasm code size (in bytes) that can be uploaded. wasmd's setting is used by default
+	// https://github.com/CosmWasm/wasmd/blob/main/README.md#compile-time-parameters
+	MaxWasmSize = ""
 )
 
 var (

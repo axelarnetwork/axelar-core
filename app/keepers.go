@@ -3,10 +3,12 @@ package app
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server/types"
@@ -70,6 +72,7 @@ import (
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/maps"
 )
 
@@ -163,6 +166,11 @@ func initStakingKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, ke
 
 func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *KeeperCache, bApp *bam.BaseApp, appOpts types.AppOptions, wasmOpts []wasm.Option, wasmDir string) *wasm.Keeper {
 	wasmConfig := mustReadWasmConfig(appOpts)
+
+	if MaxWasmSize != "" {
+		// Override the default max wasm code size
+		wasmtypes.MaxWasmSize = funcs.Must(strconv.Atoi(MaxWasmSize))
+	}
 
 	// The last arguments can contain custom message handlers, and custom query handlers,
 	// if we want to allow any custom callbacks
