@@ -14,14 +14,13 @@ type txWithUnwrappedMsgs struct {
 	messages []sdk.Msg
 }
 
-func (t txWithUnwrappedMsgs) ValidateBasic() error {
-	for _, message := range t.messages {
-		if err := message.ValidateBasic(); err != nil {
-			return err
-		}
+func newTxWithUnwrappedMsgs(tx sdk.Tx) (txWithUnwrappedMsgs, error) {
+	feeTx, ok := tx.(sdk.FeeTx)
+	if !ok {
+		return txWithUnwrappedMsgs{}, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx must be a FeeTx")
 	}
 
-	return nil
+	return txWithUnwrappedMsgs{feeTx, unpackMsgs(tx.GetMsgs())}, nil
 }
 
 func (t txWithUnwrappedMsgs) GetMsgs() []sdk.Msg {
@@ -42,39 +41,24 @@ func NewBatchDecorator(cdc codec.Codec) BatchDecorator {
 
 // AnteHandle record qualified refund for the multiSig and vote transactions
 func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	unwrappedMsgs, err := unpackMsgs(tx.GetMsgs())
+	tx, err := newTxWithUnwrappedMsgs(tx)
 	if err != nil {
 		return ctx, err
 	}
 
-	feeTx, ok := tx.(sdk.FeeTx)
-	if !ok {
-		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx must be a FeeTx")
-	}
-
-	return next(ctx, txWithUnwrappedMsgs{feeTx, unwrappedMsgs}, simulate)
+	return next(ctx, tx, simulate)
 }
 
-func unpackMsgs(msgs []sdk.Msg) ([]sdk.Msg, error) {
+func unpackMsgs(msgs []sdk.Msg) []sdk.Msg {
 	var unpackedMsgs []sdk.Msg
-	idx := 0
 
-	for i, msg := range msgs {
+	for _, msg := range msgs {
+		unpackedMsgs = append(unpackedMsgs, msg)
+
 		if batchReq, ok := msg.(*auxiliarytypes.BatchRequest); ok {
-			// Bulk append messages, including the current batch request
-			unpackedMsgs = append(unpackedMsgs, msgs[idx:i+1]...)
-
-			// Unwrap the batch request and append the messages
 			unpackedMsgs = append(unpackedMsgs, batchReq.UnwrapMessages()...)
-
-			idx = i + 1
 		}
 	}
 
-	// avoid copying the slice if there are no batch requests
-	if len(unpackedMsgs) == 0 {
-		return msgs, nil
-	}
-
-	return append(unpackedMsgs, msgs[idx:]...), nil
+	return unpackedMsgs
 }
