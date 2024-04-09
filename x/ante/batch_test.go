@@ -34,26 +34,6 @@ func TestBatch(t *testing.T) {
 	})
 
 	givenBatchAnteHandler.
-		When("a BatchRequest contains nested batch message", func() {
-			req := auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{
-				votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3)))),
-			})
-			batchMsg = auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{req})
-		}).
-		Then("ante handler should return an error", func(t *testing.T) {
-			tx = &mock.FeeTxMock{
-				GetMsgsFunc: func() []sdk.Msg {
-					return []sdk.Msg{batchMsg}
-				},
-			}
-
-			_, err := handler.AnteHandle(sdk.Context{}, tx, false,
-				func(sdk.Context, sdk.Tx, bool) (sdk.Context, error) { return sdk.Context{}, nil })
-			assert.ErrorContains(t, err, "nested batch")
-		}).
-		Run(t)
-
-	givenBatchAnteHandler.
 		When("messages do not contain batch", func() {
 			tx = &mock.FeeTxMock{
 				GetMsgsFunc: func() []sdk.Msg {

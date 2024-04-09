@@ -64,11 +64,8 @@ func unpackMsgs(msgs []sdk.Msg) ([]sdk.Msg, error) {
 			// Bulk append messages, including the current batch request
 			unpackedMsgs = append(unpackedMsgs, msgs[idx:i+1]...)
 
-			innerMsgs := batchReq.UnwrapMessages()
-			if auxiliarytypes.AnyBatch(innerMsgs) {
-				return []sdk.Msg{}, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "nested batch requests are not allowed")
-			}
-			unpackedMsgs = append(unpackedMsgs, innerMsgs...)
+			// Unwrap the batch request and append the messages
+			unpackedMsgs = append(unpackedMsgs, batchReq.UnwrapMessages()...)
 
 			idx = i + 1
 		}

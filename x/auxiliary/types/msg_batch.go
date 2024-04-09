@@ -33,7 +33,7 @@ func (m BatchRequest) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "empty batch")
 	}
 
-	if AnyBatch(m.UnwrapMessages()) {
+	if anyBatch(m.UnwrapMessages()) {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "nested batch requests are not allowed")
 	}
 
@@ -89,8 +89,8 @@ func equalAccAddresses(first, second []sdk.AccAddress) bool {
 	return true
 }
 
-// AnyBatch checks if any of the messages are a BatchRequest
-func AnyBatch(msgs []sdk.Msg) bool {
+// anyBatch checks if any of the messages are a BatchRequest
+func anyBatch(msgs []sdk.Msg) bool {
 	return slices.Any(msgs, func(msg sdk.Msg) bool {
 		_, ok := msg.(*BatchRequest)
 		return ok
