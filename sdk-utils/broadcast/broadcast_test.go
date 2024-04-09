@@ -103,7 +103,7 @@ func TestStatefulBroadcaster(t *testing.T) {
 		}
 	})
 
-	getAccountSequenceMismatch := When("get an account seuqence mismatch", func() {
+	getAccountSequenceMismatch := When("get an account sequence mismatch", func() {
 		clientMock.ABCIQueryWithOptionsFunc = func(context.Context, string, bytes.HexBytes, rpcclient.ABCIQueryOptions) (*coretypes.ResultABCIQuery, error) {
 			return nil, sdkerrors.ErrWrongSequence
 		}
@@ -112,6 +112,21 @@ func TestStatefulBroadcaster(t *testing.T) {
 	broadcastSucceeds := When("broadcast succeeds", func() {
 		clientMock.BroadcastTxSyncFunc = func(context.Context, tm.Tx) (*coretypes.ResultBroadcastTx, error) {
 			return &coretypes.ResultBroadcastTx{Code: abci.CodeTypeOK}, nil
+		}
+	})
+
+	broadcastSyncReturnsErrorCode := When("BroadcastTxSync returns error code", func() {
+		clientMock.BroadcastTxSyncFunc = func(context.Context, tm.Tx) (*coretypes.ResultBroadcastTx, error) {
+			return &coretypes.ResultBroadcastTx{
+				Code: mathRand.Uint32(),
+				Log:  "broadcast failed",
+			}, nil
+		}
+	})
+
+	broadcastSyncFails := When("BroadcastTxSync fails", func() {
+		clientMock.BroadcastTxSyncFunc = func(context.Context, tm.Tx) (*coretypes.ResultBroadcastTx, error) {
+			return nil, errors.New("broadcast failed")
 		}
 	})
 
@@ -222,6 +237,20 @@ func TestStatefulBroadcaster(t *testing.T) {
 	givenSetup.
 		When2(sendingNoMessages).
 		Then2(returnError).Run(t)
+
+	givenSetup.
+		When2(sendingMultipleMessages).
+		When2(accountExists).
+		When2(simulationSucceeds).
+		When2(broadcastSyncReturnsErrorCode).
+		Then2(returnErrorWithCode).Run(t)
+
+	givenSetup.
+		When2(sendingMultipleMessages).
+		When2(accountExists).
+		When2(simulationSucceeds).
+		When2(broadcastSyncFails).
+		Then2(returnError).Run(t)
 }
 
 func TestWithRefund(t *testing.T) {
@@ -308,12 +337,15 @@ func TestInBatches(t *testing.T) {
 					assert.Equal(t, msgs[0].String(), response.Events[0].Type)
 				}()
 				<-broadcastCalled
+				ensureGoRoutineIsCalled := &sync.WaitGroup{}
+				ensureGoRoutineIsCalled.Add(20)
 				// accumulate msgs in the backlog
-				for i := 0; i < 9; i++ {
+				for i := 0; i < 20; i++ {
 					wg.Add(1)
 					go func() {
 						defer wg.Done()
 						msgs := randomMsgs(1)
+						ensureGoRoutineIsCalled.Done()
 						response, err := batched.Broadcast(context.Background(), msgs...)
 						assert.NoError(t, err)
 						// make sure the expected msg is part of the response
@@ -322,9 +354,13 @@ func TestInBatches(t *testing.T) {
 								func(event abci.Event) bool { return msgs[0].String() == event.Type }))
 					}()
 				}
+				// with this waitgroup we ensure that all goroutines that broadcast a message are at least started.
+				// Without it, the unblockBroadcast channel might be closed before the main thread relinquishes control and
+				// the messages would trickle in one after the other without batching
+				ensureGoRoutineIsCalled.Wait()
 				close(unblockBroadcast)
 				wg.Wait()
-				assert.Less(t, len(broadcaster.BroadcastCalls()), 10)
+				assert.Less(t, len(broadcaster.BroadcastCalls()), 20)
 			}),
 	).Run(t)
 }

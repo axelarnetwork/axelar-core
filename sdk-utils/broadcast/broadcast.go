@@ -77,7 +77,12 @@ func isSequenceMismatch(err error) bool {
 // Broadcast sends the given tx to the blockchain and blocks until it is added to a block (or timeout).
 func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcasterOption) (*sdk.TxResponse, error) {
 	res, err := ctx.BroadcastTx(txBytes)
-	if err == nil && ctx.BroadcastMode != flags.BroadcastBlock {
+	switch {
+	case err != nil:
+		return nil, err
+	case res.Code != abci.CodeTypeOK:
+		return nil, sdkerrors.ABCIError(res.Codespace, res.Code, res.RawLog)
+	case ctx.BroadcastMode != flags.BroadcastBlock:
 		params := broadcastParams{
 			Timeout:         config.DefaultRPCConfig().TimeoutBroadcastTxCommit,
 			PollingInterval: 2 * time.Second,
@@ -88,11 +93,11 @@ func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcasterOpti
 
 		res, err = waitForBlockInclusion(ctx, res.TxHash, params)
 	}
-	if err != nil {
-		return nil, err
-	}
 
-	if res.Code != abci.CodeTypeOK {
+	switch {
+	case err != nil:
+		return nil, err
+	case res.Code != abci.CodeTypeOK:
 		return nil, sdkerrors.ABCIError(res.Codespace, res.Code, res.RawLog)
 	}
 
