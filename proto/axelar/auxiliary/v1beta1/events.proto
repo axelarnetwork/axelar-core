@@ -1,0 +1,12 @@
+syntax = "proto3";
+package axelar.auxiliary.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/auxiliary/types";
+option (gogoproto.messagename_all) = true;
+
+import "gogoproto/gogo.proto";
+
+message BatchedMessageFailed {
+    int32 index = 1;
+    string error = 2;
+}
