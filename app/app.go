@@ -530,13 +530,6 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keep
 	if upgradeInfo.Name == upgradeName(app.Version()) && !upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
 		storeUpgrades := store.StoreUpgrades{}
 
-		if IsWasmEnabled() {
-			storeUpgrades.Added = append(storeUpgrades.Added, wasm.ModuleName)
-		}
-		if IsIBCWasmHooksEnabled() {
-			storeUpgrades.Added = append(storeUpgrades.Added, ibchookstypes.StoreKey)
-		}
-
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 	}
