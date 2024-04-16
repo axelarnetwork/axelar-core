@@ -689,7 +689,7 @@ func InitCustomAnteDecorators(
 ) []sdk.AnteDecorator {
 	var anteDecorators []sdk.AnteDecorator
 
-	// unwrap batch messages, must be done before any other custom  decorators
+	// unwrap batch messages, must be done before any other custom decorators
 	anteDecorators = append(anteDecorators, ante.NewBatchDecorator(encodingConfig.Codec))
 
 	// enforce wasm limits earlier in the ante handler chain
