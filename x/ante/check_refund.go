@@ -2,8 +2,6 @@ package ante
 
 import (
 	"fmt"
-	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
-	"github.com/axelarnetwork/utils/slices"
 
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,7 +9,9 @@ import (
 	antetypes "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
+	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 // CheckRefundFeeDecorator record potential refund for multiSig and vote txs
