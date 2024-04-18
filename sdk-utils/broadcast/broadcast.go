@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	"strconv"
 	"strings"
 	"time"
@@ -404,7 +405,7 @@ func (b *batchedBroadcaster) processBacklog() {
 		ctx = log.Append(ctx, "batch_size", len(msgs))
 		log.FromCtx(ctx).Debug("high traffic; merging batches")
 
-		response, err := b.broadcaster.Broadcast(ctx, msgs...)
+		response, err := b.broadcaster.Broadcast(ctx, auxiliarytypes.NewBatchRequest(msgs[0].GetSigners()[0], msgs))
 
 		for _, callback := range callbacks {
 			callback <- broadcastResult{
