@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"github.com/tendermint/tendermint/config"
 
 	errors2 "github.com/axelarnetwork/axelar-core/utils/errors"
+	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/utils"
 	"github.com/axelarnetwork/utils/log"
