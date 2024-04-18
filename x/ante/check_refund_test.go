@@ -133,6 +133,21 @@ func TestCheckRefundFeeDecorator_AnteHandle(t *testing.T) {
 				},
 			)},
 		},
+		{
+			label:       "non-refundable message and refundable batched messages",
+			succeeds:    false,
+			refundCount: 0,
+			msgs: []sdk.Msg{
+				auxiliarytypes.NewBatchRequest(
+					sender,
+					[]sdk.Msg{
+						rewardtypes.NewRefundMsgRequest(sender, &multisig.SubmitSignatureRequest{}),
+						rewardtypes.NewRefundMsgRequest(sender, &votetypes.VoteRequest{}),
+					},
+				),
+				&axelarnet.LinkRequest{},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
