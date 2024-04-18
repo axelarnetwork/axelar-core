@@ -79,15 +79,8 @@ func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate
 }
 
 func countRefundableMsgs(msgs []sdk.Msg) int {
-	count := 0
-
-	for _, msg := range msgs {
-		switch msg.(type) {
-		case *rewardtypes.RefundMsgRequest:
-			count += 1
-		}
-	}
-	return count
+	refundables := slices.TryCast[sdk.Msg, *rewardtypes.RefundMsgRequest](msgs)
+	return len(refundables)
 }
 
 func (d CheckRefundFeeDecorator) validateRefundQualification(ctx sdk.Context, msgs []sdk.Msg) error {
