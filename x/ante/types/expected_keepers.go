@@ -10,7 +10,7 @@ import (
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Permission Staking
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Permission Staking Reward
 
 // MultiSig provides access to the multisig functionality
 type MultiSig interface {
