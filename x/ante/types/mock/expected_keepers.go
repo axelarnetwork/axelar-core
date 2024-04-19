@@ -6,6 +6,7 @@ package mock
 import (
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
 	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"sync"
@@ -152,5 +153,83 @@ func (mock *StakingMock) ValidatorCalls() []struct {
 	mock.lockValidator.RLock()
 	calls = mock.calls.Validator
 	mock.lockValidator.RUnlock()
+	return calls
+}
+
+// Ensure, that RewardMock does implement types.Reward.
+// If this is not the case, regenerate this file with moq.
+var _ types.Reward = &RewardMock{}
+
+// RewardMock is a mock implementation of types.Reward.
+//
+//	func TestSomethingThatUsesReward(t *testing.T) {
+//
+//		// make and configure a mocked types.Reward
+//		mockedReward := &RewardMock{
+//			SetPendingRefundFunc: func(ctx sdk.Context, req rewardtypes.RefundMsgRequest, refund rewardtypes.Refund) error {
+//				panic("mock out the SetPendingRefund method")
+//			},
+//		}
+//
+//		// use mockedReward in code that requires types.Reward
+//		// and then make assertions.
+//
+//	}
+type RewardMock struct {
+	// SetPendingRefundFunc mocks the SetPendingRefund method.
+	SetPendingRefundFunc func(ctx sdk.Context, req rewardtypes.RefundMsgRequest, refund rewardtypes.Refund) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// SetPendingRefund holds details about calls to the SetPendingRefund method.
+		SetPendingRefund []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Req is the req argument value.
+			Req rewardtypes.RefundMsgRequest
+			// Refund is the refund argument value.
+			Refund rewardtypes.Refund
+		}
+	}
+	lockSetPendingRefund sync.RWMutex
+}
+
+// SetPendingRefund calls SetPendingRefundFunc.
+func (mock *RewardMock) SetPendingRefund(ctx sdk.Context, req rewardtypes.RefundMsgRequest, refund rewardtypes.Refund) error {
+	if mock.SetPendingRefundFunc == nil {
+		panic("RewardMock.SetPendingRefundFunc: method is nil but Reward.SetPendingRefund was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		Req    rewardtypes.RefundMsgRequest
+		Refund rewardtypes.Refund
+	}{
+		Ctx:    ctx,
+		Req:    req,
+		Refund: refund,
+	}
+	mock.lockSetPendingRefund.Lock()
+	mock.calls.SetPendingRefund = append(mock.calls.SetPendingRefund, callInfo)
+	mock.lockSetPendingRefund.Unlock()
+	return mock.SetPendingRefundFunc(ctx, req, refund)
+}
+
+// SetPendingRefundCalls gets all the calls that were made to SetPendingRefund.
+// Check the length with:
+//
+//	len(mockedReward.SetPendingRefundCalls())
+func (mock *RewardMock) SetPendingRefundCalls() []struct {
+	Ctx    sdk.Context
+	Req    rewardtypes.RefundMsgRequest
+	Refund rewardtypes.Refund
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		Req    rewardtypes.RefundMsgRequest
+		Refund rewardtypes.Refund
+	}
+	mock.lockSetPendingRefund.RLock()
+	calls = mock.calls.SetPendingRefund
+	mock.lockSetPendingRefund.RUnlock()
 	return calls
 }

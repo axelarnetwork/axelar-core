@@ -9,7 +9,9 @@ import (
 	antetypes "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
+	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 // CheckRefundFeeDecorator record potential refund for multiSig and vote txs
@@ -36,7 +38,8 @@ func NewCheckRefundFeeDecorator(registry cdctypes.InterfaceRegistry, ak antetype
 func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	msgs := tx.GetMsgs()
 
-	if !anyRefundable(msgs) {
+	refundableCount := countRefundableMsgs(msgs)
+	if refundableCount == 0 {
 		return next(ctx, tx, simulate)
 	}
 
@@ -56,28 +59,32 @@ func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate
 			feePayer = feeTx.FeePayer()
 		}
 
-		req := msgs[0].(*rewardtypes.RefundMsgRequest)
-		err := d.reward.SetPendingRefund(ctx, *req, rewardtypes.Refund{Payer: feePayer, Fees: fees})
-		if err != nil {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
+		splitFees := d.splitFeesEvenly(refundableCount, fees)
+
+		for _, msg := range msgs {
+			switch msg := msg.(type) {
+			case *rewardtypes.RefundMsgRequest:
+				req := *msg
+				err := d.reward.SetPendingRefund(ctx, req, rewardtypes.Refund{Payer: feePayer, Fees: splitFees[0]})
+				if err != nil {
+					return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
+				}
+				// when messages are batched not all are refundable, so we cannot use the msg index directly
+				splitFees = splitFees[1:]
+			}
 		}
 	}
 
 	return next(ctx, tx, simulate)
 }
 
-func anyRefundable(msgs []sdk.Msg) bool {
-	if len(msgs) == 0 {
-		return false
-	}
+func countRefundableMsgs(msgs []sdk.Msg) int {
+	return len(slices.Filter(msgs, isRefundMsgRequest))
+}
 
-	for _, msg := range msgs {
-		switch msg.(type) {
-		case *rewardtypes.RefundMsgRequest:
-			return true
-		}
-	}
-	return false
+func isRefundMsgRequest(msg sdk.Msg) bool {
+	_, ok := msg.(*rewardtypes.RefundMsgRequest)
+	return ok
 }
 
 func (d CheckRefundFeeDecorator) validateRefundQualification(ctx sdk.Context, msgs []sdk.Msg) error {
@@ -100,6 +107,9 @@ func (d CheckRefundFeeDecorator) validateRefundQualification(ctx sdk.Context, ms
 			if validator == nil {
 				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "signer is not associated with a validator")
 			}
+		// ignore the batch request message, as long as all other messages are refundable
+		case *auxiliarytypes.BatchRequest:
+			continue
 		default:
 			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("all messages in a transaction must be refundable, message type %T is not refundable", msg))
 		}
@@ -115,4 +125,21 @@ func msgRegistered(r cdctypes.InterfaceRegistry, targetURL string) bool {
 		}
 	}
 	return false
+}
+
+func (d CheckRefundFeeDecorator) splitFeesEvenly(refundableCount int, fees sdk.Coins) []sdk.Coins {
+	splitFees := slices.Expand(func(int) sdk.Coins { return sdk.NewCoins() }, refundableCount)
+
+	for _, coin := range fees {
+		equalParts := coin.Amount.QuoRaw(int64(refundableCount))
+
+		// if we neglect the remainder, the sum of the split fees will be less than the original fee, so it gets added to the first split fee
+		remainder := coin.Amount.ModRaw(int64(refundableCount))
+		splitFees[0] = splitFees[0].Add(sdk.NewCoin(coin.Denom, equalParts).AddAmount(remainder))
+
+		for i := 1; i < refundableCount; i++ {
+			splitFees[i] = splitFees[i].Add(sdk.NewCoin(coin.Denom, equalParts))
+		}
+	}
+	return splitFees
 }
