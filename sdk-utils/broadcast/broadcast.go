@@ -18,6 +18,7 @@ import (
 	"github.com/tendermint/tendermint/config"
 
 	errors2 "github.com/axelarnetwork/axelar-core/utils/errors"
+	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/utils"
 	"github.com/axelarnetwork/utils/log"
@@ -404,7 +405,7 @@ func (b *batchedBroadcaster) processBacklog() {
 		ctx = log.Append(ctx, "batch_size", len(msgs))
 		log.FromCtx(ctx).Debug("high traffic; merging batches")
 
-		response, err := b.broadcaster.Broadcast(ctx, msgs...)
+		response, err := b.broadcaster.Broadcast(ctx, auxiliarytypes.NewBatchRequest(msgs[0].GetSigners()[0], msgs))
 
 		for _, callback := range callbacks {
 			callback <- broadcastResult{

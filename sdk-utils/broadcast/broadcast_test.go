@@ -32,6 +32,7 @@ import (
 	mock2 "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	errors2 "github.com/axelarnetwork/axelar-core/utils/errors"
+	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/utils/slices"
@@ -321,38 +322,46 @@ func TestInBatches(t *testing.T) {
 				once.Do(func() { close(broadcastCalled) })
 				<-unblockBroadcast
 
+				// either the broadcast isn't batches, so it's a single message, or it uses a batch request to collect multiple messages.
+				// in both cases the broadcast should contain exactly one message
+				assert.Len(t, msgs, 1)
+				batch, ok := msgs[0].(*auxiliarytypes.BatchRequest)
+				if ok {
+					assert.NoError(t, batch.ValidateBasic())
+					msgs = batch.UnwrapMessages()
+				}
+
 				events := slices.Map(msgs, func(msg sdk.Msg) abci.Event { return abci.Event{Type: msg.String()} })
 				return &sdk.TxResponse{Events: events}, nil
 			}
 		}).
 			Then("batch msgs", func(t *testing.T) {
+				msgs := randomMsgs(20)
 				wg := &sync.WaitGroup{}
 				wg.Add(1)
 				// block the broadcast pipeline with one message
 				go func() {
 					defer wg.Done()
-					msgs := randomMsgs(1)
-					response, err := batched.Broadcast(context.Background(), msgs...)
+					response, err := batched.Broadcast(context.Background(), msgs[0])
 					assert.NoError(t, err)
 					assert.Equal(t, msgs[0].String(), response.Events[0].Type)
 				}()
 				<-broadcastCalled
 				ensureGoRoutineIsCalled := &sync.WaitGroup{}
-				ensureGoRoutineIsCalled.Add(20)
+				ensureGoRoutineIsCalled.Add(19)
 				// accumulate msgs in the backlog
-				for i := 0; i < 20; i++ {
+				for i := 1; i < 20; i++ {
 					wg.Add(1)
-					go func() {
+					go func(i int) {
 						defer wg.Done()
-						msgs := randomMsgs(1)
 						ensureGoRoutineIsCalled.Done()
-						response, err := batched.Broadcast(context.Background(), msgs...)
+						response, err := batched.Broadcast(context.Background(), msgs[i])
 						assert.NoError(t, err)
 						// make sure the expected msg is part of the response
 						assert.True(t,
 							slices.Any(response.Events,
-								func(event abci.Event) bool { return msgs[0].String() == event.Type }))
-					}()
+								func(event abci.Event) bool { return msgs[i].String() == event.Type }))
+					}(i)
 				}
 				// with this waitgroup we ensure that all goroutines that broadcast a message are at least started.
 				// Without it, the unblockBroadcast channel might be closed before the main thread relinquishes control and
@@ -458,10 +467,10 @@ func randomMsgs(count int) []sdk.Msg {
 	for i := 0; i < count; i++ {
 		msg := evm.NewLinkRequest(
 			sender,
-			rand.StrBetween(5, 10),
-			rand.StrBetween(5, 10),
+			rand.AlphaNumericStrBetween(5, 10),
+			rand.AlphaNumericStrBetween(5, 10),
 			evm.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))).Hex(),
-			rand.StrBetween(5, 10),
+			rand.AlphaStrBetween(5, 10),
 		)
 		msgs = append(msgs, msg)
 	}
