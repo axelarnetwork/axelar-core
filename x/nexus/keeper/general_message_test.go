@@ -254,7 +254,7 @@ func TestRouteMessage(t *testing.T) {
 					assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "not an hex address")
 				}),
 
-			When("the destination chain does't support the asset", func() {
+			When("the destination chain doesn't support the asset", func() {
 				msg.Recipient = exported.CrossChainAddress{
 					Chain:   evm.Ethereum,
 					Address: evmtestutils.RandomAddress().Hex(),
@@ -327,7 +327,7 @@ func TestRouteMessage(t *testing.T) {
 					assert.ErrorContains(t, keeper.RouteMessage(ctx, msg.ID), "not an hex address")
 				}),
 
-			When("the sender chain does't support the asset", func() {
+			When("the sender chain doesn't support the asset", func() {
 				msg.Sender = exported.CrossChainAddress{
 					Chain:   evm.Ethereum,
 					Address: evmtestutils.RandomAddress().Hex(),
