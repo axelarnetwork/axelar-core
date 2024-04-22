@@ -121,7 +121,6 @@ message WasmMessage {
     (gogoproto.casttype) = "WasmBytes"
   ];
   uint64 source_tx_index = 7 [ (gogoproto.jsontag) = "source_tx_index" ];
-  ;
   bytes sender = 8 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 }
