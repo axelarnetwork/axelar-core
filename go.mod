@@ -10,7 +10,7 @@ require (
 	github.com/axelarnetwork/utils v0.0.0-20230706045331-b7aacc1f4a2f
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2
 	github.com/cosmos/cosmos-sdk v0.45.16
-	github.com/cosmos/ibc-go/v4 v4.5.1
+	github.com/cosmos/ibc-go/v4 v4.6.0
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/go-errors/errors v1.4.2
