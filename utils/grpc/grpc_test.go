@@ -58,5 +58,5 @@ func TestServerWithSDKErrors(t *testing.T) {
 		Then("the wrapped handler returns the registered error", func(t *testing.T) {
 			_, err := wrappedHandler(nil, ctx, nil, nil)
 			assert.True(t, errors.Is[*sdkerrors.Error](err))
-		})
+		}).Run(t)
 }
