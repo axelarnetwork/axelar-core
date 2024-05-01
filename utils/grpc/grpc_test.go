@@ -3,17 +3,19 @@ package grpc_test
 import (
 	"context"
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/utils/errors"
-	"github.com/axelarnetwork/axelar-core/utils/grpc"
-	"github.com/axelarnetwork/axelar-core/utils/grpc/mock"
-	. "github.com/axelarnetwork/utils/test"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
 	abci "github.com/tendermint/tendermint/proto/tendermint/types"
 	grpc2 "google.golang.org/grpc"
-	"testing"
+
+	"github.com/axelarnetwork/axelar-core/utils/errors"
+	"github.com/axelarnetwork/axelar-core/utils/grpc"
+	"github.com/axelarnetwork/axelar-core/utils/grpc/mock"
+	. "github.com/axelarnetwork/utils/test"
 )
 
 func TestServerWithSDKErrors(t *testing.T) {
