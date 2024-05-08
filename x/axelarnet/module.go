@@ -212,7 +212,7 @@ func NewAxelarnetIBCModule(
 }
 
 // OnRecvPacket implements the IBCModule interface. A successful acknowledgement
-// is returned if the packet data is succesfully decoded and the receive application
+// is returned if the packet data is successfully decoded and the receive application
 // logic returns without error.
 func (m AxelarnetIBCModule) OnRecvPacket(
 	ctx sdk.Context,

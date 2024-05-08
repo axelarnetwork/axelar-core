@@ -165,7 +165,7 @@ func (k Keeper) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddres
 }
 
 // GetProxy returns the proxy address for a given operator address. Returns nil if not set.
-// The bool value denotes wether or not the proxy is active and to be included in the next snapshot
+// The bool value denotes whether or not the proxy is active and to be included in the next snapshot
 func (k Keeper) GetProxy(ctx sdk.Context, operator sdk.ValAddress) (addr sdk.AccAddress, active bool) {
 	if proxiedValidator, ok := k.getProxiedValidator(ctx, operator); ok {
 		return proxiedValidator.Proxy, proxiedValidator.Active
