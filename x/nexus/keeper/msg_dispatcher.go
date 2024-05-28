@@ -60,12 +60,11 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 		return fmt.Errorf("recipient chain %s is not a registered chain", msg.DestinationChain)
 	}
 
-	id, _, _ := m.GenerateMessageID(ctx)
 	sourceChain := exported.Chain{Name: msg.SourceChain, SupportsForeignAssets: false, KeyType: tss.None, Module: wasmtypes.ModuleName}
 	sender := exported.CrossChainAddress{Chain: sourceChain, Address: msg.SourceAddress}
 	recipient := exported.CrossChainAddress{Chain: destinationChain, Address: msg.DestinationAddress}
 
-	nexusMsg := exported.NewGeneralMessage(id, sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
+	nexusMsg := exported.NewGeneralMessage(msg.MsgId, sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
 	if err := m.Nexus.SetNewMessage(ctx, nexusMsg); err != nil {
 		return err
 	}
