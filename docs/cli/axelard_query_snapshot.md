@@ -25,7 +25,8 @@ axelard query snapshot [flags]
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md)	 - Querying subcommands
-- [axelard query snapshot operator](axelard_query_snapshot_operator.md)	 - Fetch the operator address associated with \[proxy address\]
-- [axelard query snapshot params](axelard_query_snapshot_params.md)	 - Returns the params for the snapshot module
-- [axelard query snapshot proxy](axelard_query_snapshot_proxy.md)	 - Fetch the proxy address associated with \[operator address\] and status (active/inactive)
+* [axelard query](axelard_query.md)	 - Querying subcommands
+* [axelard query snapshot operator](axelard_query_snapshot_operator.md)	 - Fetch the operator address associated with [proxy address]
+* [axelard query snapshot params](axelard_query_snapshot_params.md)	 - Returns the params for the snapshot module
+* [axelard query snapshot proxy](axelard_query_snapshot_proxy.md)	 - Fetch the proxy address associated with [operator address] and status (active/inactive)
+

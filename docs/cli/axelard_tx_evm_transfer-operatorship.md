@@ -45,4 +45,5 @@ axelard tx evm transfer-operatorship [chain] [keyID] [flags]
 
 ### SEE ALSO
 
-- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+* [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+

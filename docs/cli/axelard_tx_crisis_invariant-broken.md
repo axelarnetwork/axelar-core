@@ -45,4 +45,5 @@ axelard tx crisis invariant-broken [module-name] [invariant-route] [flags]
 
 ### SEE ALSO
 
-- [axelard tx crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
+* [axelard tx crisis](axelard_tx_crisis.md)	 - Crisis transactions subcommands
+

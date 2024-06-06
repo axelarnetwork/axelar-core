@@ -54,4 +54,5 @@ axelard tx distribution withdraw-all-rewards [flags]
 
 ### SEE ALSO
 
-- [axelard tx distribution](axelard_tx_distribution.md)	 - Distribution transactions subcommands
+* [axelard tx distribution](axelard_tx_distribution.md)	 - Distribution transactions subcommands
+

@@ -25,8 +25,9 @@ axelard tx gov [flags]
 
 ### SEE ALSO
 
-- [axelard tx](axelard_tx.md)	 - Transactions subcommands
-- [axelard tx gov deposit](axelard_tx_gov_deposit.md)	 - Deposit tokens for an active proposal
-- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
-- [axelard tx gov vote](axelard_tx_gov_vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
-- [axelard tx gov weighted-vote](axelard_tx_gov_weighted-vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
+* [axelard tx](axelard_tx.md)	 - Transactions subcommands
+* [axelard tx gov deposit](axelard_tx_gov_deposit.md)	 - Deposit tokens for an active proposal
+* [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
+* [axelard tx gov vote](axelard_tx_gov_vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
+* [axelard tx gov weighted-vote](axelard_tx_gov_weighted-vote.md)	 - Vote for an active proposal, options: yes/no/no_with_veto/abstain
+

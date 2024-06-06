@@ -6,8 +6,8 @@ Generate multisig signatures for transactions generated offline
 
 Sign transactions created with the --generate-only flag that require multisig signatures.
 
-Read one or more signatures from one or more \[signature\] file, generate a multisig signature compliant to the
-multisig key \[name\], and attach the key name to the transaction read from \[file\].
+Read one or more signatures from one or more [signature] file, generate a multisig signature compliant to the
+multisig key [name], and attach the key name to the transaction read from [file].
 
 Example:
 $ <appd> tx multisign transaction.json k1k2k3 k1sig.json k2sig.json k3sig.json
@@ -68,4 +68,5 @@ axelard tx multisign [file] [name] [[signature]...] [flags]
 
 ### SEE ALSO
 
-- [axelard tx](axelard_tx.md)	 - Transactions subcommands
+* [axelard tx](axelard_tx.md)	 - Transactions subcommands
+

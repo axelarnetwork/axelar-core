@@ -8,16 +8,16 @@ Submit a community pool spend proposal along with an initial deposit.
 The proposal details must be supplied via a JSON file.
 
 Example:
-$ <appd> tx gov submit-proposal community-pool-spend \<path/to/proposal.json> --from=\<key_or_address>
+$ <appd> tx gov submit-proposal community-pool-spend <path/to/proposal.json> --from=<key_or_address>
 
 Where proposal.json contains:
 
 {
-"title": "Community Pool Spend",
-"description": "Pay me some Atoms!",
-"recipient": "axelar1s5afhd6gxevu37mkqcvvsj8qeylhn0rz46zdlq",
-"amount": "1000stake",
-"deposit": "1000stake"
+  "title": "Community Pool Spend",
+  "description": "Pay me some Atoms!",
+  "recipient": "axelar1s5afhd6gxevu37mkqcvvsj8qeylhn0rz46zdlq",
+  "amount": "1000stake",
+  "deposit": "1000stake"
 }
 
 ```
@@ -63,4 +63,5 @@ axelard tx gov submit-proposal community-pool-spend [proposal-file] [flags]
 
 ### SEE ALSO
 
-- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
+* [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
+

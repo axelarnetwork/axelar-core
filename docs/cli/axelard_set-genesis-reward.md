@@ -26,4 +26,5 @@ axelard set-genesis-reward [flags]
 
 ### SEE ALSO
 
-- [axelard](axelard.md)	 - Axelar App
+* [axelard](axelard.md)	 - Axelar App
+

@@ -48,4 +48,5 @@ axelard tx axelarnet register-asset [chain] [denom] [flags]
 
 ### SEE ALSO
 
-- [axelard tx axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
+* [axelard tx axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
+

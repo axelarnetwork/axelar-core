@@ -125,6 +125,9 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 					nexus.GenerateMessageIDFunc = func(_ sdk.Context) (string, []byte, uint64) {
 						return "1", []byte("1"), 1
 					}
+					nexus.GetMessageFunc = func(_ sdk.Context, _ string) (exported.GeneralMessage, bool) {
+						return exported.GeneralMessage{}, false
+					}
 					nexus.SetNewMessageFunc = func(_ sdk.Context, _ exported.GeneralMessage) error {
 						return fmt.Errorf("set msg error")
 					}
@@ -163,6 +166,9 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 			nexus.GenerateMessageIDFunc = func(_ sdk.Context) (string, []byte, uint64) {
 				return "1", []byte("1"), 1
 			}
+			nexus.GetMessageFunc = func(_ sdk.Context, _ string) (exported.GeneralMessage, bool) {
+				return exported.GeneralMessage{}, false
+			}
 			nexus.SetNewMessageFunc = func(_ sdk.Context, msg exported.GeneralMessage) error {
 				return nil
 			}
@@ -177,34 +183,50 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 			When("succeed to route message", func() {
 				nexus.RouteMessageFunc = func(_ sdk.Context, id string, _ ...exported.RoutingContext) error { return nil }
 			}).
-				Then("should route the message", func(t *testing.T) {
-					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
-					assert.NoError(t, err)
+				Branch(
+					Then("should route the message", func(t *testing.T) {
+						_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
+						assert.NoError(t, err)
 
-					assert.Len(t, nexus.SetNewMessageCalls(), 1)
-					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Recipient.Chain, axelarnet.Axelarnet)
-					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Status, exported.Approved)
-					assert.Nil(t, nexus.SetNewMessageCalls()[0].Msg.Asset)
+						assert.Len(t, nexus.SetNewMessageCalls(), 1)
+						assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Recipient.Chain, axelarnet.Axelarnet)
+						assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Status, exported.Approved)
+						assert.Nil(t, nexus.SetNewMessageCalls()[0].Msg.Asset)
 
-					assert.Len(t, nexus.RouteMessageCalls(), 1)
-					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.ID, nexus.RouteMessageCalls()[0].ID)
-				}),
+						assert.Len(t, nexus.RouteMessageCalls(), 1)
+						assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.ID, nexus.RouteMessageCalls()[0].ID)
+					}),
+					When("message already set", func() {
 
-			When("failed to route message", func() {
-				nexus.RouteMessageFunc = func(_ sdk.Context, id string, _ ...exported.RoutingContext) error { return fmt.Errorf("failed") }
-			}).
-				Then("should set message as processing", func(t *testing.T) {
-					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
-					assert.NoError(t, err)
+						nexus.GetMessageFunc = func(_ sdk.Context, _ string) (exported.GeneralMessage, bool) {
+							return exported.GeneralMessage{}, true
+						}
+					}).Then("should be a no op", func(t *testing.T) {
 
-					assert.Len(t, nexus.SetNewMessageCalls(), 1)
-					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Recipient.Chain, axelarnet.Axelarnet)
-					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Status, exported.Approved)
-					assert.Nil(t, nexus.SetNewMessageCalls()[0].Msg.Asset)
+						_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
+						assert.NoError(t, err)
 
-					assert.Len(t, nexus.RouteMessageCalls(), 1)
-					assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.ID, nexus.RouteMessageCalls()[0].ID)
-				}),
+						assert.Len(t, nexus.SetNewMessageCalls(), 0)
+
+						assert.Len(t, nexus.RouteMessageCalls(), 0)
+					}),
+
+					When("failed to route message", func() {
+						nexus.RouteMessageFunc = func(_ sdk.Context, id string, _ ...exported.RoutingContext) error { return fmt.Errorf("failed") }
+					}).
+						Then("should set message as processing", func(t *testing.T) {
+							_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
+							assert.NoError(t, err)
+
+							assert.Len(t, nexus.SetNewMessageCalls(), 1)
+							assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Recipient.Chain, axelarnet.Axelarnet)
+							assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.Status, exported.Approved)
+							assert.Nil(t, nexus.SetNewMessageCalls()[0].Msg.Asset)
+
+							assert.Len(t, nexus.RouteMessageCalls(), 1)
+							assert.Equal(t, nexus.SetNewMessageCalls()[0].Msg.ID, nexus.RouteMessageCalls()[0].ID)
+						}),
+				),
 		).
 		Run(t)
 }
