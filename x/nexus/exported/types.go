@@ -349,7 +349,7 @@ func FromGeneralMessage(msg GeneralMessage) WasmMessage {
 		PayloadHash:        msg.PayloadHash,
 		SourceTxID:         msg.SourceTxID,
 		SourceTxIndex:      msg.SourceTxIndex,
-		MsgID:              msg.ID,
+		ID:                 msg.ID,
 	}
 }
 

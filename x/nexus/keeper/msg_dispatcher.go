@@ -64,13 +64,13 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 	sender := exported.CrossChainAddress{Chain: sourceChain, Address: msg.SourceAddress}
 	recipient := exported.CrossChainAddress{Chain: destinationChain, Address: msg.DestinationAddress}
 
-	nexusMsg := exported.NewGeneralMessage(msg.MsgID, sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
-	if err := m.Nexus.SetNewMessage(ctx, nexusMsg); err != nil {
-		return err
-	}
+	nexusMsg := exported.NewGeneralMessage(msg.ID, sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
 
 	// try routing the message
 	_ = utils.RunCached(ctx, m, func(ctx sdk.Context) (struct{}, error) {
+		if err := m.Nexus.SetNewMessage(ctx, nexusMsg); err != nil {
+			return struct{}{}, err
+		}
 		return struct{}{}, m.RouteMessage(ctx, nexusMsg.ID)
 	})
 
