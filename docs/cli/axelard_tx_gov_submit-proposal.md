@@ -13,10 +13,10 @@ $ <appd> tx gov submit-proposal --proposal="path/to/proposal.json" --from mykey
 Where proposal.json contains:
 
 {
-  "title": "Test Proposal",
-  "description": "My awesome proposal",
-  "type": "Text",
-  "deposit": "10test"
+"title": "Test Proposal",
+"description": "My awesome proposal",
+"type": "Text",
+"deposit": "10test"
 }
 
 Which is equivalent to:
@@ -71,12 +71,11 @@ axelard tx gov submit-proposal [flags]
 
 ### SEE ALSO
 
-* [axelard tx gov](axelard_tx_gov.md)	 - Governance transactions subcommands
-* [axelard tx gov submit-proposal call-contracts](axelard_tx_gov_submit-proposal_call-contracts.md)	 - Submit a call contracts proposal
-* [axelard tx gov submit-proposal cancel-software-upgrade](axelard_tx_gov_submit-proposal_cancel-software-upgrade.md)	 - Cancel the current software upgrade proposal
-* [axelard tx gov submit-proposal community-pool-spend](axelard_tx_gov_submit-proposal_community-pool-spend.md)	 - Submit a community pool spend proposal
-* [axelard tx gov submit-proposal ibc-upgrade](axelard_tx_gov_submit-proposal_ibc-upgrade.md)	 - Submit an IBC upgrade proposal
-* [axelard tx gov submit-proposal param-change](axelard_tx_gov_submit-proposal_param-change.md)	 - Submit a parameter change proposal
-* [axelard tx gov submit-proposal software-upgrade](axelard_tx_gov_submit-proposal_software-upgrade.md)	 - Submit a software upgrade proposal
-* [axelard tx gov submit-proposal update-client](axelard_tx_gov_submit-proposal_update-client.md)	 - Submit an update IBC client proposal
-
+- [axelard tx gov](axelard_tx_gov.md)	 - Governance transactions subcommands
+- [axelard tx gov submit-proposal call-contracts](axelard_tx_gov_submit-proposal_call-contracts.md)	 - Submit a call contracts proposal
+- [axelard tx gov submit-proposal cancel-software-upgrade](axelard_tx_gov_submit-proposal_cancel-software-upgrade.md)	 - Cancel the current software upgrade proposal
+- [axelard tx gov submit-proposal community-pool-spend](axelard_tx_gov_submit-proposal_community-pool-spend.md)	 - Submit a community pool spend proposal
+- [axelard tx gov submit-proposal ibc-upgrade](axelard_tx_gov_submit-proposal_ibc-upgrade.md)	 - Submit an IBC upgrade proposal
+- [axelard tx gov submit-proposal param-change](axelard_tx_gov_submit-proposal_param-change.md)	 - Submit a parameter change proposal
+- [axelard tx gov submit-proposal software-upgrade](axelard_tx_gov_submit-proposal_software-upgrade.md)	 - Submit a software upgrade proposal
+- [axelard tx gov submit-proposal update-client](axelard_tx_gov_submit-proposal_update-client.md)	 - Submit an update IBC client proposal

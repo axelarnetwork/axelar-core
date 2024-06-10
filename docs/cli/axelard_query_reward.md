@@ -25,7 +25,6 @@ axelard query reward [flags]
 
 ### SEE ALSO
 
-* [axelard query](axelard_query.md)	 - Querying subcommands
-* [axelard query reward inflation-rate](axelard_query_reward_inflation-rate.md)	 - Returns the inflation rate on the network. If a validator is provided, query the inflation rate for that validator.
-* [axelard query reward params](axelard_query_reward_params.md)	 - Returns the params for the reward module
-
+- [axelard query](axelard_query.md)	 - Querying subcommands
+- [axelard query reward inflation-rate](axelard_query_reward_inflation-rate.md)	 - Returns the inflation rate on the network. If a validator is provided, query the inflation rate for that validator.
+- [axelard query reward params](axelard_query_reward_params.md)	 - Returns the params for the reward module

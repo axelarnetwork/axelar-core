@@ -27,5 +27,4 @@ axelard query nexus latest-deposit-address [deposit chain] [recipient chain] [re
 
 ### SEE ALSO
 
-* [axelard query nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
-
+- [axelard query nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module

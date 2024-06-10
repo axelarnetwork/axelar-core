@@ -45,5 +45,4 @@ axelard tx permission deregister-controller [controller] [flags]
 
 ### SEE ALSO
 
-* [axelard tx permission](axelard_tx_permission.md)	 - permission transactions subcommands
-
+- [axelard tx permission](axelard_tx_permission.md)	 - permission transactions subcommands

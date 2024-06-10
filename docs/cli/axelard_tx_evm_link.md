@@ -45,5 +45,4 @@ axelard tx evm link [chain] [recipient chain] [recipient address] [asset name] [
 
 ### SEE ALSO
 
-* [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
-
+- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands

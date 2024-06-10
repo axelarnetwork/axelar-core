@@ -4,11 +4,11 @@ Query details of a single grant
 
 ### Synopsis
 
-Query details for a grant. 
+Query details for a grant.
 You can find the fee-grant of a granter and grantee.
 
 Example:
-$ <appd> query feegrant grant [granter] [grantee]
+$ <appd> query feegrant grant \[granter\] \[grantee\]
 
 ```
 axelard query feegrant grant [granter] [grantee] [flags]
@@ -35,5 +35,4 @@ axelard query feegrant grant [granter] [grantee] [flags]
 
 ### SEE ALSO
 
-* [axelard query feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module
-
+- [axelard query feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module

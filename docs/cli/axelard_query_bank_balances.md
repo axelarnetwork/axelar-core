@@ -7,8 +7,8 @@ Query for account balances by address
 Query the total balance of an account or of a specific denomination.
 
 Example:
-  $ <appd> query bank balances [address]
-  $ <appd> query bank balances [address] --denom=[denom]
+$ <appd> query bank balances \[address\]
+$ <appd> query bank balances \[address\] --denom=\[denom\]
 
 ```
 axelard query bank balances [address] [flags]
@@ -42,5 +42,4 @@ axelard query bank balances [address] [flags]
 
 ### SEE ALSO
 
-* [axelard query bank](axelard_query_bank.md)	 - Querying commands for the bank module
-
+- [axelard query bank](axelard_query_bank.md)	 - Querying commands for the bank module

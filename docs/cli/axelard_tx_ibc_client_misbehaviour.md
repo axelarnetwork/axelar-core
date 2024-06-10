@@ -35,5 +35,4 @@ axelard tx ibc client misbehaviour [path/to/misbehaviour.json] [flags]
 
 ### SEE ALSO
 
-* [axelard tx ibc client](axelard_tx_ibc_client.md)	 - IBC client transaction subcommands
-
+- [axelard tx ibc client](axelard_tx_ibc_client.md)	 - IBC client transaction subcommands

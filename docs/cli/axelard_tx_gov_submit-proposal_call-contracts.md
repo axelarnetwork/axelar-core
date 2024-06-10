@@ -9,20 +9,20 @@ The proposal details must be supplied via a JSON file. For values that contains
 objects, only non-empty fields will be updated.
 
 Example:
-$ <appd> tx gov submit-proposal call-contracts <path/to/proposal.json>
+$ <appd> tx gov submit-proposal call-contracts \<path/to/proposal.json>
 
 Where proposal.json contains:
 
 {
-  "title": "Call Contracts",
-  "description": "Call contracts on other chains",
-  "contract_calls": [
-    {
-      "chain": "chain",
-      "contract_address": "0x1234",
-      "payload": "MTIzMTIzMTIzNDEyNDEyMzU0ODk3MA=="
-    }
-  ]
+"title": "Call Contracts",
+"description": "Call contracts on other chains",
+"contract_calls": \[
+{
+"chain": "chain",
+"contract_address": "0x1234",
+"payload": "MTIzMTIzMTIzNDEyNDEyMzU0ODk3MA=="
+}
+\]
 }
 
 IMPORTANT: The payload field must be base64 encoded.
@@ -71,5 +71,4 @@ axelard tx gov submit-proposal call-contracts [proposal-file] [flags]
 
 ### SEE ALSO
 
-* [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
-
+- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit

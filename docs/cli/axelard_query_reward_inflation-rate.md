@@ -28,5 +28,4 @@ axelard query reward inflation-rate [flags]
 
 ### SEE ALSO
 
-* [axelard query reward](axelard_query_reward.md)	 - Querying commands for the reward module
-
+- [axelard query reward](axelard_query_reward.md)	 - Querying commands for the reward module

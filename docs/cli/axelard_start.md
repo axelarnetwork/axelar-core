@@ -31,7 +31,6 @@ API services are enabled via the 'grpc-only' flag. In this mode, Tendermint is
 bypassed and can be used when legacy queries are needed after an on-chain upgrade
 is performed. Note, when enabled, gRPC will also be automatically enabled.
 
-
 ```
 axelard start [flags]
 ```
@@ -104,5 +103,4 @@ axelard start [flags]
 
 ### SEE ALSO
 
-* [axelard](axelard.md)	 - Axelar App
-
+- [axelard](axelard.md)	 - Axelar App

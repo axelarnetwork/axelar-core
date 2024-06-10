@@ -38,5 +38,4 @@ axelard query ibc channel next-sequence-receive [port-id] [channel-id] [flags]
 
 ### SEE ALSO
 
-* [axelard query ibc channel](axelard_query_ibc_channel.md)	 - IBC channel query subcommands
-
+- [axelard query ibc channel](axelard_query_ibc_channel.md)	 - IBC channel query subcommands

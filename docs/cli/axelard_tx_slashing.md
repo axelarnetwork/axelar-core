@@ -25,6 +25,5 @@ axelard tx slashing [flags]
 
 ### SEE ALSO
 
-* [axelard tx](axelard_tx.md)	 - Transactions subcommands
-* [axelard tx slashing unjail](axelard_tx_slashing_unjail.md)	 - unjail validator previously jailed for downtime
-
+- [axelard tx](axelard_tx.md)	 - Transactions subcommands
+- [axelard tx slashing unjail](axelard_tx_slashing_unjail.md)	 - unjail validator previously jailed for downtime

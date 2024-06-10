@@ -60,6 +60,7 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 		return fmt.Errorf("recipient chain %s is not a registered chain", msg.DestinationChain)
 	}
 
+	// If message already exists, then this is a no-op to avoid causing an error from reverting the whole message batch being routed in Amplifier
 	if _, ok := m.Nexus.GetMessage(ctx, msg.ID); ok {
 		return nil
 	}

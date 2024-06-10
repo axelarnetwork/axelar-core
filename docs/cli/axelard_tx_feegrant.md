@@ -29,7 +29,6 @@ axelard tx feegrant [flags]
 
 ### SEE ALSO
 
-* [axelard tx](axelard_tx.md)	 - Transactions subcommands
-* [axelard tx feegrant grant](axelard_tx_feegrant_grant.md)	 - Grant Fee allowance to an address
-* [axelard tx feegrant revoke](axelard_tx_feegrant_revoke.md)	 - revoke fee-grant
-
+- [axelard tx](axelard_tx.md)	 - Transactions subcommands
+- [axelard tx feegrant grant](axelard_tx_feegrant_grant.md)	 - Grant Fee allowance to an address
+- [axelard tx feegrant revoke](axelard_tx_feegrant_revoke.md)	 - revoke fee-grant

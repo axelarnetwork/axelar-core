@@ -9,7 +9,6 @@ Migrate the source genesis into the target version and print to STDOUT.
 Example:
 $ <appd> migrate v0.36 /path/to/genesis.json --chain-id=cosmoshub-3 --genesis-time=2019-04-22T17:00:00Z
 
-
 ```
 axelard migrate [target-version] [genesis-file] [flags]
 ```
@@ -34,5 +33,4 @@ axelard migrate [target-version] [genesis-file] [flags]
 
 ### SEE ALSO
 
-* [axelard](axelard.md)	 - Axelar App
-
+- [axelard](axelard.md)	 - Axelar App

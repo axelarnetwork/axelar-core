@@ -25,8 +25,7 @@ axelard query slashing [flags]
 
 ### SEE ALSO
 
-* [axelard query](axelard_query.md)	 - Querying subcommands
-* [axelard query slashing params](axelard_query_slashing_params.md)	 - Query the current slashing parameters
-* [axelard query slashing signing-info](axelard_query_slashing_signing-info.md)	 - Query a validator's signing information
-* [axelard query slashing signing-infos](axelard_query_slashing_signing-infos.md)	 - Query signing information of all validators
-
+- [axelard query](axelard_query.md)	 - Querying subcommands
+- [axelard query slashing params](axelard_query_slashing_params.md)	 - Query the current slashing parameters
+- [axelard query slashing signing-info](axelard_query_slashing_signing-info.md)	 - Query a validator's signing information
+- [axelard query slashing signing-infos](axelard_query_slashing_signing-infos.md)	 - Query signing information of all validators
