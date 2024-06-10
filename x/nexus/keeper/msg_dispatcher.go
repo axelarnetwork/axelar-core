@@ -69,7 +69,7 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 	sender := exported.CrossChainAddress{Chain: sourceChain, Address: msg.SourceAddress}
 	recipient := exported.CrossChainAddress{Chain: destinationChain, Address: msg.DestinationAddress}
 
-	nexusMsg := exported.NewGeneralMessage(msg.ID, sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
+	nexusMsg := exported.NewGeneralMessage(fmt.Sprintf("%s-%s", msg.SourceChain, msg.ID), sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
 	if err := m.Nexus.SetNewMessage(ctx, nexusMsg); err != nil {
 		return err
 	}
