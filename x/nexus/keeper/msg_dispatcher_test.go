@@ -58,7 +58,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 	givenMessenger.
 		When("the msg is encoded correctly", func() {
 			msg = wasmvmtypes.CosmosMsg{
-				Custom: []byte("{}"),
+				Custom: []byte("{\"source_chain\":\"sourcechain\",\"source_address\":\"0xb860\",\"destination_chain\":\"Axelarnet\",\"destination_address\":\"axelarvaloper1zh9wrak6ke4n6fclj5e8yk397czv430ygs5jz7\",\"payload_hash\":[187,155,85,102,194,244,135,104,99,51,62,72,31,70,152,53,1,84,37,159,254,98,38,226,131,177,108,225,138,100,188,241],\"source_tx_id\":[47,228],\"source_tx_index\":100, \"id\": \"0x73657e3da2e404f474218fe2789462585d7f6060741bd312c862378cf67ca981-1\"}"),
 			}
 		}).
 		Branch(
@@ -94,7 +94,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 	givenMessenger.
 		When("the msg is encoded correctly and the gateway is set correctly", func() {
 			msg = wasmvmtypes.CosmosMsg{
-				Custom: []byte("{}"),
+				Custom: []byte("{\"source_chain\":\"sourcechain\",\"source_address\":\"0xb860\",\"destination_chain\":\"Axelarnet\",\"destination_address\":\"axelarvaloper1zh9wrak6ke4n6fclj5e8yk397czv430ygs5jz7\",\"payload_hash\":[187,155,85,102,194,244,135,104,99,51,62,72,31,70,152,53,1,84,37,159,254,98,38,226,131,177,108,225,138,100,188,241],\"source_tx_id\":[47,228],\"source_tx_index\":100, \"id\": \"0x73657e3da2e404f474218fe2789462585d7f6060741bd312c862378cf67ca981-1\"}"),
 			}
 
 			nexus.GetParamsFunc = func(_ sdk.Context) types.Params {
@@ -176,7 +176,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 		}).
 		When("the msg is encoded correctly", func() {
 			msg = wasmvmtypes.CosmosMsg{
-				Custom: []byte("{\"source_chain\":\"sourcechain\",\"source_address\":\"0xb860\",\"destination_chain\":\"Axelarnet\",\"destination_address\":\"axelarvaloper1zh9wrak6ke4n6fclj5e8yk397czv430ygs5jz7\",\"payload_hash\":[187,155,85,102,194,244,135,104,99,51,62,72,31,70,152,53,1,84,37,159,254,98,38,226,131,177,108,225,138,100,188,241],\"source_tx_id\":[47,228],\"source_tx_index\":100}"),
+				Custom: []byte("{\"source_chain\":\"sourcechain\",\"source_address\":\"0xb860\",\"destination_chain\":\"Axelarnet\",\"destination_address\":\"axelarvaloper1zh9wrak6ke4n6fclj5e8yk397czv430ygs5jz7\",\"payload_hash\":[187,155,85,102,194,244,135,104,99,51,62,72,31,70,152,53,1,84,37,159,254,98,38,226,131,177,108,225,138,100,188,241],\"source_tx_id\":[47,228],\"source_tx_index\":100, \"id\": \"0x73657e3da2e404f474218fe2789462585d7f6060741bd312c862378cf67ca981-1\"}"),
 			}
 		}).
 		Branch(

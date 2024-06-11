@@ -55,6 +55,10 @@ func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, _ s
 }
 
 func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
+	if err := msg.ValidateBasic(); err != nil {
+		return err
+	}
+
 	destinationChain, ok := m.GetChain(ctx, msg.DestinationChain)
 	if !ok {
 		return fmt.Errorf("recipient chain %s is not a registered chain", msg.DestinationChain)
