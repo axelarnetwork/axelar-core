@@ -55,17 +55,25 @@ func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, _ s
 }
 
 func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
+	if err := msg.ValidateBasic(); err != nil {
+		return err
+	}
+
 	destinationChain, ok := m.GetChain(ctx, msg.DestinationChain)
 	if !ok {
 		return fmt.Errorf("recipient chain %s is not a registered chain", msg.DestinationChain)
 	}
 
-	id, _, _ := m.GenerateMessageID(ctx)
+	// If message already exists, then this is a no-op to avoid causing an error from reverting the whole message batch being routed in Amplifier
+	if _, ok := m.Nexus.GetMessage(ctx, msg.ID); ok {
+		return nil
+	}
+
 	sourceChain := exported.Chain{Name: msg.SourceChain, SupportsForeignAssets: false, KeyType: tss.None, Module: wasmtypes.ModuleName}
 	sender := exported.CrossChainAddress{Chain: sourceChain, Address: msg.SourceAddress}
 	recipient := exported.CrossChainAddress{Chain: destinationChain, Address: msg.DestinationAddress}
 
-	nexusMsg := exported.NewGeneralMessage(id, sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
+	nexusMsg := exported.NewGeneralMessage(fmt.Sprintf("%s-%s", msg.SourceChain, msg.ID), sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
 	if err := m.Nexus.SetNewMessage(ctx, nexusMsg); err != nil {
 		return err
 	}

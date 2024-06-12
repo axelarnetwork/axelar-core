@@ -26,7 +26,12 @@ func NewMessageRoute(nexus types.Nexus, account types.AccountKeeper, wasm types.
 			return fmt.Errorf("gateway is not set")
 		}
 
-		bz, err := json.Marshal(request{RouteMessagesFromNexus: []exported.WasmMessage{exported.FromGeneralMessage(msg)}})
+		wasmMsg := exported.FromGeneralMessage(msg)
+		if err := wasmMsg.ValidateBasic(); err != nil {
+			return err
+		}
+
+		bz, err := json.Marshal(request{RouteMessagesFromNexus: []exported.WasmMessage{wasmMsg}})
 		if err != nil {
 			return nil
 		}
