@@ -382,7 +382,7 @@ func (m WasmMessage) ValidateBasic() error {
 		return fmt.Errorf("invalid wasm message payload hash")
 	}
 
-	if len(m.SourceTxID) == 0 {
+	if len(m.SourceTxID) != 32 {
 		return fmt.Errorf("invalid wasm message source tx id")
 	}
 
