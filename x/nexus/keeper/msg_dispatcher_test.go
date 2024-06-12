@@ -170,7 +170,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 				return exported.GeneralMessage{}, false
 			}
 			nexus.SetNewMessageFunc = func(_ sdk.Context, msg exported.GeneralMessage) error {
-				return nil
+				return msg.ValidateBasic()
 			}
 			nexus.RouteMessageFunc = func(ctx sdk.Context, id string, _ ...exported.RoutingContext) error { return nil }
 		}).

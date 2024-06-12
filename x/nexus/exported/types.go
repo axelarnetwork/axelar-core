@@ -362,8 +362,16 @@ func (m WasmMessage) ValidateBasic() error {
 		return sdkerrors.Wrap(err, "invalid wasm message id")
 	}
 
+	if err := m.SourceChain.Validate(); err != nil {
+		return sdkerrors.Wrap(err, "invalid wasm message source chain name")
+	}
+
 	if err := utils.ValidateString(m.SourceAddress); err != nil {
 		return sdkerrors.Wrap(err, "invalid wasm message source address")
+	}
+
+	if err := m.DestinationChain.Validate(); err != nil {
+		return sdkerrors.Wrap(err, "invalid wasm message destination chain name")
 	}
 
 	if err := utils.ValidateString(m.DestinationAddress); err != nil {
@@ -372,6 +380,10 @@ func (m WasmMessage) ValidateBasic() error {
 
 	if len(m.PayloadHash) != 32 {
 		return fmt.Errorf("invalid wasm message payload hash")
+	}
+
+	if len(m.SourceTxID) == 0 {
+		return fmt.Errorf("invalid wasm message source tx id")
 	}
 
 	return nil
