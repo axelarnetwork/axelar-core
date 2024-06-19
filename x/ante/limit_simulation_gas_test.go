@@ -1,14 +1,16 @@
 package ante_test
 
 import (
-	"github.com/axelarnetwork/axelar-core/testutils/fake"
-	"github.com/axelarnetwork/axelar-core/x/ante"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	abciproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	"testing"
+
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/x/ante"
 )
 
 func TestLimitSimulationGasDecorator_AnteHandle(t *testing.T) {
