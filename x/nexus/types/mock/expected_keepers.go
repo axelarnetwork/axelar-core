@@ -59,6 +59,9 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			GetFeeInfoFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset string) github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo {
 //				panic("mock out the GetFeeInfo method")
 //			},
+//			GetMessageFunc: func(ctx cosmossdktypes.Context, id string) (github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage, bool) {
+//				panic("mock out the GetMessage method")
+//			},
 //			GetParamsFunc: func(ctx cosmossdktypes.Context) nexustypes.Params {
 //				panic("mock out the GetParams method")
 //			},
@@ -140,6 +143,9 @@ type NexusMock struct {
 
 	// GetFeeInfoFunc mocks the GetFeeInfo method.
 	GetFeeInfoFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset string) github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo
+
+	// GetMessageFunc mocks the GetMessage method.
+	GetMessageFunc func(ctx cosmossdktypes.Context, id string) (github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage, bool)
 
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx cosmossdktypes.Context) nexustypes.Params
@@ -257,6 +263,13 @@ type NexusMock struct {
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// Asset is the asset argument value.
 			Asset string
+		}
+		// GetMessage holds details about calls to the GetMessage method.
+		GetMessage []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ID is the id argument value.
+			ID string
 		}
 		// GetParams holds details about calls to the GetParams method.
 		GetParams []struct {
@@ -382,6 +395,7 @@ type NexusMock struct {
 	lockGetChainMaintainers      sync.RWMutex
 	lockGetChains                sync.RWMutex
 	lockGetFeeInfo               sync.RWMutex
+	lockGetMessage               sync.RWMutex
 	lockGetParams                sync.RWMutex
 	lockInitGenesis              sync.RWMutex
 	lockIsChainActivated         sync.RWMutex
@@ -783,6 +797,42 @@ func (mock *NexusMock) GetFeeInfoCalls() []struct {
 	mock.lockGetFeeInfo.RLock()
 	calls = mock.calls.GetFeeInfo
 	mock.lockGetFeeInfo.RUnlock()
+	return calls
+}
+
+// GetMessage calls GetMessageFunc.
+func (mock *NexusMock) GetMessage(ctx cosmossdktypes.Context, id string) (github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage, bool) {
+	if mock.GetMessageFunc == nil {
+		panic("NexusMock.GetMessageFunc: method is nil but Nexus.GetMessage was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+		ID  string
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockGetMessage.Lock()
+	mock.calls.GetMessage = append(mock.calls.GetMessage, callInfo)
+	mock.lockGetMessage.Unlock()
+	return mock.GetMessageFunc(ctx, id)
+}
+
+// GetMessageCalls gets all the calls that were made to GetMessage.
+// Check the length with:
+//
+//	len(mockedNexus.GetMessageCalls())
+func (mock *NexusMock) GetMessageCalls() []struct {
+	Ctx cosmossdktypes.Context
+	ID  string
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+		ID  string
+	}
+	mock.lockGetMessage.RLock()
+	calls = mock.calls.GetMessage
+	mock.lockGetMessage.RUnlock()
 	return calls
 }
 
