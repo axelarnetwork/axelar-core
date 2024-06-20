@@ -509,5 +509,5 @@ func NewRWFile(path string) RWFile {
 // ReadAll returns the full content of the file
 func (f RWFile) ReadAll() ([]byte, error) { return os.ReadFile(f.path) }
 
-// WriteAll writes the given bytes to a file. Creates a new fille if it does not exist, overwrites the previous content otherwise.
+// WriteAll writes the given bytes to a file. Creates a new file if it does not exist, overwrites the previous content otherwise.
 func (f RWFile) WriteAll(bz []byte) error { return os.WriteFile(f.path, bz, RW) }

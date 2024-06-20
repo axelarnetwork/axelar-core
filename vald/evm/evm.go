@@ -52,7 +52,7 @@ func (mgr Mgr) logger(keyvals ...any) log.Logger {
 	return log.WithKeyVals(keyvals...)
 }
 
-// ProcessNewChain notifies the operator that vald needs to be restarted/udpated for a new chain
+// ProcessNewChain notifies the operator that vald needs to be restarted/updated for a new chain
 func (mgr Mgr) ProcessNewChain(event *types.ChainAdded) (err error) {
 	mgr.logger().Info(fmt.Sprintf("VALD needs to be updated and restarted for new chain %s", event.Chain.String()))
 	return nil
