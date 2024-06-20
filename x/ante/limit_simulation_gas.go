@@ -36,10 +36,10 @@ func (d LimitSimulationGasDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 	if hasLimit {
 		gasMeter = sdk.NewGasMeter(limit)
 		gasMeter.ConsumeGas(ctx.GasMeter().GasConsumed(), "ante handler")
-		ctx.WithGasMeter(gasMeter)
+		ctx = ctx.WithGasMeter(gasMeter)
 	}
 
-	return next(ctx.WithGasMeter(gasMeter), tx, simulate)
+	return next(ctx, tx, simulate)
 }
 
 func (d LimitSimulationGasDecorator) getGasLimit(ctx sdk.Context) (sdk.Gas, bool) {
