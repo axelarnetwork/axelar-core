@@ -62,7 +62,7 @@
       - [latest-batched-commands \[chain\]](axelard_query_evm_latest-batched-commands.md)	 - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [params \[chain\]](axelard_query_evm_params.md)	 - Returns the params for the evm module
       - [pending-commands \[chain\]](axelard_query_evm_pending-commands.md)	 - Get the list of commands not yet added to a batch
-      - [token-address \[chain\]](axelard_query_evm_token-address.md)	 - Query a token address by by either symbol or asset
+      - [token-address \[chain\]](axelard_query_evm_token-address.md)	 - Query a token address by either symbol or asset
       - [token-info \[chain\]](axelard_query_evm_token-info.md)	 - Returns the info of token by either symbol, asset, or address
     - [feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module
       - [grant \[granter\] \[grantee\]](axelard_query_feegrant_grant.md)	 - Query details of a single grant
