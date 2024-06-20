@@ -696,7 +696,7 @@ func InitCustomAnteDecorators(
 	if IsWasmEnabled() {
 		wasmConfig := mustReadWasmConfig(appOpts)
 		wasmAnteDecorators := []sdk.AnteDecorator{
-			wasmkeeper.NewLimitSimulationGasDecorator(wasmConfig.SimulationGasLimit),
+			ante.NewLimitSimulationGasDecorator(wasmConfig.SimulationGasLimit),
 			wasmkeeper.NewCountTXDecorator(keys[wasm.StoreKey]),
 		}
 
