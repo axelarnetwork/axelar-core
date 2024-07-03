@@ -452,6 +452,7 @@ func initMessageRouter(keepers *KeeperCache) nexusTypes.MessageRouter {
 			axelarbankkeeper.NewBankKeeper(GetKeeper[bankkeeper.BaseKeeper](keepers)),
 			GetKeeper[nexusKeeper.Keeper](keepers),
 			GetKeeper[authkeeper.AccountKeeper](keepers),
+			GetKeeper[stakingkeeper.Keeper](keepers),
 		))
 
 	if IsWasmEnabled() {
