@@ -124,7 +124,7 @@ type GovKeeper interface {
 	GetProposal(ctx sdk.Context, proposalID uint64) (govtypes.Proposal, bool)
 }
 
-// StakingKeeper provides functionality to the gov module
+// StakingKeeper provides functionality to the staking module
 type StakingKeeper interface {
 	BondDenom(ctx sdk.Context) string
 }
