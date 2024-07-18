@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/CosmWasm/wasmd/x/wasm"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
@@ -18,6 +19,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
@@ -50,7 +52,7 @@ func (f Fee) ValidateBasic() error {
 	return nil
 }
 
-func validateFee(ctx sdk.Context, n types.Nexus, b types.BankKeeper, token sdk.Coin, msgType nexus.MessageType, sourceChain nexus.Chain, fee Fee) error {
+func validateFee(ctx sdk.Context, n types.Nexus, token sdk.Coin, msgType nexus.MessageType, sourceChain nexus.Chain, fee Fee) error {
 	if err := fee.ValidateBasic(); err != nil {
 		return err
 	}
@@ -132,7 +134,7 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 
 	path := types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())
 
-	if err := validateMessage(ctx, ibcK, n, b, path, msg, token); err != nil {
+	if err := validateMessage(ctx, ibcK, n, path, msg, token); err != nil {
 		ibcK.Logger(ctx).Debug(fmt.Sprintf("failed validating message: %s", err.Error()),
 			"src_channel", packet.GetSourceChannel(),
 			"dest_channel", packet.GetDestChannel(),
@@ -182,9 +184,10 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	return ack
 }
 
-func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, ibcPath string, msg Message, token keeper.Coin) error {
-	srcChainName, ok := ibcK.GetChainNameByIBCPath(ctx, ibcPath)
-	if !ok {
+func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcPath string, msg Message, token keeper.Coin) error {
+	// validate source chain
+	srcChainName, found := ibcK.GetChainNameByIBCPath(ctx, ibcPath)
+	if !found {
 		return fmt.Errorf("unrecognized IBC path %s", ibcPath)
 	}
 	srcChain := funcs.MustOk(n.GetChain(ctx, srcChainName))
@@ -193,27 +196,27 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b ty
 		return fmt.Errorf("chain %s registered for IBC path %s is deactivated", srcChain.Name, ibcPath)
 	}
 
+	if msg.Fee != nil {
+		err := validateFee(ctx, n, token.Coin, nexus.MessageType(msg.Type), srcChain, *msg.Fee)
+		if err != nil {
+			return err
+		}
+	}
+
+	// validate destination chain
 	destChainName := nexus.ChainName(msg.DestinationChain)
 	if err := destChainName.Validate(); err != nil {
 		return err
 	}
 
-	destChain, ok := n.GetChain(ctx, destChainName)
-	if !ok {
-		return fmt.Errorf("unrecognized destination chain %s", destChainName)
-	}
+	destChain, found := n.GetChain(ctx, destChainName)
 
-	if !n.IsChainActivated(ctx, destChain) {
-		return fmt.Errorf("chain %s is deactivated", destChain.Name)
-	}
+	if found { // if chain can't be found in the nexus module, leave rest of validation up to amplifier
+		if !n.IsChainActivated(ctx, destChain) {
+			return fmt.Errorf("chain %s is deactivated", destChain.Name)
+		}
 
-	if err := n.ValidateAddress(ctx, nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}); err != nil {
-		return err
-	}
-
-	if msg.Fee != nil {
-		err := validateFee(ctx, n, b, token.Coin, nexus.MessageType(msg.Type), srcChain, *msg.Fee)
-		if err != nil {
+		if err := n.ValidateAddress(ctx, nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}); err != nil {
 			return err
 		}
 	}
@@ -226,7 +229,7 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b ty
 			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), srcChain.Name)
 		}
 
-		if !n.IsAssetRegistered(ctx, destChain, token.GetDenom()) {
+		if found && !n.IsAssetRegistered(ctx, destChain, token.GetDenom()) {
 			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), destChain.Name)
 		}
 		return nil
@@ -244,7 +247,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 		return err
 	}
 
-	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
+	destChain := getDestChain(ctx, msg.DestinationChain, n)
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	m := nexus.NewGeneralMessage(
 		id,
@@ -281,7 +284,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		return err
 	}
 
-	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
+	destChain := getDestChain(ctx, msg.DestinationChain, n)
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	m := nexus.NewGeneralMessage(
 		id,
@@ -308,7 +311,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 }
 
 func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
-	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
+	destChain := getDestChain(ctx, msg.DestinationChain, n)
 	crossChainAddr := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 
 	if err := token.Lock(b, types.AxelarGMPAccount); err != nil {
@@ -331,6 +334,18 @@ func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceA
 
 	return nil
 
+}
+
+func getDestChain(ctx sdk.Context, name string, n types.Nexus) nexus.Chain {
+	chainName := nexus.ChainName(name)
+
+	destinationChain, ok := n.GetChain(ctx, chainName)
+	if !ok {
+		// try forwarding it to wasm router if destination chain is not registered
+		destinationChain = nexus.Chain{Name: chainName, SupportsForeignAssets: false, KeyType: tss.None, Module: wasm.ModuleName}
+	}
+
+	return destinationChain
 }
 
 // extractTokenFromPacketData get normalized token from ICS20 packet
