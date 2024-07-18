@@ -42,7 +42,7 @@ func TestMgr_GetTxReceiptIfFinalized(t *testing.T) {
 		confHeight = uint64(rand.I64Between(1, 50))
 		latestFinalizedBlockNumber = uint64(rand.I64Between(1000, 10000))
 
-		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, nil, rand.ValAddr(), rand.AccAddr(), cache)
+		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, nil, rand.ValAddr(), rand.AccAddr(), "", cache)
 	})
 
 	givenMgr.
@@ -179,7 +179,7 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 			GetFunc: func(chain nexus.ChainName) *big.Int { return big.NewInt(0) },
 			SetFunc: func(nexus.ChainName, *big.Int) {},
 		}
-		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): evmClient}, nil, rand.ValAddr(), rand.AccAddr(), cache)
+		mgr = evm.NewMgr(map[string]evmRpc.Client{chain.String(): evmClient}, nil, rand.ValAddr(), rand.AccAddr(), "", cache)
 	})
 
 	confHeight = uint64(rand.I64Between(1, 50))

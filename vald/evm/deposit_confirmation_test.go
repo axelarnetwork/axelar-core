@@ -137,7 +137,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		}
 
 		valAddr = rand.ValAddr()
-		mgr = evm.NewMgr(evmMap, broadcaster, valAddr, rand.AccAddr(), &evmmock.LatestFinalizedBlockCacheMock{
+		mgr = evm.NewMgr(evmMap, broadcaster, valAddr, rand.AccAddr(), "", &evmmock.LatestFinalizedBlockCacheMock{
 			GetFunc: func(_ nexus.ChainName) *big.Int { return big.NewInt(0) },
 			SetFunc: func(_ nexus.ChainName, _ *big.Int) {},
 		})

@@ -34,16 +34,18 @@ type Mgr struct {
 	validator                 sdk.ValAddress
 	proxy                     sdk.AccAddress
 	latestFinalizedBlockCache LatestFinalizedBlockCache
+	chainID                   string
 }
 
 // NewMgr returns a new Mgr instance
-func NewMgr(rpcs map[string]rpc.Client, broadcaster broadcast.Broadcaster, valAddr sdk.ValAddress, proxy sdk.AccAddress, latestFinalizedBlockCache LatestFinalizedBlockCache) *Mgr {
+func NewMgr(rpcs map[string]rpc.Client, broadcaster broadcast.Broadcaster, valAddr sdk.ValAddress, proxy sdk.AccAddress, chainID string, latestFinalizedBlockCache LatestFinalizedBlockCache) *Mgr {
 	return &Mgr{
 		rpcs:                      rpcs,
 		proxy:                     proxy,
 		broadcaster:               broadcaster,
 		validator:                 valAddr,
 		latestFinalizedBlockCache: latestFinalizedBlockCache,
+		chainID:                   chainID,
 	}
 }
 
