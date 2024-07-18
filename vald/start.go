@@ -493,7 +493,7 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broad
 		log.Infof("successfully connected to EVM bridge for chain %s", chainName)
 	})
 
-	return evm.NewMgr(rpcs, b, valAddr, cliCtx.FromAddress, evm.NewLatestFinalizedBlockCache())
+	return evm.NewMgr(rpcs, b, valAddr, cliCtx.FromAddress, cliCtx.ChainID, evm.NewLatestFinalizedBlockCache())
 }
 
 // RWFile implements the ReadWriter interface for an underlying file
