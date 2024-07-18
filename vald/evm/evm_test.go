@@ -18,7 +18,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
-	broadcastmock "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
+	mock2 "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/vald/evm"
@@ -394,7 +394,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		votes = []*types.VoteEvents{}
 		evmMap = make(map[string]evmRpc.Client, 1)
 
-		broadcaster := &broadcastmock.BroadcasterMock{
+		broadcaster := &mock2.BroadcasterMock{
 			BroadcastFunc: func(_ context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 				for _, msg := range msgs {
 					votes = append(votes, msg.(*voteTypes.VoteRequest).Vote.GetCachedValue().(*types.VoteEvents))
@@ -583,7 +583,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 		mgr              *evm.Mgr
 		event            *types.ConfirmTokenStarted
 		rpc              *mock.ClientMock
-		broadcaster      *broadcastmock.BroadcasterMock
+		broadcaster      *mock2.BroadcasterMock
 		gatewayAddrBytes []byte
 		valAddr          sdk.ValAddress
 	)
@@ -634,7 +634,7 @@ func TestMgr_ProccessTokenConfirmation(t *testing.T) {
 				return receipt.BlockNumber, nil
 			},
 		}
-		broadcaster = &broadcastmock.BroadcasterMock{
+		broadcaster = &mock2.BroadcasterMock{
 			BroadcastFunc: func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) { return nil, nil },
 		}
 		evmMap := make(map[string]evmRpc.Client)
@@ -729,7 +729,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 		mgr            *evm.Mgr
 		event          *types.ConfirmKeyTransferStarted
 		rpc            *mock.ClientMock
-		broadcaster    *broadcastmock.BroadcasterMock
+		broadcaster    *mock2.BroadcasterMock
 		txID           types.Hash
 		gatewayAddress types.Address
 		pollID         vote.PollID
@@ -739,7 +739,7 @@ func TestMgr_ProcessTransferKeyConfirmation(t *testing.T) {
 
 	givenEvmMgr := Given("EVM mgr", func() {
 		rpc = &mock.ClientMock{}
-		broadcaster = &broadcastmock.BroadcasterMock{
+		broadcaster = &mock2.BroadcasterMock{
 			BroadcastFunc: func(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) { return nil, nil },
 		}
 		evmMap := make(map[string]evmRpc.Client)
@@ -984,7 +984,7 @@ func TestMgr_ProcessTransferKeyConfirmation_FileCoinTestnetRescue(t *testing.T) 
 		mgr         *evm.Mgr
 		event       *types.ConfirmKeyTransferStarted
 		rpc         *mock.ClientMock
-		broadcaster *broadcastmock.BroadcasterMock
+		broadcaster *mock2.BroadcasterMock
 	)
 
 	app.SetConfig()
@@ -996,7 +996,7 @@ func TestMgr_ProcessTransferKeyConfirmation_FileCoinTestnetRescue(t *testing.T) 
 
 	givenEvmMgr := Given("EVM mgr", func() {
 		rpc = &mock.ClientMock{}
-		broadcaster = &broadcastmock.BroadcasterMock{
+		broadcaster = &mock2.BroadcasterMock{
 			BroadcastFunc: func(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) { return nil, nil },
 		}
 		evmMap := make(map[string]evmRpc.Client)
