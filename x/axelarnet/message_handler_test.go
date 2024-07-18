@@ -322,7 +322,7 @@ func TestHandleMessage(t *testing.T) {
 	message.Type = nexus.TypeGeneralMessage
 
 	whenMessageIsValidWithKnownDest := whenSourceChainIsValid.
-		When("dest chain valid", func() {
+		When("dest chain is found in the nexus module", func() {
 			isChainFound(destChain, true)()
 			destChain.Module = evmtypes.ModuleName
 			isChainActivated(destChain, true)()
@@ -332,7 +332,7 @@ func TestHandleMessage(t *testing.T) {
 		})
 
 	whenMessageIsValidWithUnknownDest := whenSourceChainIsValid.
-		When("dest chain valid", func() {
+		When("dest chain is not found in the nexus module", func() {
 			isChainFound(destChain, false)()
 			destChain.Module = evmtypes.ModuleName
 			isChainActivated(destChain, true)()
