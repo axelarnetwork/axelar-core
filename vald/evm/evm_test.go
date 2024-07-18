@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/axelarnetwork/axelar-core/app"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"math/big"
 	"strings"
 	"testing"
@@ -17,7 +15,9 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	geth "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
+	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	broadcastmock "github.com/axelarnetwork/axelar-core/sdk-utils/broadcast/mock"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
