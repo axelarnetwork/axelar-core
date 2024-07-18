@@ -283,11 +283,11 @@ func (mgr Mgr) isStuckFileCoinKeyRotation(event *types.ConfirmKeyTransferStarted
 		return false
 	}
 
-	if !strings.EqualFold(event.TxID.Hex(), "0xd9cc8d5f0238dfe360776ed9029835d8a470d4d30e46a43deb76f316c0bd5740") {
+	if event.TxID != types.Hash(common.HexToHash("0xd9cc8d5f0238dfe360776ed9029835d8a470d4d30e46a43deb76f316c0bd5740")) {
 		return false
 	}
 
-	if !strings.EqualFold(event.GatewayAddress.Hex(), "0x999117D44220F33e0441fbAb2A5aDB8FF485c54D") {
+	if event.GatewayAddress != types.Address(common.HexToAddress("0x999117D44220F33e0441fbAb2A5aDB8FF485c54D")) {
 		return false
 	}
 
