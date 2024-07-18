@@ -14,7 +14,7 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-// NewKeygenSession is the contructor for keygen session
+// NewKeygenSession is the contractor for keygen session
 func NewKeygenSession(id exported.KeyID, keygenThreshold utils.Threshold, signingThreshold utils.Threshold, snapshot snapshot.Snapshot, expiresAt int64, gracePeriod int64) KeygenSession {
 	return KeygenSession{
 		Key: Key{

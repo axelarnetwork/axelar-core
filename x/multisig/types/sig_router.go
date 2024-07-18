@@ -23,7 +23,7 @@ type router struct {
 	sealed   bool
 }
 
-// NewSigRouter is the contructor for sig router
+// NewSigRouter is the contractor for sig router
 func NewSigRouter() SigRouter {
 	return &router{
 		handlers: make(map[string]exported.SigHandler),

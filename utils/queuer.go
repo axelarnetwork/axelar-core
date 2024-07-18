@@ -42,7 +42,7 @@ type GeneralKVQueue struct {
 	prioritizer func(value codec.ProtoMarshaler) Key
 }
 
-// NewGeneralKVQueue is the contructor for GeneralKVQueue
+// NewGeneralKVQueue is the contractor for GeneralKVQueue
 func NewGeneralKVQueue(name string, store KVStore, logger log.Logger, prioritizer func(value codec.ProtoMarshaler) Key) GeneralKVQueue {
 	return GeneralKVQueue{
 		name:        KeyFromStr(name),
