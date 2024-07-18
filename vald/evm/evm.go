@@ -278,9 +278,6 @@ func (mgr Mgr) isStuckFileCoinKeyRotation(event *types.ConfirmKeyTransferStarted
 	if mgr.chainID != "axelar-testnet-lisbon-3" {
 		return false
 	}
-	if event.PollID.String() != "1342934" {
-		return false
-	}
 
 	if event.Chain != "filecoin-2" {
 		return false
@@ -291,10 +288,6 @@ func (mgr Mgr) isStuckFileCoinKeyRotation(event *types.ConfirmKeyTransferStarted
 	}
 
 	if !strings.EqualFold(event.GatewayAddress.Hex(), "0x999117D44220F33e0441fbAb2A5aDB8FF485c54D") {
-		return false
-	}
-
-	if event.ConfirmationHeight != 10 {
 		return false
 	}
 

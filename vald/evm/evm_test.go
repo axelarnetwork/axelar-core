@@ -1031,22 +1031,43 @@ func TestMgr_ProcessTransferKeyConfirmation_FileCoinTestnetRescue(t *testing.T) 
 
 	givenEvmMgr.
 		Given2(givenTxReceiptIsNotFound).
-		When("when confirming specific missed filecoin transfer event", func() {
-			var abciEvent abci.Event
-			funcs.MustNoErr(encoding.Codec.UnmarshalJSON([]byte(confirmKeyTransferStartedEvent), &abciEvent))
-			event = funcs.Must(sdk.ParseTypedEvent(abciEvent)).(*types.ConfirmKeyTransferStarted)
-		}).
-		Then("should vote yes for event", func(t *testing.T) {
-			err := mgr.ProcessTransferKeyConfirmation(event)
-			assert.NoError(t, err)
+		Branch(
+			When("when confirming the original missed filecoin transfer event", func() {
+				var abciEvent abci.Event
+				funcs.MustNoErr(encoding.Codec.UnmarshalJSON([]byte(confirmKeyTransferStartedEvent), &abciEvent))
+				event = funcs.Must(sdk.ParseTypedEvent(abciEvent)).(*types.ConfirmKeyTransferStarted)
+			}).
+				Then("should vote yes for event", func(t *testing.T) {
+					err := mgr.ProcessTransferKeyConfirmation(event)
+					assert.NoError(t, err)
 
-			actual := assertAndGetVoteEvents(t)
+					actual := assertAndGetVoteEvents(t)
 
-			var expected types.VoteEvents
-			funcs.MustNoErr(encoding.Codec.UnmarshalJSON([]byte(voteEvent), &expected))
+					var expected types.VoteEvents
+					funcs.MustNoErr(encoding.Codec.UnmarshalJSON([]byte(voteEvent), &expected))
 
-			assert.Equal(t, &expected, actual)
-		}).
+					assert.Equal(t, &expected, actual)
+				}),
+			When("when a transfer derived from the original filecoin transfer event", func() {
+				var abciEvent abci.Event
+				funcs.MustNoErr(encoding.Codec.UnmarshalJSON([]byte(confirmKeyTransferStartedEvent), &abciEvent))
+				event = funcs.Must(sdk.ParseTypedEvent(abciEvent)).(*types.ConfirmKeyTransferStarted)
+				event.PollID = 99999
+				event.ConfirmationHeight = 3
+				event.Participants = event.Participants[0:4]
+			}).
+				Then("should vote yes for event", func(t *testing.T) {
+					err := mgr.ProcessTransferKeyConfirmation(event)
+					assert.NoError(t, err)
+
+					actual := assertAndGetVoteEvents(t)
+
+					var expected types.VoteEvents
+					funcs.MustNoErr(encoding.Codec.UnmarshalJSON([]byte(voteEvent), &expected))
+
+					assert.Equal(t, &expected, actual)
+				}),
+		).
 		Run(t)
 }
 
