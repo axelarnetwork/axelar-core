@@ -2,6 +2,7 @@ package exported
 
 import (
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -118,11 +119,11 @@ func (m KeyRequirement) Validate() error {
 	}
 
 	if m.MinKeygenThreshold.Validate() != nil {
-		return fmt.Errorf("MinKeygenThreshold must be <=1 and >0")
+		return errors.New("MinKeygenThreshold must be <=1 and >0")
 	}
 
 	if m.SafetyThreshold.Validate() != nil {
-		return fmt.Errorf("SafetyThreshold must be <=1 and >0")
+		return errors.New("SafetyThreshold must be <=1 and >0")
 	}
 
 	if err := m.KeyShareDistributionPolicy.Validate(); err != nil {
@@ -130,23 +131,23 @@ func (m KeyRequirement) Validate() error {
 	}
 
 	if m.KeygenVotingThreshold.Validate() != nil {
-		return fmt.Errorf("KeygenVotingThreshold must be <=1 and >0")
+		return errors.New("KeygenVotingThreshold must be <=1 and >0")
 	}
 
 	if m.SignVotingThreshold.Validate() != nil {
-		return fmt.Errorf("SignVotingThreshold must be <=1 and >0")
+		return errors.New("SignVotingThreshold must be <=1 and >0")
 	}
 
 	if m.KeygenTimeout <= 0 {
-		return fmt.Errorf("KeygenTimeout must be >0")
+		return errors.New("KeygenTimeout must be >0")
 	}
 
 	if m.SignTimeout <= 0 {
-		return fmt.Errorf("SignTimeout must be >0")
+		return errors.New("SignTimeout must be >0")
 	}
 
 	if m.MinTotalShareCount <= 0 || m.MinTotalShareCount > m.MaxTotalShareCount {
-		return fmt.Errorf("must satisfy 0 < MinTotalShareCount <= MaxTotalShareCount")
+		return ferrors.New("must satisfy 0 < MinTotalShareCount <= MaxTotalShareCount")
 	}
 
 	for totalShareCount := m.MinTotalShareCount; totalShareCount <= m.MaxTotalShareCount; totalShareCount++ {

@@ -1,7 +1,7 @@
 package keeper
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -62,7 +62,7 @@ func initializeRandomPoll(ctx sdk.Context, keeper Keeper) exported.PollMetadata 
 
 	metadata, ok := keeper.getPollMetadata(ctx, pollID)
 	if !ok {
-		panic(fmt.Errorf("poll metadata not found"))
+		panic(errors.New("poll metadata not found"))
 	}
 
 	metadata.State = rand.Of(exported.Completed, exported.Failed)

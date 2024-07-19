@@ -1,7 +1,7 @@
 package types
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -87,28 +87,28 @@ func TestVoteRouter(t *testing.T) {
 			ctx.KVStore(storeKey).Set([]byte("key1"), []byte("value"))
 
 			events.Emit(ctx, &Voted{})
-			return fmt.Errorf("some error")
+			return errors.New("some error")
 		}
 
 		handler.HandleFailedPollFunc = func(ctx sdk.Context, _ exported.Poll) error {
 			ctx.KVStore(storeKey).Set([]byte("key2"), []byte("value"))
 
 			events.Emit(ctx, &Voted{})
-			return fmt.Errorf("some error")
+			return errors.New("some error")
 		}
 
 		handler.HandleExpiredPollFunc = func(ctx sdk.Context, _ exported.Poll) error {
 			ctx.KVStore(storeKey).Set([]byte("key3"), []byte("value"))
 
 			events.Emit(ctx, &Voted{})
-			return fmt.Errorf("some error")
+			return errors.New("some error")
 		}
 
 		handler.HandleCompletedPollFunc = func(ctx sdk.Context, _ exported.Poll) error {
 			ctx.KVStore(storeKey).Set([]byte("key4"), []byte("value"))
 
 			events.Emit(ctx, &Voted{})
-			return fmt.Errorf("some error")
+			return errors.New("some error")
 		}
 	}).
 		Then("ctx is rolled back and no events emitted", func(t *testing.T) {

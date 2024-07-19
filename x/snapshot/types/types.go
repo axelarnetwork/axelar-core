@@ -1,7 +1,7 @@
 package types
 
 import (
-	"fmt"
+	"errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -27,7 +27,7 @@ func (m ProxiedValidator) Validate() error {
 	}
 
 	if m.Validator.Equals(m.Proxy) {
-		return fmt.Errorf("validator cannot be the same as proxy")
+		return errors.New("validator cannot be the same as proxy")
 	}
 
 	return nil
