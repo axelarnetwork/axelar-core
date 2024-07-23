@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"encoding/json"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd"
 	"testing"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -316,7 +317,13 @@ func TestMaxSizeOverrideForClient(t *testing.T) {
 	assert.Error(t, msg.ValidateBasic())
 
 	app.MaxWasmSize = "10000000"
-	_ = app.NewWasmAppModuleBasicOverride(wasm.AppModuleBasic{})
+	// ensure the override works no matter if it's server or client side
+	app.WasmEnabled = "true"
+	_, _ = cmd.NewRootCmd()
+
+	// reset the sender, because the encoding has changed after calling the root cmd from prefix 'cosmos' to 'axelar'
+	msg.Sender = rand.AccAddr().String()
+
 	assert.Equal(t, 10000000, wasmtypes.MaxWasmSize)
 
 	assert.NoError(t, msg.ValidateBasic())

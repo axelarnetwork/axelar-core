@@ -124,8 +124,8 @@ type WasmAppModuleBasicOverride struct {
 }
 
 func NewWasmAppModuleBasicOverride(wasmModule wasm.AppModuleBasic) WasmAppModuleBasicOverride {
-	// the cosmwasm client uses this parameter to validate the message to store contracts before sending it.
-	// Because the AppModuleBasic provides all client commands, it's sufficient to do the override here.
+	// Both the server and the cosmwasm client use this parameter to validate MsgStoreCode.
+	// Because the AppModuleBasic provides server and client commands, it's sufficient to do the override here to set it for both.
 	if MaxWasmSize != "" {
 		// Override the default max wasm code size
 		wasmtypes.MaxWasmSize = funcs.Must(strconv.Atoi(MaxWasmSize))
