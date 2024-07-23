@@ -2,7 +2,6 @@ package app_test
 
 import (
 	"encoding/json"
-	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd"
 	"testing"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/mock"
+	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	. "github.com/axelarnetwork/utils/test"
