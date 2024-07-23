@@ -3,7 +3,6 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/axelarnetwork/utils/funcs"
 	"strconv"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -16,6 +15,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/x/ante"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 //go:generate moq -pkg mock -out ./mock/ibchooks.go . PacketI
