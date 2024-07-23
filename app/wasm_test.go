@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"encoding/json"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"testing"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -303,4 +304,20 @@ func TestICSMiddleWare(t *testing.T) {
 			assert.False(t, ok)
 		})
 	}
+}
+
+func TestMaxSizeOverrideForClient(t *testing.T) {
+	msg := wasmtypes.MsgStoreCode{
+		Sender:                rand.AccAddr().String(),
+		WASMByteCode:          rand.Bytes(5000000),
+		InstantiatePermission: nil,
+	}
+
+	assert.Error(t, msg.ValidateBasic())
+
+	app.MaxWasmSize = "10000000"
+	_ = app.NewWasmAppModuleBasicOverride(wasm.AppModuleBasic{})
+	assert.Equal(t, 10000000, wasmtypes.MaxWasmSize)
+
+	assert.NoError(t, msg.ValidateBasic())
 }

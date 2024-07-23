@@ -3,6 +3,8 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/axelarnetwork/utils/funcs"
+	"strconv"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
@@ -122,6 +124,13 @@ type WasmAppModuleBasicOverride struct {
 }
 
 func NewWasmAppModuleBasicOverride(wasmModule wasm.AppModuleBasic) WasmAppModuleBasicOverride {
+	// the cosmwasm client uses this parameter to validate the message to store contracts before sending it.
+	// Because the AppModuleBasic provides all client commands, it's sufficient to do the override here.
+	if MaxWasmSize != "" {
+		// Override the default max wasm code size
+		wasmtypes.MaxWasmSize = funcs.Must(strconv.Atoi(MaxWasmSize))
+	}
+
 	return WasmAppModuleBasicOverride{
 		AppModuleBasic: wasmModule,
 	}
