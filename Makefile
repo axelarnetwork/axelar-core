@@ -24,7 +24,7 @@ $(info $$CGO_ENABLED is [${CGO_ENABLED}])
 
 ifndef $(WASM_CAPABILITIES)
 # Wasm capabilities: https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
-WASM_CAPABILITIES := "iterator,staking,stargate,cosmwasm_1_3"
+WASM_CAPABILITIES := "iterator,staking,stargate,cosmwasm_1_1,cosmwasm_1_2,cosmwasm_1_3"
 else
 WASM_CAPABILITIES := ""
 endif
