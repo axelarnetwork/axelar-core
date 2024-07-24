@@ -10,14 +10,10 @@ on:
 
 jobs:
   release:
-    strategy:
-      matrix:
-        os:
-          - ubuntu-20.04
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3.0.1
+        uses: actions/checkout@v4
         with:
           fetch-depth: '0'
           submodules: recursive

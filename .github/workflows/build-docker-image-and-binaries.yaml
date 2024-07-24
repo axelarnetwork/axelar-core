@@ -22,10 +22,10 @@ jobs:
       matrix:
         go-version:
           - 1.21
-        os: [ubuntu-20.04, macos-latest]
+        os: [ubuntu-22.04, macos-latest]
         arch: [amd64, arm64]
         exclude:
-          - {os: "ubuntu-20.04", arch: "arm64"}
+          - {os: "ubuntu-22.04", arch: "arm64"}
 
     permissions:
       contents: write
@@ -74,7 +74,7 @@ jobs:
           WASM: ${{ github.event.inputs.wasm }}
           IBC_WASM_HOOKS: ${{ github.event.inputs.ibc-wasm-hooks }}
         run: |
-          OS=$(echo "$OS_TYPE" | sed -e 's/ubuntu-20.04/linux/; s/macos-latest/darwin/')
+          OS=$(echo "$OS_TYPE" | sed -e 's/ubuntu-22.04/linux/; s/macos-latest/darwin/')
           make ARCH="$ARCH" build-binaries-multiarch
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
           gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
@@ -130,7 +130,7 @@ jobs:
           S3_PATH: s3://axelar-releases/axelard/${{ github.event.inputs.tag }}
         run: |
           aws s3 cp ./bin ${S3_PATH}/ --recursive
-      
+
       - name: Upload binaries to Cloudflare R2
         uses: ryand56/r2-upload-action@latest
         with:
@@ -146,7 +146,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-22.04]
         platform: [linux/amd64]
 
     permissions:
@@ -198,7 +198,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-22.04]
 
     permissions:
       contents: write
