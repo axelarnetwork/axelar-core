@@ -832,7 +832,7 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 	destAddress := evmtestutils.RandomAddress().Hex()
 	payload := rand.BytesBetween(100, 500)
 
-	givenPacketWithMessage := Given("a packet with general message", func() {
+	givenPacketWithMessage := Given("a packet with tokens", func() {
 		gmpWithToken = axelarnet.Message{
 			DestinationChain:   destChain.Name.String(),
 			DestinationAddress: destAddress,
@@ -906,7 +906,7 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 	})
 
 	whenPacketReceiverIsGMPWithTokenAccount := givenPacketWithMessage.
-		When("receiver is gmp account", func() {
+		When("receiver is gmp with token account", func() {
 			ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
 				rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), types.AxelarGMPAccount.String(),
 			)
@@ -915,7 +915,7 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 		})
 
 	whenPacketReceiverIsSendTokenAccount := givenPacketWithMessage.
-		When("receiver is gmp account", func() {
+		When("receiver is send token account", func() {
 			ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
 				rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), types.AxelarGMPAccount.String(),
 			)
