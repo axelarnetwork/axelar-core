@@ -26,6 +26,9 @@ type Nexus interface {
 	SetParams(ctx sdk.Context, p Params)
 	GetParams(ctx sdk.Context) Params
 
+	ActivateWasmConnection(ctx sdk.Context)
+	DeactivateWasmConnection(ctx sdk.Context)
+	IsWasmConnectionActivated(ctx sdk.Context) bool
 	IsChainActivated(ctx sdk.Context, chain exported.Chain) bool
 	ActivateChain(ctx sdk.Context, chain exported.Chain)
 	GetChains(ctx sdk.Context) []exported.Chain

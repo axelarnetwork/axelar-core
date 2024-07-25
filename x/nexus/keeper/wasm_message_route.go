@@ -31,6 +31,10 @@ func NewMessageRoute(nexus types.Nexus, account types.AccountKeeper, wasm types.
 			return err
 		}
 
+		if !nexus.IsWasmConnectionActivated(ctx) {
+			return fmt.Errorf("wasm connection is not activated")
+		}
+
 		bz, err := json.Marshal(request{RouteMessagesFromNexus: []exported.WasmMessage{wasmMsg}})
 		if err != nil {
 			return nil

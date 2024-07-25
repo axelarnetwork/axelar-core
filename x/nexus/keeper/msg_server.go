@@ -16,6 +16,7 @@ import (
 var _ types.MsgServiceServer = msgServer{}
 
 const allChain = ":all:"
+const wasm = ":wasm:"
 
 type msgServer struct {
 	types.Nexus
@@ -131,13 +132,18 @@ func (s msgServer) ActivateChain(c context.Context, req *types.ActivateChainRequ
 		for _, chain := range s.GetChains(ctx) {
 			s.activateChain(ctx, chain)
 		}
+		s.ActivateWasmConnection(ctx)
 	} else {
 		for _, chainStr := range req.Chains {
-			chain, ok := s.GetChain(ctx, chainStr)
-			if !ok {
-				return nil, fmt.Errorf("%s is not a registered chain", chainStr)
+			if strings.ToLower(chainStr.String()) == wasm {
+				s.ActivateWasmConnection(ctx)
+			} else {
+				chain, ok := s.GetChain(ctx, chainStr)
+				if !ok {
+					return nil, fmt.Errorf("%s is not a registered chain", chainStr)
+				}
+				s.activateChain(ctx, chain)
 			}
-			s.activateChain(ctx, chain)
 		}
 	}
 	return &types.ActivateChainResponse{}, nil
@@ -153,12 +159,16 @@ func (s msgServer) DeactivateChain(c context.Context, req *types.DeactivateChain
 		}
 	} else {
 		for _, chainStr := range req.Chains {
-			chain, ok := s.GetChain(ctx, chainStr)
-			if !ok {
-				return nil, fmt.Errorf("%s is not a registered chain", chainStr)
-			}
+			if strings.ToLower(chainStr.String()) == wasm {
+				s.DeactivateWasmConnection(ctx)
+			} else {
+				chain, ok := s.GetChain(ctx, chainStr)
+				if !ok {
+					return nil, fmt.Errorf("%s is not a registered chain", chainStr)
+				}
 
-			s.deactivateChain(ctx, chain)
+				s.deactivateChain(ctx, chain)
+			}
 		}
 	}
 	return &types.DeactivateChainResponse{}, nil
