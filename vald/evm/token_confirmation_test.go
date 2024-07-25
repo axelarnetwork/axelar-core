@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"math/big"
+	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -228,4 +229,33 @@ func createTokenLogs(denom string, gateway, tokenAddr common.Address, deploySig 
 	}
 
 	return logs
+}
+
+func TestMgr_ProcessTokenConfirmationNoTopicsNotPanics(t *testing.T) {
+	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
+	receipt := geth.Receipt{
+		Logs:        []*geth.Log{{Topics: make([]common.Hash, 0)}},
+		BlockNumber: big.NewInt(1),
+		Status:      geth.ReceiptStatusSuccessful,
+	}
+	rpcClient := &mock.ClientMock{TransactionReceiptsFunc: func(_ context.Context, _ []common.Hash) ([]evmrpc.TxReceiptResult, error) {
+		return []evmrpc.TxReceiptResult{evmrpc.TxReceiptResult(results.FromOk(receipt))}, nil
+	}}
+	cache := &evmmock.LatestFinalizedBlockCacheMock{GetFunc: func(chain nexus.ChainName) *big.Int {
+		return big.NewInt(100)
+	}}
+
+	broadcaster := &broadcastmock.BroadcasterMock{BroadcastFunc: func(_ context.Context, _ ...sdk.Msg) (*sdk.TxResponse, error) {
+		return nil, nil
+	}}
+
+	valAddr := rand.ValAddr()
+	mgr := evm.NewMgr(map[string]evmrpc.Client{chain.String(): rpcClient}, broadcaster, valAddr, rand.AccAddr(), cache)
+
+	assert.NotPanics(t, func() {
+		mgr.ProcessTokenConfirmation(&types.ConfirmTokenStarted{TxID: types.Hash{1},
+			PollParticipants: vote.PollParticipants{PollID: 10, Participants: []sdk.ValAddress{valAddr}},
+			Chain:            chain,
+		})
+	})
 }
