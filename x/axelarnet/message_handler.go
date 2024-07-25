@@ -186,8 +186,8 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 
 func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcPath string, msg Message, token keeper.Coin) error {
 	// validate source chain
-	srcChainName, found := ibcK.GetChainNameByIBCPath(ctx, ibcPath)
-	if !found {
+	srcChainName, srcChainFound := ibcK.GetChainNameByIBCPath(ctx, ibcPath)
+	if !srcChainFound {
 		return fmt.Errorf("unrecognized IBC path %s", ibcPath)
 	}
 	srcChain := funcs.MustOk(n.GetChain(ctx, srcChainName))
@@ -209,9 +209,8 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 		return err
 	}
 
-	destChain, found := n.GetChain(ctx, destChainName)
-
-	if found { // if chain can't be found in the nexus module, leave rest of validation up to amplifier
+	destChain, destChainFound := n.GetChain(ctx, destChainName)
+	if destChainFound { // if chain can't be found in the nexus module, leave rest of validation up to amplifier (unless it has tokens, see below)
 		if !n.IsChainActivated(ctx, destChain) {
 			return fmt.Errorf("chain %s is deactivated", destChain.Name)
 		}
@@ -225,11 +224,17 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 	case nexus.TypeGeneralMessage:
 		return nil
 	case nexus.TypeGeneralMessageWithToken, nexus.TypeSendToken:
+
+		// if destination chain is not found but has tokens, it should not be allowed to be sent to amplifier
+		if !destChainFound {
+			return fmt.Errorf("unrecognized destination chain %s", destChainName)
+		}
+
 		if !n.IsAssetRegistered(ctx, srcChain, token.GetDenom()) {
 			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), srcChain.Name)
 		}
 
-		if found && !n.IsAssetRegistered(ctx, destChain, token.GetDenom()) {
+		if !n.IsAssetRegistered(ctx, destChain, token.GetDenom()) {
 			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), destChain.Name)
 		}
 		return nil
@@ -247,7 +252,13 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 		return err
 	}
 
-	destChain := getDestChain(ctx, msg.DestinationChain, n)
+	chainName := nexus.ChainName(msg.DestinationChain)
+	destChain, ok := n.GetChain(ctx, chainName)
+	if !ok {
+		// try forwarding it to wasm router if destination chain is not registered
+		destChain = nexus.Chain{Name: chainName, SupportsForeignAssets: false, KeyType: tss.None, Module: wasm.ModuleName}
+	}
+
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	m := nexus.NewGeneralMessage(
 		id,
@@ -284,7 +295,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		return err
 	}
 
-	destChain := getDestChain(ctx, msg.DestinationChain, n)
+	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	m := nexus.NewGeneralMessage(
 		id,
@@ -311,7 +322,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 }
 
 func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
-	destChain := getDestChain(ctx, msg.DestinationChain, n)
+	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	crossChainAddr := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 
 	if err := token.Lock(b, types.AxelarGMPAccount); err != nil {
@@ -334,18 +345,6 @@ func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceA
 
 	return nil
 
-}
-
-func getDestChain(ctx sdk.Context, name string, n types.Nexus) nexus.Chain {
-	chainName := nexus.ChainName(name)
-
-	destinationChain, ok := n.GetChain(ctx, chainName)
-	if !ok {
-		// try forwarding it to wasm router if destination chain is not registered
-		destinationChain = nexus.Chain{Name: chainName, SupportsForeignAssets: false, KeyType: tss.None, Module: wasm.ModuleName}
-	}
-
-	return destinationChain
 }
 
 // extractTokenFromPacketData get normalized token from ICS20 packet

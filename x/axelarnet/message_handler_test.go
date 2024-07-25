@@ -279,48 +279,6 @@ func TestHandleMessage(t *testing.T) {
 		Then("should return ack error", ackError()).
 		Run(t)
 
-	whenSourceChainIsValid.
-		When("dest chain is found", isChainFound(destChain, true)).
-		When("dest chain is evm", func() { destChain.Module = evmtypes.ModuleName }).
-		When("dest chain is activated", isChainActivated(destChain, true)).
-		When("is a general message with token", func() {
-			message.Type = nexus.TypeGeneralMessageWithToken
-		}).
-		When("dest address is valid", func() {
-			message.DestinationAddress = evmtestutils.RandomAddress().Hex()
-			ics20Packet.Memo = string(funcs.Must(json.Marshal(message)))
-			packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
-		}).
-		When("dest asset is not registered", func() {
-			n.IsAssetRegisteredFunc = func(ctx sdk.Context, chain nexus.Chain, denom string) bool {
-				return chain.Name != destChain.Name
-			}
-		}).
-		Then("should return ack error", ackError()).
-		Run(t)
-
-	whenSourceChainIsValid.
-		When("dest chain is found", isChainFound(destChain, true)).
-		When("dest chain is evm", func() { destChain.Module = evmtypes.ModuleName }).
-		When("dest chain is activated", isChainActivated(destChain, true)).
-		When("is of type send token", func() {
-			message.Type = nexus.TypeSendToken
-		}).
-		When("dest address is valid", func() {
-			message.DestinationAddress = evmtestutils.RandomAddress().Hex()
-			ics20Packet.Memo = string(funcs.Must(json.Marshal(message)))
-			packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
-		}).
-		When("dest asset is not registered", func() {
-			n.IsAssetRegisteredFunc = func(ctx sdk.Context, chain nexus.Chain, denom string) bool {
-				return chain.Name != destChain.Name
-			}
-		}).
-		Then("should return ack error", ackError()).
-		Run(t)
-
-	message.Type = nexus.TypeGeneralMessage
-
 	whenMessageIsValidWithKnownDest := whenSourceChainIsValid.
 		When("dest chain is found in the nexus module", func() {
 			isChainFound(destChain, true)()
@@ -848,4 +806,134 @@ func TestHandleSendToken(t *testing.T) {
 			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
 		}).
 		Run(t)
+}
+
+func TestTokenAndDestChainNotFound(t *testing.T) {
+	var (
+		ctx      sdk.Context
+		k        keeper.Keeper
+		packet   ibcchanneltypes.Packet
+		b        *mock.BankKeeperMock
+		n        *mock.NexusMock
+		channelK *mock.ChannelKeeperMock
+		ibcK     keeper.IBCKeeper
+		r        axelarnet.RateLimiter
+
+		ics20Packet  ibctransfertypes.FungibleTokenPacketData
+		gmpWithToken axelarnet.Message
+		sendToken    axelarnet.Message
+	)
+
+	sourceChannel := axelartestutils.RandomChannel()
+	receiverChannel := axelartestutils.RandomChannel()
+
+	srcChain := nexustestutils.RandomChain()
+	destChain := nexustestutils.RandomChain()
+	destAddress := evmtestutils.RandomAddress().Hex()
+	payload := rand.BytesBetween(100, 500)
+
+	givenPacketWithMessage := Given("a packet with general message", func() {
+		gmpWithToken = axelarnet.Message{
+			DestinationChain:   destChain.Name.String(),
+			DestinationAddress: destAddress,
+			Payload:            payload,
+			Type:               nexus.TypeGeneralMessageWithToken,
+		}
+
+		sendToken = axelarnet.Message{
+			DestinationChain:   destChain.Name.String(),
+			DestinationAddress: destAddress,
+			Payload:            payload,
+			Type:               nexus.TypeSendToken,
+		}
+
+		ctx, k, channelK = setup()
+		funcs.MustNoErr(k.SetCosmosChain(ctx, types.CosmosChain{
+			Name:       srcChain.Name,
+			IBCPath:    axelartestutils.RandomIBCPath(),
+			AddrPrefix: "cosmos",
+		}))
+		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
+		n = &mock.NexusMock{
+			SetNewMessageFunc: func(ctx sdk.Context, msg nexus.GeneralMessage) error {
+				return nil
+			},
+			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+				switch chain {
+				case srcChain.Name:
+					return srcChain, true
+				default:
+					return nexus.Chain{}, false
+				}
+			},
+			ValidateAddressFunc: func(ctx sdk.Context, address nexus.CrossChainAddress) error {
+				switch address.Chain.Module {
+				case evmtypes.ModuleName:
+					return evmKeeper.NewAddressValidator()(ctx, address)
+				case exported.ModuleName:
+					return keeper.NewAddressValidator(k)(ctx, address)
+				default:
+					return fmt.Errorf("module not found")
+				}
+			},
+			GenerateMessageIDFunc: func(ctx sdk.Context) (string, []byte, uint64) {
+				hash := sha256.Sum256(ctx.TxBytes())
+				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0), hash[:], 0
+			},
+			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
+				return nil
+			},
+			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) {
+				return srcChain, true
+			},
+			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool {
+				return chain.Name == srcChain.Name
+			},
+		}
+		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
+			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
+				return ibctransfertypes.DenomTrace{
+					Path:      fmt.Sprintf("%s/%s", ibctransfertypes.PortID, receiverChannel),
+					BaseDenom: rand.Denom(5, 10),
+				}, true
+			},
+		})
+
+		r = axelarnet.NewRateLimiter(&k, n)
+		b = &mock.BankKeeperMock{
+			SendCoinsFunc: func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil },
+		}
+	})
+
+	whenPacketReceiverIsGMPWithTokenAccount := givenPacketWithMessage.
+		When("receiver is gmp account", func() {
+			ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
+				rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), types.AxelarGMPAccount.String(),
+			)
+			ics20Packet.Memo = string(funcs.Must(json.Marshal(gmpWithToken)))
+			packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
+		})
+
+	whenPacketReceiverIsSendTokenAccount := givenPacketWithMessage.
+		When("receiver is gmp account", func() {
+			ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
+				rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), types.AxelarGMPAccount.String(),
+			)
+			ics20Packet.Memo = string(funcs.Must(json.Marshal(sendToken)))
+			packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
+		})
+
+	for _, whenPacketReceiverIsTokenAccount := range []WhenStatement{whenPacketReceiverIsGMPWithTokenAccount, whenPacketReceiverIsSendTokenAccount} {
+		whenPacketReceiverIsTokenAccount.
+			When("source chain is valid", func() {
+				funcs.MustNoErr(k.SetChainByIBCPath(ctx, types.NewIBCPath(ibctransfertypes.PortID, receiverChannel), srcChain.Name))
+			}).
+			Then("should return ack error", func(t *testing.T) {
+				acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet)
+				var ack ibcchanneltypes.Acknowledgement
+				funcs.MustNoErr(ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement.Acknowledgement(), &ack))
+				assert.False(t, ack.Success())
+			}).
+			Run(t)
+	}
 }
