@@ -15,7 +15,7 @@ on:
 jobs:
     build-and-upload:
         name: Build binary and push to R2
-        runs-on: ubuntu-20.04
+        runs-on: ubuntu-22.04
         permissions:
             contents: write
             packages: write
@@ -38,7 +38,7 @@ jobs:
                 path: axelar-core
                 submodules: recursive
                 ref: ${{ steps.get-branch-name.outputs.branch }}
-            
+
             - name: Build axelard binary with version and commit hash
               id: build-binary
               run: |
@@ -51,10 +51,10 @@ jobs:
                 mkdir -p ./binary_file/$commit_hash/
                 sudo mv axelar-core/bin/axelard ./binary_file/$commit_hash/axelard-linux-amd64-$semver
                 echo "binary-directory=./binary_file" >> $GITHUB_OUTPUT
-              
+
             - name: List contents of root directory
               run: ls -la
-          
+
             - uses: ryand56/r2-upload-action@latest
               with:
                 r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
