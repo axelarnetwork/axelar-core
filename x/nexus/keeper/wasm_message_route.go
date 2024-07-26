@@ -21,6 +21,10 @@ func NewMessageRoute(nexus types.Nexus, account types.AccountKeeper, wasm types.
 			return fmt.Errorf("asset transfer is not supported")
 		}
 
+		if !nexus.IsWasmConnectionActivated(ctx) {
+			return fmt.Errorf("wasm connection is not activated")
+		}
+
 		gateway := nexus.GetParams(ctx).Gateway
 		if gateway.Empty() {
 			return fmt.Errorf("gateway is not set")
@@ -29,10 +33,6 @@ func NewMessageRoute(nexus types.Nexus, account types.AccountKeeper, wasm types.
 		wasmMsg := exported.FromGeneralMessage(msg)
 		if err := wasmMsg.ValidateBasic(); err != nil {
 			return err
-		}
-
-		if !nexus.IsWasmConnectionActivated(ctx) {
-			return fmt.Errorf("wasm connection is not activated")
 		}
 
 		bz, err := json.Marshal(request{RouteMessagesFromNexus: []exported.WasmMessage{wasmMsg}})

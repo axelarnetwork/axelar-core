@@ -17,7 +17,7 @@ import (
 var _ types.MsgServiceServer = msgServer{}
 
 const allChain = ":all:"
-const wasm = ":wasm:"
+const wasmAsChain = ":wasm:"
 
 type msgServer struct {
 	types.Nexus
@@ -179,7 +179,9 @@ func (s msgServer) findRelevantChains(chainNames []exported.ChainName, ctx sdk.C
 	return chains, doWasm
 }
 
-func chainIsWasm(chain exported.ChainName) bool { return strings.ToLower(chain.String()) == wasm }
+func chainIsWasm(chain exported.ChainName) bool {
+	return strings.ToLower(chain.String()) == wasmAsChain
+}
 
 func (s msgServer) activateChain(ctx sdk.Context, chain exported.Chain) {
 	if s.IsChainActivated(ctx, chain) {

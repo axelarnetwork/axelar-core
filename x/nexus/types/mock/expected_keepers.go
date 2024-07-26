@@ -29,11 +29,17 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			ActivateChainFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
 //				panic("mock out the ActivateChain method")
 //			},
+//			ActivateWasmConnectionFunc: func(ctx cosmossdktypes.Context)  {
+//				panic("mock out the ActivateWasmConnection method")
+//			},
 //			AddChainMaintainerFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator cosmossdktypes.ValAddress) error {
 //				panic("mock out the AddChainMaintainer method")
 //			},
 //			DeactivateChainFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
 //				panic("mock out the DeactivateChain method")
+//			},
+//			DeactivateWasmConnectionFunc: func(ctx cosmossdktypes.Context)  {
+//				panic("mock out the DeactivateWasmConnection method")
 //			},
 //			DequeueRouteMessageFunc: func(ctx cosmossdktypes.Context) (github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage, bool) {
 //				panic("mock out the DequeueRouteMessage method")
@@ -73,6 +79,9 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			},
 //			IsChainMaintainerFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, maintainer cosmossdktypes.ValAddress) bool {
 //				panic("mock out the IsChainMaintainer method")
+//			},
+//			IsWasmConnectionActivatedFunc: func(ctx cosmossdktypes.Context) bool {
+//				panic("mock out the IsWasmConnectionActivated method")
 //			},
 //			LinkAddressesFunc: func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
 //				panic("mock out the LinkAddresses method")
@@ -114,11 +123,17 @@ type NexusMock struct {
 	// ActivateChainFunc mocks the ActivateChain method.
 	ActivateChainFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
 
+	// ActivateWasmConnectionFunc mocks the ActivateWasmConnection method.
+	ActivateWasmConnectionFunc func(ctx cosmossdktypes.Context)
+
 	// AddChainMaintainerFunc mocks the AddChainMaintainer method.
 	AddChainMaintainerFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator cosmossdktypes.ValAddress) error
 
 	// DeactivateChainFunc mocks the DeactivateChain method.
 	DeactivateChainFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
+
+	// DeactivateWasmConnectionFunc mocks the DeactivateWasmConnection method.
+	DeactivateWasmConnectionFunc func(ctx cosmossdktypes.Context)
 
 	// DequeueRouteMessageFunc mocks the DequeueRouteMessage method.
 	DequeueRouteMessageFunc func(ctx cosmossdktypes.Context) (github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage, bool)
@@ -159,6 +174,9 @@ type NexusMock struct {
 	// IsChainMaintainerFunc mocks the IsChainMaintainer method.
 	IsChainMaintainerFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, maintainer cosmossdktypes.ValAddress) bool
 
+	// IsWasmConnectionActivatedFunc mocks the IsWasmConnectionActivated method.
+	IsWasmConnectionActivatedFunc func(ctx cosmossdktypes.Context) bool
+
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error
 
@@ -198,6 +216,11 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		}
+		// ActivateWasmConnection holds details about calls to the ActivateWasmConnection method.
+		ActivateWasmConnection []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
 		// AddChainMaintainer holds details about calls to the AddChainMaintainer method.
 		AddChainMaintainer []struct {
 			// Ctx is the ctx argument value.
@@ -213,6 +236,11 @@ type NexusMock struct {
 			Ctx cosmossdktypes.Context
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		}
+		// DeactivateWasmConnection holds details about calls to the DeactivateWasmConnection method.
+		DeactivateWasmConnection []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
 		}
 		// DequeueRouteMessage holds details about calls to the DequeueRouteMessage method.
 		DequeueRouteMessage []struct {
@@ -299,6 +327,11 @@ type NexusMock struct {
 			// Maintainer is the maintainer argument value.
 			Maintainer cosmossdktypes.ValAddress
 		}
+		// IsWasmConnectionActivated holds details about calls to the IsWasmConnectionActivated method.
+		IsWasmConnectionActivated []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
 		// LinkAddresses holds details about calls to the LinkAddresses method.
 		LinkAddresses []struct {
 			// Ctx is the ctx argument value.
@@ -384,32 +417,35 @@ type NexusMock struct {
 			Window time.Duration
 		}
 	}
-	lockActivateChain            sync.RWMutex
-	lockAddChainMaintainer       sync.RWMutex
-	lockDeactivateChain          sync.RWMutex
-	lockDequeueRouteMessage      sync.RWMutex
-	lockExportGenesis            sync.RWMutex
-	lockGenerateMessageID        sync.RWMutex
-	lockGetChain                 sync.RWMutex
-	lockGetChainMaintainerStates sync.RWMutex
-	lockGetChainMaintainers      sync.RWMutex
-	lockGetChains                sync.RWMutex
-	lockGetFeeInfo               sync.RWMutex
-	lockGetMessage               sync.RWMutex
-	lockGetParams                sync.RWMutex
-	lockInitGenesis              sync.RWMutex
-	lockIsChainActivated         sync.RWMutex
-	lockIsChainMaintainer        sync.RWMutex
-	lockLinkAddresses            sync.RWMutex
-	lockLogger                   sync.RWMutex
-	lockRateLimitTransfer        sync.RWMutex
-	lockRegisterFee              sync.RWMutex
-	lockRemoveChainMaintainer    sync.RWMutex
-	lockRouteMessage             sync.RWMutex
-	lockSetMessageExecuted       sync.RWMutex
-	lockSetNewMessage            sync.RWMutex
-	lockSetParams                sync.RWMutex
-	lockSetRateLimit             sync.RWMutex
+	lockActivateChain             sync.RWMutex
+	lockActivateWasmConnection    sync.RWMutex
+	lockAddChainMaintainer        sync.RWMutex
+	lockDeactivateChain           sync.RWMutex
+	lockDeactivateWasmConnection  sync.RWMutex
+	lockDequeueRouteMessage       sync.RWMutex
+	lockExportGenesis             sync.RWMutex
+	lockGenerateMessageID         sync.RWMutex
+	lockGetChain                  sync.RWMutex
+	lockGetChainMaintainerStates  sync.RWMutex
+	lockGetChainMaintainers       sync.RWMutex
+	lockGetChains                 sync.RWMutex
+	lockGetFeeInfo                sync.RWMutex
+	lockGetMessage                sync.RWMutex
+	lockGetParams                 sync.RWMutex
+	lockInitGenesis               sync.RWMutex
+	lockIsChainActivated          sync.RWMutex
+	lockIsChainMaintainer         sync.RWMutex
+	lockIsWasmConnectionActivated sync.RWMutex
+	lockLinkAddresses             sync.RWMutex
+	lockLogger                    sync.RWMutex
+	lockRateLimitTransfer         sync.RWMutex
+	lockRegisterFee               sync.RWMutex
+	lockRemoveChainMaintainer     sync.RWMutex
+	lockRouteMessage              sync.RWMutex
+	lockSetMessageExecuted        sync.RWMutex
+	lockSetNewMessage             sync.RWMutex
+	lockSetParams                 sync.RWMutex
+	lockSetRateLimit              sync.RWMutex
 }
 
 // ActivateChain calls ActivateChainFunc.
@@ -445,6 +481,38 @@ func (mock *NexusMock) ActivateChainCalls() []struct {
 	mock.lockActivateChain.RLock()
 	calls = mock.calls.ActivateChain
 	mock.lockActivateChain.RUnlock()
+	return calls
+}
+
+// ActivateWasmConnection calls ActivateWasmConnectionFunc.
+func (mock *NexusMock) ActivateWasmConnection(ctx cosmossdktypes.Context) {
+	if mock.ActivateWasmConnectionFunc == nil {
+		panic("NexusMock.ActivateWasmConnectionFunc: method is nil but Nexus.ActivateWasmConnection was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockActivateWasmConnection.Lock()
+	mock.calls.ActivateWasmConnection = append(mock.calls.ActivateWasmConnection, callInfo)
+	mock.lockActivateWasmConnection.Unlock()
+	mock.ActivateWasmConnectionFunc(ctx)
+}
+
+// ActivateWasmConnectionCalls gets all the calls that were made to ActivateWasmConnection.
+// Check the length with:
+//
+//	len(mockedNexus.ActivateWasmConnectionCalls())
+func (mock *NexusMock) ActivateWasmConnectionCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockActivateWasmConnection.RLock()
+	calls = mock.calls.ActivateWasmConnection
+	mock.lockActivateWasmConnection.RUnlock()
 	return calls
 }
 
@@ -521,6 +589,38 @@ func (mock *NexusMock) DeactivateChainCalls() []struct {
 	mock.lockDeactivateChain.RLock()
 	calls = mock.calls.DeactivateChain
 	mock.lockDeactivateChain.RUnlock()
+	return calls
+}
+
+// DeactivateWasmConnection calls DeactivateWasmConnectionFunc.
+func (mock *NexusMock) DeactivateWasmConnection(ctx cosmossdktypes.Context) {
+	if mock.DeactivateWasmConnectionFunc == nil {
+		panic("NexusMock.DeactivateWasmConnectionFunc: method is nil but Nexus.DeactivateWasmConnection was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockDeactivateWasmConnection.Lock()
+	mock.calls.DeactivateWasmConnection = append(mock.calls.DeactivateWasmConnection, callInfo)
+	mock.lockDeactivateWasmConnection.Unlock()
+	mock.DeactivateWasmConnectionFunc(ctx)
+}
+
+// DeactivateWasmConnectionCalls gets all the calls that were made to DeactivateWasmConnection.
+// Check the length with:
+//
+//	len(mockedNexus.DeactivateWasmConnectionCalls())
+func (mock *NexusMock) DeactivateWasmConnectionCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockDeactivateWasmConnection.RLock()
+	calls = mock.calls.DeactivateWasmConnection
+	mock.lockDeactivateWasmConnection.RUnlock()
 	return calls
 }
 
@@ -977,6 +1077,38 @@ func (mock *NexusMock) IsChainMaintainerCalls() []struct {
 	mock.lockIsChainMaintainer.RLock()
 	calls = mock.calls.IsChainMaintainer
 	mock.lockIsChainMaintainer.RUnlock()
+	return calls
+}
+
+// IsWasmConnectionActivated calls IsWasmConnectionActivatedFunc.
+func (mock *NexusMock) IsWasmConnectionActivated(ctx cosmossdktypes.Context) bool {
+	if mock.IsWasmConnectionActivatedFunc == nil {
+		panic("NexusMock.IsWasmConnectionActivatedFunc: method is nil but Nexus.IsWasmConnectionActivated was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockIsWasmConnectionActivated.Lock()
+	mock.calls.IsWasmConnectionActivated = append(mock.calls.IsWasmConnectionActivated, callInfo)
+	mock.lockIsWasmConnectionActivated.Unlock()
+	return mock.IsWasmConnectionActivatedFunc(ctx)
+}
+
+// IsWasmConnectionActivatedCalls gets all the calls that were made to IsWasmConnectionActivated.
+// Check the length with:
+//
+//	len(mockedNexus.IsWasmConnectionActivatedCalls())
+func (mock *NexusMock) IsWasmConnectionActivatedCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockIsWasmConnectionActivated.RLock()
+	calls = mock.calls.IsWasmConnectionActivated
+	mock.lockIsWasmConnectionActivated.RUnlock()
 	return calls
 }
 
