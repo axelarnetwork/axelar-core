@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"encoding/json"
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,6 +12,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
@@ -40,6 +40,7 @@ func TestNewMessageRoute(t *testing.T) {
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 
 		nexusK = &mock.NexusMock{}
+		nexusK.IsWasmConnectionActivatedFunc = func(_ sdk.Context) bool { return true }
 		accountK = &mock.AccountKeeperMock{}
 		wasmK = &mock.WasmKeeperMock{}
 

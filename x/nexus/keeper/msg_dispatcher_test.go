@@ -36,8 +36,10 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 	givenMessenger := Given("a messenger", func() {
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 		nexus = &mock.NexusMock{
-			LoggerFunc: func(ctx sdk.Context) log.Logger { return ctx.Logger() },
+			LoggerFunc:                    func(ctx sdk.Context) log.Logger { return ctx.Logger() },
+			IsWasmConnectionActivatedFunc: func(sdk.Context) bool { return true },
 		}
+
 		messenger = keeper.NewMessenger(nexus)
 	})
 
