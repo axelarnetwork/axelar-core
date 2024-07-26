@@ -132,7 +132,7 @@ func (s msgServer) ActivateChain(c context.Context, req *types.ActivateChainRequ
 
 	chains, doWasm := s.findRelevantChains(req.Chains, ctx)
 	for _, chain := range chains {
-		s.deactivateChain(ctx, chain)
+		s.activateChain(ctx, chain)
 	}
 	if doWasm {
 		s.ActivateWasmConnection(ctx)
@@ -146,9 +146,6 @@ func (s msgServer) DeactivateChain(c context.Context, req *types.DeactivateChain
 	ctx := sdk.UnwrapSDKContext(c)
 
 	chains, doWasm := s.findRelevantChains(req.Chains, ctx)
-	for _, chain := range chains {
-		s.deactivateChain(ctx, chain)
-	}
 
 	for _, chain := range chains {
 		s.deactivateChain(ctx, chain)
