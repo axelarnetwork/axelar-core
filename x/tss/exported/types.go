@@ -147,7 +147,7 @@ func (m KeyRequirement) Validate() error {
 	}
 
 	if m.MinTotalShareCount <= 0 || m.MinTotalShareCount > m.MaxTotalShareCount {
-		return ferrors.New("must satisfy 0 < MinTotalShareCount <= MaxTotalShareCount")
+		return errors.New("must satisfy 0 < MinTotalShareCount <= MaxTotalShareCount")
 	}
 
 	for totalShareCount := m.MinTotalShareCount; totalShareCount <= m.MaxTotalShareCount; totalShareCount++ {
