@@ -17,7 +17,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
 )
 
-func TestMsgServer_De_ActivateWasm(t *testing.T) {
+func TestMsgServerActivateDeactivateWasm(t *testing.T) {
 	encodingConfig := params.MakeEncodingConfig()
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
@@ -39,14 +39,16 @@ func TestMsgServer_De_ActivateWasm(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
 
 	assert.True(t, k.IsWasmConnectionActivated(ctx))
+
 	_, err := msgServer.DeactivateChain(sdk.WrapSDKContext(ctx), &types.DeactivateChainRequest{Chains: []nexus.ChainName{":all:"}})
 	assert.NoError(t, err)
 	assert.False(t, k.IsWasmConnectionActivated(ctx))
+
 	_, err = msgServer.ActivateChain(sdk.WrapSDKContext(ctx), &types.ActivateChainRequest{Chains: []nexus.ChainName{":wasm:"}})
 	assert.NoError(t, err)
 	assert.True(t, k.IsWasmConnectionActivated(ctx))
+
 	_, err = msgServer.DeactivateChain(sdk.WrapSDKContext(ctx), &types.DeactivateChainRequest{Chains: []nexus.ChainName{"not_wasm"}})
 	assert.NoError(t, err)
 	assert.True(t, k.IsWasmConnectionActivated(ctx))
-
 }
