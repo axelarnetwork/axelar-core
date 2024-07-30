@@ -311,7 +311,7 @@ message QueryDelegatorValidatorRequest {
 // QueryDelegatorValidatorResponse response type for the
 // Query/DelegatorValidator RPC method.
 message QueryDelegatorValidatorResponse {
-  // validator defines the validator info.
+  // validator defines the the validator info.
   Validator validator = 1 [(gogoproto.nullable) = false];
 }
 
