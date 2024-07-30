@@ -252,11 +252,12 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 		return err
 	}
 
-	chainName := nexus.ChainName(msg.DestinationChain)
-	destChain, ok := n.GetChain(ctx, chainName)
+	destChain, ok := n.GetChain(ctx, nexus.ChainName(msg.DestinationChain))
 	if !ok {
 		// try forwarding it to wasm router if destination chain is not registered
-		destChain = nexus.Chain{Name: chainName, SupportsForeignAssets: false, KeyType: tss.None, Module: wasm.ModuleName}
+		// Wasm chain names are always lower case, so normalize it for consistency in core
+		destChainName := nexus.ChainName(strings.ToLower(msg.DestinationChain))
+		destChain = nexus.Chain{Name: destChainName, SupportsForeignAssets: false, KeyType: tss.None, Module: wasm.ModuleName}
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}

@@ -109,10 +109,11 @@ func NewProposalHandler(k keeper.Keeper, nexusK types.Nexus, accountK types.Acco
 			for _, contractCall := range c.ContractCalls {
 				sender := nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: accountK.GetModuleAddress(govtypes.ModuleName).String()}
 
-				destChainName := nexus.ChainName(strings.ToLower(contractCall.Chain.String()))
-				destChain, ok := nexusK.GetChain(ctx, destChainName)
+				destChain, ok := nexusK.GetChain(ctx, contractCall.Chain)
 				if !ok {
 					// Try forwarding it to wasm router if destination chain is not registered
+					// Wasm chain names are always lower case, so normalize it for consistency in core
+					destChainName := nexus.ChainName(strings.ToLower(contractCall.Chain.String()))
 					destChain = nexus.Chain{Name: destChainName, SupportsForeignAssets: false, KeyType: tss.None, Module: wasm.ModuleName}
 				}
 				recipient := nexus.CrossChainAddress{Chain: destChain, Address: contractCall.ContractAddress}
