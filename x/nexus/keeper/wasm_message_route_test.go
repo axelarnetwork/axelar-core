@@ -12,6 +12,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
@@ -39,6 +40,7 @@ func TestNewMessageRoute(t *testing.T) {
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 
 		nexusK = &mock.NexusMock{}
+		nexusK.IsWasmConnectionActivatedFunc = func(_ sdk.Context) bool { return true }
 		accountK = &mock.AccountKeeperMock{}
 		wasmK = &mock.WasmKeeperMock{}
 
@@ -100,6 +102,52 @@ func TestNewMessageRoute(t *testing.T) {
 					assert.Equal(t, len(nexusK.SetMessageExecutedCalls()), 1)
 				}),
 		).
+		Run(t)
+}
+
+func TestMessageRoute_WasmConnectionNotActivated(t *testing.T) {
+	var (
+		ctx      sdk.Context
+		route    exported.MessageRoute
+		nexusK   *mock.NexusMock
+		accountK *mock.AccountKeeperMock
+		wasmK    *mock.WasmKeeperMock
+	)
+
+	Given("the message route", func() {
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+
+		nexusK = &mock.NexusMock{}
+
+		nexusK.GetParamsFunc = func(ctx sdk.Context) types.Params {
+			params := types.DefaultParams()
+			params.Gateway = rand.AccAddr()
+
+			return params
+		}
+		nexusK.SetMessageExecutedFunc = func(_ sdk.Context, _ string) error { return nil }
+
+		accountK = &mock.AccountKeeperMock{}
+		accountK.GetModuleAddressFunc = func(_ string) sdk.AccAddress { return rand.AccAddr() }
+		wasmK = &mock.WasmKeeperMock{}
+		wasmK.ExecuteFunc = func(_ sdk.Context, _, _ sdk.AccAddress, _ []byte, _ sdk.Coins) ([]byte, error) { return nil, nil }
+
+		route = keeper.NewMessageRoute(nexusK, accountK, wasmK)
+	}).
+		When("the wasm connection is not activated", func() {
+			nexusK.IsWasmConnectionActivatedFunc = func(_ sdk.Context) bool { return false }
+		}).
+		Then("should return error", func(t *testing.T) {
+			err := route(ctx, exported.RoutingContext{}, exported.GeneralMessage{
+				ID:            "id",
+				Sender:        testutils.RandomCrossChainAddress(),
+				Recipient:     testutils.RandomCrossChainAddress(),
+				PayloadHash:   rand.Bytes(32),
+				SourceTxID:    rand.Bytes(32),
+				SourceTxIndex: 0,
+			})
+			assert.ErrorContains(t, err, "wasm connection is not activated")
+		}).
 		Run(t)
 }
 

@@ -36,8 +36,10 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 	givenMessenger := Given("a messenger", func() {
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 		nexus = &mock.NexusMock{
-			LoggerFunc: func(ctx sdk.Context) log.Logger { return ctx.Logger() },
+			LoggerFunc:                    func(ctx sdk.Context) log.Logger { return ctx.Logger() },
+			IsWasmConnectionActivatedFunc: func(sdk.Context) bool { return true },
 		}
+
 		messenger = keeper.NewMessenger(nexus)
 	})
 
@@ -228,5 +230,32 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 						}),
 				),
 		).
+		Run(t)
+}
+
+func TestMessenger_DispatchMsg_WasmConnectionNotActivated(t *testing.T) {
+	var (
+		ctx       sdk.Context
+		messenger keeper.Messenger
+		nexus     *mock.NexusMock
+	)
+
+	contractAddr := rand.AccAddr()
+
+	Given("a messenger", func() {
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		nexus = &mock.NexusMock{
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return ctx.Logger() },
+		}
+		messenger = keeper.NewMessenger(nexus)
+	}).
+		When("wasm connection is not activated", func() {
+			nexus.IsWasmConnectionActivatedFunc = func(_ sdk.Context) bool { return false }
+		}).
+		Then("should return error", func(t *testing.T) {
+			_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", wasmvmtypes.CosmosMsg{})
+
+			assert.ErrorContains(t, err, "wasm connection is not activated")
+		}).
 		Run(t)
 }

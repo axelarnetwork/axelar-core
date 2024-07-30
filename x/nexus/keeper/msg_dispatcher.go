@@ -30,6 +30,10 @@ func NewMessenger(nexus types.Nexus) Messenger {
 
 // DispatchMsg decodes the messages from the cosmowasm gateway and routes them to the nexus module if possible
 func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, _ string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error) {
+	if !m.IsWasmConnectionActivated(ctx) {
+		return nil, nil, fmt.Errorf("wasm connection is not activated")
+	}
+
 	req, err := encodeRoutingMessage(contractAddr, msg.Custom)
 	if err != nil {
 		return nil, nil, err
