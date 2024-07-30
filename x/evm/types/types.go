@@ -380,7 +380,7 @@ type Signature [crypto.SignatureLength]byte
 // NewSignature is the constructor of Signature
 func NewSignature(bz []byte) (sig Signature, err error) {
 	if len(bz) != crypto.SignatureLength {
-		return Signature{}, fmt.Errorf("invalid signature length")
+		return Signature{}, errors.New("invalid signature length")
 	}
 
 	copy(sig[:], bz)
