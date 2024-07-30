@@ -1,7 +1,7 @@
 package types
 
 import (
-	"fmt"
+	"errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -42,19 +42,19 @@ func (m ConfirmGatewayTxsRequest) ValidateBasic() error {
 	}
 
 	if len(m.TxIDs) == 0 {
-		return fmt.Errorf("tx ids cannot be empty")
+		return errors.New("tx ids cannot be empty")
 	}
 
 	if len(m.TxIDs) > TxLimit {
-		return fmt.Errorf("tx ids limit exceeded")
+		return errors.New("tx ids limit exceeded")
 	}
 
 	if slices.Any(m.TxIDs, Hash.IsZero) {
-		return fmt.Errorf("invalid tx id")
+		return errors.New("invalid tx id")
 	}
 
 	if slices.HasDuplicates(m.TxIDs) {
-		return fmt.Errorf("duplicate tx ids")
+		return errors.New("duplicate tx ids")
 	}
 
 	return nil

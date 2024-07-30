@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -153,7 +154,7 @@ func validateBytes(bytes interface{}) error {
 	}
 
 	if len(b) == 0 {
-		return fmt.Errorf("byte slice cannot be empty")
+		return errors.New("byte slice cannot be empty")
 	}
 
 	return nil
@@ -196,7 +197,7 @@ func validateNetworks(network interface{}) error {
 		}
 
 		if !n.Id.IsPositive() {
-			return fmt.Errorf("network chain id must be positive")
+			return errors.New("network chain id must be positive")
 		}
 	}
 
@@ -223,7 +224,7 @@ func validateMinVoterCount(minVoterCount interface{}) error {
 	}
 
 	if val < 1 {
-		return fmt.Errorf("min voter count must be >=1")
+		return errors.New("min voter count must be >=1")
 	}
 
 	return nil
@@ -236,7 +237,7 @@ func validateCommandsGasLimit(commandsGasLimit interface{}) error {
 	}
 
 	if val <= 0 {
-		return fmt.Errorf("commands gas limit must be >0")
+		return errors.New("commands gas limit must be >0")
 	}
 
 	return nil
@@ -260,7 +261,7 @@ func validateEndBlockerLimit(limit interface{}) error {
 		return fmt.Errorf("invalid parameter type for end blocker limit: %T", limit)
 	}
 	if h <= 0 {
-		return fmt.Errorf("end blocker limit must be >0")
+		return errors.New("end blocker limit must be >0")
 	}
 
 	return nil
@@ -272,7 +273,7 @@ func validateTransferLimit(limit interface{}) error {
 		return fmt.Errorf("invalid parameter type for transfer limit: %T", limit)
 	}
 	if h == 0 {
-		return fmt.Errorf("transfer limit must be >0")
+		return errors.New("transfer limit must be >0")
 	}
 
 	return nil
@@ -297,7 +298,7 @@ func (m Params) Validate() error {
 	}
 
 	if m.VotingGracePeriod >= m.RevoteLockingPeriod {
-		return fmt.Errorf("voting grace period must be < revote locking period")
+		return errors.New("voting grace period must be < revote locking period")
 	}
 
 	if err := validateVotingThreshold(m.VotingThreshold); err != nil {
