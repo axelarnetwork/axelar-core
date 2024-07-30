@@ -3,7 +3,9 @@ package axelarnet
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
 
+	"github.com/CosmWasm/wasmd/x/wasm"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -14,7 +16,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	"github.com/axelarnetwork/utils/funcs"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewHandler returns the handler of the Cosmos module
@@ -106,10 +108,17 @@ func NewProposalHandler(k keeper.Keeper, nexusK types.Nexus, accountK types.Acco
 		case *types.CallContractsProposal:
 			for _, contractCall := range c.ContractCalls {
 				sender := nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: accountK.GetModuleAddress(govtypes.ModuleName).String()}
-				recipient := nexus.CrossChainAddress{Chain: funcs.MustOk(nexusK.GetChain(ctx, contractCall.Chain)), Address: contractCall.ContractAddress}
+
+				destChainName := nexus.ChainName(strings.ToLower(contractCall.Chain.String()))
+				destChain, ok := nexusK.GetChain(ctx, destChainName)
+				if !ok {
+					// Try forwarding it to wasm router if destination chain is not registered
+					destChain = nexus.Chain{Name: destChainName, SupportsForeignAssets: false, KeyType: tss.None, Module: wasm.ModuleName}
+				}
+				recipient := nexus.CrossChainAddress{Chain: destChain, Address: contractCall.ContractAddress}
+
 				// axelar gateway expects keccak256 hashes for payloads
 				payloadHash := crypto.Keccak256(contractCall.Payload)
-
 				msgID, txID, nonce := nexusK.GenerateMessageID(ctx)
 				msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, txID, nonce, nil)
 
