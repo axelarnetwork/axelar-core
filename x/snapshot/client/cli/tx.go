@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -95,12 +96,12 @@ func GetCmdSendTokens() *cobra.Command {
 			}
 
 			if decCoins.Len() != 1 {
-				return fmt.Errorf("only a single amount is permitted")
+				return errors.New("only a single amount is permitted")
 			}
 
 			coins, decimals := decCoins.TruncateDecimal()
 			if !decimals.IsZero() {
-				return fmt.Errorf("amount must be an integer value")
+				return errors.New("amount must be an integer value")
 			}
 
 			inputs := make([]banktypes.Input, 0)

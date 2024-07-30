@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -100,7 +101,7 @@ func (p poll) GetState() exported.PollState {
 // Vote records the given vote
 func (p *poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMarshaler) (exported.VoteResult, error) {
 	if p.Is(exported.NonExistent) {
-		return exported.NoVote, fmt.Errorf("poll does not exist")
+		return exported.NoVote, errors.New("poll does not exist")
 	}
 
 	if p.HasVoted(voter) {
