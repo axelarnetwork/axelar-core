@@ -28,9 +28,9 @@ jobs:
         run: |
           if [[ $SEMVER =~ v[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3} ]]; then echo "Tag is okay" && exit 0; else echo "invalid tag" && exit 1; fi
           aws s3 ls s3://axelar-testnet-snapshots/axelartestnet-${{ github.event.inputs.axelard_version }}.tar.lz4 && echo "tag already exists, use a new one" && exit 1
-          
+
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: '0'
           submodules: recursive
@@ -38,4 +38,4 @@ jobs:
       - name: Copy snapshot to s3://axelar-testnet-snapshots/axelartestnet-${{ github.event.inputs.axelard_version }}.tar.lz4
         run: |
           URL=`curl https://quicksync.io/axelar.json|jq -r '.[] |select(.file=="axelartestnet-lisbon-3-pruned")|.url'`
-          curl "$URL" | aws s3 cp - s3://axelar-testnet-snapshots/axelartestnet-${{ github.event.inputs.axelard_version }}.tar.lz4 
+          curl "$URL" | aws s3 cp - s3://axelar-testnet-snapshots/axelartestnet-${{ github.event.inputs.axelard_version }}.tar.lz4

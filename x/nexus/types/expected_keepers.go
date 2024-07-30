@@ -14,7 +14,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper RewardKeeper SlashingKeeper WasmKeeper AccountKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper RewardKeeper SlashingKeeper WasmKeeper AccountKeeper StakingKeeper
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
@@ -26,6 +26,9 @@ type Nexus interface {
 	SetParams(ctx sdk.Context, p Params)
 	GetParams(ctx sdk.Context) Params
 
+	ActivateWasmConnection(ctx sdk.Context)
+	DeactivateWasmConnection(ctx sdk.Context)
+	IsWasmConnectionActivated(ctx sdk.Context) bool
 	IsChainActivated(ctx sdk.Context, chain exported.Chain) bool
 	ActivateChain(ctx sdk.Context, chain exported.Chain)
 	GetChains(ctx sdk.Context) []exported.Chain
@@ -43,6 +46,7 @@ type Nexus interface {
 	RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection) error
 	GenerateMessageID(ctx sdk.Context) (string, []byte, uint64)
 	SetNewMessage(ctx sdk.Context, msg exported.GeneralMessage) error
+	GetMessage(ctx sdk.Context, id string) (exported.GeneralMessage, bool)
 	SetMessageExecuted(ctx sdk.Context, id string) error
 	RouteMessage(ctx sdk.Context, id string, routingCtx ...exported.RoutingContext) error
 	DequeueRouteMessage(ctx sdk.Context) (exported.GeneralMessage, bool)

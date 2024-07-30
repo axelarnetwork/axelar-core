@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"fmt"
 	"time"
 
@@ -127,6 +128,23 @@ func (k Keeper) DeactivateChain(ctx sdk.Context, chain exported.Chain) {
 	chainState.Activated = false
 
 	k.setChainState(ctx, chainState)
+}
+
+const wasmIsActivated = 1
+const wasmIsDeactivated = 0
+
+func (k Keeper) ActivateWasmConnection(ctx sdk.Context) {
+	k.getStore(ctx).SetRawNew(wasmActivation, []byte{wasmIsActivated})
+}
+
+func (k Keeper) DeactivateWasmConnection(ctx sdk.Context) {
+	k.getStore(ctx).SetRawNew(wasmActivation, []byte{wasmIsDeactivated})
+}
+
+func (k Keeper) IsWasmConnectionActivated(ctx sdk.Context) bool {
+	bz := k.getStore(ctx).GetRawNew(wasmActivation)
+	// either it has never been set or it's active
+	return bz == nil || bytes.Equal(bz, []byte{wasmIsActivated})
 }
 
 // IsChainActivated returns true if the given chain is activated; false otherwise

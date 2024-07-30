@@ -349,6 +349,7 @@ func FromGeneralMessage(msg GeneralMessage) WasmMessage {
 		PayloadHash:        msg.PayloadHash,
 		SourceTxID:         msg.SourceTxID,
 		SourceTxIndex:      msg.SourceTxIndex,
+		ID:                 msg.ID,
 	}
 }
 
@@ -356,9 +357,35 @@ var _ sdk.Msg = &WasmMessage{}
 
 // ValidateBasic implements sdk.Msg
 func (m WasmMessage) ValidateBasic() error {
-	// The ValidateBasic function allows cheap stateless checks to fail msg handling early during CheckTx.
-	// This message can only be sent by the cosmwasm router as part of the amplifier integration into core,
-	// so there is no point in validating the message here.
+
+	if err := utils.ValidateString(m.ID); err != nil {
+		return sdkerrors.Wrap(err, "invalid wasm message id")
+	}
+
+	if err := m.SourceChain.Validate(); err != nil {
+		return sdkerrors.Wrap(err, "invalid wasm message source chain name")
+	}
+
+	if err := utils.ValidateString(m.SourceAddress); err != nil {
+		return sdkerrors.Wrap(err, "invalid wasm message source address")
+	}
+
+	if err := m.DestinationChain.Validate(); err != nil {
+		return sdkerrors.Wrap(err, "invalid wasm message destination chain name")
+	}
+
+	if err := utils.ValidateString(m.DestinationAddress); err != nil {
+		return sdkerrors.Wrap(err, "invalid wasm message destination address")
+	}
+
+	if len(m.PayloadHash) != 32 {
+		return fmt.Errorf("invalid wasm message payload hash")
+	}
+
+	if len(m.SourceTxID) != 32 {
+		return fmt.Errorf("invalid wasm message source tx id")
+	}
+
 	return nil
 }
 

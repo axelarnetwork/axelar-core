@@ -3243,6 +3243,72 @@ func (mock *GovKeeperMock) GetProposalCalls() []struct {
 	return calls
 }
 
+// Ensure, that StakingKeeperMock does implement axelarnettypes.StakingKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ axelarnettypes.StakingKeeper = &StakingKeeperMock{}
+
+// StakingKeeperMock is a mock implementation of axelarnettypes.StakingKeeper.
+//
+//	func TestSomethingThatUsesStakingKeeper(t *testing.T) {
+//
+//		// make and configure a mocked axelarnettypes.StakingKeeper
+//		mockedStakingKeeper := &StakingKeeperMock{
+//			BondDenomFunc: func(ctx cosmossdktypes.Context) string {
+//				panic("mock out the BondDenom method")
+//			},
+//		}
+//
+//		// use mockedStakingKeeper in code that requires axelarnettypes.StakingKeeper
+//		// and then make assertions.
+//
+//	}
+type StakingKeeperMock struct {
+	// BondDenomFunc mocks the BondDenom method.
+	BondDenomFunc func(ctx cosmossdktypes.Context) string
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// BondDenom holds details about calls to the BondDenom method.
+		BondDenom []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
+	}
+	lockBondDenom sync.RWMutex
+}
+
+// BondDenom calls BondDenomFunc.
+func (mock *StakingKeeperMock) BondDenom(ctx cosmossdktypes.Context) string {
+	if mock.BondDenomFunc == nil {
+		panic("StakingKeeperMock.BondDenomFunc: method is nil but StakingKeeper.BondDenom was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockBondDenom.Lock()
+	mock.calls.BondDenom = append(mock.calls.BondDenom, callInfo)
+	mock.lockBondDenom.Unlock()
+	return mock.BondDenomFunc(ctx)
+}
+
+// BondDenomCalls gets all the calls that were made to BondDenom.
+// Check the length with:
+//
+//	len(mockedStakingKeeper.BondDenomCalls())
+func (mock *StakingKeeperMock) BondDenomCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockBondDenom.RLock()
+	calls = mock.calls.BondDenom
+	mock.lockBondDenom.RUnlock()
+	return calls
+}
+
 // Ensure, that FeegrantKeeperMock does implement axelarnettypes.FeegrantKeeper.
 // If this is not the case, regenerate this file with moq.
 var _ axelarnettypes.FeegrantKeeper = &FeegrantKeeperMock{}
