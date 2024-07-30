@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -242,7 +243,9 @@ func mustToGeneralMessage(ctx sdk.Context, n types.Nexus, event types.Event) nex
 	destinationChain, ok := n.GetChain(ctx, contractCall.DestinationChain)
 	if !ok {
 		// try forwarding it to wasm router if destination chain is not registered
-		destinationChain = nexus.Chain{Name: contractCall.DestinationChain, SupportsForeignAssets: false, KeyType: tss.None, Module: wasm.ModuleName}
+		// Wasm chain names are always lower case, so normalize it for consistency in core
+		destChainName := nexus.ChainName(strings.ToLower(contractCall.DestinationChain.String()))
+		destinationChain = nexus.Chain{Name: destChainName, SupportsForeignAssets: false, KeyType: tss.None, Module: wasm.ModuleName}
 	}
 	recipient := nexus.CrossChainAddress{Chain: destinationChain, Address: contractCall.ContractAddress}
 

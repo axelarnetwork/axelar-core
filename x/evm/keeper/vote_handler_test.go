@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"fmt"
 	mathRand "math/rand"
+	"strings"
 	"testing"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -401,6 +402,9 @@ func TestHandleResult(t *testing.T) {
 
 					for _, call := range nexusK.SetNewMessageCalls() {
 						assert.Equal(t, wasm.ModuleName, call.M.Recipient.Chain.Module)
+
+						destChainName := call.M.Recipient.Chain.Name.String()
+						assert.Equal(t, strings.ToLower(destChainName), destChainName)
 					}
 				}),
 		).
