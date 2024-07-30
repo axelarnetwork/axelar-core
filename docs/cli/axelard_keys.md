@@ -18,7 +18,7 @@ file        Uses encrypted file-based keystore within the app's configuration di
 kwallet     Uses KDE Wallet Manager as a credentials management application.
 pass        Uses the pass command line utility to store and retrieve keys.
 test        Stores keys insecurely to disk. It does not prompt for a password to be unlocked
-            and it should be use only for testing purposes.
+            and it should be used only for testing purposes.
 ```
 
 kwallet and pass backends depend on external tools. Refer to their respective documentation for more
