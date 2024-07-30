@@ -1,6 +1,7 @@
 package tofnd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -11,7 +12,7 @@ import (
 // Validate checks if the criminal list is valid
 func (m *MessageOut_CriminalList) Validate() error {
 	if len(m.Criminals) == 0 {
-		return fmt.Errorf("missing criminals")
+		return errors.New("missing criminals")
 	}
 
 	criminalSeen := make(map[string]bool)
@@ -31,7 +32,7 @@ func (m *MessageOut_CriminalList) Validate() error {
 		}
 
 		if i < len(m.Criminals)-1 && !m.Less(i, i+1) {
-			return fmt.Errorf("criminals have to be sorted in ascending order")
+			return errors.New("criminals have to be sorted in ascending order")
 		}
 
 		criminalSeen[criminal.String()] = true
@@ -58,7 +59,7 @@ func (m *MessageOut_SignResult) Validate() error {
 		return nil
 	}
 
-	return fmt.Errorf("missing signature or criminals")
+	return errors.New("missing signature or criminals")
 }
 
 // Validate checks if the keygen result is valid
@@ -66,15 +67,15 @@ func (m *MessageOut_KeygenResult) Validate() error {
 	if keygenData := m.GetData(); keygenData != nil {
 		pubKeyBytes := keygenData.GetPubKey()
 		if pubKeyBytes == nil {
-			return fmt.Errorf("pubkey is nil")
+			return errors.New("pubkey is nil")
 		}
 		groupRecoverInfo := keygenData.GetGroupRecoverInfo()
 		if groupRecoverInfo == nil {
-			return fmt.Errorf("group recovery info is nil")
+			return errors.New("group recovery info is nil")
 		}
 		privateRecoverInfo := keygenData.GetPrivateRecoverInfo()
 		if privateRecoverInfo == nil {
-			return fmt.Errorf("private recovery info is nil")
+			return errors.New("private recovery info is nil")
 		}
 		_, err := btcec.ParsePubKey(pubKeyBytes)
 		if err != nil {
@@ -92,7 +93,7 @@ func (m *MessageOut_KeygenResult) Validate() error {
 		return nil
 	}
 
-	return fmt.Errorf("missing pubkey or criminals")
+	return errors.New("missing pubkey or criminals")
 }
 
 // Len returns the number of criminals in the criminal list

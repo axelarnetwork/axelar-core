@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
@@ -14,6 +15,7 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/x/ante"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 //go:generate moq -pkg mock -out ./mock/ibchooks.go . PacketI
@@ -122,6 +124,13 @@ type WasmAppModuleBasicOverride struct {
 }
 
 func NewWasmAppModuleBasicOverride(wasmModule wasm.AppModuleBasic) WasmAppModuleBasicOverride {
+	// Both the server and the cosmwasm client use this parameter to validate MsgStoreCode.
+	// Because the AppModuleBasic provides server and client commands, it's sufficient to do the override here to set it for both.
+	if MaxWasmSize != "" {
+		// Override the default max wasm code size
+		wasmtypes.MaxWasmSize = funcs.Must(strconv.Atoi(MaxWasmSize))
+	}
+
 	return WasmAppModuleBasicOverride{
 		AppModuleBasic: wasmModule,
 	}

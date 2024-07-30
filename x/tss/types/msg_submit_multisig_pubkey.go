@@ -1,7 +1,7 @@
 package types
 
 import (
-	"fmt"
+	"errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -42,7 +42,7 @@ func (m SubmitMultisigPubKeysRequest) ValidateBasic() error {
 			return nil
 		}
 		if seen[string(info.PubKey)] {
-			return fmt.Errorf("duplicate key")
+			return errors.New("duplicate key")
 		}
 		seen[string(info.PubKey)] = true
 	}
