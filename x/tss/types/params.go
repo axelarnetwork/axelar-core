@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -173,7 +174,7 @@ func validateKeyRequirements(keyRequirements interface{}) error {
 	for _, keyRequirement := range val {
 		key := fmt.Sprintf("%s_%s", keyRequirement.KeyRole.SimpleString(), keyRequirement.KeyType.SimpleString())
 		if keyRoleSeen[key] {
-			return fmt.Errorf("duplicate key role and key type found in KeyRequirements")
+			return errors.New("duplicate key role and key type found in KeyRequirements")
 		}
 
 		if err := keyRequirement.Validate(); err != nil {
@@ -193,7 +194,7 @@ func validateSuspendDurationInBlocks(suspendDurationInBlocks interface{}) error 
 	}
 
 	if val <= 0 {
-		return fmt.Errorf("SuspendDurationInBlocks must be a positive integer")
+		return errors.New("SuspendDurationInBlocks must be a positive integer")
 	}
 
 	return nil
@@ -221,7 +222,7 @@ func validateMaxMissedBlocksPerWindow(maxMissedBlocksPerWindow interface{}) erro
 	}
 
 	if val.Validate() != nil {
-		return fmt.Errorf("MaxMissedBlocksPerWindow threshold must be >0 and <=1")
+		return errors.New("MaxMissedBlocksPerWindow threshold must be >0 and <=1")
 	}
 
 	return nil
@@ -234,7 +235,7 @@ func validateExternalMultisigThreshold(externalMultisigThreshold interface{}) er
 	}
 
 	if t.Validate() != nil {
-		return fmt.Errorf("ExternalMultisigThreshold must be >0 and <=1")
+		return errors.New("ExternalMultisigThreshold must be >0 and <=1")
 	}
 
 	return nil

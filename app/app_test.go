@@ -115,7 +115,6 @@ func TestGRPCEncodingSetDuringInit(t *testing.T) {
 }
 
 func TestAnteHandlersCanHandleWasmMsgsWithoutSigners(t *testing.T) {
-	app.SetConfig()
 	app.WasmEnabled = "true"
 	app.IBCWasmHooksEnabled = "true"
 	version.Version = "0.35.0"

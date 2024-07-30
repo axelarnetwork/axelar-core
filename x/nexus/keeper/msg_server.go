@@ -11,11 +11,13 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 var _ types.MsgServiceServer = msgServer{}
 
 const allChain = ":all:"
+const wasmAsChain = ":wasm:"
 
 type msgServer struct {
 	types.Nexus
@@ -127,19 +129,15 @@ func (s msgServer) DeregisterChainMaintainer(c context.Context, req *types.Dereg
 
 func (s msgServer) ActivateChain(c context.Context, req *types.ActivateChainRequest) (*types.ActivateChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	if strings.ToLower(req.Chains[0].String()) == allChain {
-		for _, chain := range s.GetChains(ctx) {
-			s.activateChain(ctx, chain)
-		}
-	} else {
-		for _, chainStr := range req.Chains {
-			chain, ok := s.GetChain(ctx, chainStr)
-			if !ok {
-				return nil, fmt.Errorf("%s is not a registered chain", chainStr)
-			}
-			s.activateChain(ctx, chain)
-		}
+
+	chains, doWasm := s.findRelevantChains(req.Chains, ctx)
+	for _, chain := range chains {
+		s.activateChain(ctx, chain)
 	}
+	if doWasm {
+		s.ActivateWasmConnection(ctx)
+	}
+
 	return &types.ActivateChainResponse{}, nil
 }
 
@@ -147,21 +145,39 @@ func (s msgServer) ActivateChain(c context.Context, req *types.ActivateChainRequ
 func (s msgServer) DeactivateChain(c context.Context, req *types.DeactivateChainRequest) (*types.DeactivateChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if strings.ToLower(req.Chains[0].String()) == allChain {
-		for _, chain := range s.GetChains(ctx) {
-			s.deactivateChain(ctx, chain)
-		}
-	} else {
-		for _, chainStr := range req.Chains {
-			chain, ok := s.GetChain(ctx, chainStr)
-			if !ok {
-				return nil, fmt.Errorf("%s is not a registered chain", chainStr)
-			}
+	chains, doWasm := s.findRelevantChains(req.Chains, ctx)
 
-			s.deactivateChain(ctx, chain)
+	for _, chain := range chains {
+		s.deactivateChain(ctx, chain)
+	}
+	if doWasm {
+		s.DeactivateWasmConnection(ctx)
+	}
+
+	return &types.DeactivateChainResponse{}, nil
+}
+
+func (s msgServer) findRelevantChains(chainNames []exported.ChainName, ctx sdk.Context) (chains []exported.Chain, doWasm bool) {
+	doAllChains := strings.ToLower(chainNames[0].String()) == allChain
+	doWasm = doAllChains || slices.Any(chainNames, chainIsWasm)
+
+	if doAllChains {
+		chains = s.GetChains(ctx)
+	} else {
+		for _, chain := range chainNames {
+			chain, ok := s.GetChain(ctx, chain)
+			if !ok {
+				continue
+			}
+			chains = append(chains, chain)
 		}
 	}
-	return &types.DeactivateChainResponse{}, nil
+
+	return chains, doWasm
+}
+
+func chainIsWasm(chain exported.ChainName) bool {
+	return strings.ToLower(chain.String()) == wasmAsChain
 }
 
 func (s msgServer) activateChain(ctx sdk.Context, chain exported.Chain) {

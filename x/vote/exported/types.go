@@ -1,6 +1,7 @@
 package exported
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -137,35 +138,35 @@ func (builder PollBuilder) Build(blockHeight int64) (PollMetadata, error) {
 // ValidateBasic returns an error if the poll metadata is not valid; nil otherwise
 func (m PollMetadata) ValidateBasic() error {
 	if len(m.Module) == 0 {
-		return fmt.Errorf("module must be set")
+		return errors.New("module must be set")
 	}
 
 	if m.ExpiresAt <= 0 {
-		return fmt.Errorf("expires at must be >0")
+		return errors.New("expires at must be >0")
 	}
 
 	if m.CompletedAt < 0 {
-		return fmt.Errorf("completed at must be >=0")
+		return errors.New("completed at must be >=0")
 	}
 
 	if m.VotingThreshold.LTE(utils.ZeroThreshold) || m.VotingThreshold.GT(utils.OneThreshold) {
-		return fmt.Errorf("voting threshold must be >0 and <=1")
+		return errors.New("voting threshold must be >0 and <=1")
 	}
 
 	if m.Is(Completed) == (m.Result == nil) {
-		return fmt.Errorf("completed poll must have result set")
+		return errors.New("completed poll must have result set")
 	}
 
 	if m.Is(Completed) == (m.CompletedAt <= 0) {
-		return fmt.Errorf("completed poll must have CompletedAt set and non-completed poll must not")
+		return errors.New("completed poll must have CompletedAt set and non-completed poll must not")
 	}
 
 	if m.Is(NonExistent) {
-		return fmt.Errorf("state cannot be non-existent")
+		return errors.New("state cannot be non-existent")
 	}
 
 	if m.MinVoterCount < 0 || m.MinVoterCount > int64(len(m.Snapshot.Participants)) {
-		return fmt.Errorf("invalid min voter count")
+		return errors.New("invalid min voter count")
 	}
 
 	if err := m.Snapshot.ValidateBasic(); err != nil {
@@ -173,7 +174,7 @@ func (m PollMetadata) ValidateBasic() error {
 	}
 
 	if m.Snapshot.GetParticipantsWeight().LT(m.Snapshot.CalculateMinPassingWeight(m.VotingThreshold)) {
-		return fmt.Errorf("invalid voting threshold")
+		return errors.New("invalid voting threshold")
 	}
 
 	return nil

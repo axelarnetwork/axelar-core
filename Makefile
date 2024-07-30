@@ -24,7 +24,7 @@ $(info $$CGO_ENABLED is [${CGO_ENABLED}])
 
 ifndef $(WASM_CAPABILITIES)
 # Wasm capabilities: https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
-WASM_CAPABILITIES := "iterator,staking,stargate,cosmwasm_1_3"
+WASM_CAPABILITIES := "iterator,staking,stargate,cosmwasm_1_1,cosmwasm_1_2,cosmwasm_1_3"
 else
 WASM_CAPABILITIES := ""
 endif
@@ -59,7 +59,7 @@ ldflags = "-X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 BUILD_FLAGS := -tags $(BUILD_TAGS) -ldflags $(ldflags) -trimpath
 USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
-OS := $(shell echo $$OS_TYPE | sed -e 's/ubuntu-20.04/linux/; s/macos-latest/darwin/')
+OS := $(shell echo $$OS_TYPE | sed -e 's/ubuntu-22.04/linux/; s/macos-latest/darwin/')
 SUFFIX := $(shell echo $$PLATFORM | sed 's/\//-/' | sed 's/\///')
 
 .PHONY: all

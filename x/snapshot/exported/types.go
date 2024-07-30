@@ -2,7 +2,7 @@ package exported
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"sort"
 	"time"
 
@@ -44,19 +44,19 @@ func NewSnapshot(timestamp time.Time, height int64, participants []Participant, 
 // ValidateBasic returns an error if the given snapshot is invalid; nil otherwise
 func (m Snapshot) ValidateBasic() error {
 	if len(m.Participants) == 0 {
-		return fmt.Errorf("snapshot cannot have no participant")
+		return errors.New("snapshot cannot have no participant")
 	}
 
 	if m.BondedWeight.IsZero() {
-		return fmt.Errorf("snapshot must have bonded weight >0")
+		return errors.New("snapshot must have bonded weight >0")
 	}
 
 	if m.Height <= 0 {
-		return fmt.Errorf("snapshot must have height >0")
+		return errors.New("snapshot must have height >0")
 	}
 
 	if m.Timestamp.IsZero() {
-		return fmt.Errorf("snapshot must have timestamp >0")
+		return errors.New("snapshot must have timestamp >0")
 	}
 
 	for addr, p := range m.Participants {
@@ -65,12 +65,12 @@ func (m Snapshot) ValidateBasic() error {
 		}
 
 		if addr != p.Address.String() {
-			return fmt.Errorf("invalid snapshot")
+			return errors.New("invalid snapshot")
 		}
 	}
 
 	if m.GetParticipantsWeight().GT(m.BondedWeight) {
-		return fmt.Errorf("snapshot cannot have sum of participants weight greater than bonded weight")
+		return errors.New("snapshot cannot have sum of participants weight greater than bonded weight")
 	}
 
 	return nil

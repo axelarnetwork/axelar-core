@@ -30,6 +30,10 @@ func NewMessenger(nexus types.Nexus) Messenger {
 
 // DispatchMsg decodes the messages from the cosmowasm gateway and routes them to the nexus module if possible
 func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, _ string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error) {
+	if !m.IsWasmConnectionActivated(ctx) {
+		return nil, nil, fmt.Errorf("wasm connection is not activated")
+	}
+
 	req, err := encodeRoutingMessage(contractAddr, msg.Custom)
 	if err != nil {
 		return nil, nil, err
@@ -55,17 +59,25 @@ func (m Messenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, _ s
 }
 
 func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
+	if err := msg.ValidateBasic(); err != nil {
+		return err
+	}
+
 	destinationChain, ok := m.GetChain(ctx, msg.DestinationChain)
 	if !ok {
 		return fmt.Errorf("recipient chain %s is not a registered chain", msg.DestinationChain)
 	}
 
-	id, _, _ := m.GenerateMessageID(ctx)
+	// If message already exists, then this is a no-op to avoid causing an error from reverting the whole message batch being routed in Amplifier
+	if _, ok := m.Nexus.GetMessage(ctx, msg.ID); ok {
+		return nil
+	}
+
 	sourceChain := exported.Chain{Name: msg.SourceChain, SupportsForeignAssets: false, KeyType: tss.None, Module: wasmtypes.ModuleName}
 	sender := exported.CrossChainAddress{Chain: sourceChain, Address: msg.SourceAddress}
 	recipient := exported.CrossChainAddress{Chain: destinationChain, Address: msg.DestinationAddress}
 
-	nexusMsg := exported.NewGeneralMessage(id, sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
+	nexusMsg := exported.NewGeneralMessage(fmt.Sprintf("%s-%s", msg.SourceChain, msg.ID), sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
 	if err := m.Nexus.SetNewMessage(ctx, nexusMsg); err != nil {
 		return err
 	}
