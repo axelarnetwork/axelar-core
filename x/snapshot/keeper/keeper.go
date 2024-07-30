@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -69,7 +70,7 @@ func (k Keeper) GetMinProxyBalance(ctx sdk.Context) sdk.Int {
 // The proxy will be marked as active and to be included in the next snapshot by default
 func (k Keeper) ActivateProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sdk.AccAddress) error {
 	if bytes.Equal(operator, proxy) {
-		return fmt.Errorf("proxy address cannot be the same as the operator address")
+		return errors.New("proxy address cannot be the same as the operator address")
 	}
 
 	if existing, ok := k.getProxiedValidator(ctx, operator); ok && !existing.Proxy.Equals(proxy) {
@@ -165,7 +166,7 @@ func (k Keeper) GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddres
 }
 
 // GetProxy returns the proxy address for a given operator address. Returns nil if not set.
-// The bool value denotes wether or not the proxy is active and to be included in the next snapshot
+// The bool value denotes whether or not the proxy is active and to be included in the next snapshot
 func (k Keeper) GetProxy(ctx sdk.Context, operator sdk.ValAddress) (addr sdk.AccAddress, active bool) {
 	if proxiedValidator, ok := k.getProxiedValidator(ctx, operator); ok {
 		return proxiedValidator.Proxy, proxiedValidator.Active

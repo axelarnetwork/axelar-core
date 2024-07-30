@@ -56,10 +56,10 @@ func (m BatchRequest) GetSigners() []sdk.AccAddress {
 }
 
 // UnpackInterfaces implements UnpackInterfacesMessage
-func (m BatchRequest) UnpackInterfaces(unpacker cdctypes.AnyUnpacker) error {
-	for _, msg := range m.Messages {
+func (m *BatchRequest) UnpackInterfaces(unpacker cdctypes.AnyUnpacker) error {
+	for i := range m.Messages {
 		var sdkMsg sdk.Msg
-		if err := unpacker.UnpackAny(&msg, &sdkMsg); err != nil {
+		if err := unpacker.UnpackAny(&m.Messages[i], &sdkMsg); err != nil {
 			return err
 		}
 	}

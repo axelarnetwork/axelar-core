@@ -452,6 +452,7 @@ func initMessageRouter(keepers *KeeperCache) nexusTypes.MessageRouter {
 			axelarbankkeeper.NewBankKeeper(GetKeeper[bankkeeper.BaseKeeper](keepers)),
 			GetKeeper[nexusKeeper.Keeper](keepers),
 			GetKeeper[authkeeper.AccountKeeper](keepers),
+			GetKeeper[stakingkeeper.Keeper](keepers),
 		))
 
 	if IsWasmEnabled() {
@@ -696,7 +697,7 @@ func InitCustomAnteDecorators(
 	if IsWasmEnabled() {
 		wasmConfig := mustReadWasmConfig(appOpts)
 		wasmAnteDecorators := []sdk.AnteDecorator{
-			wasmkeeper.NewLimitSimulationGasDecorator(wasmConfig.SimulationGasLimit),
+			ante.NewLimitSimulationGasDecorator(wasmConfig.SimulationGasLimit),
 			wasmkeeper.NewCountTXDecorator(keys[wasm.StoreKey]),
 		}
 

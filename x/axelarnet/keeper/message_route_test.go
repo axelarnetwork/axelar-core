@@ -84,6 +84,7 @@ func TestNewMessageRoute(t *testing.T) {
 		bankK     *mock.BankKeeperMock
 		nexusK    *mock.NexusMock
 		accountK  *mock.AccountKeeperMock
+		stakingK  *mock.StakingKeeperMock
 	)
 
 	givenMessageRoute := Given("the message route", func() {
@@ -93,8 +94,12 @@ func TestNewMessageRoute(t *testing.T) {
 		bankK = &mock.BankKeeperMock{}
 		nexusK = &mock.NexusMock{}
 		accountK = &mock.AccountKeeperMock{}
+		stakingK = &mock.StakingKeeperMock{}
+		stakingK.BondDenomFunc = func(ctx sdk.Context) string {
+			return exported.NativeAsset
+		}
 
-		route = keeper.NewMessageRoute(k, ibcK, feegrantK, bankK, nexusK, accountK)
+		route = keeper.NewMessageRoute(k, ibcK, feegrantK, bankK, nexusK, accountK, stakingK)
 	})
 
 	givenMessageRoute.
