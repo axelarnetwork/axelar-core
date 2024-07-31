@@ -45,6 +45,10 @@ func (mgr Mgr) processDepositConfirmationLogs(event *types.ConfirmDepositStarted
 	events := make([]types.Event, 0, len(logs))
 
 	for i, log := range logs {
+		if len(log.Topics) == 0 {
+			continue
+		}
+
 		if log.Topics[0] != ERC20TransferSig {
 			continue
 		}

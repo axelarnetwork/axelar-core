@@ -45,6 +45,10 @@ func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error 
 
 func (mgr Mgr) processTokenConfirmationLogs(event *types.ConfirmTokenStarted, logs []*geth.Log) []types.Event {
 	for i, log := range logs {
+		if len(log.Topics) == 0 {
+			continue
+		}
+
 		if log.Topics[0] != ERC20TokenDeploymentSig {
 			continue
 		}
