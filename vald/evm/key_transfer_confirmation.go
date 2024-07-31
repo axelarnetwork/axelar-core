@@ -44,6 +44,10 @@ func (mgr Mgr) processTransferKeyLogs(event *types.ConfirmKeyTransferStarted, lo
 	for i := len(logs) - 1; i >= 0; i-- {
 		txlog := logs[i]
 
+		if len(txlog.Topics) == 0 {
+			continue
+		}
+
 		if txlog.Topics[0] != MultisigTransferOperatorshipSig {
 			continue
 		}

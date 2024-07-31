@@ -50,6 +50,10 @@ func (mgr Mgr) processGatewayTxLogs(chain nexus.ChainName, gatewayAddress types.
 			continue
 		}
 
+		if len(txlog.Topics) == 0 {
+			continue
+		}
+
 		switch txlog.Topics[0] {
 		case ContractCallSig:
 			gatewayEvent, err := DecodeEventContractCall(txlog)

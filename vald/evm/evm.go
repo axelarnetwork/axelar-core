@@ -10,6 +10,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
+	errors2 "github.com/pkg/errors"
 
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
 	"github.com/axelarnetwork/axelar-core/utils/errors"
@@ -62,6 +63,10 @@ func (mgr Mgr) isFinalized(chain nexus.ChainName, txReceipt geth.Receipt, confHe
 	client, ok := mgr.rpcs[strings.ToLower(chain.String())]
 	if !ok {
 		return false, fmt.Errorf("rpc client not found for chain %s", chain.String())
+	}
+
+	if txReceipt.BlockNumber == nil {
+		return false, errors2.New("block number of tx receipt is nil")
 	}
 
 	if mgr.latestFinalizedBlockCache.Get(chain).Cmp(txReceipt.BlockNumber) >= 0 {

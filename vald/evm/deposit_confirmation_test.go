@@ -22,6 +22,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/monads/results"
 	"github.com/axelarnetwork/utils/slices"
@@ -313,6 +314,35 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 				}),
 		).
 		Run(t, 20)
+}
+
+func TestMgr_ProccessDepositConfirmationNoTopicsNotPanics(t *testing.T) {
+	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
+	receipt := geth.Receipt{
+		Logs:        []*geth.Log{{Topics: make([]common.Hash, 0)}},
+		BlockNumber: big.NewInt(1),
+		Status:      geth.ReceiptStatusSuccessful,
+	}
+	rpcClient := &mock.ClientMock{TransactionReceiptsFunc: func(_ context.Context, _ []common.Hash) ([]evmRpc.TxReceiptResult, error) {
+		return []evmRpc.TxReceiptResult{evmRpc.TxReceiptResult(results.FromOk(receipt))}, nil
+	}}
+	cache := &evmmock.LatestFinalizedBlockCacheMock{GetFunc: func(chain nexus.ChainName) *big.Int {
+		return big.NewInt(100)
+	}}
+
+	broadcaster := &broadcastmock.BroadcasterMock{BroadcastFunc: func(_ context.Context, _ ...sdk.Msg) (*sdk.TxResponse, error) {
+		return nil, nil
+	}}
+
+	valAddr := rand.ValAddr()
+	mgr := evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, broadcaster, valAddr, rand.AccAddr(), cache)
+
+	assert.NotPanics(t, func() {
+		mgr.ProcessDepositConfirmation(&types.ConfirmDepositStarted{TxID: types.Hash{1},
+			PollParticipants: exported.PollParticipants{PollID: 10, Participants: []sdk.ValAddress{valAddr}},
+			Chain:            chain,
+		})
+	})
 }
 
 type byter interface {
