@@ -96,6 +96,10 @@ func (mgr Mgr) ProcessDepositConfirmation(event *types.ConfirmDepositStarted) er
 
 	var events []types.Event
 	for i, log := range txReceipt.Logs {
+		if len(log.Topics) == 0 {
+			continue
+		}
+
 		if log.Topics[0] != ERC20TransferSig {
 			continue
 		}
@@ -155,6 +159,10 @@ func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error 
 
 	var events []types.Event
 	for i, log := range txReceipt.Logs {
+		if len(log.Topics) == 0 {
+			continue
+		}
+
 		if log.Topics[0] != ERC20TokenDeploymentSig {
 			continue
 		}
@@ -216,6 +224,10 @@ func (mgr Mgr) ProcessTransferKeyConfirmation(event *types.ConfirmKeyTransferSta
 	var events []types.Event
 	for i := len(txReceipt.Logs) - 1; i >= 0; i-- {
 		txlog := txReceipt.Logs[i]
+
+		if len(txlog.Topics) == 0 {
+			continue
+		}
 
 		if txlog.Topics[0] != MultisigTransferOperatorshipSig {
 			continue
@@ -618,6 +630,10 @@ func (mgr Mgr) processGatewayTxLogs(chain nexus.ChainName, gatewayAddress types.
 	var events []types.Event
 	for i, txlog := range logs {
 		if !bytes.Equal(gatewayAddress.Bytes(), txlog.Address.Bytes()) {
+			continue
+		}
+
+		if len(txlog.Topics) == 0 {
 			continue
 		}
 

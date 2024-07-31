@@ -977,6 +977,203 @@ func TestMgr_GetTxReceiptsIfFinalized(t *testing.T) {
 		Run(t, 5)
 }
 
+func TestMgr_ProccessDepositConfirmationNoTopicsNotPanics(t *testing.T) {
+	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
+	receipt := geth.Receipt{
+		Logs:        []*geth.Log{{Topics: make([]common.Hash, 0)}},
+		BlockNumber: big.NewInt(1),
+		Status:      geth.ReceiptStatusSuccessful,
+	}
+	rpcClient := &mock.ClientMock{TransactionReceiptFunc: func(_ context.Context, _ common.Hash) (*geth.Receipt, error) {
+		return &receipt, nil
+	}}
+	cache := &evmmock.LatestFinalizedBlockCacheMock{GetFunc: func(chain nexus.ChainName) *big.Int {
+		return big.NewInt(100)
+	}}
+
+	broadcaster := &mock2.BroadcasterMock{BroadcastFunc: func(_ context.Context, _ ...sdk.Msg) (*sdk.TxResponse, error) {
+		return nil, nil
+	}}
+
+	valAddr := rand.ValAddr()
+	mgr := evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, broadcaster, valAddr, rand.AccAddr(), cache)
+
+	assert.NotPanics(t, func() {
+		_ = mgr.ProcessDepositConfirmation(&types.ConfirmDepositStarted{TxID: types.Hash{1},
+			PollParticipants: vote.PollParticipants{PollID: 10, Participants: []sdk.ValAddress{valAddr}},
+			Chain:            chain,
+		})
+	})
+}
+
+func TestMgr_ProcessGatewayTxConfirmationMissingBlockNumberNotPanics(t *testing.T) {
+	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
+	receipt := geth.Receipt{Logs: []*geth.Log{{Topics: make([]common.Hash, 0)}}}
+	rpcClient := &mock.ClientMock{TransactionReceiptFunc: func(_ context.Context, _ common.Hash) (*geth.Receipt, error) {
+		return &receipt, nil
+	}}
+	cache := &evmmock.LatestFinalizedBlockCacheMock{GetFunc: func(chain nexus.ChainName) *big.Int {
+		return big.NewInt(100)
+	}}
+
+	broadcaster := &mock2.BroadcasterMock{BroadcastFunc: func(_ context.Context, _ ...sdk.Msg) (*sdk.TxResponse, error) {
+		return nil, nil
+	}}
+
+	valAddr := rand.ValAddr()
+	mgr := evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, broadcaster, valAddr, rand.AccAddr(), cache)
+
+	assert.NotPanics(t, func() {
+		_ = mgr.ProcessGatewayTxConfirmation(&types.ConfirmGatewayTxStarted{TxID: types.Hash{1},
+			PollParticipants: vote.PollParticipants{PollID: 10, Participants: []sdk.ValAddress{valAddr}},
+			Chain:            chain,
+		})
+	})
+}
+
+func TestMgr_ProcessGatewayTxConfirmationNoTopicsNotPanics(t *testing.T) {
+	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
+	receipt := geth.Receipt{
+		Logs:        []*geth.Log{{Topics: make([]common.Hash, 0)}},
+		BlockNumber: big.NewInt(1),
+		Status:      geth.ReceiptStatusSuccessful,
+	}
+	rpcClient := &mock.ClientMock{TransactionReceiptFunc: func(_ context.Context, _ common.Hash) (*geth.Receipt, error) {
+		return &receipt, nil
+	}}
+	cache := &evmmock.LatestFinalizedBlockCacheMock{GetFunc: func(chain nexus.ChainName) *big.Int {
+		return big.NewInt(100)
+	}}
+
+	broadcaster := &mock2.BroadcasterMock{BroadcastFunc: func(_ context.Context, _ ...sdk.Msg) (*sdk.TxResponse, error) {
+		return nil, nil
+	}}
+
+	valAddr := rand.ValAddr()
+	mgr := evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, broadcaster, valAddr, rand.AccAddr(), cache)
+
+	assert.NotPanics(t, func() {
+		_ = mgr.ProcessGatewayTxConfirmation(&types.ConfirmGatewayTxStarted{TxID: types.Hash{1},
+			PollParticipants: vote.PollParticipants{PollID: 10, Participants: []sdk.ValAddress{valAddr}},
+			Chain:            chain,
+		})
+	})
+}
+
+func TestMgr_ProcessGatewayTxsConfirmationMissingBlockNumberNotPanics(t *testing.T) {
+	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
+	receipt := geth.Receipt{Logs: []*geth.Log{{Topics: make([]common.Hash, 0)}}}
+	rpcClient := &mock.ClientMock{TransactionReceiptsFunc: func(_ context.Context, _ []common.Hash) ([]evmRpc.Result, error) {
+		return []evmRpc.Result{evmRpc.Result(results.FromOk(&receipt))}, nil
+	}}
+	cache := &evmmock.LatestFinalizedBlockCacheMock{GetFunc: func(chain nexus.ChainName) *big.Int {
+		return big.NewInt(100)
+	}}
+
+	broadcaster := &mock2.BroadcasterMock{BroadcastFunc: func(_ context.Context, _ ...sdk.Msg) (*sdk.TxResponse, error) {
+		return nil, nil
+	}}
+
+	valAddr := rand.ValAddr()
+	mgr := evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, broadcaster, valAddr, rand.AccAddr(), cache)
+
+	assert.NotPanics(t, func() {
+		_ = mgr.ProcessGatewayTxsConfirmation(&types.ConfirmGatewayTxsStarted{
+			PollMappings: []types.PollMapping{{PollID: 10, TxID: types.Hash{1}}},
+			Participants: []sdk.ValAddress{valAddr},
+			Chain:        chain,
+		})
+	})
+}
+
+func TestMgr_ProcessGatewayTxsConfirmationNoTopicsNotPanics(t *testing.T) {
+	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
+	receipt := geth.Receipt{
+		Logs:        []*geth.Log{{Topics: make([]common.Hash, 0)}},
+		BlockNumber: big.NewInt(1),
+		Status:      geth.ReceiptStatusSuccessful,
+	}
+	rpcClient := &mock.ClientMock{TransactionReceiptsFunc: func(_ context.Context, _ []common.Hash) ([]evmRpc.Result, error) {
+		return []evmRpc.Result{evmRpc.Result(results.FromOk(&receipt))}, nil
+	}}
+	cache := &evmmock.LatestFinalizedBlockCacheMock{GetFunc: func(chain nexus.ChainName) *big.Int {
+		return big.NewInt(100)
+	}}
+
+	broadcaster := &mock2.BroadcasterMock{BroadcastFunc: func(_ context.Context, _ ...sdk.Msg) (*sdk.TxResponse, error) {
+		return nil, nil
+	}}
+
+	valAddr := rand.ValAddr()
+	mgr := evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, broadcaster, valAddr, rand.AccAddr(), cache)
+
+	assert.NotPanics(t, func() {
+		_ = mgr.ProcessGatewayTxsConfirmation(&types.ConfirmGatewayTxsStarted{
+			PollMappings: []types.PollMapping{{PollID: 10, TxID: types.Hash{1}}},
+			Participants: []sdk.ValAddress{valAddr},
+			Chain:        chain,
+		})
+	})
+}
+
+func TestMgr_ProcessTransferKeyConfirmationNoTopicsNotPanics(t *testing.T) {
+	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
+	receipt := geth.Receipt{
+		Logs:        []*geth.Log{{Topics: make([]common.Hash, 0)}},
+		BlockNumber: big.NewInt(1),
+		Status:      geth.ReceiptStatusSuccessful,
+	}
+	rpcClient := &mock.ClientMock{TransactionReceiptFunc: func(_ context.Context, _ common.Hash) (*geth.Receipt, error) {
+		return &receipt, nil
+	}}
+	cache := &evmmock.LatestFinalizedBlockCacheMock{GetFunc: func(chain nexus.ChainName) *big.Int {
+		return big.NewInt(100)
+	}}
+
+	broadcaster := &mock2.BroadcasterMock{BroadcastFunc: func(_ context.Context, _ ...sdk.Msg) (*sdk.TxResponse, error) {
+		return nil, nil
+	}}
+
+	valAddr := rand.ValAddr()
+	mgr := evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, broadcaster, valAddr, rand.AccAddr(), cache)
+
+	assert.NotPanics(t, func() {
+		_ = mgr.ProcessTransferKeyConfirmation(&types.ConfirmKeyTransferStarted{TxID: types.Hash{1},
+			PollParticipants: vote.PollParticipants{PollID: 10, Participants: []sdk.ValAddress{valAddr}},
+			Chain:            chain,
+		})
+	})
+}
+
+func TestMgr_ProcessTokenConfirmationNoTopicsNotPanics(t *testing.T) {
+	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
+	receipt := geth.Receipt{
+		Logs:        []*geth.Log{{Topics: make([]common.Hash, 0)}},
+		BlockNumber: big.NewInt(1),
+		Status:      geth.ReceiptStatusSuccessful,
+	}
+	rpcClient := &mock.ClientMock{TransactionReceiptFunc: func(_ context.Context, _ common.Hash) (*geth.Receipt, error) {
+		return &receipt, nil
+	}}
+	cache := &evmmock.LatestFinalizedBlockCacheMock{GetFunc: func(chain nexus.ChainName) *big.Int {
+		return big.NewInt(100)
+	}}
+
+	broadcaster := &mock2.BroadcasterMock{BroadcastFunc: func(_ context.Context, _ ...sdk.Msg) (*sdk.TxResponse, error) {
+		return nil, nil
+	}}
+
+	valAddr := rand.ValAddr()
+	mgr := evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, broadcaster, valAddr, rand.AccAddr(), cache)
+
+	assert.NotPanics(t, func() {
+		_ = mgr.ProcessTokenConfirmation(&types.ConfirmTokenStarted{TxID: types.Hash{1},
+			PollParticipants: vote.PollParticipants{PollID: 10, Participants: []sdk.ValAddress{valAddr}},
+			Chain:            chain,
+		})
+	})
+}
+
 func createTokenLogs(denom string, gateway, tokenAddr common.Address, deploySig common.Hash, hasCorrectLog bool) []*geth.Log {
 	numLogs := rand.I64Between(1, 100)
 	correctPos := rand.I64Between(0, numLogs)
