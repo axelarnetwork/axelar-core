@@ -13,7 +13,7 @@ axelard query ibc client self-consensus-state [flags]
 ### Examples
 
 ```
-<appd> query ibc client self-consensus-state
+axelard query ibc client self-consensus-state
 ```
 
 ### Options

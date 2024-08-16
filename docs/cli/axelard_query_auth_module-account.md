@@ -9,7 +9,7 @@ axelard query auth module-account [module-name] [flags]
 ### Examples
 
 ```
-<appd> q auth module-account auth
+axelard q auth module-account auth
 ```
 
 ### Options

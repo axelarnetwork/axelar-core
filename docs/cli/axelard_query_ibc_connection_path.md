@@ -13,7 +13,7 @@ axelard query ibc connection path [client-id] [flags]
 ### Examples
 
 ```
-<appd> query  ibc connection path [client-id]
+axelard query  ibc connection path [client-id]
 ```
 
 ### Options

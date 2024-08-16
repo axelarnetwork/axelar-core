@@ -7,7 +7,7 @@ Query all redelegations records for one delegator
 Query all redelegation records for an individual delegator.
 
 Example:
-$ <appd> query staking redelegation axelar1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
+$ axelard query staking redelegation axelar1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
 
 ```
 axelard query staking redelegations [delegator-addr] [flags]

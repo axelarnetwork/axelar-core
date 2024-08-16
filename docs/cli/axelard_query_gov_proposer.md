@@ -7,7 +7,7 @@ Query the proposer of a governance proposal
 Query which address proposed a proposal with a given ID.
 
 Example:
-$ <appd> query gov proposer 1
+$ axelard query gov proposer 1
 
 ```
 axelard query gov proposer [proposal-id] [flags]

@@ -7,7 +7,7 @@ Decode a pubkey from proto JSON
 Decode a pubkey from proto JSON and display it's address.
 
 Example:
-$ <appd> debug pubkey '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AurroA7jvfPd1AadmmOvWM2rJSwipXfRf8yD6pLbA2DJ"}'
+$ axelard debug pubkey '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AurroA7jvfPd1AadmmOvWM2rJSwipXfRf8yD6pLbA2DJ"}'
 
 ```
 axelard debug pubkey [pubkey] [flags]

@@ -18,7 +18,7 @@ axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [amount] [f
 ### Examples
 
 ```
-<appd> tx ibc-transfer transfer [src-port] [src-channel] [receiver] [amount]
+axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [amount]
 ```
 
 ### Options

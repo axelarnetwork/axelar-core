@@ -7,7 +7,7 @@ Query a validator
 Query details about an individual validator.
 
 Example:
-$ <appd> query staking validator axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
+$ axelard query staking validator axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
 
 ```
 axelard query staking validator [validator-addr] [flags]

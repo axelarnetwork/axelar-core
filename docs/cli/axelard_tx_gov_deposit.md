@@ -5,10 +5,10 @@ Deposit tokens for an active proposal
 ### Synopsis
 
 Submit a deposit for an active proposal. You can
-find the proposal-id by running "<appd> query gov proposals".
+find the proposal-id by running "axelard query gov proposals".
 
 Example:
-$ <appd> tx gov deposit 1 10stake --from mykey
+$ axelard tx gov deposit 1 10stake --from mykey
 
 ```
 axelard tx gov deposit [proposal-id] [deposit] [flags]

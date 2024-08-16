@@ -7,7 +7,7 @@ Query the current staking parameters information
 Query values set as staking parameters.
 
 Example:
-$ <appd> query staking params
+$ axelard query staking params
 
 ```
 axelard query staking params [flags]

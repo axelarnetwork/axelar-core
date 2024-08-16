@@ -7,7 +7,7 @@ Query a delegation based on address and validator address
 Query delegations for an individual delegator on an individual validator.
 
 Example:
-$ <appd> query staking delegation axelar1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
+$ axelard query staking delegation axelar1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
 
 ```
 axelard query staking delegation [delegator-addr] [validator-addr] [flags]

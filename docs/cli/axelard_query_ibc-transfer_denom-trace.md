@@ -13,7 +13,7 @@ axelard query ibc-transfer denom-trace [hash/denom] [flags]
 ### Examples
 
 ```
-<appd> query ibc-transfer denom-trace 27A6394C3F9FF9C9DCF5DFFADF9BB5FE9A37C7E92B006199894CF1824DF9AC7C
+axelard query ibc-transfer denom-trace 27A6394C3F9FF9C9DCF5DFFADF9BB5FE9A37C7E92B006199894CF1824DF9AC7C
 ```
 
 ### Options

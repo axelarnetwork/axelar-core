@@ -13,7 +13,7 @@ axelard query ibc connection end [connection-id] [flags]
 ### Examples
 
 ```
-<appd> query ibc connection end [connection-id]
+axelard query ibc connection end [connection-id]
 ```
 
 ### Options

@@ -7,7 +7,7 @@ Query the amount of coins in the community pool
 Query all coins in the community pool which is under Governance control.
 
 Example:
-$ <appd> query distribution community-pool
+$ axelard query distribution community-pool
 
 ```
 axelard query distribution community-pool [flags]

@@ -7,8 +7,8 @@ Query all distribution delegator rewards or rewards from a particular validator
 Query all rewards earned by a delegator, optionally restrict to rewards from a single validator.
 
 Example:
-$ <appd> query distribution rewards axelar1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
-$ <appd> query distribution rewards axelar1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
+$ axelard query distribution rewards axelar1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
+$ axelard query distribution rewards axelar1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
 
 ```
 axelard query distribution rewards [delegator-addr] [validator-addr] [flags]

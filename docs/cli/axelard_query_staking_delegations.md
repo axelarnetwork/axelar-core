@@ -7,7 +7,7 @@ Query all delegations made by one delegator
 Query delegations for an individual delegator on all validators.
 
 Example:
-$ <appd> query staking delegations axelar1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
+$ axelard query staking delegations axelar1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
 
 ```
 axelard query staking delegations [delegator-addr] [flags]

@@ -7,7 +7,7 @@ Unbond shares from a validator
 Unbond an amount of bonded shares from a validator.
 
 Example:
-$ <appd> tx staking unbond axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj 100stake --from mykey
+$ axelard tx staking unbond axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj 100stake --from mykey
 
 ```
 axelard tx staking unbond [validator-addr] [amount] [flags]

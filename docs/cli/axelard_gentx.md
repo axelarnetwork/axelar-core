@@ -18,7 +18,7 @@ minimum self delegation:     1
 ```
 
 Example:
-$ <appd> gentx my-key-name 1000000stake --home=/path/to/home/dir --keyring-backend=os --chain-id=test-chain-1 \
+$ axelard gentx my-key-name 1000000stake --home=/path/to/home/dir --keyring-backend=os --chain-id=test-chain-1 \
 --moniker="myvalidator" \
 --commission-max-change-rate=0.01 \
 --commission-max-rate=1.0 \

@@ -13,7 +13,7 @@ axelard query ibc client consensus-state-heights [client-id] [flags]
 ### Examples
 
 ```
-<appd> query ibc client consensus-state-heights [client-id]
+axelard query ibc client consensus-state-heights [client-id]
 ```
 
 ### Options

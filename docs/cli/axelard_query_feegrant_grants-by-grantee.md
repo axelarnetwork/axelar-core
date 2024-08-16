@@ -7,7 +7,7 @@ Query all grants of a grantee
 Queries all the grants for a grantee address.
 
 Example:
-$ <appd> query feegrant grants-by-grantee \[grantee\]
+$ axelard query feegrant grants-by-grantee \[grantee\]
 
 ```
 axelard query feegrant grants-by-grantee [grantee] [flags]

@@ -7,7 +7,7 @@ Query all unbonding delegatations from a validator
 Query delegations that are unbonding _from_ a validator.
 
 Example:
-$ <appd> query staking unbonding-delegations-from axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
+$ axelard query staking unbonding-delegations-from axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
 
 ```
 axelard query staking unbonding-delegations-from [validator-addr] [flags]

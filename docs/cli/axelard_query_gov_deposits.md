@@ -5,10 +5,10 @@ Query deposits on a proposal
 ### Synopsis
 
 Query details for all deposits on a proposal.
-You can find the proposal-id by running "<appd> query gov proposals".
+You can find the proposal-id by running "axelard query gov proposals".
 
 Example:
-$ <appd> query gov deposits 1
+$ axelard query gov deposits 1
 
 ```
 axelard query gov deposits [proposal-id] [flags]

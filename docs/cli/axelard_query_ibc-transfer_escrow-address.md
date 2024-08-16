@@ -13,7 +13,7 @@ axelard query ibc-transfer escrow-address [flags]
 ### Examples
 
 ```
-<appd> query ibc-transfer escrow-address [port] [channel-id]
+axelard query ibc-transfer escrow-address [port] [channel-id]
 ```
 
 ### Options

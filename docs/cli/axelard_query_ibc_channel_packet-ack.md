@@ -13,7 +13,7 @@ axelard query ibc channel packet-ack [port-id] [channel-id] [sequence] [flags]
 ### Examples
 
 ```
-<appd> query ibc channel packet-ack [port-id] [channel-id] [sequence]
+axelard query ibc channel packet-ack [port-id] [channel-id] [sequence]
 ```
 
 ### Options

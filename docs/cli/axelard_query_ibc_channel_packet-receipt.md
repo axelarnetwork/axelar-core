@@ -13,7 +13,7 @@ axelard query ibc channel packet-receipt [port-id] [channel-id] [sequence] [flag
 ### Examples
 
 ```
-<appd> query ibc channel packet-receipt [port-id] [channel-id] [sequence]
+axelard query ibc channel packet-receipt [port-id] [channel-id] [sequence]
 ```
 
 ### Options
