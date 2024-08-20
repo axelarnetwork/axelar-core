@@ -95,7 +95,7 @@ message HeartBeatRequest {
     (gogoproto.customname) = "KeyIDs",
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID",
-    deprecated = true  ];
+    deprecated = true  ];  // key_ids was deprecated in v1.0
 }
 
 message HeartBeatResponse {}
