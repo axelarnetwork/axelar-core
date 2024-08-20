@@ -11,7 +11,6 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
-	"github.com/axelarnetwork/axelar-core/vald/parse"
 	"github.com/axelarnetwork/axelar-core/vald/tss/rpc"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -91,21 +90,4 @@ func (mgr *Mgr) ProcessHeartBeatEvent(_ tmEvents.Event) error {
 	logger.Info(fmt.Sprintf("no keygen/signing issues reported for operator %s", mgr.principalAddr))
 
 	return nil
-}
-
-func parseHeartBeatParams(cdc *codec.LegacyAmino, attributes map[string]string) []tss.KeyInfo {
-	parsers := []*parse.AttributeParser{
-		{Key: tss.AttributeKeyKeyInfos, Map: func(s string) (interface{}, error) {
-			var keyInfos []tss.KeyInfo
-			cdc.MustUnmarshalJSON([]byte(s), &keyInfos)
-			return keyInfos, nil
-		}},
-	}
-
-	results, err := parse.Parse(attributes, parsers)
-	if err != nil {
-		panic(err)
-	}
-
-	return results[0].([]tss.KeyInfo)
 }
