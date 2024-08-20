@@ -3,13 +3,12 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	"github.com/axelarnetwork/axelar-core/x/tss/exported"
 )
 
 // NewHeartBeatRequest constructor for AckRequest
-func NewHeartBeatRequest(sender sdk.AccAddress, keyIDs []exported.KeyID) *HeartBeatRequest {
-	return &HeartBeatRequest{Sender: sender, KeyIDs: keyIDs}
+func NewHeartBeatRequest(sender sdk.AccAddress) *HeartBeatRequest {
+	// todo: completely remove keyIDs from the message
+	return &HeartBeatRequest{Sender: sender, KeyIDs: nil}
 }
 
 // Route implements the sdk.Msg interface.
