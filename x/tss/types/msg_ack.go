@@ -7,7 +7,7 @@ import (
 
 // NewHeartBeatRequest constructor for AckRequest
 func NewHeartBeatRequest(sender sdk.AccAddress) *HeartBeatRequest {
-	// todo: completely remove keyIDs from the message
+	// TODO: completely remove keyIDs from the message
 	return &HeartBeatRequest{Sender: sender, KeyIDs: nil}
 }
 
