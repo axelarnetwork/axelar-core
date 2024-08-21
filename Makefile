@@ -69,13 +69,6 @@ go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
 		GO111MODULE=on go mod verify
 
-# Print the value of a variable
-print-%:
-	@echo $*=$($*)
-
-# Uncomment when you have some tests
-# test:
-# 	@go test -mod=readonly $(PACKAGES)
 .PHONY: lint
 # look into .golangci.yml for enabling / disabling linters
 lint:
