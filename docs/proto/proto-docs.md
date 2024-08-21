@@ -8084,7 +8084,9 @@ ParamsRequest represents a message that queries the params
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `sender` | [bytes](#bytes) |  |  |
-| `key_ids` | [string](#string) | repeated |  |
+| `key_ids` | [string](#string) | repeated | **Deprecated.** Deprecated: this field will be removed in the next release
+
+key_ids was deprecated in v1.0 |
 
 
 
