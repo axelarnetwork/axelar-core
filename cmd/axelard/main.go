@@ -24,8 +24,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
 )
 
-//go:generate ./genDocs.sh ../../Makefile ../../docs/cli
-
 func main() {
 	docs := flag.String("docs", "", "only generate documentation for the CLI commands into the specified folder")
 	flag.Parse()

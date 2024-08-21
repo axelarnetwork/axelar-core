@@ -176,9 +176,24 @@ prereqs:
 
 # Run all the code generators in the project
 .PHONY: generate
-generate: prereqs
+generate: prereqs docs generate-mocks
+
+.PHONY: generate-mocks
+generate-mocks:
 	go generate -x ./...
 
+.PHONY: docs
+docs:
+	@echo "Removing old clidocs"
+
+	@if find docs/cli -name "*.md"  | grep -q .; then \
+		rm docs/cli/*.md; \
+	fi
+
+	@echo "Generating new cli docs"
+	@go run $(BUILD_FLAGS) cmd/axelard/main.go --docs docs/cli
+	@# ensure docs are canonically formatted
+	@mdformat docs/cli/*
 
 .PHONE: tofnd-client
 tofnd-client:
