@@ -90,11 +90,12 @@ message HeartBeatRequest {
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 
+  // Deprecated: this field will be removed in the next release
   repeated string key_ids = 2 [
     (gogoproto.customname) = "KeyIDs",
     (gogoproto.casttype) =
-        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
-  ];
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID",
+    deprecated = true  ];  // key_ids was deprecated in v1.0
 }
 
 message HeartBeatResponse {}

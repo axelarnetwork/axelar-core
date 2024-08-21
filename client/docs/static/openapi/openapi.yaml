@@ -16808,6 +16808,7 @@ paths:
                   type: array
                   items:
                     type: string
+                  title: "Deprecated: this field will be removed in the next release"
         required: true
       tags:
         - MsgService
@@ -52868,6 +52869,7 @@ components:
           type: array
           items:
             type: string
+          title: "Deprecated: this field will be removed in the next release"
     axelar.tss.v1beta1.HeartBeatResponse:
       type: object
     axelar.tss.v1beta1.Params:
