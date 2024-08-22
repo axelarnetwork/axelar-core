@@ -7,8 +7,8 @@ Query votes on a proposal
 Query vote details for a single proposal by its identifier.
 
 Example:
-$ <appd> query gov votes 1
-$ <appd> query gov votes 1 --page=2 --limit=100
+$ axelard query gov votes 1
+$ axelard query gov votes 1 --page=2 --limit=100
 
 ```
 axelard query gov votes [proposal-id] [flags]

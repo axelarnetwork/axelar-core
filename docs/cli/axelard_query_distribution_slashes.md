@@ -7,7 +7,7 @@ Query distribution validator slashes
 Query all slashes of a validator for a given block range.
 
 Example:
-$ <appd> query distribution slashes axelarvalopervaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj 0 100
+$ axelard query distribution slashes axelarvalopervaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj 0 100
 
 ```
 axelard query distribution slashes [validator] [start-height] [end-height] [flags]

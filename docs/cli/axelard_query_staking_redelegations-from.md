@@ -7,7 +7,7 @@ Query all outgoing redelegatations from a validator
 Query delegations that are redelegating _from_ a validator.
 
 Example:
-$ <appd> query staking redelegations-from axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
+$ axelard query staking redelegations-from axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
 
 ```
 axelard query staking redelegations-from [validator-addr] [flags]

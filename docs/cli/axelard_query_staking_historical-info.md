@@ -7,7 +7,7 @@ Query historical info at given height
 Query historical info at given height.
 
 Example:
-$ <appd> query staking historical-info 5
+$ axelard query staking historical-info 5
 
 ```
 axelard query staking historical-info [height] [flags]

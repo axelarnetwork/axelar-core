@@ -7,7 +7,7 @@ Query the parameters of the governance process
 Query the all the parameters for the governance process.
 
 Example:
-$ <appd> query gov params
+$ axelard query gov params
 
 ```
 axelard query gov params [flags]

@@ -13,7 +13,7 @@ axelard query ibc connection connections [flags]
 ### Examples
 
 ```
-<appd> query ibc connection connections
+axelard query ibc connection connections
 ```
 
 ### Options

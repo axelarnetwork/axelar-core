@@ -7,10 +7,10 @@ Query the total supply of coins of the chain
 Query total supply of coins that are held by accounts in the chain.
 
 Example:
-$ <appd> query bank total
+$ axelard query bank total
 
 To query for the total supply of a specific coin denomination use:
-$ <appd> query bank total --denom=\[denom\]
+$ axelard query bank total --denom=\[denom\]
 
 ```
 axelard query bank total [flags]

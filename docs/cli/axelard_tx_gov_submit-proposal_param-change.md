@@ -17,7 +17,7 @@ Proper vetting of a parameter change proposal should prevent this from happening
 regardless.
 
 Example:
-$ <appd> tx gov submit-proposal param-change \<path/to/proposal.json> --from=\<key_or_address>
+$ axelard tx gov submit-proposal param-change \<path/to/proposal.json> --from=\<key_or_address>
 
 Where proposal.json contains:
 

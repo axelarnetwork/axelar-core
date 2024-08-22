@@ -13,7 +13,7 @@ axelard query ibc-transfer params [flags]
 ### Examples
 
 ```
-<appd> query ibc-transfer params
+axelard query ibc-transfer params
 ```
 
 ### Options

@@ -13,7 +13,7 @@ axelard query ibc client params [flags]
 ### Examples
 
 ```
-<appd> query ibc client params
+axelard query ibc client params
 ```
 
 ### Options

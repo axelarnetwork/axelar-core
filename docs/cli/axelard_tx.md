@@ -52,3 +52,4 @@ axelard tx [flags]
 - [axelard tx validate-signatures](axelard_tx_validate-signatures.md)	 - validate transactions signatures
 - [axelard tx vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
 - [axelard tx vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
+- [axelard tx wasm](axelard_tx_wasm.md)	 - Wasm transaction subcommands

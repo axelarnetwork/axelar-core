@@ -13,7 +13,7 @@ axelard query ibc channel next-sequence-receive [port-id] [channel-id] [flags]
 ### Examples
 
 ```
-<appd> query ibc channel next-sequence-receive [port-id] [channel-id]
+axelard query ibc channel next-sequence-receive [port-id] [channel-id]
 ```
 
 ### Options

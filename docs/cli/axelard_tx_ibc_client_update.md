@@ -13,7 +13,7 @@ axelard tx ibc client update [client-id] [path/to/header.json] [flags]
 ### Examples
 
 ```
-<appd> tx ibc client update [client-id] [path/to/header.json] --from node0 --home ../node0/<app>cli --chain-id $CID
+axelard tx ibc client update [client-id] [path/to/header.json] --from node0 --home ../node0/<app>cli --chain-id $CID
 ```
 
 ### Options

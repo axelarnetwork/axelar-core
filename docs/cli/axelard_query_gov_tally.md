@@ -5,10 +5,10 @@ Get the tally of a proposal vote
 ### Synopsis
 
 Query tally of votes on a proposal. You can find
-the proposal-id by running "<appd> query gov proposals".
+the proposal-id by running "axelard query gov proposals".
 
 Example:
-$ <appd> query gov tally 1
+$ axelard query gov tally 1
 
 ```
 axelard query gov tally [proposal-id] [flags]

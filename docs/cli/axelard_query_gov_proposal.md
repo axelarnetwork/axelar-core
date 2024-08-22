@@ -5,10 +5,10 @@ Query details of a single proposal
 ### Synopsis
 
 Query details for a proposal. You can find the
-proposal-id by running "<appd> query gov proposals".
+proposal-id by running "axelard query gov proposals".
 
 Example:
-$ <appd> query gov proposal 1
+$ axelard query gov proposal 1
 
 ```
 axelard query gov proposal [proposal-id] [flags]

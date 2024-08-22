@@ -7,7 +7,7 @@ Query distribution validator commission
 Query validator commission rewards from delegators to that validator.
 
 Example:
-$ <appd> query distribution commission axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
+$ axelard query distribution commission axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
 
 ```
 axelard query distribution commission [validator] [flags]

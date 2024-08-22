@@ -7,7 +7,7 @@ Query the current staking pool values
 Query values for amounts stored in the staking pool.
 
 Example:
-$ <appd> query staking pool
+$ axelard query staking pool
 
 ```
 axelard query staking pool [flags]

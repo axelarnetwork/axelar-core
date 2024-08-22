@@ -53,3 +53,4 @@ axelard query [flags]
 - [axelard query txs](axelard_query_txs.md)	 - Query for paginated transactions that match a set of events
 - [axelard query upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
 - [axelard query vote](axelard_query_vote.md)	 - Querying commands for the vote module
+- [axelard query wasm](axelard_query_wasm.md)	 - Querying commands for the wasm module

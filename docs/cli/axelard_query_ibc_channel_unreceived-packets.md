@@ -17,7 +17,7 @@ axelard query ibc channel unreceived-packets [port-id] [channel-id] [flags]
 ### Examples
 
 ```
-<appd> query ibc channel unreceived-packets [port-id] [channel-id] --sequences=1,2,3
+axelard query ibc channel unreceived-packets [port-id] [channel-id] --sequences=1,2,3
 ```
 
 ### Options

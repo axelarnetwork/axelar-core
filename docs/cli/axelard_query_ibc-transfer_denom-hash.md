@@ -13,7 +13,7 @@ axelard query ibc-transfer denom-hash [trace] [flags]
 ### Examples
 
 ```
-<appd> query ibc-transfer denom-hash transfer/channel-0/uatom
+axelard query ibc-transfer denom-hash transfer/channel-0/uatom
 ```
 
 ### Options

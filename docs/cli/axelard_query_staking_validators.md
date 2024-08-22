@@ -7,7 +7,7 @@ Query for all validators
 Query details about all validators on a network.
 
 Example:
-$ <appd> query staking validators
+$ axelard query staking validators
 
 ```
 axelard query staking validators [flags]

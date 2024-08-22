@@ -9,7 +9,7 @@ The proposal details must be supplied via a JSON file. For values that contains
 objects, only non-empty fields will be updated.
 
 Example:
-$ <appd> tx gov submit-proposal call-contracts \<path/to/proposal.json>
+$ axelard tx gov submit-proposal call-contracts \<path/to/proposal.json>
 
 Where proposal.json contains:
 

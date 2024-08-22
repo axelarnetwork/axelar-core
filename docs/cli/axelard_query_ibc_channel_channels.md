@@ -13,7 +13,7 @@ axelard query ibc channel channels [flags]
 ### Examples
 
 ```
-<appd> query ibc channel channels
+axelard query ibc channel channels
 ```
 
 ### Options

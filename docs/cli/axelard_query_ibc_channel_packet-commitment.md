@@ -13,7 +13,7 @@ axelard query ibc channel packet-commitment [port-id] [channel-id] [sequence] [f
 ### Examples
 
 ```
-<appd> query ibc channel packet-commitment [port-id] [channel-id] [sequence]
+axelard query ibc channel packet-commitment [port-id] [channel-id] [sequence]
 ```
 
 ### Options

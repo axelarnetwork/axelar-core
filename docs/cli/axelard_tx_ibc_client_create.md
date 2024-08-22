@@ -15,7 +15,7 @@ axelard tx ibc client create [path/to/client_state.json] [path/to/consensus_stat
 ### Examples
 
 ```
-<appd> tx ibc client create [path/to/client_state.json] [path/to/consensus_state.json] --from node0 --home ../node0/<app>cli --chain-id $CID
+axelard tx ibc client create [path/to/client_state.json] [path/to/consensus_state.json] --from node0 --home ../node0/<app>cli --chain-id $CID
 ```
 
 ### Options

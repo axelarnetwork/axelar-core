@@ -13,7 +13,7 @@ axelard query ibc-transfer denom-traces [flags]
 ### Examples
 
 ```
-<appd> query ibc-transfer denom-traces
+axelard query ibc-transfer denom-traces
 ```
 
 ### Options

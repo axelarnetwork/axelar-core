@@ -13,7 +13,7 @@ axelard query ibc client state [client-id] [flags]
 ### Examples
 
 ```
-<appd> query ibc client state [client-id]
+axelard query ibc client state [client-id]
 ```
 
 ### Options

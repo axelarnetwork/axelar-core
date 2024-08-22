@@ -13,7 +13,7 @@ axelard query ibc client consensus-states [client-id] [flags]
 ### Examples
 
 ```
-<appd> query ibc client consensus-states [client-id]
+axelard query ibc client consensus-states [client-id]
 ```
 
 ### Options

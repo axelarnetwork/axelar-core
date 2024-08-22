@@ -13,7 +13,7 @@ axelard query ibc channel connections [connection-id] [flags]
 ### Examples
 
 ```
-<appd> query ibc channel connections [connection-id]
+axelard query ibc channel connections [connection-id]
 ```
 
 ### Options

@@ -69,9 +69,6 @@ go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
 		GO111MODULE=on go mod verify
 
-# Uncomment when you have some tests
-# test:
-# 	@go test -mod=readonly $(PACKAGES)
 .PHONY: lint
 # look into .golangci.yml for enabling / disabling linters
 lint:
@@ -172,9 +169,24 @@ prereqs:
 
 # Run all the code generators in the project
 .PHONY: generate
-generate: prereqs
+generate: prereqs docs generate-mocks
+
+.PHONY: generate-mocks
+generate-mocks:
 	go generate -x ./...
 
+.PHONY: docs
+docs:
+	@echo "Removing old clidocs"
+
+	@if find docs/cli -name "*.md"  | grep -q .; then \
+		rm docs/cli/*.md; \
+	fi
+
+	@echo "Generating new cli docs"
+	@go run $(BUILD_FLAGS) cmd/axelard/main.go --docs docs/cli
+	@# ensure docs are canonically formatted
+	@mdformat docs/cli/*
 
 .PHONE: tofnd-client
 tofnd-client:

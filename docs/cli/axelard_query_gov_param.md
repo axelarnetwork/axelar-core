@@ -7,9 +7,9 @@ Query the parameters (voting|tallying|deposit) of the governance process
 Query the all the parameters for the governance process.
 
 Example:
-$ <appd> query gov param voting
-$ <appd> query gov param tallying
-$ <appd> query gov param deposit
+$ axelard query gov param voting
+$ axelard query gov param tallying
+$ axelard query gov param deposit
 
 ```
 axelard query gov param [param-type] [flags]

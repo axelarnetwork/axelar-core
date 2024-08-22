@@ -10,7 +10,7 @@ Read one or more signatures from one or more \[signature\] file, generate a mult
 multisig key \[name\], and attach the key name to the transaction read from \[file\].
 
 Example:
-$ <appd> tx multisign-batch transactions.json multisigk1k2k3 k1sigs.json k2sigs.json k3sig.json
+$ axelard tx multisign-batch transactions.json multisigk1k2k3 k1sigs.json k2sigs.json k3sig.json
 
 The current multisig implementation defaults to amino-json sign mode.
 The SIGN_MODE_DIRECT sign mode is not supported.'

@@ -8,7 +8,7 @@ Query details for a grant.
 You can find the fee-grant of a granter and grantee.
 
 Example:
-$ <appd> query feegrant grant \[granter\] \[grantee\]
+$ axelard query feegrant grant \[granter\] \[grantee\]
 
 ```
 axelard query feegrant grant [granter] [grantee] [flags]
