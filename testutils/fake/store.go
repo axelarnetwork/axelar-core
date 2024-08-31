@@ -19,7 +19,7 @@ type MultiStore struct {
 	*mock.MultiStoreMock
 }
 
-// CachedMultiStore is a simple chached multistore for testing
+// CachedMultiStore is a simple cached multistore for testing
 type CachedMultiStore struct {
 	kvstore map[string]interfaces.KVStore
 	*mock.CacheMultiStoreMock
