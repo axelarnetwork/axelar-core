@@ -150,10 +150,12 @@ func (m WasmAppModuleBasicOverride) DefaultGenesis(cdc codec.JSONCodec) json.Raw
 	})
 }
 
+// QueryRequest is the custom queries wasm contracts can make for the core modules
 type QueryRequest struct {
 	Nexus *nexus.WasmQueryRequest
 }
 
+// NewQueryPlugins returns a new instance of the custom query plugins
 func NewQueryPlugins(txIDGenerator nexustypes.TxIDGenerator) *wasmkeeper.QueryPlugins {
 	nexusWasmQuerier := nexusKeeper.NewWasmQuerier(txIDGenerator)
 
