@@ -15,6 +15,9 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/x/ante"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
+	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
@@ -145,4 +148,27 @@ func (m WasmAppModuleBasicOverride) DefaultGenesis(cdc codec.JSONCodec) json.Raw
 			InstantiateDefaultPermission: wasmtypes.AccessTypeNobody,
 		},
 	})
+}
+
+type QueryRequest struct {
+	Nexus *nexus.WasmQueryRequest
+}
+
+func NewQueryPlugins(txIDGenerator nexustypes.TxIDGenerator) *wasmkeeper.QueryPlugins {
+	nexusWasmQuerier := nexusKeeper.NewWasmQuerier(txIDGenerator)
+
+	return &wasmkeeper.QueryPlugins{
+		Custom: func(ctx sdk.Context, request json.RawMessage) ([]byte, error) {
+			req := QueryRequest{}
+			if err := json.Unmarshal(request, &req); err != nil {
+				return nil, wasmvmtypes.InvalidRequest{Err: "invalid Custom query request", Request: request}
+			}
+
+			if req.Nexus != nil {
+				return nexusWasmQuerier.Query(ctx, *req.Nexus)
+			}
+
+			return nil, wasmvmtypes.UnsupportedRequest{Kind: "unknown Custom query request"}
+		},
+	}
 }

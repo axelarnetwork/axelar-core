@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
@@ -20,6 +21,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	nexusmock "github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -327,4 +330,63 @@ func TestMaxSizeOverrideForClient(t *testing.T) {
 	assert.Equal(t, 10000000, wasmtypes.MaxWasmSize)
 
 	assert.NoError(t, msg.ValidateBasic())
+}
+
+func TestQueryPlugins(t *testing.T) {
+	var (
+		txIDGenerator *nexusmock.TxIDGeneratorMock
+		req           json.RawMessage
+		ctx           sdk.Context
+	)
+
+	Given("the tx id generator", func() {
+		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+		txIDGenerator = &nexusmock.TxIDGeneratorMock{}
+	}).
+		Branch(
+			When("request is invalid", func() {
+				req = []byte("{\"invalid\"}")
+			}).
+				Then("it should return an error", func(t *testing.T) {
+					_, err := app.NewQueryPlugins(txIDGenerator).Custom(ctx, req)
+
+					assert.ErrorContains(t, err, "invalid Custom query request")
+				}),
+
+			When("request is unknown", func() {
+				req = []byte("{\"unknown\":{}}")
+			}).
+				Then("it should return an error", func(t *testing.T) {
+					_, err := app.NewQueryPlugins(txIDGenerator).Custom(ctx, req)
+
+					assert.ErrorContains(t, err, "unknown Custom query request")
+				}),
+
+			When("request is a nexus wasm query but unknown", func() {
+				req = []byte("{\"nexus\":{}}")
+			}).
+				Then("it should return an error", func(t *testing.T) {
+					_, err := app.NewQueryPlugins(txIDGenerator).Custom(ctx, req)
+
+					assert.ErrorContains(t, err, "unknown Nexus query request")
+				}),
+
+			When("request is a nexus wasm TxID query", func() {
+				req = []byte("{\"nexus\":{\"tx_id\":{}}}")
+			}).
+				Then("it should return an error", func(t *testing.T) {
+					txHash := [32]byte(rand.Bytes(32))
+					index := uint64(rand.PosI64())
+					txIDGenerator.CurrFunc = func(ctx sdk.Context) ([32]byte, uint64) {
+						return txHash, index
+					}
+
+					actual, err := app.NewQueryPlugins(txIDGenerator).Custom(ctx, req)
+
+					assert.NoError(t, err)
+					assert.Equal(t, fmt.Sprintf("{\"tx_hash\":%s,\"index\":%d}", funcs.Must(json.Marshal(txHash)), index), string(actual))
+				}),
+		).
+		Run(t)
+
 }

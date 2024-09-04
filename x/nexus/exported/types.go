@@ -414,3 +414,12 @@ func (bz *WasmBytes) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+type WasmQueryRequest struct {
+	TxID *struct{} `json:"tx_id,omitempty"`
+}
+
+type WasmQueryTxIDResponse struct {
+	TxHash [32]byte `json:"tx_hash,omitempty"`
+	Index  uint64   `json:"index,omitempty"`
+}
