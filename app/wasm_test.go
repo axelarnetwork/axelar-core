@@ -377,7 +377,7 @@ func TestQueryPlugins(t *testing.T) {
 				Then("it should return an error", func(t *testing.T) {
 					txHash := [32]byte(rand.Bytes(32))
 					index := uint64(rand.PosI64())
-					txIDGenerator.CurrFunc = func(ctx sdk.Context) ([32]byte, uint64) {
+					txIDGenerator.CurrIDFunc = func(ctx sdk.Context) ([32]byte, uint64) {
 						return txHash, index
 					}
 

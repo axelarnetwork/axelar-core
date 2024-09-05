@@ -24,7 +24,7 @@ func NewWasmQuerier(txIDGenerator types.TxIDGenerator) *WasmQuerier {
 // Query handles the wasm queries for the nexus module
 func (q WasmQuerier) Query(ctx sdk.Context, req exported.WasmQueryRequest) ([]byte, error) {
 	if req.TxID != nil {
-		txHash, index := q.txIDGenerator.Curr(ctx)
+		txHash, index := q.txIDGenerator.CurrID(ctx)
 
 		return funcs.Must(json.Marshal(exported.WasmQueryTxIDResponse{
 			TxHash: txHash,

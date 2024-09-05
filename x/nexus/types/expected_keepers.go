@@ -54,8 +54,8 @@ type Nexus interface {
 
 // TxIDGenerator provides functionality to generate transaction IDs
 type TxIDGenerator interface {
-	Next(ctx sdk.Context) ([32]byte, uint64)
-	Curr(ctx sdk.Context) ([32]byte, uint64)
+	NextID(ctx sdk.Context) ([32]byte, uint64)
+	CurrID(ctx sdk.Context) ([32]byte, uint64)
 }
 
 // Snapshotter provides functionality to the snapshot module
