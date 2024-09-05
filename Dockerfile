@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:experimental
 
-FROM golang:1.21-alpine3.18 as build
+FROM golang:1.23-alpine3.20 as build
 
 ARG ARCH=x86_64
 ARG WASM=true
@@ -33,7 +33,7 @@ COPY . .
 
 RUN make MUSLC="${WASM}" WASM="${WASM}" IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" build
 
-FROM alpine:3.18
+FROM alpine:3.20
 
 ARG USER_ID=1000
 ARG GROUP_ID=1001
