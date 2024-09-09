@@ -334,21 +334,21 @@ func TestMaxSizeOverrideForClient(t *testing.T) {
 
 func TestQueryPlugins(t *testing.T) {
 	var (
-		txIDGenerator *nexusmock.TxIDGeneratorMock
-		req           json.RawMessage
-		ctx           sdk.Context
+		msgIDGenerator *nexusmock.MsgIDGeneratorMock
+		req            json.RawMessage
+		ctx            sdk.Context
 	)
 
 	Given("the tx id generator", func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
-		txIDGenerator = &nexusmock.TxIDGeneratorMock{}
+		msgIDGenerator = &nexusmock.MsgIDGeneratorMock{}
 	}).
 		Branch(
 			When("request is invalid", func() {
 				req = []byte("{\"invalid\"}")
 			}).
 				Then("it should return an error", func(t *testing.T) {
-					_, err := app.NewQueryPlugins(txIDGenerator).Custom(ctx, req)
+					_, err := app.NewQueryPlugins(msgIDGenerator).Custom(ctx, req)
 
 					assert.ErrorContains(t, err, "invalid Custom query request")
 				}),
@@ -357,7 +357,7 @@ func TestQueryPlugins(t *testing.T) {
 				req = []byte("{\"unknown\":{}}")
 			}).
 				Then("it should return an error", func(t *testing.T) {
-					_, err := app.NewQueryPlugins(txIDGenerator).Custom(ctx, req)
+					_, err := app.NewQueryPlugins(msgIDGenerator).Custom(ctx, req)
 
 					assert.ErrorContains(t, err, "unknown Custom query request")
 				}),
@@ -366,25 +366,25 @@ func TestQueryPlugins(t *testing.T) {
 				req = []byte("{\"nexus\":{}}")
 			}).
 				Then("it should return an error", func(t *testing.T) {
-					_, err := app.NewQueryPlugins(txIDGenerator).Custom(ctx, req)
+					_, err := app.NewQueryPlugins(msgIDGenerator).Custom(ctx, req)
 
 					assert.ErrorContains(t, err, "unknown Nexus query request")
 				}),
 
 			When("request is a nexus wasm TxID query", func() {
-				req = []byte("{\"nexus\":{\"tx_id\":{}}}")
+				req = []byte("{\"nexus\":{\"tx_hash_and_nonce\":{}}}")
 			}).
 				Then("it should return an error", func(t *testing.T) {
 					txHash := [32]byte(rand.Bytes(32))
 					index := uint64(rand.PosI64())
-					txIDGenerator.CurrIDFunc = func(ctx sdk.Context) ([32]byte, uint64) {
+					msgIDGenerator.CurrIDFunc = func(ctx sdk.Context) ([32]byte, uint64) {
 						return txHash, index
 					}
 
-					actual, err := app.NewQueryPlugins(txIDGenerator).Custom(ctx, req)
+					actual, err := app.NewQueryPlugins(msgIDGenerator).Custom(ctx, req)
 
 					assert.NoError(t, err)
-					assert.Equal(t, fmt.Sprintf("{\"tx_hash\":%s,\"index\":%d}", funcs.Must(json.Marshal(txHash)), index), string(actual))
+					assert.Equal(t, fmt.Sprintf("{\"tx_hash\":%s,\"nonce\":%d}", funcs.Must(json.Marshal(txHash)), index), string(actual))
 				}),
 		).
 		Run(t)

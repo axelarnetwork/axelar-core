@@ -2917,16 +2917,16 @@ func (mock *StakingKeeperMock) ValidatorCalls() []struct {
 	return calls
 }
 
-// Ensure, that TxIDGeneratorMock does implement nexustypes.TxIDGenerator.
+// Ensure, that MsgIDGeneratorMock does implement nexustypes.MsgIDGenerator.
 // If this is not the case, regenerate this file with moq.
-var _ nexustypes.TxIDGenerator = &TxIDGeneratorMock{}
+var _ nexustypes.MsgIDGenerator = &MsgIDGeneratorMock{}
 
-// TxIDGeneratorMock is a mock implementation of nexustypes.TxIDGenerator.
+// MsgIDGeneratorMock is a mock implementation of nexustypes.MsgIDGenerator.
 //
-//	func TestSomethingThatUsesTxIDGenerator(t *testing.T) {
+//	func TestSomethingThatUsesMsgIDGenerator(t *testing.T) {
 //
-//		// make and configure a mocked nexustypes.TxIDGenerator
-//		mockedTxIDGenerator := &TxIDGeneratorMock{
+//		// make and configure a mocked nexustypes.MsgIDGenerator
+//		mockedMsgIDGenerator := &MsgIDGeneratorMock{
 //			CurrIDFunc: func(ctx cosmossdktypes.Context) ([32]byte, uint64) {
 //				panic("mock out the CurrID method")
 //			},
@@ -2935,11 +2935,11 @@ var _ nexustypes.TxIDGenerator = &TxIDGeneratorMock{}
 //			},
 //		}
 //
-//		// use mockedTxIDGenerator in code that requires nexustypes.TxIDGenerator
+//		// use mockedMsgIDGenerator in code that requires nexustypes.MsgIDGenerator
 //		// and then make assertions.
 //
 //	}
-type TxIDGeneratorMock struct {
+type MsgIDGeneratorMock struct {
 	// CurrIDFunc mocks the CurrID method.
 	CurrIDFunc func(ctx cosmossdktypes.Context) ([32]byte, uint64)
 
@@ -2964,9 +2964,9 @@ type TxIDGeneratorMock struct {
 }
 
 // CurrID calls CurrIDFunc.
-func (mock *TxIDGeneratorMock) CurrID(ctx cosmossdktypes.Context) ([32]byte, uint64) {
+func (mock *MsgIDGeneratorMock) CurrID(ctx cosmossdktypes.Context) ([32]byte, uint64) {
 	if mock.CurrIDFunc == nil {
-		panic("TxIDGeneratorMock.CurrIDFunc: method is nil but TxIDGenerator.CurrID was just called")
+		panic("MsgIDGeneratorMock.CurrIDFunc: method is nil but MsgIDGenerator.CurrID was just called")
 	}
 	callInfo := struct {
 		Ctx cosmossdktypes.Context
@@ -2982,8 +2982,8 @@ func (mock *TxIDGeneratorMock) CurrID(ctx cosmossdktypes.Context) ([32]byte, uin
 // CurrIDCalls gets all the calls that were made to CurrID.
 // Check the length with:
 //
-//	len(mockedTxIDGenerator.CurrIDCalls())
-func (mock *TxIDGeneratorMock) CurrIDCalls() []struct {
+//	len(mockedMsgIDGenerator.CurrIDCalls())
+func (mock *MsgIDGeneratorMock) CurrIDCalls() []struct {
 	Ctx cosmossdktypes.Context
 } {
 	var calls []struct {
@@ -2996,9 +2996,9 @@ func (mock *TxIDGeneratorMock) CurrIDCalls() []struct {
 }
 
 // NextID calls NextIDFunc.
-func (mock *TxIDGeneratorMock) NextID(ctx cosmossdktypes.Context) ([32]byte, uint64) {
+func (mock *MsgIDGeneratorMock) NextID(ctx cosmossdktypes.Context) ([32]byte, uint64) {
 	if mock.NextIDFunc == nil {
-		panic("TxIDGeneratorMock.NextIDFunc: method is nil but TxIDGenerator.NextID was just called")
+		panic("MsgIDGeneratorMock.NextIDFunc: method is nil but MsgIDGenerator.NextID was just called")
 	}
 	callInfo := struct {
 		Ctx cosmossdktypes.Context
@@ -3014,8 +3014,8 @@ func (mock *TxIDGeneratorMock) NextID(ctx cosmossdktypes.Context) ([32]byte, uin
 // NextIDCalls gets all the calls that were made to NextID.
 // Check the length with:
 //
-//	len(mockedTxIDGenerator.NextIDCalls())
-func (mock *TxIDGeneratorMock) NextIDCalls() []struct {
+//	len(mockedMsgIDGenerator.NextIDCalls())
+func (mock *MsgIDGeneratorMock) NextIDCalls() []struct {
 	Ctx cosmossdktypes.Context
 } {
 	var calls []struct {

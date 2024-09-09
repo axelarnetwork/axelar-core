@@ -13,22 +13,22 @@ import (
 
 // WasmQuerier is a querier for the wasm contracts
 type WasmQuerier struct {
-	txIDGenerator types.TxIDGenerator
+	msgIDGenerator types.MsgIDGenerator
 }
 
 // NewWasmQuerier creates a new WasmQuerier
-func NewWasmQuerier(txIDGenerator types.TxIDGenerator) *WasmQuerier {
-	return &WasmQuerier{txIDGenerator}
+func NewWasmQuerier(msgIDGenerator types.MsgIDGenerator) *WasmQuerier {
+	return &WasmQuerier{msgIDGenerator}
 }
 
 // Query handles the wasm queries for the nexus module
 func (q WasmQuerier) Query(ctx sdk.Context, req exported.WasmQueryRequest) ([]byte, error) {
-	if req.TxID != nil {
-		txHash, index := q.txIDGenerator.CurrID(ctx)
+	if req.TxHashAndNonce != nil {
+		txHash, nonce := q.msgIDGenerator.CurrID(ctx)
 
-		return funcs.Must(json.Marshal(exported.WasmQueryTxIDResponse{
+		return funcs.Must(json.Marshal(exported.WasmQueryTxHashAndNonceResponse{
 			TxHash: txHash,
-			Index:  index,
+			Nonce:  nonce,
 		})), nil
 	}
 

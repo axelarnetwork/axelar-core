@@ -9,13 +9,13 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
-var _ types.TxIDGenerator = &Keeper{}
+var _ types.MsgIDGenerator = &Keeper{}
 
 func getTxHash(ctx sdk.Context) [32]byte {
 	return sha256.Sum256(ctx.TxBytes())
 }
 
-// NextID returns the next transaction hash and index, and increments the index
+// NextID returns the transaction hash of the current transaction and the incremented nonce
 func (k Keeper) NextID(ctx sdk.Context) ([32]byte, uint64) {
 	return getTxHash(ctx), utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx)).Incr(ctx)
 }

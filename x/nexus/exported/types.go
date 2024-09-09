@@ -417,11 +417,11 @@ func (bz *WasmBytes) UnmarshalJSON(data []byte) error {
 
 // WasmQueryRequest is the request for wasm contracts to query
 type WasmQueryRequest struct {
-	TxID *struct{} `json:"tx_id,omitempty"`
+	TxHashAndNonce *struct{} `json:"tx_hash_and_nonce,omitempty"`
 }
 
-// WasmQueryTxIDResponse is the response for the TxID query
-type WasmQueryTxIDResponse struct {
+// WasmQueryTxHashAndNonceResponse is the response for the TxHashAndNonce query
+type WasmQueryTxHashAndNonceResponse struct {
 	TxHash [32]byte `json:"tx_hash,omitempty"` // the hash of the current transaction
-	Index  uint64   `json:"index,omitempty"`   // the index of the current execution, which increments with each entry of any wasm execution
+	Nonce  uint64   `json:"nonce,omitempty"`   // the nonce of the current execution, which increments with each entry of any wasm execution
 }
