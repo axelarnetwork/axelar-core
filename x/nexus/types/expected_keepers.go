@@ -14,7 +14,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper RewardKeeper SlashingKeeper WasmKeeper AccountKeeper StakingKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper RewardKeeper SlashingKeeper WasmKeeper AccountKeeper StakingKeeper MsgIDGenerator
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
@@ -50,6 +50,12 @@ type Nexus interface {
 	RouteMessage(ctx sdk.Context, id string, routingCtx ...exported.RoutingContext) error
 	DequeueRouteMessage(ctx sdk.Context) (exported.GeneralMessage, bool)
 	IsAssetRegistered(ctx sdk.Context, chain exported.Chain, denom string) bool
+}
+
+// MsgIDGenerator provides functionality to generate msg IDs
+type MsgIDGenerator interface {
+	IncrID(ctx sdk.Context)
+	CurrID(ctx sdk.Context) ([32]byte, uint64)
 }
 
 // Snapshotter provides functionality to the snapshot module

@@ -2928,3 +2928,113 @@ func (mock *StakingKeeperMock) ValidatorCalls() []struct {
 	mock.lockValidator.RUnlock()
 	return calls
 }
+
+// Ensure, that MsgIDGeneratorMock does implement nexustypes.MsgIDGenerator.
+// If this is not the case, regenerate this file with moq.
+var _ nexustypes.MsgIDGenerator = &MsgIDGeneratorMock{}
+
+// MsgIDGeneratorMock is a mock implementation of nexustypes.MsgIDGenerator.
+//
+//	func TestSomethingThatUsesMsgIDGenerator(t *testing.T) {
+//
+//		// make and configure a mocked nexustypes.MsgIDGenerator
+//		mockedMsgIDGenerator := &MsgIDGeneratorMock{
+//			CurrIDFunc: func(ctx cosmossdktypes.Context) ([32]byte, uint64) {
+//				panic("mock out the CurrID method")
+//			},
+//			IncrIDFunc: func(ctx cosmossdktypes.Context)  {
+//				panic("mock out the IncrID method")
+//			},
+//		}
+//
+//		// use mockedMsgIDGenerator in code that requires nexustypes.MsgIDGenerator
+//		// and then make assertions.
+//
+//	}
+type MsgIDGeneratorMock struct {
+	// CurrIDFunc mocks the CurrID method.
+	CurrIDFunc func(ctx cosmossdktypes.Context) ([32]byte, uint64)
+
+	// IncrIDFunc mocks the IncrID method.
+	IncrIDFunc func(ctx cosmossdktypes.Context)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// CurrID holds details about calls to the CurrID method.
+		CurrID []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
+		// IncrID holds details about calls to the IncrID method.
+		IncrID []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
+	}
+	lockCurrID sync.RWMutex
+	lockIncrID sync.RWMutex
+}
+
+// CurrID calls CurrIDFunc.
+func (mock *MsgIDGeneratorMock) CurrID(ctx cosmossdktypes.Context) ([32]byte, uint64) {
+	if mock.CurrIDFunc == nil {
+		panic("MsgIDGeneratorMock.CurrIDFunc: method is nil but MsgIDGenerator.CurrID was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockCurrID.Lock()
+	mock.calls.CurrID = append(mock.calls.CurrID, callInfo)
+	mock.lockCurrID.Unlock()
+	return mock.CurrIDFunc(ctx)
+}
+
+// CurrIDCalls gets all the calls that were made to CurrID.
+// Check the length with:
+//
+//	len(mockedMsgIDGenerator.CurrIDCalls())
+func (mock *MsgIDGeneratorMock) CurrIDCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockCurrID.RLock()
+	calls = mock.calls.CurrID
+	mock.lockCurrID.RUnlock()
+	return calls
+}
+
+// IncrID calls IncrIDFunc.
+func (mock *MsgIDGeneratorMock) IncrID(ctx cosmossdktypes.Context) {
+	if mock.IncrIDFunc == nil {
+		panic("MsgIDGeneratorMock.IncrIDFunc: method is nil but MsgIDGenerator.IncrID was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockIncrID.Lock()
+	mock.calls.IncrID = append(mock.calls.IncrID, callInfo)
+	mock.lockIncrID.Unlock()
+	mock.IncrIDFunc(ctx)
+}
+
+// IncrIDCalls gets all the calls that were made to IncrID.
+// Check the length with:
+//
+//	len(mockedMsgIDGenerator.IncrIDCalls())
+func (mock *MsgIDGeneratorMock) IncrIDCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockIncrID.RLock()
+	calls = mock.calls.IncrID
+	mock.lockIncrID.RUnlock()
+	return calls
+}
