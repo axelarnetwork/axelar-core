@@ -2930,8 +2930,8 @@ var _ nexustypes.MsgIDGenerator = &MsgIDGeneratorMock{}
 //			CurrIDFunc: func(ctx cosmossdktypes.Context) ([32]byte, uint64) {
 //				panic("mock out the CurrID method")
 //			},
-//			NextIDFunc: func(ctx cosmossdktypes.Context) ([32]byte, uint64) {
-//				panic("mock out the NextID method")
+//			IncrIDFunc: func(ctx cosmossdktypes.Context)  {
+//				panic("mock out the IncrID method")
 //			},
 //		}
 //
@@ -2943,8 +2943,8 @@ type MsgIDGeneratorMock struct {
 	// CurrIDFunc mocks the CurrID method.
 	CurrIDFunc func(ctx cosmossdktypes.Context) ([32]byte, uint64)
 
-	// NextIDFunc mocks the NextID method.
-	NextIDFunc func(ctx cosmossdktypes.Context) ([32]byte, uint64)
+	// IncrIDFunc mocks the IncrID method.
+	IncrIDFunc func(ctx cosmossdktypes.Context)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -2953,14 +2953,14 @@ type MsgIDGeneratorMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
-		// NextID holds details about calls to the NextID method.
-		NextID []struct {
+		// IncrID holds details about calls to the IncrID method.
+		IncrID []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
 	}
 	lockCurrID sync.RWMutex
-	lockNextID sync.RWMutex
+	lockIncrID sync.RWMutex
 }
 
 // CurrID calls CurrIDFunc.
@@ -2995,34 +2995,34 @@ func (mock *MsgIDGeneratorMock) CurrIDCalls() []struct {
 	return calls
 }
 
-// NextID calls NextIDFunc.
-func (mock *MsgIDGeneratorMock) NextID(ctx cosmossdktypes.Context) ([32]byte, uint64) {
-	if mock.NextIDFunc == nil {
-		panic("MsgIDGeneratorMock.NextIDFunc: method is nil but MsgIDGenerator.NextID was just called")
+// IncrID calls IncrIDFunc.
+func (mock *MsgIDGeneratorMock) IncrID(ctx cosmossdktypes.Context) {
+	if mock.IncrIDFunc == nil {
+		panic("MsgIDGeneratorMock.IncrIDFunc: method is nil but MsgIDGenerator.IncrID was just called")
 	}
 	callInfo := struct {
 		Ctx cosmossdktypes.Context
 	}{
 		Ctx: ctx,
 	}
-	mock.lockNextID.Lock()
-	mock.calls.NextID = append(mock.calls.NextID, callInfo)
-	mock.lockNextID.Unlock()
-	return mock.NextIDFunc(ctx)
+	mock.lockIncrID.Lock()
+	mock.calls.IncrID = append(mock.calls.IncrID, callInfo)
+	mock.lockIncrID.Unlock()
+	mock.IncrIDFunc(ctx)
 }
 
-// NextIDCalls gets all the calls that were made to NextID.
+// IncrIDCalls gets all the calls that were made to IncrID.
 // Check the length with:
 //
-//	len(mockedMsgIDGenerator.NextIDCalls())
-func (mock *MsgIDGeneratorMock) NextIDCalls() []struct {
+//	len(mockedMsgIDGenerator.IncrIDCalls())
+func (mock *MsgIDGeneratorMock) IncrIDCalls() []struct {
 	Ctx cosmossdktypes.Context
 } {
 	var calls []struct {
 		Ctx cosmossdktypes.Context
 	}
-	mock.lockNextID.RLock()
-	calls = mock.calls.NextID
-	mock.lockNextID.RUnlock()
+	mock.lockIncrID.RLock()
+	calls = mock.calls.IncrID
+	mock.lockIncrID.RUnlock()
 	return calls
 }

@@ -54,7 +54,7 @@ type Nexus interface {
 
 // MsgIDGenerator provides functionality to generate msg IDs
 type MsgIDGenerator interface {
-	NextID(ctx sdk.Context) ([32]byte, uint64)
+	IncrID(ctx sdk.Context)
 	CurrID(ctx sdk.Context) ([32]byte, uint64)
 }
 

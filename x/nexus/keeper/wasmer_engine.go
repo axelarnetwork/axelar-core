@@ -38,7 +38,7 @@ func (w *WasmerEngine) Instantiate(
 	gasLimit uint64,
 	deserCost wasmvmtypes.UFraction,
 ) (*wasmvmtypes.Response, uint64, error) {
-	defer w.msgIDGenerator.NextID(getCtx(querier))
+	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
 	return w.WasmerEngine.Instantiate(checksum, env, info, initMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
 }
@@ -56,7 +56,7 @@ func (w *WasmerEngine) Execute(
 	gasLimit uint64,
 	deserCost wasmvmtypes.UFraction,
 ) (*wasmvmtypes.Response, uint64, error) {
-	defer w.msgIDGenerator.NextID(getCtx(querier))
+	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
 	return w.WasmerEngine.Execute(code, env, info, executeMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
 }
@@ -73,7 +73,7 @@ func (w *WasmerEngine) Migrate(
 	gasLimit uint64,
 	deserCost wasmvmtypes.UFraction,
 ) (*wasmvmtypes.Response, uint64, error) {
-	defer w.msgIDGenerator.NextID(getCtx(querier))
+	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
 	return w.WasmerEngine.Migrate(checksum, env, migrateMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
 }
@@ -90,7 +90,7 @@ func (w *WasmerEngine) Sudo(
 	gasLimit uint64,
 	deserCost wasmvmtypes.UFraction,
 ) (*wasmvmtypes.Response, uint64, error) {
-	defer w.msgIDGenerator.NextID(getCtx(querier))
+	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
 	return w.WasmerEngine.Sudo(checksum, env, sudoMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
 }
@@ -107,7 +107,7 @@ func (w *WasmerEngine) Reply(
 	gasLimit uint64,
 	deserCost wasmvmtypes.UFraction,
 ) (*wasmvmtypes.Response, uint64, error) {
-	defer w.msgIDGenerator.NextID(getCtx(querier))
+	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
 	return w.WasmerEngine.Reply(checksum, env, reply, store, goapi, querier, gasMeter, gasLimit, deserCost)
 }
