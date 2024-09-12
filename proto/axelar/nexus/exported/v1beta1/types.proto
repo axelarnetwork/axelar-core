@@ -123,7 +123,7 @@ message WasmMessage {
   uint64 source_tx_index = 7 [ (gogoproto.jsontag) = "source_tx_index" ];
   bytes sender = 8 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  string id = 9 [
-    (gogoproto.customname) = "ID"
-  ];
+  string id = 9 [ (gogoproto.customname) = "ID" ];
+  cosmos.base.v1beta1.Coin token = 10
+      [ (gogoproto.nullable) = true, (gogoproto.customname) = "Asset" ];
 }
