@@ -7,6 +7,7 @@ import (
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server/types"
@@ -163,20 +164,28 @@ func initStakingKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, ke
 
 func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *KeeperCache, bApp *bam.BaseApp, appOpts types.AppOptions, wasmOpts []wasm.Option, wasmDir string) *wasm.Keeper {
 	wasmConfig := mustReadWasmConfig(appOpts)
+	nexusK := GetKeeper[nexusKeeper.Keeper](keepers)
 
 	// The last arguments can contain custom message handlers, and custom query handlers,
 	// if we want to allow any custom callbacks
-	wasmOpts = append(wasmOpts, wasmkeeper.WithMessageHandlerDecorator(
-		func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
-			encoders := wasm.DefaultEncoders(encodingConfig.Codec, GetKeeper[ibctransferkeeper.Keeper](keepers))
-			encoders.Custom = nexusKeeper.EncodeRoutingMessage
+	wasmOpts = append(
+		wasmOpts,
+		wasmkeeper.WithMessageHandlerDecorator(
+			func(old wasmkeeper.Messenger) wasmkeeper.Messenger {
+				encoders := wasm.DefaultEncoders(encodingConfig.Codec, GetKeeper[ibctransferkeeper.Keeper](keepers))
+				encoders.Custom = nexusKeeper.EncodeRoutingMessage
 
-			return WithAnteHandlers(
-				encoders,
-				initMessageAnteDecorators(encodingConfig, keepers),
-				// for security reasons we disallow some msg types that can be used for arbitrary calls
-				wasmkeeper.NewMessageHandlerChain(NewMsgTypeBlacklistMessenger(), old, nexusKeeper.NewMessenger(GetKeeper[nexusKeeper.Keeper](keepers))))
-		}))
+				return WithAnteHandlers(
+					encoders,
+					initMessageAnteDecorators(encodingConfig, keepers),
+					// for security reasons we disallow some msg types that can be used for arbitrary calls
+					wasmkeeper.NewMessageHandlerChain(NewMsgTypeBlacklistMessenger(), old, nexusKeeper.NewMessenger(nexusK)))
+			}),
+		wasmkeeper.WithWasmEngineDecorator(func(old wasmtypes.WasmerEngine) wasmtypes.WasmerEngine {
+			return nexusKeeper.NewWasmerEngine(old, nexusK)
+		}),
+		wasmkeeper.WithQueryPlugins(NewQueryPlugins(nexusK)),
+	)
 
 	scopedWasmK := GetKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(wasm.ModuleName)
 	ibcKeeper := GetKeeper[ibckeeper.Keeper](keepers)
