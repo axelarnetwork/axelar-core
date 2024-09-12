@@ -63,9 +63,14 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 		return err
 	}
 
+	// Prevent wasm gateway from spoofing a chain name registered in nexus as the source chain
+	if _, ok := m.GetChain(ctx, msg.SourceChain); ok {
+		return fmt.Errorf("wasm source chain %s should not be a registered chain in nexus", msg.SourceChain)
+	}
+
 	destinationChain, ok := m.GetChain(ctx, msg.DestinationChain)
 	if !ok {
-		return fmt.Errorf("recipient chain %s is not a registered chain", msg.DestinationChain)
+		return fmt.Errorf("destination chain %s is not a registered chain in nexus", msg.DestinationChain)
 	}
 
 	// If message already exists, then this is a no-op to avoid causing an error from reverting the whole message batch being routed in Amplifier

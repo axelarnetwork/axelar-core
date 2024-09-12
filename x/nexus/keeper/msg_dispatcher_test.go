@@ -163,6 +163,16 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 			}
 		}).
 		Branch(
+			When("the source chain is registered", func() {
+				nexus.GetChainFunc = func(ctx sdk.Context, chain exported.ChainName) (exported.Chain, bool) { return exported.Chain{}, true }
+			}).
+				Then("should return error", func(t *testing.T) {
+					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
+
+					assert.ErrorContains(t, err, "should not be a registered chain in nexus")
+					assert.False(t, errors.Is(err, wasmtypes.ErrUnknownMsg))
+				}),
+
 			When("the destination chain is not registered", func() {
 				nexus.GetChainFunc = func(_ sdk.Context, chain exported.ChainName) (exported.Chain, bool) {
 					return exported.Chain{}, false
@@ -171,13 +181,21 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 				Then("should return error", func(t *testing.T) {
 					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 
-					assert.ErrorContains(t, err, "is not a registered chain")
+					assert.ErrorContains(t, err, "is not a registered chain in nexus")
 					assert.False(t, errors.Is(err, wasmtypes.ErrUnknownMsg))
 				}),
 
 			When("the destination chain is registered", func() {
-				nexus.GetChainFunc = func(ctx sdk.Context, chain exported.ChainName) (exported.Chain, bool) { return exported.Chain{}, true }
-
+				nexus.GetChainFunc = func(_ sdk.Context, chain exported.ChainName) (exported.Chain, bool) {
+					switch chain {
+					case evm.Ethereum.Name:
+						return evm.Ethereum, true
+					case axelarnet.Axelarnet.Name:
+						return axelarnet.Axelarnet, true
+					default:
+						return exported.Chain{}, false
+					}
+				}
 			}).
 				When("the msg fails to be set", func() {
 					nexus.GetMessageFunc = func(_ sdk.Context, _ string) (exported.GeneralMessage, bool) {
