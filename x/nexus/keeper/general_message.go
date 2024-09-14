@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 
@@ -32,9 +31,7 @@ func getProcessingMessageKey(destinationChain exported.ChainName, id string) key
 // GenerateMessageID generates a unique general message ID, and returns the message ID, current transacation ID and a unique integer nonce
 // The message ID is just a concatenation of the transaction ID and the nonce
 func (k Keeper) GenerateMessageID(ctx sdk.Context) (string, []byte, uint64) {
-	counter := utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx))
-	nonce := counter.Incr(ctx)
-	hash := sha256.Sum256(ctx.TxBytes())
+	hash, nonce := k.nextID(ctx)
 
 	return fmt.Sprintf("0x%s-%d", hex.EncodeToString(hash[:]), nonce), hash[:], nonce
 }
