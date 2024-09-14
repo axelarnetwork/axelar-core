@@ -2,6 +2,7 @@ package multisig
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -55,7 +56,7 @@ func (mgr Mgr) generateKey(keyUID string) (exported.PublicKey, error) {
 	case *tofnd.KeygenResponse_PubKey:
 		return res.GetPubKey(), nil
 	case *tofnd.KeygenResponse_Error:
-		return nil, fmt.Errorf(res.GetError())
+		return nil, errors.New(res.GetError())
 	default:
 		panic(fmt.Errorf("unknown multisig keygen response %T", res.GetKeygenResponse()))
 	}
@@ -72,14 +73,14 @@ func (mgr Mgr) sign(keyUID string, payloadHash exported.Hash, pubKey []byte) (ty
 		PubKey:    pubKey,
 	})
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed signing")
+		return nil, sdkerrors.Wrap(err, "failed signing")
 	}
 
 	switch res.GetSignResponse().(type) {
 	case *tofnd.SignResponse_Signature:
 		return res.GetSignature(), nil
 	case *tofnd.SignResponse_Error:
-		return nil, fmt.Errorf(res.GetError())
+		return nil, errors.New(res.GetError())
 	default:
 		panic(fmt.Errorf("unknown multisig sign response %T", res.GetSignResponse()))
 	}
