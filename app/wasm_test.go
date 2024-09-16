@@ -21,6 +21,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusmock "github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
 	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
@@ -334,21 +335,21 @@ func TestMaxSizeOverrideForClient(t *testing.T) {
 
 func TestQueryPlugins(t *testing.T) {
 	var (
-		msgIDGenerator *nexusmock.MsgIDGeneratorMock
-		req            json.RawMessage
-		ctx            sdk.Context
+		nexusK *nexusmock.NexusMock
+		req    json.RawMessage
+		ctx    sdk.Context
 	)
 
-	Given("the tx id generator", func() {
+	Given("the nexus keeper", func() {
 		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
-		msgIDGenerator = &nexusmock.MsgIDGeneratorMock{}
+		nexusK = &nexusmock.NexusMock{}
 	}).
 		Branch(
 			When("request is invalid", func() {
 				req = []byte("{\"invalid\"}")
 			}).
 				Then("it should return an error", func(t *testing.T) {
-					_, err := app.NewQueryPlugins(msgIDGenerator).Custom(ctx, req)
+					_, err := app.NewQueryPlugins(nexusK).Custom(ctx, req)
 
 					assert.ErrorContains(t, err, "invalid Custom query request")
 				}),
@@ -357,7 +358,7 @@ func TestQueryPlugins(t *testing.T) {
 				req = []byte("{\"unknown\":{}}")
 			}).
 				Then("it should return an error", func(t *testing.T) {
-					_, err := app.NewQueryPlugins(msgIDGenerator).Custom(ctx, req)
+					_, err := app.NewQueryPlugins(nexusK).Custom(ctx, req)
 
 					assert.ErrorContains(t, err, "unknown Custom query request")
 				}),
@@ -366,7 +367,7 @@ func TestQueryPlugins(t *testing.T) {
 				req = []byte("{\"nexus\":{}}")
 			}).
 				Then("it should return an error", func(t *testing.T) {
-					_, err := app.NewQueryPlugins(msgIDGenerator).Custom(ctx, req)
+					_, err := app.NewQueryPlugins(nexusK).Custom(ctx, req)
 
 					assert.ErrorContains(t, err, "unknown Nexus query request")
 				}),
@@ -374,17 +375,29 @@ func TestQueryPlugins(t *testing.T) {
 			When("request is a nexus wasm TxID query", func() {
 				req = []byte("{\"nexus\":{\"tx_hash_and_nonce\":{}}}")
 			}).
-				Then("it should return an error", func(t *testing.T) {
+				Then("it should return a TxHashAndNonce response", func(t *testing.T) {
 					txHash := [32]byte(rand.Bytes(32))
 					index := uint64(rand.PosI64())
-					msgIDGenerator.CurrIDFunc = func(ctx sdk.Context) ([32]byte, uint64) {
+					nexusK.CurrIDFunc = func(ctx sdk.Context) ([32]byte, uint64) {
 						return txHash, index
 					}
 
-					actual, err := app.NewQueryPlugins(msgIDGenerator).Custom(ctx, req)
+					actual, err := app.NewQueryPlugins(nexusK).Custom(ctx, req)
 
 					assert.NoError(t, err)
 					assert.Equal(t, fmt.Sprintf("{\"tx_hash\":%s,\"nonce\":%d}", funcs.Must(json.Marshal(txHash)), index), string(actual))
+				}),
+			When("request is a nexus wasm IsChainRegistered query", func() {
+				req = []byte("{\"nexus\":{\"is_chain_registered\":{\"chain\": \"chain-0\"}}}")
+			}).
+				Then("it should return a chain registered response", func(t *testing.T) {
+					nexusK.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+						return nexus.Chain{}, true
+					}
+					actual, err := app.NewQueryPlugins(nexusK).Custom(ctx, req)
+
+					assert.NoError(t, err)
+					assert.Equal(t, "{\"registered\":true}", string(actual))
 				}),
 		).
 		Run(t)
