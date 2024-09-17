@@ -390,14 +390,14 @@ func TestQueryPlugins(t *testing.T) {
 			When("request is a nexus wasm IsChainRegistered query", func() {
 				req = []byte("{\"nexus\":{\"is_chain_registered\":{\"chain\": \"chain-0\"}}}")
 			}).
-				Then("it should return a chain registered response", func(t *testing.T) {
+				Then("it should return a IsChainRegisteredResponse", func(t *testing.T) {
 					nexusK.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 						return nexus.Chain{}, true
 					}
 					actual, err := app.NewQueryPlugins(nexusK).Custom(ctx, req)
 
 					assert.NoError(t, err)
-					assert.Equal(t, "{\"registered\":true}", string(actual))
+					assert.Equal(t, "{\"is_registered\":true}", string(actual))
 				}),
 		).
 		Run(t)

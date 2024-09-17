@@ -39,7 +39,7 @@ func (q WasmQuerier) Query(ctx sdk.Context, req exported.WasmQueryRequest) ([]by
 
 		_, registered := q.nexus.GetChain(ctx, chainName)
 		return funcs.Must(json.Marshal(exported.WasmQueryIsChainRegisteredResponse{
-			Registered: registered,
+			IsRegistered: registered,
 		})), nil
 
 	default:
