@@ -48,9 +48,9 @@ jobs:
                 commit_hash=$(git rev-parse --short HEAD)
                 echo "Semantic Version of current binary: $semver"
                 cd ..
-                mkdir -p ./binary_file/$commit_hash/
-                sudo mv axelar-core/bin/axelard ./binary_file/$commit_hash/axelard-linux-amd64-$semver
-                echo "binary-directory=./binary_file" >> $GITHUB_OUTPUT
+                mkdir -p ./$commit_hash/
+                sudo mv axelar-core/bin/axelard ./$commit_hash/axelard-linux-amd64-$semver
+                echo "binary-directory=./$commit_hash" >> $GITHUB_OUTPUT
 
             - name: List contents of root directory
               run: ls -la
