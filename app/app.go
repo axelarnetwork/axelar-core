@@ -310,7 +310,6 @@ func NewAxelarApp(
 			*GetKeeper[axelarnetKeeper.IBCKeeper](keepers),
 			GetKeeper[nexusKeeper.Keeper](keepers),
 			axelarbankkeeper.NewBankKeeper(GetKeeper[bankkeeper.BaseKeeper](keepers)),
-			GetKeeper[authkeeper.AccountKeeper](keepers),
 			logger,
 		),
 	)
@@ -446,12 +445,10 @@ func initMessageRouter(keepers *KeeperCache) nexusTypes.MessageRouter {
 	messageRouter := nexusTypes.NewMessageRouter().
 		AddRoute(evmTypes.ModuleName, evmKeeper.NewMessageRoute()).
 		AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewMessageRoute(
-			*GetKeeper[axelarnetKeeper.Keeper](keepers),
 			GetKeeper[axelarnetKeeper.IBCKeeper](keepers),
 			GetKeeper[feegrantkeeper.Keeper](keepers),
 			axelarbankkeeper.NewBankKeeper(GetKeeper[bankkeeper.BaseKeeper](keepers)),
 			GetKeeper[nexusKeeper.Keeper](keepers),
-			GetKeeper[authkeeper.AccountKeeper](keepers),
 			GetKeeper[stakingkeeper.Keeper](keepers),
 		))
 

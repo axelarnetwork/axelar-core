@@ -9,6 +9,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
 // for IBC execution
@@ -16,12 +17,10 @@ const gasCost = storetypes.Gas(1000000)
 
 // NewMessageRoute creates a new message route
 func NewMessageRoute(
-	keeper Keeper,
 	ibcK types.IBCKeeper,
 	feegrantK types.FeegrantKeeper,
 	bankK types.BankKeeper,
 	nexusK types.Nexus,
-	accountK types.AccountKeeper,
 	stakingK types.StakingKeeper,
 ) nexus.MessageRoute {
 	return func(ctx sdk.Context, routingCtx nexus.RoutingContext, msg nexus.GeneralMessage) error {
@@ -34,7 +33,7 @@ func NewMessageRoute(
 			return sdkerrors.Wrap(err, "invalid payload")
 		}
 
-		asset, err := escrowAssetToMessageSender(ctx, keeper, feegrantK, bankK, nexusK, accountK, stakingK, routingCtx, msg)
+		asset, err := escrowAssetToMessageSender(ctx, feegrantK, bankK, nexusK, ibcK, stakingK, routingCtx, msg)
 		if err != nil {
 			return err
 		}
@@ -49,11 +48,10 @@ func NewMessageRoute(
 // escrowAssetToMessageSender sends the asset to general msg sender account
 func escrowAssetToMessageSender(
 	ctx sdk.Context,
-	keeper Keeper,
 	feegrantK types.FeegrantKeeper,
 	bankK types.BankKeeper,
 	nexusK types.Nexus,
-	accountK types.AccountKeeper,
+	ibcK types.IBCKeeper,
 	stakingK types.StakingKeeper,
 	routingCtx nexus.RoutingContext,
 	msg nexus.GeneralMessage,
@@ -80,13 +78,12 @@ func escrowAssetToMessageSender(
 
 		return asset, bankK.SendCoins(ctx, sender, types.AxelarGMPAccount, sdk.NewCoins(asset))
 	case nexus.TypeGeneralMessageWithToken:
-		// general message with token, get token from corresponding account
-		asset, sender, err := prepareTransfer(ctx, keeper, nexusK, bankK, accountK, *msg.Asset)
+		coin, err := nexustypes.NewCoin(ctx, nexusK, ibcK, bankK, *msg.Asset)
 		if err != nil {
 			return sdk.Coin{}, err
 		}
 
-		return asset, bankK.SendCoins(ctx, sender, types.AxelarGMPAccount, sdk.NewCoins(asset))
+		return coin.GetOriginalCoin(ctx), coin.Unlock(ctx, types.AxelarGMPAccount)
 	default:
 		return sdk.Coin{}, fmt.Errorf("unrecognized message type")
 	}
