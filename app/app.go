@@ -746,7 +746,7 @@ func InitModuleAccountPermissions() map[string][]string {
 		axelarnetTypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 		rewardTypes.ModuleName:         {authtypes.Minter},
 		wasm.ModuleName:                {authtypes.Burner},
-		nexusTypes.ModuleName:          nil,
+		nexusTypes.ModuleName:          {authtypes.Minter, authtypes.Burner},
 	}
 }
 

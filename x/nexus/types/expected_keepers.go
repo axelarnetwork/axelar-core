@@ -6,6 +6,7 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -14,7 +15,7 @@ import (
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper RewardKeeper SlashingKeeper WasmKeeper AccountKeeper StakingKeeper MsgIDGenerator
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Nexus Snapshotter AxelarnetKeeper RewardKeeper SlashingKeeper WasmKeeper AccountKeeper StakingKeeper MsgIDGenerator IBCKeeper BankKeeper
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
@@ -50,6 +51,7 @@ type Nexus interface {
 	RouteMessage(ctx sdk.Context, id string, routingCtx ...exported.RoutingContext) error
 	DequeueRouteMessage(ctx sdk.Context) (exported.GeneralMessage, bool)
 	IsAssetRegistered(ctx sdk.Context, chain exported.Chain, denom string) bool
+	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain exported.Chain, ok bool)
 }
 
 // MsgIDGenerator provides functionality to generate msg IDs
@@ -95,4 +97,19 @@ type WasmKeeper interface {
 // AccountKeeper provides functionality to get account keeper
 type AccountKeeper interface {
 	GetModuleAddress(moduleName string) sdk.AccAddress
+}
+
+// IBCKeeper provides functionality to send IBC transfer
+type IBCKeeper interface {
+	ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.DenomTrace, error)
+	GetIBCPath(ctx sdk.Context, chain exported.ChainName) (string, bool)
+}
+
+// BankKeeper provides functionality to manage bank
+type BankKeeper interface {
+	SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error
+	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
+	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+	BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
+	MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
 }

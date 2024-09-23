@@ -1,9 +1,11 @@
 package types
 
 import (
+	"crypto/sha256"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/address"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -187,4 +189,25 @@ func NewTransferEpoch(chain exported.ChainName, asset string, epoch uint64, dire
 		Epoch:     epoch,
 		Direction: direction,
 	}
+}
+
+// CoinType on can be ICS20 token, native asset, or wrapped asset from external chains
+type CoinType int
+
+const (
+	// Unrecognized means coin type is unrecognized
+	Unrecognized = iota
+	// Native means native token on Axelarnet
+	Native = 1
+	// ICS20 means coin from IBC chains
+	ICS20 = 2
+	// External means from external chains, such as EVM chains
+	External = 3
+)
+
+// GetEscrowAddress creates an address for the given denomination
+func GetEscrowAddress(denom string) sdk.AccAddress {
+	hash := sha256.Sum256([]byte(denom))
+
+	return hash[:address.Len]
 }
