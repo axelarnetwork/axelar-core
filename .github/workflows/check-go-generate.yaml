@@ -5,32 +5,26 @@ on:
 
 jobs:
   check-go-generate-up-to-date:
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     steps:
       - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v2
+        uses: useblacksmith/setup-go@v6
         with:
           go-version: 1.23
 
       - name: Install Python
-        uses: actions/setup-python@v3
-
-      - name: Cache Python
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: pip-cache
+        uses: useblacksmith/setup-python@v6
 
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Get Bytecode Version
         id: bytecode_version
-        run: echo ::set-output name=VERSION::$(cat contract-version.json | jq -r '.gateway')
+        run: echo "version=$(cat contract-version.json | jq -r '.gateway')" >> $GITHUB_OUTPUT
 
       - name: Download Gateway Bytecode
         run : |
-          wget "https://github.com/axelarnetwork/axelar-cgp-solidity/releases/download/${{ steps.bytecode_version.outputs.VERSION }}/Bytecode-${{ steps.bytecode_version.outputs.VERSION }}.zip"
+          wget "https://github.com/axelarnetwork/axelar-cgp-solidity/releases/download/${{ steps.bytecode_version.outputs.version }}/Bytecode-${{ steps.bytecode_version.outputs.version }}.zip"
 
       - name: Create folder contract-artifacts
         run : |
@@ -38,8 +32,8 @@ jobs:
 
       - name: Unzip Bytecode
         run : |
-          unzip Bytecode-${{ steps.bytecode_version.outputs.VERSION }}.zip  -d ./contract-artifacts
-          rm Bytecode-${{ steps.bytecode_version.outputs.VERSION }}.zip
+          unzip Bytecode-${{ steps.bytecode_version.outputs.version }}.zip  -d ./contract-artifacts
+          rm Bytecode-${{ steps.bytecode_version.outputs.version }}.zip
 
       - name: Install prereqs
         run: |

@@ -22,10 +22,10 @@ jobs:
       matrix:
         go-version:
           - 1.23
-        os: [ubuntu-22.04, macos-latest]
+        os: [blacksmith-2vcpu-ubuntu-2204, macos-latest]
         arch: [amd64, arm64]
         exclude:
-          - {os: "ubuntu-22.04", arch: "arm64"}
+          - {os: "blacksmith-2vcpu-ubuntu-2204", arch: "arm64"}
 
     permissions:
       contents: write
@@ -55,7 +55,7 @@ jobs:
           submodules: recursive
 
       - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v2
+        uses: useblacksmith/setup-go@v6
         with:
           go-version: ${{ matrix.go-version }}
 
@@ -74,7 +74,7 @@ jobs:
           WASM: ${{ github.event.inputs.wasm }}
           IBC_WASM_HOOKS: ${{ github.event.inputs.ibc-wasm-hooks }}
         run: |
-          OS=$(echo "$OS_TYPE" | sed -e 's/ubuntu-22.04/linux/; s/macos-latest/darwin/')
+          OS=$(echo "$OS_TYPE" | sed -e 's/blacksmith-2vcpu-ubuntu-2204/linux/; s/macos-latest/darwin/')
           make ARCH="$ARCH" build-binaries-multiarch
           mv ./bin/axelard ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
           gpg --armor --detach-sign  ./bin/axelard-"$OS"-"$ARCH"-"$SEMVER"
@@ -146,7 +146,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04]
+        os: [blacksmith-2vcpu-ubuntu-2204]
         platform: [linux/amd64]
 
     permissions:
@@ -198,7 +198,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04]
+        os: [blacksmith-2vcpu-ubuntu-2204]
 
     permissions:
       contents: write
@@ -230,4 +230,3 @@ jobs:
         env:
           TAGS: axelarnet/axelar-core:${{ github.event.inputs.tag }}
           COSIGN_EXPERIMENTAL: 1
-
