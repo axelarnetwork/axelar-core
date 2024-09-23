@@ -3,6 +3,10 @@ name: Ensure EVM module migration when bytecode changes
 on:
   - pull_request
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ensure-evm-migration:
     runs-on: ubuntu-latest

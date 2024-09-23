@@ -3,6 +3,10 @@ name: Check format and go generated files up-to-date
 on:
   - pull_request
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check-go-generate-up-to-date:
     runs-on: blacksmith-2vcpu-ubuntu-2204
