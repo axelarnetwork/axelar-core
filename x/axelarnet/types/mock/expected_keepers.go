@@ -11,6 +11,7 @@ import (
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	cosmossdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	gov "github.com/cosmos/cosmos-sdk/x/gov/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
@@ -3937,6 +3938,9 @@ var _ axelarnettypes.AccountKeeper = &AccountKeeperMock{}
 //
 //		// make and configure a mocked axelarnettypes.AccountKeeper
 //		mockedAccountKeeper := &AccountKeeperMock{
+//			GetModuleAccountFunc: func(ctx cosmossdktypes.Context, name string) authtypes.ModuleAccountI {
+//				panic("mock out the GetModuleAccount method")
+//			},
 //			GetModuleAddressFunc: func(moduleName string) cosmossdktypes.AccAddress {
 //				panic("mock out the GetModuleAddress method")
 //			},
@@ -3947,18 +3951,65 @@ var _ axelarnettypes.AccountKeeper = &AccountKeeperMock{}
 //
 //	}
 type AccountKeeperMock struct {
+	// GetModuleAccountFunc mocks the GetModuleAccount method.
+	GetModuleAccountFunc func(ctx cosmossdktypes.Context, name string) authtypes.ModuleAccountI
+
 	// GetModuleAddressFunc mocks the GetModuleAddress method.
 	GetModuleAddressFunc func(moduleName string) cosmossdktypes.AccAddress
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetModuleAccount holds details about calls to the GetModuleAccount method.
+		GetModuleAccount []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Name is the name argument value.
+			Name string
+		}
 		// GetModuleAddress holds details about calls to the GetModuleAddress method.
 		GetModuleAddress []struct {
 			// ModuleName is the moduleName argument value.
 			ModuleName string
 		}
 	}
+	lockGetModuleAccount sync.RWMutex
 	lockGetModuleAddress sync.RWMutex
+}
+
+// GetModuleAccount calls GetModuleAccountFunc.
+func (mock *AccountKeeperMock) GetModuleAccount(ctx cosmossdktypes.Context, name string) authtypes.ModuleAccountI {
+	if mock.GetModuleAccountFunc == nil {
+		panic("AccountKeeperMock.GetModuleAccountFunc: method is nil but AccountKeeper.GetModuleAccount was just called")
+	}
+	callInfo := struct {
+		Ctx  cosmossdktypes.Context
+		Name string
+	}{
+		Ctx:  ctx,
+		Name: name,
+	}
+	mock.lockGetModuleAccount.Lock()
+	mock.calls.GetModuleAccount = append(mock.calls.GetModuleAccount, callInfo)
+	mock.lockGetModuleAccount.Unlock()
+	return mock.GetModuleAccountFunc(ctx, name)
+}
+
+// GetModuleAccountCalls gets all the calls that were made to GetModuleAccount.
+// Check the length with:
+//
+//	len(mockedAccountKeeper.GetModuleAccountCalls())
+func (mock *AccountKeeperMock) GetModuleAccountCalls() []struct {
+	Ctx  cosmossdktypes.Context
+	Name string
+} {
+	var calls []struct {
+		Ctx  cosmossdktypes.Context
+		Name string
+	}
+	mock.lockGetModuleAccount.RLock()
+	calls = mock.calls.GetModuleAccount
+	mock.lockGetModuleAccount.RUnlock()
+	return calls
 }
 
 // GetModuleAddress calls GetModuleAddressFunc.

@@ -75,7 +75,7 @@ func (i IBCKeeper) SendMessage(c context.Context, recipient nexus.CrossChainAddr
 		return err
 	}
 
-	msg := ibctypes.NewMsgTransfer(portID, channelID, asset, types.AxelarGMPAccount.String(), recipient.Address, height, 0)
+	msg := ibctypes.NewMsgTransfer(portID, channelID, asset, types.AxelarIBCAccount.String(), recipient.Address, height, 0)
 	msg.Memo = payload
 
 	res, err := i.ibcTransferK.Transfer(c, msg)

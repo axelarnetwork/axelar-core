@@ -8,6 +8,7 @@ import (
 	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
@@ -122,11 +123,11 @@ func (c Coin) toICS20(ctx sdk.Context) (sdk.Coin, error) {
 }
 
 func lock(ctx sdk.Context, bank BankKeeper, fromAddr sdk.AccAddress, coin sdk.Coin) error {
-	return bank.SendCoins(ctx, fromAddr, GetEscrowAddress(coin.GetDenom()), sdk.NewCoins(coin))
+	return bank.SendCoins(ctx, fromAddr, exported.GetEscrowAddress(coin.GetDenom()), sdk.NewCoins(coin))
 }
 
 func unlock(ctx sdk.Context, bank BankKeeper, toAddr sdk.AccAddress, coin sdk.Coin) error {
-	return bank.SendCoins(ctx, GetEscrowAddress(coin.GetDenom()), toAddr, sdk.NewCoins(coin))
+	return bank.SendCoins(ctx, exported.GetEscrowAddress(coin.GetDenom()), toAddr, sdk.NewCoins(coin))
 }
 
 func burn(ctx sdk.Context, bank BankKeeper, fromAddr sdk.AccAddress, coin sdk.Coin) error {

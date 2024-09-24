@@ -410,12 +410,12 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 				continue
 			}
 
-			if err := coin.Unlock(ctx, types.AxelarGMPAccount); err != nil {
+			if err := coin.Unlock(ctx, types.AxelarIBCAccount); err != nil {
 				s.Logger(ctx).Error(fmt.Sprintf("failed to route IBC transfer %s: %s", p.String(), err))
 				continue
 			}
 
-			funcs.MustNoErr(s.EnqueueIBCTransfer(ctx, types.NewIBCTransfer(types.AxelarGMPAccount, p.Recipient.Address, coin.GetOriginalCoin(ctx), portID, channelID, p.ID)))
+			funcs.MustNoErr(s.EnqueueIBCTransfer(ctx, types.NewIBCTransfer(types.AxelarIBCAccount, p.Recipient.Address, coin.GetOriginalCoin(ctx), portID, channelID, p.ID)))
 			s.nexus.ArchivePendingTransfer(ctx, p)
 		}
 	}

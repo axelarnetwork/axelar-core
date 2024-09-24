@@ -48,7 +48,7 @@ func TestHandleMsgLink(t *testing.T) {
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{}
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, ibcK)
 	})
 
 	whenChainIsRegistered := When("chain is registered", func() {
@@ -154,7 +154,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			},
 		}
 		ibcK := keeper.NewIBCKeeper(k, transferK)
-		server = keeper.NewMsgServerImpl(k, nexusK, bankK, &mock.AccountKeeperMock{}, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, ibcK)
 	})
 
 	recipientIsFound := When("recipient is found", func() {
@@ -387,13 +387,8 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 		}
 		bankK = &mock.BankKeeperMock{}
 		transferK = &mock.IBCTransferKeeperMock{}
-		accountK := &mock.AccountKeeperMock{
-			GetModuleAddressFunc: func(moduleName string) sdk.AccAddress {
-				return rand.AccAddr()
-			},
-		}
 		ibcK := keeper.NewIBCKeeper(k, transferK)
-		server = keeper.NewMsgServerImpl(k, nexusK, bankK, accountK, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, ibcK)
 	})
 
 	whenAssetOriginsFromExternalCosmosChain := When("asset is from external cosmos chain", func() {
@@ -595,13 +590,8 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 		}
 		bankK = &mock.BankKeeperMock{}
 		transferK = &mock.IBCTransferKeeperMock{}
-		accountK := &mock.AccountKeeperMock{
-			GetModuleAddressFunc: func(string) sdk.AccAddress {
-				return rand.AccAddr()
-			},
-		}
 		ibcK := keeper.NewIBCKeeper(k, transferK)
-		server = keeper.NewMsgServerImpl(k, nexusK, bankK, accountK, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, ibcK)
 	})
 
 	whenAssetOriginsFromExternalCosmosChain := When("asset is from external cosmos chain", func() {
@@ -726,7 +716,6 @@ func TestRetryIBCTransfer(t *testing.T) {
 		n        *mock.NexusMock
 		b        *mock.BankKeeperMock
 		i        *mock.IBCTransferKeeperMock
-		a        *mock.AccountKeeperMock
 		channelK *mock.ChannelKeeperMock
 		ctx      sdk.Context
 		chain    nexus.Chain
@@ -750,7 +739,6 @@ func TestRetryIBCTransfer(t *testing.T) {
 		funcs.MustNoErr(k.SetChainByIBCPath(ctx, path, cosmosChain.Name))
 
 		b = &mock.BankKeeperMock{}
-		a = &mock.AccountKeeperMock{}
 		i = &mock.IBCTransferKeeperMock{
 			SendTransferFunc: func(sdk.Context, string, string, sdk.Coin, sdk.AccAddress, string, clienttypes.Height, uint64) error {
 				return nil
@@ -774,7 +762,7 @@ func TestRetryIBCTransfer(t *testing.T) {
 		}
 
 		ibcK := keeper.NewIBCKeeper(k, i)
-		server = keeper.NewMsgServerImpl(k, n, b, a, ibcK)
+		server = keeper.NewMsgServerImpl(k, n, b, ibcK)
 	})
 
 	requestIsMade := When("a retry failed transfer request is made", func() {
@@ -858,7 +846,7 @@ func TestAddCosmosBasedChain(t *testing.T) {
 			},
 		}
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
-		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{}, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, ibcK)
 	})
 
 	addChainRequest := When("an add cosmos based chain request is created", func() {
@@ -984,8 +972,7 @@ func TestRouteMessage(t *testing.T) {
 		nexusK = &mock.NexusMock{}
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
 		bankK := &mock.BankKeeperMock{}
-		accountK := &mock.AccountKeeperMock{}
-		server = keeper.NewMsgServerImpl(k, nexusK, bankK, accountK, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, bankK, ibcK)
 	})
 
 	givenMsgServer.
@@ -1022,7 +1009,7 @@ func TestHandleCallContract(t *testing.T) {
 		nexusK = &mock.NexusMock{}
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
 		b = &mock.BankKeeperMock{}
-		server = keeper.NewMsgServerImpl(k, nexusK, b, &mock.AccountKeeperMock{}, ibcK)
+		server = keeper.NewMsgServerImpl(k, nexusK, b, ibcK)
 		count := 0
 		nexusK.GenerateMessageIDFunc = func(ctx sdk.Context) (string, []byte, uint64) {
 			count++

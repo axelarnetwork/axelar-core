@@ -76,14 +76,14 @@ func escrowAssetToMessageSender(
 			sender = routingCtx.FeeGranter
 		}
 
-		return asset, bankK.SendCoins(ctx, sender, types.AxelarGMPAccount, sdk.NewCoins(asset))
+		return asset, bankK.SendCoins(ctx, sender, types.AxelarIBCAccount, sdk.NewCoins(asset))
 	case nexus.TypeGeneralMessageWithToken:
 		coin, err := nexustypes.NewCoin(ctx, nexusK, ibcK, bankK, *msg.Asset)
 		if err != nil {
 			return sdk.Coin{}, err
 		}
 
-		return coin.GetOriginalCoin(ctx), coin.Unlock(ctx, types.AxelarGMPAccount)
+		return coin.GetOriginalCoin(ctx), coin.Unlock(ctx, types.AxelarIBCAccount)
 	default:
 		return sdk.Coin{}, fmt.Errorf("unrecognized message type")
 	}

@@ -343,13 +343,12 @@ func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channe
 	// check if the packet is Axelar routed cross chain transfer
 	transferID, ok := getSeqIDMapping(ctx, m.keeper, port, channel, sequence)
 	if ok {
-		transfer := funcs.MustOk(m.keeper.GetTransfer(ctx, transferID))
-		coin, err := nexustypes.NewCoin(ctx, m.nexus, m.ibcK, m.bank, transfer.Token)
+		coin, err := nexustypes.NewCoin(ctx, m.nexus, m.ibcK, m.bank, funcs.MustOk(m.keeper.GetTransfer(ctx, transferID)).Token)
 		if err != nil {
 			return err
 		}
 
-		err = coin.Lock(ctx, types.AxelarGMPAccount)
+		err = coin.Lock(ctx, types.AxelarIBCAccount)
 		if err != nil {
 			return err
 		}
@@ -375,7 +374,7 @@ func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channe
 			return err
 		}
 
-		err = coin.Lock(ctx, types.AxelarGMPAccount)
+		err = coin.Lock(ctx, types.AxelarIBCAccount)
 		if err != nil {
 			return err
 		}

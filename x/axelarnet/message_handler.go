@@ -112,7 +112,7 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	}
 
 	// Skip if packet not sent to Axelar message sender account.
-	if data.GetReceiver() != types.AxelarGMPAccount.String() {
+	if data.GetReceiver() != types.AxelarIBCAccount.String() {
 		// Rate limit non-GMP IBC transfers
 		// IBC receives are rate limited on the from direction (tokens coming from the source chain).
 		if err := r.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
@@ -160,7 +160,7 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	case nexus.TypeSendToken:
 		// Send token is already rate limited in nexus.EnqueueTransfer
 		rateLimitPacket = false
-		err = handleTokenSent(ctx, n, b, sourceAddress, msg, token)
+		err = handleTokenSent(ctx, n, sourceAddress, msg, token)
 	default:
 		err = sdkerrors.Wrapf(types.ErrGeneralMessage, "unrecognized Message type")
 	}
@@ -293,7 +293,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		return err
 	}
 
-	if err = token.Lock(ctx, types.AxelarGMPAccount); err != nil {
+	if err = token.Lock(ctx, types.AxelarIBCAccount); err != nil {
 		return err
 	}
 
@@ -323,11 +323,11 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 	return n.SetNewMessage(ctx, m)
 }
 
-func handleTokenSent(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token nexustypes.Coin) error {
+func handleTokenSent(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChainAddress, msg Message, token nexustypes.Coin) error {
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	crossChainAddr := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 
-	if err := token.Lock(ctx, types.AxelarGMPAccount); err != nil {
+	if err := token.Lock(ctx, types.AxelarIBCAccount); err != nil {
 		return err
 	}
 
@@ -416,12 +416,12 @@ func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token nexustypes.C
 	// subtract fee from transfer value
 	token.Amount = token.Amount.Sub(feeAmount)
 
-	return token, b.SendCoins(ctx, types.AxelarGMPAccount, recipient, sdk.NewCoins(coin))
+	return token, b.SendCoins(ctx, types.AxelarIBCAccount, recipient, sdk.NewCoins(coin))
 }
 
 // validateReceiver rejects uppercase GMP account address
 func validateReceiver(receiver string) error {
-	if strings.ToUpper(receiver) == receiver && types.AxelarGMPAccount.Equals(funcs.Must(sdk.AccAddressFromBech32(receiver))) {
+	if strings.ToUpper(receiver) == receiver && types.AxelarIBCAccount.Equals(funcs.Must(sdk.AccAddressFromBech32(receiver))) {
 		return fmt.Errorf("uppercase GMP account address is not allowed")
 	}
 

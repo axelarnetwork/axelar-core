@@ -1,11 +1,9 @@
 package types
 
 import (
-	"crypto/sha256"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/address"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -204,10 +202,3 @@ const (
 	// External means from external chains, such as EVM chains
 	External = 3
 )
-
-// GetEscrowAddress creates an address for the given denomination
-func GetEscrowAddress(denom string) sdk.AccAddress {
-	hash := sha256.Sum256([]byte(denom))
-
-	return hash[:address.Len]
-}

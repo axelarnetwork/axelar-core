@@ -1,6 +1,7 @@
 package exported
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/address"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -424,4 +426,11 @@ type WasmQueryRequest struct {
 type WasmQueryTxHashAndNonceResponse struct {
 	TxHash [32]byte `json:"tx_hash,omitempty"` // the hash of the current transaction
 	Nonce  uint64   `json:"nonce,omitempty"`   // the nonce of the current execution, which increments with each entry of any wasm execution
+}
+
+// GetEscrowAddress creates an address for the given denomination
+func GetEscrowAddress(denom string) sdk.AccAddress {
+	hash := sha256.Sum256([]byte(denom))
+
+	return hash[:address.Len]
 }

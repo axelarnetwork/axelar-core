@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
@@ -129,6 +130,7 @@ type ChannelKeeper interface {
 // creating a x/bank keeper.
 type AccountKeeper interface {
 	GetModuleAddress(moduleName string) sdk.AccAddress
+	GetModuleAccount(ctx sdk.Context, name string) authtypes.ModuleAccountI
 }
 
 // CosmosChainGetter exposes GetCosmosChainByName
