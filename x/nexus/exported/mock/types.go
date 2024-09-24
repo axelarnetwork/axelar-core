@@ -560,3 +560,250 @@ func (mock *MaintainerStateMock) UnmarshalCalls() []struct {
 	mock.lockUnmarshal.RUnlock()
 	return calls
 }
+
+// Ensure, that LockableCoinMock does implement exported.LockableCoin.
+// If this is not the case, regenerate this file with moq.
+var _ exported.LockableCoin = &LockableCoinMock{}
+
+// LockableCoinMock is a mock implementation of exported.LockableCoin.
+//
+//	func TestSomethingThatUsesLockableCoin(t *testing.T) {
+//
+//		// make and configure a mocked exported.LockableCoin
+//		mockedLockableCoin := &LockableCoinMock{
+//			GetCoinFunc: func() types.Coin {
+//				panic("mock out the GetCoin method")
+//			},
+//			GetOriginalCoinFunc: func(ctx types.Context) types.Coin {
+//				panic("mock out the GetOriginalCoin method")
+//			},
+//			LockFunc: func(ctx types.Context, fromAddr types.AccAddress) error {
+//				panic("mock out the Lock method")
+//			},
+//			SubFunc: func(coin types.Coin) exported.LockableCoin {
+//				panic("mock out the Sub method")
+//			},
+//			UnlockFunc: func(ctx types.Context, toAddr types.AccAddress) error {
+//				panic("mock out the Unlock method")
+//			},
+//		}
+//
+//		// use mockedLockableCoin in code that requires exported.LockableCoin
+//		// and then make assertions.
+//
+//	}
+type LockableCoinMock struct {
+	// GetCoinFunc mocks the GetCoin method.
+	GetCoinFunc func() types.Coin
+
+	// GetOriginalCoinFunc mocks the GetOriginalCoin method.
+	GetOriginalCoinFunc func(ctx types.Context) types.Coin
+
+	// LockFunc mocks the Lock method.
+	LockFunc func(ctx types.Context, fromAddr types.AccAddress) error
+
+	// SubFunc mocks the Sub method.
+	SubFunc func(coin types.Coin) exported.LockableCoin
+
+	// UnlockFunc mocks the Unlock method.
+	UnlockFunc func(ctx types.Context, toAddr types.AccAddress) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetCoin holds details about calls to the GetCoin method.
+		GetCoin []struct {
+		}
+		// GetOriginalCoin holds details about calls to the GetOriginalCoin method.
+		GetOriginalCoin []struct {
+			// Ctx is the ctx argument value.
+			Ctx types.Context
+		}
+		// Lock holds details about calls to the Lock method.
+		Lock []struct {
+			// Ctx is the ctx argument value.
+			Ctx types.Context
+			// FromAddr is the fromAddr argument value.
+			FromAddr types.AccAddress
+		}
+		// Sub holds details about calls to the Sub method.
+		Sub []struct {
+			// Coin is the coin argument value.
+			Coin types.Coin
+		}
+		// Unlock holds details about calls to the Unlock method.
+		Unlock []struct {
+			// Ctx is the ctx argument value.
+			Ctx types.Context
+			// ToAddr is the toAddr argument value.
+			ToAddr types.AccAddress
+		}
+	}
+	lockGetCoin         sync.RWMutex
+	lockGetOriginalCoin sync.RWMutex
+	lockLock            sync.RWMutex
+	lockSub             sync.RWMutex
+	lockUnlock          sync.RWMutex
+}
+
+// GetCoin calls GetCoinFunc.
+func (mock *LockableCoinMock) GetCoin() types.Coin {
+	if mock.GetCoinFunc == nil {
+		panic("LockableCoinMock.GetCoinFunc: method is nil but LockableCoin.GetCoin was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetCoin.Lock()
+	mock.calls.GetCoin = append(mock.calls.GetCoin, callInfo)
+	mock.lockGetCoin.Unlock()
+	return mock.GetCoinFunc()
+}
+
+// GetCoinCalls gets all the calls that were made to GetCoin.
+// Check the length with:
+//
+//	len(mockedLockableCoin.GetCoinCalls())
+func (mock *LockableCoinMock) GetCoinCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetCoin.RLock()
+	calls = mock.calls.GetCoin
+	mock.lockGetCoin.RUnlock()
+	return calls
+}
+
+// GetOriginalCoin calls GetOriginalCoinFunc.
+func (mock *LockableCoinMock) GetOriginalCoin(ctx types.Context) types.Coin {
+	if mock.GetOriginalCoinFunc == nil {
+		panic("LockableCoinMock.GetOriginalCoinFunc: method is nil but LockableCoin.GetOriginalCoin was just called")
+	}
+	callInfo := struct {
+		Ctx types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetOriginalCoin.Lock()
+	mock.calls.GetOriginalCoin = append(mock.calls.GetOriginalCoin, callInfo)
+	mock.lockGetOriginalCoin.Unlock()
+	return mock.GetOriginalCoinFunc(ctx)
+}
+
+// GetOriginalCoinCalls gets all the calls that were made to GetOriginalCoin.
+// Check the length with:
+//
+//	len(mockedLockableCoin.GetOriginalCoinCalls())
+func (mock *LockableCoinMock) GetOriginalCoinCalls() []struct {
+	Ctx types.Context
+} {
+	var calls []struct {
+		Ctx types.Context
+	}
+	mock.lockGetOriginalCoin.RLock()
+	calls = mock.calls.GetOriginalCoin
+	mock.lockGetOriginalCoin.RUnlock()
+	return calls
+}
+
+// Lock calls LockFunc.
+func (mock *LockableCoinMock) Lock(ctx types.Context, fromAddr types.AccAddress) error {
+	if mock.LockFunc == nil {
+		panic("LockableCoinMock.LockFunc: method is nil but LockableCoin.Lock was just called")
+	}
+	callInfo := struct {
+		Ctx      types.Context
+		FromAddr types.AccAddress
+	}{
+		Ctx:      ctx,
+		FromAddr: fromAddr,
+	}
+	mock.lockLock.Lock()
+	mock.calls.Lock = append(mock.calls.Lock, callInfo)
+	mock.lockLock.Unlock()
+	return mock.LockFunc(ctx, fromAddr)
+}
+
+// LockCalls gets all the calls that were made to Lock.
+// Check the length with:
+//
+//	len(mockedLockableCoin.LockCalls())
+func (mock *LockableCoinMock) LockCalls() []struct {
+	Ctx      types.Context
+	FromAddr types.AccAddress
+} {
+	var calls []struct {
+		Ctx      types.Context
+		FromAddr types.AccAddress
+	}
+	mock.lockLock.RLock()
+	calls = mock.calls.Lock
+	mock.lockLock.RUnlock()
+	return calls
+}
+
+// Sub calls SubFunc.
+func (mock *LockableCoinMock) Sub(coin types.Coin) exported.LockableCoin {
+	if mock.SubFunc == nil {
+		panic("LockableCoinMock.SubFunc: method is nil but LockableCoin.Sub was just called")
+	}
+	callInfo := struct {
+		Coin types.Coin
+	}{
+		Coin: coin,
+	}
+	mock.lockSub.Lock()
+	mock.calls.Sub = append(mock.calls.Sub, callInfo)
+	mock.lockSub.Unlock()
+	return mock.SubFunc(coin)
+}
+
+// SubCalls gets all the calls that were made to Sub.
+// Check the length with:
+//
+//	len(mockedLockableCoin.SubCalls())
+func (mock *LockableCoinMock) SubCalls() []struct {
+	Coin types.Coin
+} {
+	var calls []struct {
+		Coin types.Coin
+	}
+	mock.lockSub.RLock()
+	calls = mock.calls.Sub
+	mock.lockSub.RUnlock()
+	return calls
+}
+
+// Unlock calls UnlockFunc.
+func (mock *LockableCoinMock) Unlock(ctx types.Context, toAddr types.AccAddress) error {
+	if mock.UnlockFunc == nil {
+		panic("LockableCoinMock.UnlockFunc: method is nil but LockableCoin.Unlock was just called")
+	}
+	callInfo := struct {
+		Ctx    types.Context
+		ToAddr types.AccAddress
+	}{
+		Ctx:    ctx,
+		ToAddr: toAddr,
+	}
+	mock.lockUnlock.Lock()
+	mock.calls.Unlock = append(mock.calls.Unlock, callInfo)
+	mock.lockUnlock.Unlock()
+	return mock.UnlockFunc(ctx, toAddr)
+}
+
+// UnlockCalls gets all the calls that were made to Unlock.
+// Check the length with:
+//
+//	len(mockedLockableCoin.UnlockCalls())
+func (mock *LockableCoinMock) UnlockCalls() []struct {
+	Ctx    types.Context
+	ToAddr types.AccAddress
+} {
+	var calls []struct {
+		Ctx    types.Context
+		ToAddr types.AccAddress
+	}
+	mock.lockUnlock.RLock()
+	calls = mock.calls.Unlock
+	mock.lockUnlock.RUnlock()
+	return calls
+}

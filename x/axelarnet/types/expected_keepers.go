@@ -87,6 +87,7 @@ type Nexus interface {
 	SetMessageFailed(ctx sdk.Context, id string) error
 	GenerateMessageID(ctx sdk.Context) (string, []byte, uint64)
 	ValidateAddress(ctx sdk.Context, address nexus.CrossChainAddress) error
+	NewLockableCoin(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error)
 }
 
 // BankKeeper defines the expected interface contract the vesting module requires

@@ -751,6 +751,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 //				panic("mock out the Logger method")
 //			},
+//			NewLockableCoinFunc: func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableCoin, error) {
+//				panic("mock out the NewLockableCoin method")
+//			},
 //			RateLimitTransferFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
 //				panic("mock out the RateLimitTransfer method")
 //			},
@@ -883,6 +886,9 @@ type NexusMock struct {
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
+
+	// NewLockableCoinFunc mocks the NewLockableCoin method.
+	NewLockableCoinFunc func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableCoin, error)
 
 	// RateLimitTransferFunc mocks the RateLimitTransfer method.
 	RateLimitTransferFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error
@@ -1128,6 +1134,17 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
+		// NewLockableCoin holds details about calls to the NewLockableCoin method.
+		NewLockableCoin []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Ibc is the ibc argument value.
+			Ibc nexustypes.IBCKeeper
+			// Bank is the bank argument value.
+			Bank nexustypes.BankKeeper
+			// Coin is the coin argument value.
+			Coin cosmossdktypes.Coin
+		}
 		// RateLimitTransfer holds details about calls to the RateLimitTransfer method.
 		RateLimitTransfer []struct {
 			// Ctx is the ctx argument value.
@@ -1269,6 +1286,7 @@ type NexusMock struct {
 	lockIsWasmConnectionActivated     sync.RWMutex
 	lockLinkAddresses                 sync.RWMutex
 	lockLogger                        sync.RWMutex
+	lockNewLockableCoin               sync.RWMutex
 	lockRateLimitTransfer             sync.RWMutex
 	lockRegisterAsset                 sync.RWMutex
 	lockRegisterFee                   sync.RWMutex
@@ -2325,6 +2343,50 @@ func (mock *NexusMock) LoggerCalls() []struct {
 	mock.lockLogger.RLock()
 	calls = mock.calls.Logger
 	mock.lockLogger.RUnlock()
+	return calls
+}
+
+// NewLockableCoin calls NewLockableCoinFunc.
+func (mock *NexusMock) NewLockableCoin(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableCoin, error) {
+	if mock.NewLockableCoinFunc == nil {
+		panic("NexusMock.NewLockableCoinFunc: method is nil but Nexus.NewLockableCoin was just called")
+	}
+	callInfo := struct {
+		Ctx  cosmossdktypes.Context
+		Ibc  nexustypes.IBCKeeper
+		Bank nexustypes.BankKeeper
+		Coin cosmossdktypes.Coin
+	}{
+		Ctx:  ctx,
+		Ibc:  ibc,
+		Bank: bank,
+		Coin: coin,
+	}
+	mock.lockNewLockableCoin.Lock()
+	mock.calls.NewLockableCoin = append(mock.calls.NewLockableCoin, callInfo)
+	mock.lockNewLockableCoin.Unlock()
+	return mock.NewLockableCoinFunc(ctx, ibc, bank, coin)
+}
+
+// NewLockableCoinCalls gets all the calls that were made to NewLockableCoin.
+// Check the length with:
+//
+//	len(mockedNexus.NewLockableCoinCalls())
+func (mock *NexusMock) NewLockableCoinCalls() []struct {
+	Ctx  cosmossdktypes.Context
+	Ibc  nexustypes.IBCKeeper
+	Bank nexustypes.BankKeeper
+	Coin cosmossdktypes.Coin
+} {
+	var calls []struct {
+		Ctx  cosmossdktypes.Context
+		Ibc  nexustypes.IBCKeeper
+		Bank nexustypes.BankKeeper
+		Coin cosmossdktypes.Coin
+	}
+	mock.lockNewLockableCoin.RLock()
+	calls = mock.calls.NewLockableCoin
+	mock.lockNewLockableCoin.RUnlock()
 	return calls
 }
 

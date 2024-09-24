@@ -29,7 +29,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
@@ -343,7 +342,7 @@ func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channe
 	// check if the packet is Axelar routed cross chain transfer
 	transferID, ok := getSeqIDMapping(ctx, m.keeper, port, channel, sequence)
 	if ok {
-		coin, err := nexustypes.NewCoin(ctx, m.nexus, m.ibcK, m.bank, funcs.MustOk(m.keeper.GetTransfer(ctx, transferID)).Token)
+		coin, err := m.nexus.NewLockableCoin(ctx, m.ibcK, m.bank, funcs.MustOk(m.keeper.GetTransfer(ctx, transferID)).Token)
 		if err != nil {
 			return err
 		}
@@ -369,7 +368,7 @@ func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channe
 	// check if the packet is Axelar routed general message
 	messageID, ok := getSeqMessageIDMapping(ctx, m.keeper, port, channel, sequence)
 	if ok {
-		coin, err := nexustypes.NewCoin(ctx, m.nexus, m.ibcK, m.bank, extractTokenFromAckOrTimeoutPacket(packet))
+		coin, err := m.nexus.NewLockableCoin(ctx, m.ibcK, m.bank, extractTokenFromAckOrTimeoutPacket(packet))
 		if err != nil {
 			return err
 		}

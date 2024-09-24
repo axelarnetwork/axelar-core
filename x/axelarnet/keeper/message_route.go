@@ -9,7 +9,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
 // for IBC execution
@@ -78,7 +77,7 @@ func escrowAssetToMessageSender(
 
 		return asset, bankK.SendCoins(ctx, sender, types.AxelarIBCAccount, sdk.NewCoins(asset))
 	case nexus.TypeGeneralMessageWithToken:
-		coin, err := nexustypes.NewCoin(ctx, nexusK, ibcK, bankK, *msg.Asset)
+		coin, err := nexusK.NewLockableCoin(ctx, ibcK, bankK, *msg.Asset)
 		if err != nil {
 			return sdk.Coin{}, err
 		}

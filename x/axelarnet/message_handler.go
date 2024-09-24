@@ -19,7 +19,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
@@ -154,9 +153,9 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 
 	switch msg.Type {
 	case nexus.TypeGeneralMessage:
-		err = handleMessage(ctx, n, b, sourceAddress, msg, token)
+		err = handleMessage(ctx, n, b, ibcK, sourceAddress, msg, token)
 	case nexus.TypeGeneralMessageWithToken:
-		err = handleMessageWithToken(ctx, n, b, sourceAddress, msg, token)
+		err = handleMessageWithToken(ctx, n, b, ibcK, sourceAddress, msg, token)
 	case nexus.TypeSendToken:
 		// Send token is already rate limited in nexus.EnqueueTransfer
 		rateLimitPacket = false
@@ -185,7 +184,7 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	return ack
 }
 
-func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcPath string, msg Message, token nexustypes.Coin) error {
+func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcPath string, msg Message, token nexus.LockableCoin) error {
 	// validate source chain
 	srcChainName, srcChainFound := ibcK.GetChainNameByIBCPath(ctx, ibcPath)
 	if !srcChainFound {
@@ -198,7 +197,7 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 	}
 
 	if msg.Fee != nil {
-		err := validateFee(ctx, n, token.Coin, nexus.MessageType(msg.Type), srcChain, *msg.Fee)
+		err := validateFee(ctx, n, token.GetCoin(), nexus.MessageType(msg.Type), srcChain, *msg.Fee)
 		if err != nil {
 			return err
 		}
@@ -231,12 +230,12 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 			return fmt.Errorf("unrecognized destination chain %s", destChainName)
 		}
 
-		if !n.IsAssetRegistered(ctx, srcChain, token.GetDenom()) {
-			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), srcChain.Name)
+		if !n.IsAssetRegistered(ctx, srcChain, token.GetCoin().Denom) {
+			return fmt.Errorf("asset %s is not registered on chain %s", token.GetCoin().Denom, srcChain.Name)
 		}
 
-		if !n.IsAssetRegistered(ctx, destChain, token.GetDenom()) {
-			return fmt.Errorf("asset %s is not registered on chain %s", token.GetDenom(), destChain.Name)
+		if !n.IsAssetRegistered(ctx, destChain, token.GetCoin().Denom) {
+			return fmt.Errorf("asset %s is not registered on chain %s", token.GetCoin().Denom, destChain.Name)
 		}
 		return nil
 	default:
@@ -244,11 +243,11 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 	}
 }
 
-func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token nexustypes.Coin) error {
+func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK types.IBCKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token nexus.LockableCoin) error {
 	id, txID, nonce := n.GenerateMessageID(ctx)
 
 	// ignore token for call contract
-	_, err := deductFee(ctx, b, msg.Fee, token, id)
+	_, err := deductFee(ctx, n, b, ibcK, msg.Fee, token, id)
 	if err != nil {
 		return err
 	}
@@ -285,10 +284,10 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 	return n.SetNewMessage(ctx, m)
 }
 
-func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token nexustypes.Coin) error {
+func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK types.IBCKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token nexus.LockableCoin) error {
 	id, txID, nonce := n.GenerateMessageID(ctx)
 
-	token, err := deductFee(ctx, b, msg.Fee, token, id)
+	token, err := deductFee(ctx, n, b, ibcK, msg.Fee, token, id)
 	if err != nil {
 		return err
 	}
@@ -299,6 +298,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
+	coin := token.GetCoin()
 	m := nexus.NewGeneralMessage(
 		id,
 		sourceAddress,
@@ -306,7 +306,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		crypto.Keccak256Hash(msg.Payload).Bytes(),
 		txID,
 		nonce,
-		&token.Coin,
+		&coin,
 	)
 
 	events.Emit(ctx, &types.ContractCallWithTokenSubmitted{
@@ -317,13 +317,13 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		ContractAddress:  m.GetDestinationAddress(),
 		PayloadHash:      m.PayloadHash,
 		Payload:          msg.Payload,
-		Asset:            token.Coin,
+		Asset:            token.GetCoin(),
 	})
 
 	return n.SetNewMessage(ctx, m)
 }
 
-func handleTokenSent(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChainAddress, msg Message, token nexustypes.Coin) error {
+func handleTokenSent(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChainAddress, msg Message, token nexus.LockableCoin) error {
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	crossChainAddr := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 
@@ -331,7 +331,7 @@ func handleTokenSent(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossCh
 		return err
 	}
 
-	transferID, err := n.EnqueueTransfer(ctx, sourceAddress.Chain, crossChainAddr, token.Coin)
+	transferID, err := n.EnqueueTransfer(ctx, sourceAddress.Chain, crossChainAddr, token.GetCoin())
 	if err != nil {
 		return err
 	}
@@ -342,7 +342,7 @@ func handleTokenSent(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossCh
 		SourceChain:        sourceAddress.Chain.Name,
 		DestinationAddress: crossChainAddr.Address,
 		DestinationChain:   crossChainAddr.Chain.Name,
-		Asset:              token.Coin,
+		Asset:              token.GetCoin(),
 	})
 
 	return nil
@@ -351,7 +351,7 @@ func handleTokenSent(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossCh
 
 // extractTokenFromPacketData get normalized token from ICS20 packet
 // panic if unable to unmarshal packet data
-func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, packet ibcexported.PacketI) (nexustypes.Coin, error) {
+func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, packet ibcexported.PacketI) (nexus.LockableCoin, error) {
 	data := funcs.Must(types.ToICS20Packet(packet))
 
 	// parse the transfer amount
@@ -389,24 +389,24 @@ func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.
 		denom = denomTrace.IBCDenom()
 	}
 
-	return nexustypes.NewCoin(ctx, n, ibcK, b, sdk.NewCoin(denom, amount))
+	return n.NewLockableCoin(ctx, ibcK, b, sdk.NewCoin(denom, amount))
 }
 
 // deductFee pays the fee and returns the updated transfer amount with the fee deducted
-func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token nexustypes.Coin, msgID string) (nexustypes.Coin, error) {
+func deductFee(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK types.IBCKeeper, fee *Fee, token nexus.LockableCoin, msgID string) (nexus.LockableCoin, error) {
 	if fee == nil {
 		return token, nil
 	}
 
 	feeAmount := funcs.MustOk(sdk.NewIntFromString(fee.Amount))
-	coin := sdk.NewCoin(token.GetOriginalCoin(ctx).Denom, feeAmount)
+	feeCoin := sdk.NewCoin(token.GetOriginalCoin(ctx).Denom, feeAmount)
 	recipient := funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))
 
 	feePaidEvent := types.FeePaid{
 		MessageID: msgID,
 		Recipient: recipient,
-		Fee:       coin,
-		Asset:     token.GetDenom(),
+		Fee:       feeCoin,
+		Asset:     token.GetCoin().Denom,
 	}
 	if fee.RefundRecipient != nil {
 		feePaidEvent.RefundRecipient = *fee.RefundRecipient
@@ -414,9 +414,9 @@ func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token nexustypes.C
 	events.Emit(ctx, &feePaidEvent)
 
 	// subtract fee from transfer value
-	token.Amount = token.Amount.Sub(feeAmount)
+	coinAfterFee := token.GetOriginalCoin(ctx).Sub(feeCoin)
 
-	return token, b.SendCoins(ctx, types.AxelarIBCAccount, recipient, sdk.NewCoins(coin))
+	return funcs.Must(n.NewLockableCoin(ctx, ibcK, b, coinAfterFee)), b.SendCoins(ctx, types.AxelarIBCAccount, recipient, sdk.NewCoins(feeCoin))
 }
 
 // validateReceiver rejects uppercase GMP account address
