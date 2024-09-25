@@ -387,6 +387,18 @@ func TestQueryPlugins(t *testing.T) {
 					assert.NoError(t, err)
 					assert.Equal(t, fmt.Sprintf("{\"tx_hash\":%s,\"nonce\":%d}", funcs.Must(json.Marshal(txHash)), index), string(actual))
 				}),
+			When("request is a nexus wasm IsChainRegistered query with empty chain name", func() {
+				req = []byte("{\"nexus\":{\"is_chain_registered\":{\"chain\": \"\"}}}")
+			}).
+				Then("should fail validation", func(t *testing.T) {
+					nexusK.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+						return nexus.Chain{}, true
+					}
+
+					_, err := app.NewQueryPlugins(nexusK).Custom(ctx, req)
+
+					assert.ErrorContains(t, err, "invalid chain name")
+				}),
 			When("request is a nexus wasm IsChainRegistered query", func() {
 				req = []byte("{\"nexus\":{\"is_chain_registered\":{\"chain\": \"chain-0\"}}}")
 			}).
