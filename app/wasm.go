@@ -156,8 +156,8 @@ type QueryRequest struct {
 }
 
 // NewQueryPlugins returns a new instance of the custom query plugins
-func NewQueryPlugins(msgIDGenerator nexustypes.MsgIDGenerator) *wasmkeeper.QueryPlugins {
-	nexusWasmQuerier := nexusKeeper.NewWasmQuerier(msgIDGenerator)
+func NewQueryPlugins(nexus nexustypes.Nexus) *wasmkeeper.QueryPlugins {
+	nexusWasmQuerier := nexusKeeper.NewWasmQuerier(nexus)
 
 	return &wasmkeeper.QueryPlugins{
 		Custom: func(ctx sdk.Context, request json.RawMessage) ([]byte, error) {
