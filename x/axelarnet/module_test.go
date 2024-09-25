@@ -25,8 +25,10 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexusmock "github.com/axelarnetwork/axelar-core/x/nexus/exported/mock"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
+	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
@@ -34,15 +36,16 @@ import (
 
 func TestIBCModule(t *testing.T) {
 	var (
-		ctx       sdk.Context
-		ibcModule axelarnet.AxelarnetIBCModule
-		k         keeper.Keeper
-		n         *mock.NexusMock
-		bankK     *mock.BankKeeperMock
+		ctx          sdk.Context
+		ibcModule    axelarnet.AxelarnetIBCModule
+		k            keeper.Keeper
+		n            *mock.NexusMock
+		bankK        *mock.BankKeeperMock
+		lockableCoin *nexusmock.LockableCoinMock
 
 		ack       channeltypes.Acknowledgement
 		transfer  types.IBCTransfer
-		message   exported.GeneralMessage
+		message   nexus.GeneralMessage
 		transfers []types.IBCTransfer
 	)
 
@@ -86,7 +89,12 @@ func TestIBCModule(t *testing.T) {
 		transferSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey(ibctransfertypes.StoreKey), sdk.NewKVStoreKey("tTrasferKey"), ibctransfertypes.ModuleName)
 
 		transferK := ibctransferkeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK)
-		n = &mock.NexusMock{}
+		lockableCoin = &nexusmock.LockableCoinMock{}
+		n = &mock.NexusMock{
+			NewLockableCoinFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
+				return lockableCoin, nil
+			},
+		}
 		ibcModule = axelarnet.NewAxelarnetIBCModule(ibcTransfer.NewIBCModule(transferK), ibcK, axelarnet.NewRateLimiter(&k, n), n, bankK)
 	})
 
@@ -119,19 +127,19 @@ func TestIBCModule(t *testing.T) {
 	})
 
 	seqMapsToMessageID := When("packet seq maps to message ID", func() {
-		message = nexustestutils.RandomMessage(exported.Processing)
+		message = nexustestutils.RandomMessage(nexus.Processing)
 		funcs.MustNoErr(k.SetSeqMessageIDMapping(ctx, ibctransfertypes.PortID, channelID, packetSeq, message.ID))
 
-		n.GetMessageFunc = func(sdk.Context, string) (exported.GeneralMessage, bool) { return message, true }
-		n.IsAssetRegisteredFunc = func(sdk.Context, exported.Chain, string) bool { return true }
+		n.GetMessageFunc = func(sdk.Context, string) (nexus.GeneralMessage, bool) { return message, true }
+		n.IsAssetRegisteredFunc = func(sdk.Context, nexus.Chain, string) bool { return true }
 		n.SetMessageFailedFunc = func(ctx sdk.Context, id string) error {
 			if id == message.ID {
-				message.Status = exported.Failed
+				message.Status = nexus.Failed
 			}
 
 			return nil
 		}
-		n.GetChainByNativeAssetFunc = func(sdk.Context, string) (exported.Chain, bool) { return exported.Chain{}, false }
+		n.GetChainByNativeAssetFunc = func(sdk.Context, string) (nexus.Chain, bool) { return nexus.Chain{}, false }
 	})
 
 	whenOnAck := When("on acknowledgement", func() {
@@ -151,12 +159,24 @@ func TestIBCModule(t *testing.T) {
 	})
 
 	whenChainIsActivated := When("chain is activated", func() {
-		n.GetChainFunc = func(ctx sdk.Context, chain exported.ChainName) (exported.Chain, bool) { return exported.Chain{}, true }
-		n.IsChainActivatedFunc = func(ctx sdk.Context, chain exported.Chain) bool { return true }
-		n.RateLimitTransferFunc = func(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection) error {
+		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, true }
+		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
+		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
 			return nil
 		}
 	})
+
+	lockCoin := func(success bool) func() {
+		if success {
+			return func() {
+				lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
+			}
+		}
+
+		return func() {
+			lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
+		}
+	}
 
 	givenAnIBCModule.
 		Branch(
@@ -171,10 +191,12 @@ func TestIBCModule(t *testing.T) {
 			whenGetValidAckError.
 				When2(whenChainIsActivated).
 				When2(seqMapsToID).
+				When("lock coin succeeds", lockCoin(true)).
 				When2(whenOnAck).
 				Then("should set transfer to failed", func(t *testing.T) {
 					transfer := funcs.MustOk(k.GetTransfer(ctx, transfer.ID))
 					assert.Equal(t, types.TransferFailed, transfer.Status)
+					assert.Len(t, lockableCoin.LockCalls(), 1)
 				}),
 
 			whenPendingTransfersExist.
@@ -192,10 +214,12 @@ func TestIBCModule(t *testing.T) {
 
 			seqMapsToID.
 				When2(whenChainIsActivated).
+				When("lock coin succeeds", lockCoin(true)).
 				When2(whenOnTimeout).
 				Then("should set transfer to failed", func(t *testing.T) {
 					transfer := funcs.MustOk(k.GetTransfer(ctx, transfer.ID))
 					assert.Equal(t, types.TransferFailed, transfer.Status)
+					assert.Len(t, lockableCoin.LockCalls(), 1)
 				}),
 
 			whenPendingTransfersExist.
@@ -207,10 +231,11 @@ func TestIBCModule(t *testing.T) {
 			whenGetValidAckError.
 				When2(whenChainIsActivated).
 				When2(seqMapsToMessageID).
+				When("lock coin succeeds", lockCoin(true)).
 				When2(whenOnAck).
 				Then("should set message to failed", func(t *testing.T) {
-					assert.Equal(t, exported.Failed, message.Status)
-					assert.Len(t, bankK.SendCoinsFromAccountToModuleCalls(), 1)
+					assert.Equal(t, nexus.Failed, message.Status)
+					assert.Len(t, lockableCoin.LockCalls(), 1)
 				}),
 		).Run(t)
 }

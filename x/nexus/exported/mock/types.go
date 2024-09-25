@@ -580,9 +580,6 @@ var _ exported.LockableCoin = &LockableCoinMock{}
 //			LockFunc: func(ctx types.Context, fromAddr types.AccAddress) error {
 //				panic("mock out the Lock method")
 //			},
-//			SubFunc: func(coin types.Coin) exported.LockableCoin {
-//				panic("mock out the Sub method")
-//			},
 //			UnlockFunc: func(ctx types.Context, toAddr types.AccAddress) error {
 //				panic("mock out the Unlock method")
 //			},
@@ -601,9 +598,6 @@ type LockableCoinMock struct {
 
 	// LockFunc mocks the Lock method.
 	LockFunc func(ctx types.Context, fromAddr types.AccAddress) error
-
-	// SubFunc mocks the Sub method.
-	SubFunc func(coin types.Coin) exported.LockableCoin
 
 	// UnlockFunc mocks the Unlock method.
 	UnlockFunc func(ctx types.Context, toAddr types.AccAddress) error
@@ -625,11 +619,6 @@ type LockableCoinMock struct {
 			// FromAddr is the fromAddr argument value.
 			FromAddr types.AccAddress
 		}
-		// Sub holds details about calls to the Sub method.
-		Sub []struct {
-			// Coin is the coin argument value.
-			Coin types.Coin
-		}
 		// Unlock holds details about calls to the Unlock method.
 		Unlock []struct {
 			// Ctx is the ctx argument value.
@@ -641,7 +630,6 @@ type LockableCoinMock struct {
 	lockGetCoin         sync.RWMutex
 	lockGetOriginalCoin sync.RWMutex
 	lockLock            sync.RWMutex
-	lockSub             sync.RWMutex
 	lockUnlock          sync.RWMutex
 }
 
@@ -737,38 +725,6 @@ func (mock *LockableCoinMock) LockCalls() []struct {
 	mock.lockLock.RLock()
 	calls = mock.calls.Lock
 	mock.lockLock.RUnlock()
-	return calls
-}
-
-// Sub calls SubFunc.
-func (mock *LockableCoinMock) Sub(coin types.Coin) exported.LockableCoin {
-	if mock.SubFunc == nil {
-		panic("LockableCoinMock.SubFunc: method is nil but LockableCoin.Sub was just called")
-	}
-	callInfo := struct {
-		Coin types.Coin
-	}{
-		Coin: coin,
-	}
-	mock.lockSub.Lock()
-	mock.calls.Sub = append(mock.calls.Sub, callInfo)
-	mock.lockSub.Unlock()
-	return mock.SubFunc(coin)
-}
-
-// SubCalls gets all the calls that were made to Sub.
-// Check the length with:
-//
-//	len(mockedLockableCoin.SubCalls())
-func (mock *LockableCoinMock) SubCalls() []struct {
-	Coin types.Coin
-} {
-	var calls []struct {
-		Coin types.Coin
-	}
-	mock.lockSub.RLock()
-	calls = mock.calls.Sub
-	mock.lockSub.RUnlock()
 	return calls
 }
 
