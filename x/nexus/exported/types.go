@@ -427,7 +427,8 @@ func (bz *WasmBytes) UnmarshalJSON(data []byte) error {
 
 // WasmQueryRequest is the request for wasm contracts to query
 type WasmQueryRequest struct {
-	TxHashAndNonce *struct{} `json:"tx_hash_and_nonce,omitempty"`
+	TxHashAndNonce    *struct{}                 `json:"tx_hash_and_nonce,omitempty"`
+	IsChainRegistered *IsChainRegisteredRequest `json:"is_chain_registered,omitempty"`
 }
 
 // WasmQueryTxHashAndNonceResponse is the response for the TxHashAndNonce query
@@ -441,4 +442,12 @@ func GetEscrowAddress(denom string) sdk.AccAddress {
 	hash := sha256.Sum256([]byte(denom))
 
 	return hash[:address.Len]
+}
+
+type IsChainRegisteredRequest struct {
+	Chain string `json:"chain"`
+}
+
+type WasmQueryIsChainRegisteredResponse struct {
+	IsRegistered bool `json:"is_registered"`
 }

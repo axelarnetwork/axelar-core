@@ -37,6 +37,9 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			AddChainMaintainerFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator cosmossdktypes.ValAddress) error {
 //				panic("mock out the AddChainMaintainer method")
 //			},
+//			CurrIDFunc: func(ctx cosmossdktypes.Context) ([32]byte, uint64) {
+//				panic("mock out the CurrID method")
+//			},
 //			DeactivateChainFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
 //				panic("mock out the DeactivateChain method")
 //			},
@@ -133,6 +136,9 @@ type NexusMock struct {
 
 	// AddChainMaintainerFunc mocks the AddChainMaintainer method.
 	AddChainMaintainerFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, validator cosmossdktypes.ValAddress) error
+
+	// CurrIDFunc mocks the CurrID method.
+	CurrIDFunc func(ctx cosmossdktypes.Context) ([32]byte, uint64)
 
 	// DeactivateChainFunc mocks the DeactivateChain method.
 	DeactivateChainFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
@@ -237,6 +243,11 @@ type NexusMock struct {
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// Validator is the validator argument value.
 			Validator cosmossdktypes.ValAddress
+		}
+		// CurrID holds details about calls to the CurrID method.
+		CurrID []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
 		}
 		// DeactivateChain holds details about calls to the DeactivateChain method.
 		DeactivateChain []struct {
@@ -439,6 +450,7 @@ type NexusMock struct {
 	lockActivateChain             sync.RWMutex
 	lockActivateWasmConnection    sync.RWMutex
 	lockAddChainMaintainer        sync.RWMutex
+	lockCurrID                    sync.RWMutex
 	lockDeactivateChain           sync.RWMutex
 	lockDeactivateWasmConnection  sync.RWMutex
 	lockDequeueRouteMessage       sync.RWMutex
@@ -573,6 +585,38 @@ func (mock *NexusMock) AddChainMaintainerCalls() []struct {
 	mock.lockAddChainMaintainer.RLock()
 	calls = mock.calls.AddChainMaintainer
 	mock.lockAddChainMaintainer.RUnlock()
+	return calls
+}
+
+// CurrID calls CurrIDFunc.
+func (mock *NexusMock) CurrID(ctx cosmossdktypes.Context) ([32]byte, uint64) {
+	if mock.CurrIDFunc == nil {
+		panic("NexusMock.CurrIDFunc: method is nil but Nexus.CurrID was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockCurrID.Lock()
+	mock.calls.CurrID = append(mock.calls.CurrID, callInfo)
+	mock.lockCurrID.Unlock()
+	return mock.CurrIDFunc(ctx)
+}
+
+// CurrIDCalls gets all the calls that were made to CurrID.
+// Check the length with:
+//
+//	len(mockedNexus.CurrIDCalls())
+func (mock *NexusMock) CurrIDCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockCurrID.RLock()
+	calls = mock.calls.CurrID
+	mock.lockCurrID.RUnlock()
 	return calls
 }
 
