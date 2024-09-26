@@ -221,7 +221,7 @@ func ValidateIBCPath(path string) error {
 	// we only support direct IBC connections
 	pathSplit := strings.Split(path, "/")
 	if len(pathSplit) != 2 {
-		return fmt.Errorf(fmt.Sprintf("invalid IBC path %s", path))
+		return fmt.Errorf("invalid IBC path %s", path)
 	}
 
 	return nil

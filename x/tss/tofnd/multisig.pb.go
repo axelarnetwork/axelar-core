@@ -76,6 +76,7 @@ func (m *KeygenRequest) GetPartyUid() string {
 
 type KeygenResponse struct {
 	// Types that are valid to be assigned to KeygenResponse:
+	//
 	//	*KeygenResponse_PubKey
 	//	*KeygenResponse_Error
 	KeygenResponse isKeygenResponse_KeygenResponse `protobuf_oneof:"keygen_response"`
@@ -229,6 +230,7 @@ func (m *SignRequest) GetPubKey() []byte {
 
 type SignResponse struct {
 	// Types that are valid to be assigned to SignResponse:
+	//
 	//	*SignResponse_Signature
 	//	*SignResponse_Error
 	SignResponse isSignResponse_SignResponse `protobuf_oneof:"sign_response"`

@@ -32,7 +32,7 @@ func (d CheckProxy) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool, n
 		case *stakingtypes.MsgCreateValidator:
 			valAddress, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
 			if err != nil {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
+				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 			}
 			if proxy, active := d.snapshotter.GetProxy(ctx, valAddress); proxy.Empty() || !active {
 				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "no proxy found for operator %s", valAddress.String())

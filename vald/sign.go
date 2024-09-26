@@ -13,6 +13,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -126,7 +127,7 @@ func GetSignCommand() *cobra.Command {
 
 				return nil
 			case *tofnd.SignResponse_Error:
-				return fmt.Errorf(res.GetError())
+				return errors.New(res.GetError())
 			default:
 				panic(fmt.Errorf("unknown multisig sign response %T", res.GetSignResponse()))
 			}

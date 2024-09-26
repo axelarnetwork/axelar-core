@@ -238,6 +238,7 @@ func (m *KeygenOutput) GetPrivateRecoverInfo() []byte {
 
 type MessageIn struct {
 	// Types that are valid to be assigned to Data:
+	//
 	//	*MessageIn_KeygenInit
 	//	*MessageIn_SignInit
 	//	*MessageIn_Traffic
@@ -349,6 +350,7 @@ func (*MessageIn) XXX_OneofWrappers() []interface{} {
 
 type MessageOut struct {
 	// Types that are valid to be assigned to Data:
+	//
 	//	*MessageOut_Traffic
 	//	*MessageOut_KeygenResult_
 	//	*MessageOut_SignResult_
@@ -461,6 +463,7 @@ func (*MessageOut) XXX_OneofWrappers() []interface{} {
 // Keygen's response types
 type MessageOut_KeygenResult struct {
 	// Types that are valid to be assigned to KeygenResultData:
+	//
 	//	*MessageOut_KeygenResult_Data
 	//	*MessageOut_KeygenResult_Criminals
 	KeygenResultData isMessageOut_KeygenResult_KeygenResultData `protobuf_oneof:"keygen_result_data"`
@@ -547,6 +550,7 @@ func (*MessageOut_KeygenResult) XXX_OneofWrappers() []interface{} {
 // Sign's response types
 type MessageOut_SignResult struct {
 	// Types that are valid to be assigned to SignResultData:
+	//
 	//	*MessageOut_SignResult_Signature
 	//	*MessageOut_SignResult_Criminals
 	SignResultData isMessageOut_SignResult_SignResultData `protobuf_oneof:"sign_result_data"`

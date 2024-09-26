@@ -265,7 +265,7 @@ func (q Querier) TransferRateLimit(c context.Context, req *types.TransferRateLim
 
 	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrNotFound, fmt.Errorf("chain %s not found", req.Chain).Error())
+		return nil, sdkerrors.Wrap(sdkerrors.ErrNotFound, fmt.Errorf("chain %s not found", req.Chain).Error())
 	}
 
 	rateLimit, found := q.keeper.getRateLimit(ctx, chain.Name, req.Asset)
