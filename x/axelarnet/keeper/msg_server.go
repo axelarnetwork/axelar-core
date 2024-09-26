@@ -93,10 +93,12 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		}
 
 		feePaidEvent := types.FeePaid{
-			MessageID: msgID,
-			Recipient: req.Fee.Recipient,
-			Fee:       req.Fee.Amount,
-			Asset:     token.GetDenom(),
+			MessageID:        msgID,
+			Recipient:        req.Fee.Recipient,
+			Fee:              req.Fee.Amount,
+			Asset:            token.GetDenom(),
+			SourceChain:      msg.GetSourceChain(),
+			DestinationChain: msg.GetDestinationChain(),
 		}
 		if req.Fee.RefundRecipient != nil {
 			feePaidEvent.RefundRecipient = req.Fee.RefundRecipient.String()

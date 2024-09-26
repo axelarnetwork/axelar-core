@@ -887,6 +887,8 @@ Msg defines the nexus Msg service.
 | `fee` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  |  |
 | `refund_recipient` | [string](#string) |  |  |
 | `asset` | [string](#string) |  | registered asset name in nexus |
+| `source_chain` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
 
 
 
