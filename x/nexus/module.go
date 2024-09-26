@@ -89,10 +89,12 @@ type AppModule struct {
 	staking     types.StakingKeeper
 	axelarnet   types.AxelarnetKeeper
 	reward      types.RewardKeeper
+	bank        types.BankKeeper
+	account     types.AccountKeeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, slashing types.SlashingKeeper, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper, reward types.RewardKeeper) AppModule {
+func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, slashing types.SlashingKeeper, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper, reward types.RewardKeeper, bank types.BankKeeper, account types.AccountKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -101,6 +103,8 @@ func NewAppModule(k keeper.Keeper, snapshotter types.Snapshotter, slashing types
 		staking:        staking,
 		axelarnet:      axelarnet,
 		reward:         reward,
+		bank:           bank,
+		account:        account,
 	}
 }
 
@@ -116,7 +120,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrNexus, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.axelarnet))
 
-	err := cfg.RegisterMigration(types.ModuleName, 6, keeper.Migrate6to7(am.keeper))
+	err := cfg.RegisterMigration(types.ModuleName, 7, keeper.Migrate7to8(am.keeper, am.bank, am.account))
 	if err != nil {
 		panic(err)
 	}
@@ -167,4 +171,4 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 7 }
+func (AppModule) ConsensusVersion() uint64 { return 8 }

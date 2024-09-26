@@ -3,23 +3,23 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
-// Migrate6to7 returns the handler that performs in-place store migrations
-func Migrate6to7(k Keeper) func(ctx sdk.Context) error {
+// Migrate7to8 returns the handler that performs in-place store migrations
+func Migrate7to8(_ Keeper, bank types.BankKeeper, account types.AccountKeeper) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
-		addModuleParamGateway(ctx, k)
-		addModuleParamEndBlockerLimit(ctx, k)
+		if err := sendCoinsFromAxelarnetToNexus(ctx, bank, account); err != nil {
+			return err
+		}
 
 		return nil
 	}
 }
 
-func addModuleParamGateway(ctx sdk.Context, k Keeper) {
-	k.params.Set(ctx, types.KeyGateway, types.DefaultParams().Gateway)
-}
+func sendCoinsFromAxelarnetToNexus(ctx sdk.Context, bank types.BankKeeper, account types.AccountKeeper) error {
+	balances := bank.GetAllBalances(ctx, account.GetModuleAddress(axelarnettypes.ModuleName))
 
-func addModuleParamEndBlockerLimit(ctx sdk.Context, k Keeper) {
-	k.params.Set(ctx, types.KeyEndBlockerLimit, types.DefaultParams().EndBlockerLimit)
+	return bank.SendCoinsFromModuleToModule(ctx, axelarnettypes.ModuleName, types.ModuleName, balances)
 }

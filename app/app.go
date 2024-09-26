@@ -596,6 +596,8 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 			GetKeeper[stakingkeeper.Keeper](keepers),
 			GetKeeper[axelarnetKeeper.Keeper](keepers),
 			GetKeeper[rewardKeeper.Keeper](keepers),
+			GetKeeper[bankkeeper.BaseKeeper](keepers),
+			GetKeeper[authkeeper.AccountKeeper](keepers),
 		),
 		evm.NewAppModule(
 			GetKeeper[evmKeeper.BaseKeeper](keepers),
