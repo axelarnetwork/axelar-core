@@ -21,11 +21,7 @@ on:
 
 jobs:
   build-and-push-latest-docker-image:
-    strategy:
-      matrix:
-        os:
-          - ubuntu-22.04
-    runs-on: ${{ matrix.os }}
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     permissions:
       id-token: write
       contents: read

@@ -5,12 +5,16 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check-internal-deps-up-to-date:
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     steps:
       - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v2
+        uses: useblacksmith/setup-go@v6
         with:
           go-version: 1.23
 
