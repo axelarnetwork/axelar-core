@@ -50,6 +50,7 @@ type Nexus interface {
 	RouteMessage(ctx sdk.Context, id string, routingCtx ...exported.RoutingContext) error
 	DequeueRouteMessage(ctx sdk.Context) (exported.GeneralMessage, bool)
 	IsAssetRegistered(ctx sdk.Context, chain exported.Chain, denom string) bool
+	CurrID(ctx sdk.Context) ([32]byte, uint64)
 }
 
 // MsgIDGenerator provides functionality to generate msg IDs

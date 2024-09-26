@@ -51,8 +51,8 @@ FROM alpine:3.18
 
 ARG USER_ID=1000
 ARG GROUP_ID=1001
-RUN apk add jq
-COPY --from=build /axelar/bin/* /usr/local/bin/
+RUN apk add --no-cache jq bash
+COPY --from=build /go/axelar/bin/* /usr/local/bin/
 RUN addgroup -S -g ${GROUP_ID} axelard && adduser -S -u ${USER_ID} axelard -G axelard
 USER axelard
 COPY ./entrypoint.sh /entrypoint.sh
