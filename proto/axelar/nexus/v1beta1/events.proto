@@ -53,12 +53,6 @@ message MessageReceived {
       [ (gogoproto.nullable) = false ];
   exported.v1beta1.CrossChainAddress recipient = 4
       [ (gogoproto.nullable) = false ];
-  string source_chain = 5
-  [ (gogoproto.casttype) =
-      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
-  string destination_chain = 6
-  [ (gogoproto.casttype) =
-      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
 message MessageProcessing { string id = 1 [ (gogoproto.customname) = "ID" ]; }
