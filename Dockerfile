@@ -1,17 +1,31 @@
 # syntax=docker/dockerfile:experimental
 
-FROM golang:1.23-alpine3.20 as build
+FROM alpine:3.18 as build
 
+ARG GO_VERSION=1.23.1
 ARG ARCH=x86_64
 ARG WASM=true
 ARG IBC_WASM_HOOKS=false
 
+# Install necessary packages
 RUN apk add --no-cache --update \
-  ca-certificates \
-  git \
-  make \
-  build-base \
-  linux-headers
+    curl \
+    git \
+    make \
+    tar \
+    build-base \
+    ca-certificates \
+    linux-headers
+
+# Download and install Go
+RUN curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o golang.tar.gz \
+    && tar -C /usr/local -xzf golang.tar.gz \
+    && rm golang.tar.gz
+
+# Set Go paths
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/go
+ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
 WORKDIR axelar
 
@@ -31,14 +45,14 @@ RUN if [[ "${WASM}" == "true" ]]; then \
 
 COPY . .
 
-RUN make MUSLC="${WASM}" WASM="${WASM}" IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" build
+RUN make ARCH="${ARCH}" MUSLC="${WASM}" WASM="${WASM}" IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" build
 
-FROM alpine:3.20
+FROM alpine:3.18
 
 ARG USER_ID=1000
 ARG GROUP_ID=1001
-RUN apk add jq
-COPY --from=build /go/axelar/bin/* /usr/local/bin/
+RUN apk add --no-cache jq bash
+COPY --from=build /axelar/bin/* /usr/local/bin/
 RUN addgroup -S -g ${GROUP_ID} axelard && adduser -S -u ${USER_ID} axelard -G axelard
 USER axelard
 COPY ./entrypoint.sh /entrypoint.sh
