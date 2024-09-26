@@ -54,7 +54,11 @@ func (k Keeper) SetMessageExecuted(ctx sdk.Context, id string) error {
 
 	m.Status = exported.Executed
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageExecuted{ID: m.ID}))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageExecuted{
+		ID:               m.ID,
+		SourceChain:      m.GetSourceChain(),
+		DestinationChain: m.GetDestinationChain(),
+	}))
 
 	return k.setMessage(ctx, m)
 }
@@ -74,7 +78,11 @@ func (k Keeper) SetMessageFailed(ctx sdk.Context, id string) error {
 
 	m.Status = exported.Failed
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageFailed{ID: m.ID}))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageFailed{
+		ID:               m.ID,
+		SourceChain:      m.GetSourceChain(),
+		DestinationChain: m.GetDestinationChain(),
+	}))
 
 	return k.setMessage(ctx, m)
 }
@@ -152,10 +160,12 @@ func (k Keeper) SetNewMessage(ctx sdk.Context, msg exported.GeneralMessage) erro
 	}
 
 	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageReceived{
-		ID:          msg.ID,
-		PayloadHash: msg.PayloadHash,
-		Sender:      msg.Sender,
-		Recipient:   msg.Recipient,
+		ID:               msg.ID,
+		PayloadHash:      msg.PayloadHash,
+		Sender:           msg.Sender,
+		Recipient:        msg.Recipient,
+		SourceChain:      msg.GetSourceChain(),
+		DestinationChain: msg.GetDestinationChain(),
 	}))
 
 	return k.setMessage(ctx, msg)

@@ -6166,6 +6166,8 @@ Query defines the gRPC querier service.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [string](#string) |  |  |
+| `source_chain` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
 
 
 
@@ -6181,6 +6183,8 @@ Query defines the gRPC querier service.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [string](#string) |  |  |
+| `source_chain` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
 
 
 
@@ -6214,6 +6218,8 @@ Query defines the gRPC querier service.
 | `payload_hash` | [bytes](#bytes) |  |  |
 | `sender` | [axelar.nexus.exported.v1beta1.CrossChainAddress](#axelar.nexus.exported.v1beta1.CrossChainAddress) |  |  |
 | `recipient` | [axelar.nexus.exported.v1beta1.CrossChainAddress](#axelar.nexus.exported.v1beta1.CrossChainAddress) |  |  |
+| `source_chain` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
 
 
 
