@@ -24,8 +24,6 @@ jobs:
           - 1.23
         os: [blacksmith-2vcpu-ubuntu-2204, macos-latest]
         arch: [amd64, arm64]
-        exclude:
-          - {os: "blacksmith-2vcpu-ubuntu-2204", arch: "arm64"}
 
     permissions:
       contents: write
