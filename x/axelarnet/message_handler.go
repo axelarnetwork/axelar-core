@@ -246,18 +246,18 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
 	id, txID, nonce := n.GenerateMessageID(ctx)
 
+	// ignore token for call contract
+	_, err := deductFee(ctx, b, msg.Fee, token, id, sourceAddress.Chain.Name, nexus.ChainName(msg.DestinationChain))
+	if err != nil {
+		return err
+	}
+
 	destChain, ok := n.GetChain(ctx, nexus.ChainName(msg.DestinationChain))
 	if !ok {
 		// try forwarding it to wasm router if destination chain is not registered
 		// Wasm chain names are always lower case, so normalize it for consistency in core
 		destChainName := nexus.ChainName(strings.ToLower(msg.DestinationChain))
 		destChain = nexus.Chain{Name: destChainName, SupportsForeignAssets: false, KeyType: tss.None, Module: wasm.ModuleName}
-	}
-
-	// ignore token for call contract
-	_, err := deductFee(ctx, b, msg.Fee, token, id, sourceAddress.Chain.Name, destChain.Name)
-	if err != nil {
-		return err
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
@@ -287,9 +287,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
 	id, txID, nonce := n.GenerateMessageID(ctx)
 
-	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
-
-	token, err := deductFee(ctx, b, msg.Fee, token, id, sourceAddress.Chain.Name, destChain.Name)
+	token, err := deductFee(ctx, b, msg.Fee, token, id, sourceAddress.Chain.Name, nexus.ChainName(msg.DestinationChain))
 	if err != nil {
 		return err
 	}
@@ -298,6 +296,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		return err
 	}
 
+	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	m := nexus.NewGeneralMessage(
 		id,
