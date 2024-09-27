@@ -32,12 +32,12 @@ func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulat
 		case *stakingtypes.MsgUndelegate:
 			valAddress, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
 			if err != nil {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
+				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 			}
 
 			delegatorAddress, err := sdk.AccAddressFromBech32(msg.DelegatorAddress)
 			if err != nil {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
+				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 			}
 
 			// only restrict a validator from unbonding it's self-delegation

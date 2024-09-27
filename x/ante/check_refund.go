@@ -67,7 +67,7 @@ func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate
 				req := *msg
 				err := d.reward.SetPendingRefund(ctx, req, rewardtypes.Refund{Payer: feePayer, Fees: splitFees[0]})
 				if err != nil {
-					return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, err.Error())
+					return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 				}
 				// when messages are batched not all are refundable, so we cannot use the msg index directly
 				splitFees = splitFees[1:]

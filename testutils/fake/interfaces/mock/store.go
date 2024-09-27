@@ -6,7 +6,6 @@ package mock
 import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake/interfaces"
 	"github.com/cosmos/cosmos-sdk/store/types"
-	"github.com/tendermint/tm-db"
 	"io"
 	"sync"
 )
@@ -956,10 +955,10 @@ var _ interfaces.KVStore = &KVStoreMock{}
 //			HasFunc: func(key []byte) bool {
 //				panic("mock out the Has method")
 //			},
-//			IteratorFunc: func(start []byte, end []byte) db.Iterator {
+//			IteratorFunc: func(start []byte, end []byte) types.Iterator {
 //				panic("mock out the Iterator method")
 //			},
-//			ReverseIteratorFunc: func(start []byte, end []byte) db.Iterator {
+//			ReverseIteratorFunc: func(start []byte, end []byte) types.Iterator {
 //				panic("mock out the ReverseIterator method")
 //			},
 //			SetFunc: func(key []byte, value []byte)  {
@@ -991,10 +990,10 @@ type KVStoreMock struct {
 	HasFunc func(key []byte) bool
 
 	// IteratorFunc mocks the Iterator method.
-	IteratorFunc func(start []byte, end []byte) db.Iterator
+	IteratorFunc func(start []byte, end []byte) types.Iterator
 
 	// ReverseIteratorFunc mocks the ReverseIterator method.
-	ReverseIteratorFunc func(start []byte, end []byte) db.Iterator
+	ReverseIteratorFunc func(start []byte, end []byte) types.Iterator
 
 	// SetFunc mocks the Set method.
 	SetFunc func(key []byte, value []byte)
@@ -1249,7 +1248,7 @@ func (mock *KVStoreMock) HasCalls() []struct {
 }
 
 // Iterator calls IteratorFunc.
-func (mock *KVStoreMock) Iterator(start []byte, end []byte) db.Iterator {
+func (mock *KVStoreMock) Iterator(start []byte, end []byte) types.Iterator {
 	if mock.IteratorFunc == nil {
 		panic("KVStoreMock.IteratorFunc: method is nil but KVStore.Iterator was just called")
 	}
@@ -1285,7 +1284,7 @@ func (mock *KVStoreMock) IteratorCalls() []struct {
 }
 
 // ReverseIterator calls ReverseIteratorFunc.
-func (mock *KVStoreMock) ReverseIterator(start []byte, end []byte) db.Iterator {
+func (mock *KVStoreMock) ReverseIterator(start []byte, end []byte) types.Iterator {
 	if mock.ReverseIteratorFunc == nil {
 		panic("KVStoreMock.ReverseIteratorFunc: method is nil but KVStore.ReverseIterator was just called")
 	}
