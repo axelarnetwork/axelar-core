@@ -17,6 +17,7 @@ import (
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	exportedmock "github.com/axelarnetwork/axelar-core/x/nexus/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
@@ -28,6 +29,9 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 		ctx       sdk.Context
 		messenger keeper.Messenger
 		nexus     *mock.NexusMock
+		ibc       *mock.IBCKeeperMock
+		bank      *mock.BankKeeperMock
+		account   *mock.AccountKeeperMock
 		msg       wasmvmtypes.CosmosMsg
 	)
 
@@ -39,8 +43,11 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 			LoggerFunc:                    func(ctx sdk.Context) log.Logger { return ctx.Logger() },
 			IsWasmConnectionActivatedFunc: func(sdk.Context) bool { return true },
 		}
+		ibc = &mock.IBCKeeperMock{}
+		bank = &mock.BankKeeperMock{}
+		account = &mock.AccountKeeperMock{}
 
-		messenger = keeper.NewMessenger(nexus)
+		messenger = keeper.NewMessenger(nexus, ibc, bank, account)
 	})
 
 	givenMessenger.
@@ -133,7 +140,14 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 			When("the asset is registered for the destination chain", func() {
 				nexus.IsAssetRegisteredFunc = func(_ sdk.Context, _ exported.Chain, _ string) bool { return true }
 			}).
-				Then("should set new message", func(t *testing.T) {
+				Then("should lock the coin and set new message", func(t *testing.T) {
+					moduleAccount := rand.AccAddr()
+					account.GetModuleAddressFunc = func(_ string) sdk.AccAddress { return moduleAccount }
+					lockableCoin := &exportedmock.LockableCoinMock{}
+					lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
+					nexus.NewLockableCoinFunc = func(ctx sdk.Context, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (exported.LockableCoin, error) {
+						return lockableCoin, nil
+					}
 					nexus.SetNewMessageFunc = func(_ sdk.Context, msg exported.GeneralMessage) error {
 						return msg.ValidateBasic()
 					}
@@ -142,6 +156,8 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 
 					assert.NoError(t, err)
+					assert.Len(t, lockableCoin.LockCalls(), 1)
+					assert.Equal(t, lockableCoin.LockCalls()[0].FromAddr, moduleAccount)
 					assert.Len(t, nexus.SetNewMessageCalls(), 1)
 					assert.Len(t, nexus.RouteMessageCalls(), 1)
 					assert.NotNil(t, nexus.SetNewMessageCalls()[0].Msg.Asset)
@@ -298,7 +314,7 @@ func TestMessenger_DispatchMsg_WasmConnectionNotActivated(t *testing.T) {
 		nexus = &mock.NexusMock{
 			LoggerFunc: func(ctx sdk.Context) log.Logger { return ctx.Logger() },
 		}
-		messenger = keeper.NewMessenger(nexus)
+		messenger = keeper.NewMessenger(nexus, &mock.IBCKeeperMock{}, &mock.BankKeeperMock{}, &mock.AccountKeeperMock{})
 	}).
 		When("wasm connection is not activated", func() {
 			nexus.IsWasmConnectionActivatedFunc = func(_ sdk.Context) bool { return false }

@@ -360,6 +360,7 @@ func FromGeneralMessage(msg GeneralMessage) WasmMessage {
 		SourceTxID:         msg.SourceTxID,
 		SourceTxIndex:      msg.SourceTxIndex,
 		ID:                 msg.ID,
+		Asset:              msg.Asset,
 	}
 }
 
