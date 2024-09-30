@@ -191,7 +191,11 @@ func (k Keeper) setMessageProcessing(ctx sdk.Context, id string) error {
 	}
 
 	funcs.MustNoErr(k.setProcessingMessageID(ctx, msg))
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageProcessing{ID: msg.ID}))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageProcessing{
+		ID:               msg.ID,
+		SourceChain:      msg.GetSourceChain(),
+		DestinationChain: msg.GetDestinationChain(),
+	}))
 
 	return nil
 }

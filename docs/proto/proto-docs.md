@@ -6202,6 +6202,8 @@ Query defines the gRPC querier service.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `id` | [string](#string) |  |  |
+| `source_chain` | [string](#string) |  |  |
+| `destination_chain` | [string](#string) |  |  |
 
 
 
