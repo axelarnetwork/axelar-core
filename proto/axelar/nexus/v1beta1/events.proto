@@ -55,11 +55,35 @@ message MessageReceived {
       [ (gogoproto.nullable) = false ];
 }
 
-message MessageProcessing { string id = 1 [ (gogoproto.customname) = "ID" ]; }
+message MessageProcessing {
+  string id = 1 [ (gogoproto.customname) = "ID" ];
+  string source_chain = 2
+  [ (gogoproto.casttype) =
+      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string destination_chain = 3
+  [ (gogoproto.casttype) =
+      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
 
-message MessageExecuted { string id = 1 [ (gogoproto.customname) = "ID" ]; }
+message MessageExecuted {
+  string id = 1 [ (gogoproto.customname) = "ID" ];
+  string source_chain = 2
+  [ (gogoproto.casttype) =
+      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string destination_chain = 3
+  [ (gogoproto.casttype) =
+      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
 
-message MessageFailed { string id = 1 [ (gogoproto.customname) = "ID" ]; }
+message MessageFailed {
+  string id = 1 [ (gogoproto.customname) = "ID" ];
+  string source_chain = 2
+  [ (gogoproto.casttype) =
+      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string destination_chain = 3
+  [ (gogoproto.casttype) =
+      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
 
 message WasmMessageRouted {
   exported.v1beta1.WasmMessage message = 1 [ (gogoproto.nullable) = false ];

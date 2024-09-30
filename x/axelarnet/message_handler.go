@@ -247,7 +247,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 	id, txID, nonce := n.GenerateMessageID(ctx)
 
 	// ignore token for call contract
-	_, err := deductFee(ctx, b, msg.Fee, token, id)
+	_, err := deductFee(ctx, b, msg.Fee, token, id, sourceAddress.Chain.Name, nexus.ChainName(msg.DestinationChain))
 	if err != nil {
 		return err
 	}
@@ -287,7 +287,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAdd
 func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token keeper.Coin) error {
 	id, txID, nonce := n.GenerateMessageID(ctx)
 
-	token, err := deductFee(ctx, b, msg.Fee, token, id)
+	token, err := deductFee(ctx, b, msg.Fee, token, id, sourceAddress.Chain.Name, nexus.ChainName(msg.DestinationChain))
 	if err != nil {
 		return err
 	}
@@ -392,7 +392,7 @@ func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.
 }
 
 // deductFee pays the fee and returns the updated transfer amount with the fee deducted
-func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token keeper.Coin, msgID string) (keeper.Coin, error) {
+func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token keeper.Coin, msgID string, sourceChain nexus.ChainName, destinationChain nexus.ChainName) (keeper.Coin, error) {
 	if fee == nil {
 		return token, nil
 	}
@@ -400,12 +400,16 @@ func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token keeper.Coin,
 	feeAmount := funcs.MustOk(sdk.NewIntFromString(fee.Amount))
 	coin := sdk.NewCoin(funcs.Must(token.GetOriginalDenom()), feeAmount)
 	recipient := funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))
+	// destination chain is from user input, normalize it to lowercase
+	destinationChain = nexus.ChainName(strings.ToLower(destinationChain.String()))
 
 	feePaidEvent := types.FeePaid{
-		MessageID: msgID,
-		Recipient: recipient,
-		Fee:       coin,
-		Asset:     token.GetDenom(),
+		MessageID:        msgID,
+		Recipient:        recipient,
+		Fee:              coin,
+		Asset:            token.GetDenom(),
+		SourceChain:      sourceChain,
+		DestinationChain: destinationChain,
 	}
 	if fee.RefundRecipient != nil {
 		feePaidEvent.RefundRecipient = *fee.RefundRecipient
