@@ -247,7 +247,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK type
 	id, txID, nonce := n.GenerateMessageID(ctx)
 
 	// ignore token for call contract
-	_, err := deductFee(ctx, n, b, ibcK, msg.Fee, token, id)
+	_, err := deductFee(ctx, n, b, ibcK, msg.Fee, token, id, sourceAddress.Chain.Name, nexus.ChainName(msg.DestinationChain))
 	if err != nil {
 		return err
 	}
@@ -287,7 +287,7 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK type
 func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK types.IBCKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token nexus.LockableAsset) error {
 	id, txID, nonce := n.GenerateMessageID(ctx)
 
-	token, err := deductFee(ctx, n, b, ibcK, msg.Fee, token, id)
+	token, err := deductFee(ctx, n, b, ibcK, msg.Fee, token, id, sourceAddress.Chain.Name, nexus.ChainName(msg.DestinationChain))
 	if err != nil {
 		return err
 	}
@@ -393,7 +393,7 @@ func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.
 }
 
 // deductFee pays the fee and returns the updated transfer amount with the fee deducted
-func deductFee(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK types.IBCKeeper, fee *Fee, token nexus.LockableAsset, msgID string) (nexus.LockableAsset, error) {
+func deductFee(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK types.IBCKeeper, fee *Fee, token nexus.LockableAsset, msgID string, sourceChain nexus.ChainName, destinationChain nexus.ChainName) (nexus.LockableAsset, error) {
 	if fee == nil {
 		return token, nil
 	}
@@ -401,12 +401,16 @@ func deductFee(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK types.IB
 	feeAmount := funcs.MustOk(sdk.NewIntFromString(fee.Amount))
 	feeCoin := sdk.NewCoin(token.GetCoin(ctx).Denom, feeAmount)
 	recipient := funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))
+	// destination chain is from user input, normalize it to lowercase
+	destinationChain = nexus.ChainName(strings.ToLower(destinationChain.String()))
 
 	feePaidEvent := types.FeePaid{
-		MessageID: msgID,
-		Recipient: recipient,
-		Fee:       feeCoin,
-		Asset:     token.GetAsset().Denom,
+		MessageID:        msgID,
+		Recipient:        recipient,
+		Fee:              feeCoin,
+		Asset:            token.GetAsset().Denom,
+		SourceChain:      sourceChain,
+		DestinationChain: destinationChain,
 	}
 	if fee.RefundRecipient != nil {
 		feePaidEvent.RefundRecipient = *fee.RefundRecipient

@@ -51,7 +51,11 @@ func (k Keeper) SetMessageExecuted(ctx sdk.Context, id string) error {
 
 	m.Status = exported.Executed
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageExecuted{ID: m.ID}))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageExecuted{
+		ID:               m.ID,
+		SourceChain:      m.GetSourceChain(),
+		DestinationChain: m.GetDestinationChain(),
+	}))
 
 	return k.setMessage(ctx, m)
 }
@@ -71,7 +75,11 @@ func (k Keeper) SetMessageFailed(ctx sdk.Context, id string) error {
 
 	m.Status = exported.Failed
 
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageFailed{ID: m.ID}))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageFailed{
+		ID:               m.ID,
+		SourceChain:      m.GetSourceChain(),
+		DestinationChain: m.GetDestinationChain(),
+	}))
 
 	return k.setMessage(ctx, m)
 }
@@ -180,7 +188,11 @@ func (k Keeper) setMessageProcessing(ctx sdk.Context, id string) error {
 	}
 
 	funcs.MustNoErr(k.setProcessingMessageID(ctx, msg))
-	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageProcessing{ID: msg.ID}))
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageProcessing{
+		ID:               msg.ID,
+		SourceChain:      msg.GetSourceChain(),
+		DestinationChain: msg.GetDestinationChain(),
+	}))
 
 	return nil
 }
