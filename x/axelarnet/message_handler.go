@@ -400,6 +400,7 @@ func deductFee(ctx sdk.Context, b types.BankKeeper, fee *Fee, token keeper.Coin,
 	feeAmount := funcs.MustOk(sdk.NewIntFromString(fee.Amount))
 	coin := sdk.NewCoin(funcs.Must(token.GetOriginalDenom()), feeAmount)
 	recipient := funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))
+	destinationChain = nexus.ChainName(strings.ToLower(destinationChain.String()))
 
 	feePaidEvent := types.FeePaid{
 		MessageID: msgID,
