@@ -18,6 +18,10 @@ import (
 // results.TxReceiptResult with *types.Receipt.
 type TxReceiptResult results.Result[types.Receipt]
 
+func (r TxReceiptResult) AsResult() results.Result[types.Receipt] {
+	return results.Result[types.Receipt](r)
+}
+
 // Client provides calls to EVM JSON-RPC endpoints
 type Client interface {
 	// TransactionReceipts returns transaction receipts for the given transaction hashes
