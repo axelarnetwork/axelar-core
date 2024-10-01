@@ -18,6 +18,7 @@ import (
 // results.TxReceiptResult with *types.Receipt.
 type TxReceiptResult results.Result[types.Receipt]
 
+// AsResult returns the TxReceiptResult as the underlying type results.Result[types.Receipt]
 func (r TxReceiptResult) AsResult() results.Result[types.Receipt] {
 	return results.Result[types.Receipt](r)
 }
