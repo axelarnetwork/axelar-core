@@ -140,7 +140,7 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 	}
 
 	return slices.Map(receipts, func(receipt rpc.TxReceiptResult) results.Result[geth.Receipt] {
-		return results.Pipe(results.Result[geth.Receipt](receipt), func(receipt geth.Receipt) results.Result[geth.Receipt] {
+		return results.Pipe(receipt.AsResult(), func(receipt geth.Receipt) results.Result[geth.Receipt] {
 
 			isFinalized, err := mgr.isFinalized(chain, receipt, confHeight)
 			if err != nil {
