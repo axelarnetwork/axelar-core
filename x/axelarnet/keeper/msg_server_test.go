@@ -222,9 +222,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				whenDepositAddressHasBalance.
 					When2(recipientIsFound).
 					When2(chainIsActivated).
-					When("fails to create a lockable coin", func() {
-						nexusK.NewLockableCoinFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
-							return nil, fmt.Errorf("failed to create lockable coin")
+					When("fails to create a lockable asset", func() {
+						nexusK.NewLockableAssetFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+							return nil, fmt.Errorf("failed to create lockable asset")
 						}
 					}).
 					When2(confirmToken).
@@ -233,9 +233,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				whenDepositAddressHasBalance.
 					When2(recipientIsFound).
 					When2(chainIsActivated).
-					When("suceeded to create a lockable coin but lock fails", func() {
-						nexusK.NewLockableCoinFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
-							lockbleCoin := &nexusmock.LockableCoinMock{
+					When("suceeded to create a lockable asset but lock fails", func() {
+						nexusK.NewLockableAssetFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+							lockbleCoin := &nexusmock.LockableAssetMock{
 								LockFromFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
 									return fmt.Errorf("failed to lock coin")
 								},
@@ -250,18 +250,18 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 				whenDepositAddressHasBalance.
 					When2(recipientIsFound).
 					When2(chainIsActivated).
-					When("suceeded to create a lockable coin but lock succeeds", func() {
-						nexusK.NewLockableCoinFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
-							lockbleCoin := &nexusmock.LockableCoinMock{
+					When("succeeded to create a lockable asset but lock succeeds", func() {
+						nexusK.NewLockableAssetFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+							lockableAsset := &nexusmock.LockableAssetMock{
 								LockFromFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
 									return nil
 								},
-								GetCoinFunc: func() sdk.Coin {
+								GetAssetFunc: func() sdk.Coin {
 									return sdk.NewCoin(req.Denom, sdk.NewInt(1e18))
 								},
 							}
 
-							return lockbleCoin, nil
+							return lockableAsset, nil
 						}
 					}).
 					When2(enqueueTransferSucceeds).
@@ -276,14 +276,14 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	var (
-		server       types.MsgServiceServer
-		k            keeper.Keeper
-		nexusK       *mock.NexusMock
-		bankK        *mock.BankKeeperMock
-		transferK    *mock.IBCTransferKeeperMock
-		ctx          sdk.Context
-		req          *types.ExecutePendingTransfersRequest
-		lockableCoin *nexusmock.LockableCoinMock
+		server        types.MsgServiceServer
+		k             keeper.Keeper
+		nexusK        *mock.NexusMock
+		bankK         *mock.BankKeeperMock
+		transferK     *mock.IBCTransferKeeperMock
+		ctx           sdk.Context
+		req           *types.ExecutePendingTransfersRequest
+		lockableAsset *nexusmock.LockableAssetMock
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
@@ -313,14 +313,14 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	})
 
 	unlocksCoinSucceeds := When("unlock coins succeeds", func() {
-		lockableCoin = &nexusmock.LockableCoinMock{
+		lockableAsset = &nexusmock.LockableAssetMock{
 			UnlockToFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
 				return nil
 			},
 		}
 
-		nexusK.NewLockableCoinFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
-			return lockableCoin, nil
+		nexusK.NewLockableAssetFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+			return lockableAsset, nil
 		}
 
 	})
@@ -347,13 +347,13 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 
 				whenHasPendingTransfers.
 					When("unlock coins fails", func() {
-						lockableCoin = &nexusmock.LockableCoinMock{
+						lockableAsset = &nexusmock.LockableAssetMock{
 							UnlockToFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
 								return fmt.Errorf("failed to unlock coin")
 							},
 						}
-						nexusK.NewLockableCoinFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
-							return lockableCoin, nil
+						nexusK.NewLockableAssetFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+							return lockableAsset, nil
 						}
 					}).
 					When2(requestIsMade).
@@ -372,7 +372,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 						assert.NoError(t, err)
 
 						assert.Len(t, nexusK.ArchivePendingTransferCalls(), 1)
-						assert.Len(t, lockableCoin.UnlockToCalls(), 1)
+						assert.Len(t, lockableAsset.UnlockToCalls(), 1)
 					}),
 
 				When("has many pending transfers", func() {
@@ -390,7 +390,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 
 						assert.NoError(t, err)
 						assert.Len(t, nexusK.ArchivePendingTransferCalls(), transferLimit)
-						assert.Len(t, lockableCoin.UnlockToCalls(), transferLimit)
+						assert.Len(t, lockableAsset.UnlockToCalls(), transferLimit)
 					}),
 			).Run(t)
 	})
@@ -398,16 +398,16 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 
 func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 	var (
-		server       types.MsgServiceServer
-		k            keeper.Keeper
-		nexusK       *mock.NexusMock
-		bankK        *mock.BankKeeperMock
-		transferK    *mock.IBCTransferKeeperMock
-		ctx          sdk.Context
-		req          *types.RouteIBCTransfersRequest
-		cosmosChains []types.CosmosChain
-		transfersNum int
-		lockableCoin *nexusmock.LockableCoinMock
+		server        types.MsgServiceServer
+		k             keeper.Keeper
+		nexusK        *mock.NexusMock
+		bankK         *mock.BankKeeperMock
+		transferK     *mock.IBCTransferKeeperMock
+		ctx           sdk.Context
+		req           *types.RouteIBCTransfersRequest
+		cosmosChains  []types.CosmosChain
+		transfersNum  int
+		lockableAsset *nexusmock.LockableAssetMock
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
@@ -494,17 +494,17 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 				whenHasPendingTranfers.
 					When2(requestIsMade).
 					When("unlock coin succeeds", func() {
-						lockableCoin = &nexusmock.LockableCoinMock{
+						lockableAsset = &nexusmock.LockableAssetMock{
 							UnlockToFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
 								return nil
 							},
-							GetOriginalCoinFunc: func(ctx sdk.Context) sdk.Coin {
+							GetCoinFunc: func(ctx sdk.Context) sdk.Coin {
 								return sdk.NewCoin(rand.Denom(3, 10), sdk.NewInt(1e18))
 							},
 						}
 
-						nexusK.NewLockableCoinFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
-							return lockableCoin, nil
+						nexusK.NewLockableAssetFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+							return lockableAsset, nil
 						}
 					}).
 					Then("archive the transfer", func(t *testing.T) {
@@ -512,7 +512,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 
 						assert.NoError(t, err)
 						assert.Len(t, nexusK.ArchivePendingTransferCalls(), transfersNum, fmt.Sprintf("expected %d got %d", transfersNum, len(nexusK.ArchivePendingTransferCalls())))
-						assert.Len(t, lockableCoin.UnlockToCalls(), transfersNum)
+						assert.Len(t, lockableAsset.UnlockToCalls(), transfersNum)
 					}),
 			).Run(t)
 	})
@@ -816,12 +816,12 @@ func TestHandleCallContract(t *testing.T) {
 		ctx, k, _, _ = setup()
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{
-			NewLockableCoinFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
-				lockableCoin := &nexusmock.LockableCoinMock{
-					GetCoinFunc: func() sdk.Coin { return req.Fee.Amount },
+			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+				lockableAsset := &nexusmock.LockableAssetMock{
+					GetAssetFunc: func() sdk.Coin { return req.Fee.Amount },
 				}
 
-				return lockableCoin, nil
+				return lockableAsset, nil
 			},
 		}
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})

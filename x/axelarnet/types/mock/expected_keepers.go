@@ -751,8 +751,8 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 //				panic("mock out the Logger method")
 //			},
-//			NewLockableCoinFunc: func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableCoin, error) {
-//				panic("mock out the NewLockableCoin method")
+//			NewLockableAssetFunc: func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableAsset, error) {
+//				panic("mock out the NewLockableAsset method")
 //			},
 //			RateLimitTransferFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
 //				panic("mock out the RateLimitTransfer method")
@@ -887,8 +887,8 @@ type NexusMock struct {
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
 
-	// NewLockableCoinFunc mocks the NewLockableCoin method.
-	NewLockableCoinFunc func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableCoin, error)
+	// NewLockableAssetFunc mocks the NewLockableAsset method.
+	NewLockableAssetFunc func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableAsset, error)
 
 	// RateLimitTransferFunc mocks the RateLimitTransfer method.
 	RateLimitTransferFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error
@@ -1134,8 +1134,8 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
-		// NewLockableCoin holds details about calls to the NewLockableCoin method.
-		NewLockableCoin []struct {
+		// NewLockableAsset holds details about calls to the NewLockableAsset method.
+		NewLockableAsset []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 			// Ibc is the ibc argument value.
@@ -1286,7 +1286,7 @@ type NexusMock struct {
 	lockIsWasmConnectionActivated     sync.RWMutex
 	lockLinkAddresses                 sync.RWMutex
 	lockLogger                        sync.RWMutex
-	lockNewLockableCoin               sync.RWMutex
+	lockNewLockableAsset              sync.RWMutex
 	lockRateLimitTransfer             sync.RWMutex
 	lockRegisterAsset                 sync.RWMutex
 	lockRegisterFee                   sync.RWMutex
@@ -2346,10 +2346,10 @@ func (mock *NexusMock) LoggerCalls() []struct {
 	return calls
 }
 
-// NewLockableCoin calls NewLockableCoinFunc.
-func (mock *NexusMock) NewLockableCoin(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableCoin, error) {
-	if mock.NewLockableCoinFunc == nil {
-		panic("NexusMock.NewLockableCoinFunc: method is nil but Nexus.NewLockableCoin was just called")
+// NewLockableAsset calls NewLockableAssetFunc.
+func (mock *NexusMock) NewLockableAsset(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableAsset, error) {
+	if mock.NewLockableAssetFunc == nil {
+		panic("NexusMock.NewLockableAssetFunc: method is nil but Nexus.NewLockableAsset was just called")
 	}
 	callInfo := struct {
 		Ctx  cosmossdktypes.Context
@@ -2362,17 +2362,17 @@ func (mock *NexusMock) NewLockableCoin(ctx cosmossdktypes.Context, ibc nexustype
 		Bank: bank,
 		Coin: coin,
 	}
-	mock.lockNewLockableCoin.Lock()
-	mock.calls.NewLockableCoin = append(mock.calls.NewLockableCoin, callInfo)
-	mock.lockNewLockableCoin.Unlock()
-	return mock.NewLockableCoinFunc(ctx, ibc, bank, coin)
+	mock.lockNewLockableAsset.Lock()
+	mock.calls.NewLockableAsset = append(mock.calls.NewLockableAsset, callInfo)
+	mock.lockNewLockableAsset.Unlock()
+	return mock.NewLockableAssetFunc(ctx, ibc, bank, coin)
 }
 
-// NewLockableCoinCalls gets all the calls that were made to NewLockableCoin.
+// NewLockableAssetCalls gets all the calls that were made to NewLockableAsset.
 // Check the length with:
 //
-//	len(mockedNexus.NewLockableCoinCalls())
-func (mock *NexusMock) NewLockableCoinCalls() []struct {
+//	len(mockedNexus.NewLockableAssetCalls())
+func (mock *NexusMock) NewLockableAssetCalls() []struct {
 	Ctx  cosmossdktypes.Context
 	Ibc  nexustypes.IBCKeeper
 	Bank nexustypes.BankKeeper
@@ -2384,9 +2384,9 @@ func (mock *NexusMock) NewLockableCoinCalls() []struct {
 		Bank nexustypes.BankKeeper
 		Coin cosmossdktypes.Coin
 	}
-	mock.lockNewLockableCoin.RLock()
-	calls = mock.calls.NewLockableCoin
-	mock.lockNewLockableCoin.RUnlock()
+	mock.lockNewLockableAsset.RLock()
+	calls = mock.calls.NewLockableAsset
+	mock.lockNewLockableAsset.RUnlock()
 	return calls
 }
 

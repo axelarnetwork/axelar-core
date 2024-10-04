@@ -21,7 +21,7 @@ import (
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func TestLockableCoin(t *testing.T) {
+func TestLockableAsset(t *testing.T) {
 	var (
 		ctx   sdk.Context
 		nexus *mock.NexusMock
@@ -93,40 +93,40 @@ func TestLockableCoin(t *testing.T) {
 		coin = sdk.NewCoin(trace.IBCDenom(), sdk.NewInt(rand.PosI64()))
 	})
 
-	t.Run("NewLockableCoin, GetCoin and GetOriginalCoin", func(t *testing.T) {
+	t.Run("NewLockableAsset, GetAsset and GetCoin", func(t *testing.T) {
 		givenKeeper.
 			When2(whenCoinIsICS20).
-			Then("should create a new lockable coin of type ICS20", func(t *testing.T) {
-				lockableCoin, err := newLockableCoin(ctx, nexus, ibc, bank, coin)
+			Then("should create a new lockable asset of type ICS20", func(t *testing.T) {
+				lockableAsset, err := newLockableAsset(ctx, nexus, ibc, bank, coin)
 
 				assert.NoError(t, err)
-				assert.Equal(t, types.CoinType(types.ICS20), lockableCoin.coinType)
-				assert.Equal(t, sdk.NewCoin(trace.GetBaseDenom(), coin.Amount), lockableCoin.GetCoin())
-				assert.Equal(t, coin, lockableCoin.GetOriginalCoin(ctx))
+				assert.Equal(t, types.CoinType(types.ICS20), lockableAsset.coinType)
+				assert.Equal(t, sdk.NewCoin(trace.GetBaseDenom(), coin.Amount), lockableAsset.GetAsset())
+				assert.Equal(t, coin, lockableAsset.GetCoin(ctx))
 			}).
 			Run(t)
 
 		givenKeeper.
 			When2(whenCoinIsNative).
-			Then("should create a new lockable coin of type native", func(t *testing.T) {
-				lockableCoin, err := newLockableCoin(ctx, nexus, ibc, bank, coin)
+			Then("should create a new lockable asset of type native", func(t *testing.T) {
+				lockableAsset, err := newLockableAsset(ctx, nexus, ibc, bank, coin)
 
 				assert.NoError(t, err)
-				assert.Equal(t, types.CoinType(types.Native), lockableCoin.coinType)
-				assert.Equal(t, coin, lockableCoin.GetCoin())
-				assert.Equal(t, coin, lockableCoin.GetOriginalCoin(ctx))
+				assert.Equal(t, types.CoinType(types.Native), lockableAsset.coinType)
+				assert.Equal(t, coin, lockableAsset.GetAsset())
+				assert.Equal(t, coin, lockableAsset.GetCoin(ctx))
 			}).
 			Run(t)
 
 		givenKeeper.
 			When2(whenCoinIsExternal).
-			Then("should create a new lockable coin of type external", func(t *testing.T) {
-				lockableCoin, err := newLockableCoin(ctx, nexus, ibc, bank, coin)
+			Then("should create a new lockable asset of type external", func(t *testing.T) {
+				lockableAsset, err := newLockableAsset(ctx, nexus, ibc, bank, coin)
 
 				assert.NoError(t, err)
-				assert.Equal(t, types.CoinType(types.External), lockableCoin.coinType)
-				assert.Equal(t, coin, lockableCoin.GetCoin())
-				assert.Equal(t, coin, lockableCoin.GetOriginalCoin(ctx))
+				assert.Equal(t, types.CoinType(types.External), lockableAsset.coinType)
+				assert.Equal(t, coin, lockableAsset.GetAsset())
+				assert.Equal(t, coin, lockableAsset.GetCoin(ctx))
 			}).
 			Run(t)
 	})
@@ -137,16 +137,16 @@ func TestLockableCoin(t *testing.T) {
 			Then("should lock the coin", func(t *testing.T) {
 				bank.SendCoinsFunc = func(ctx sdk.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil }
 
-				lockableCoin := funcs.Must(newLockableCoin(ctx, nexus, ibc, bank, coin))
+				lockableAsset := funcs.Must(newLockableAsset(ctx, nexus, ibc, bank, coin))
 				fromAddr := rand.AccAddr()
 
-				err := lockableCoin.LockFrom(ctx, fromAddr)
+				err := lockableAsset.LockFrom(ctx, fromAddr)
 
 				assert.NoError(t, err)
 				assert.Len(t, bank.SendCoinsCalls(), 1)
-				assert.Equal(t, sdk.NewCoins(lockableCoin.GetOriginalCoin(ctx)), bank.SendCoinsCalls()[0].Amt)
+				assert.Equal(t, sdk.NewCoins(lockableAsset.GetCoin(ctx)), bank.SendCoinsCalls()[0].Amt)
 				assert.Equal(t, fromAddr, bank.SendCoinsCalls()[0].FromAddr)
-				assert.Equal(t, exported.GetEscrowAddress(lockableCoin.GetOriginalCoin(ctx).Denom), bank.SendCoinsCalls()[0].ToAddr)
+				assert.Equal(t, exported.GetEscrowAddress(lockableAsset.GetCoin(ctx).Denom), bank.SendCoinsCalls()[0].ToAddr)
 			}).
 			Run(t)
 
@@ -155,16 +155,16 @@ func TestLockableCoin(t *testing.T) {
 			Then("should lock the coin", func(t *testing.T) {
 				bank.SendCoinsFunc = func(ctx sdk.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil }
 
-				lockableCoin := funcs.Must(newLockableCoin(ctx, nexus, ibc, bank, coin))
+				lockableAsset := funcs.Must(newLockableAsset(ctx, nexus, ibc, bank, coin))
 				fromAddr := rand.AccAddr()
 
-				err := lockableCoin.LockFrom(ctx, fromAddr)
+				err := lockableAsset.LockFrom(ctx, fromAddr)
 
 				assert.NoError(t, err)
 				assert.Len(t, bank.SendCoinsCalls(), 1)
-				assert.Equal(t, sdk.NewCoins(lockableCoin.GetOriginalCoin(ctx)), bank.SendCoinsCalls()[0].Amt)
+				assert.Equal(t, sdk.NewCoins(lockableAsset.GetCoin(ctx)), bank.SendCoinsCalls()[0].Amt)
 				assert.Equal(t, fromAddr, bank.SendCoinsCalls()[0].FromAddr)
-				assert.Equal(t, exported.GetEscrowAddress(lockableCoin.GetOriginalCoin(ctx).Denom), bank.SendCoinsCalls()[0].ToAddr)
+				assert.Equal(t, exported.GetEscrowAddress(lockableAsset.GetCoin(ctx).Denom), bank.SendCoinsCalls()[0].ToAddr)
 			}).
 			Run(t)
 
@@ -176,19 +176,19 @@ func TestLockableCoin(t *testing.T) {
 				}
 				bank.BurnCoinsFunc = func(ctx sdk.Context, moduleName string, amt sdk.Coins) error { return nil }
 
-				lockableCoin := funcs.Must(newLockableCoin(ctx, nexus, ibc, bank, coin))
+				lockableAsset := funcs.Must(newLockableAsset(ctx, nexus, ibc, bank, coin))
 				fromAddr := rand.AccAddr()
 
-				err := lockableCoin.LockFrom(ctx, fromAddr)
+				err := lockableAsset.LockFrom(ctx, fromAddr)
 
 				assert.NoError(t, err)
 				assert.Len(t, bank.SendCoinsFromAccountToModuleCalls(), 1)
 				assert.Equal(t, fromAddr, bank.SendCoinsFromAccountToModuleCalls()[0].SenderAddr)
 				assert.Equal(t, types.ModuleName, bank.SendCoinsFromAccountToModuleCalls()[0].RecipientModule)
-				assert.Equal(t, sdk.NewCoins(lockableCoin.GetOriginalCoin(ctx)), bank.SendCoinsFromAccountToModuleCalls()[0].Amt)
+				assert.Equal(t, sdk.NewCoins(lockableAsset.GetCoin(ctx)), bank.SendCoinsFromAccountToModuleCalls()[0].Amt)
 				assert.Len(t, bank.BurnCoinsCalls(), 1)
 				assert.Equal(t, types.ModuleName, bank.BurnCoinsCalls()[0].ModuleName)
-				assert.Equal(t, sdk.NewCoins(lockableCoin.GetOriginalCoin(ctx)), bank.BurnCoinsCalls()[0].Amt)
+				assert.Equal(t, sdk.NewCoins(lockableAsset.GetCoin(ctx)), bank.BurnCoinsCalls()[0].Amt)
 			}).
 			Run(t)
 	})
@@ -199,15 +199,15 @@ func TestLockableCoin(t *testing.T) {
 			Then("should unlock the coin", func(t *testing.T) {
 				bank.SendCoinsFunc = func(ctx sdk.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil }
 
-				lockableCoin := funcs.Must(newLockableCoin(ctx, nexus, ibc, bank, coin))
+				lockableAsset := funcs.Must(newLockableAsset(ctx, nexus, ibc, bank, coin))
 				toAddr := rand.AccAddr()
 
-				err := lockableCoin.UnlockTo(ctx, toAddr)
+				err := lockableAsset.UnlockTo(ctx, toAddr)
 
 				assert.NoError(t, err)
 				assert.Len(t, bank.SendCoinsCalls(), 1)
-				assert.Equal(t, sdk.NewCoins(lockableCoin.GetOriginalCoin(ctx)), bank.SendCoinsCalls()[0].Amt)
-				assert.Equal(t, exported.GetEscrowAddress(lockableCoin.GetOriginalCoin(ctx).Denom), bank.SendCoinsCalls()[0].FromAddr)
+				assert.Equal(t, sdk.NewCoins(lockableAsset.GetCoin(ctx)), bank.SendCoinsCalls()[0].Amt)
+				assert.Equal(t, exported.GetEscrowAddress(lockableAsset.GetCoin(ctx).Denom), bank.SendCoinsCalls()[0].FromAddr)
 				assert.Equal(t, toAddr, bank.SendCoinsCalls()[0].ToAddr)
 			}).
 			Run(t)
@@ -217,15 +217,15 @@ func TestLockableCoin(t *testing.T) {
 			Then("should unlock the coin", func(t *testing.T) {
 				bank.SendCoinsFunc = func(ctx sdk.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil }
 
-				lockableCoin := funcs.Must(newLockableCoin(ctx, nexus, ibc, bank, coin))
+				lockableAsset := funcs.Must(newLockableAsset(ctx, nexus, ibc, bank, coin))
 				toAddr := rand.AccAddr()
 
-				err := lockableCoin.UnlockTo(ctx, toAddr)
+				err := lockableAsset.UnlockTo(ctx, toAddr)
 
 				assert.NoError(t, err)
 				assert.Len(t, bank.SendCoinsCalls(), 1)
-				assert.Equal(t, sdk.NewCoins(lockableCoin.GetOriginalCoin(ctx)), bank.SendCoinsCalls()[0].Amt)
-				assert.Equal(t, exported.GetEscrowAddress(lockableCoin.GetOriginalCoin(ctx).Denom), bank.SendCoinsCalls()[0].FromAddr)
+				assert.Equal(t, sdk.NewCoins(lockableAsset.GetCoin(ctx)), bank.SendCoinsCalls()[0].Amt)
+				assert.Equal(t, exported.GetEscrowAddress(lockableAsset.GetCoin(ctx).Denom), bank.SendCoinsCalls()[0].FromAddr)
 				assert.Equal(t, toAddr, bank.SendCoinsCalls()[0].ToAddr)
 			}).
 			Run(t)
@@ -238,15 +238,15 @@ func TestLockableCoin(t *testing.T) {
 					return nil
 				}
 
-				lockableCoin := funcs.Must(newLockableCoin(ctx, nexus, ibc, bank, coin))
+				lockableAsset := funcs.Must(newLockableAsset(ctx, nexus, ibc, bank, coin))
 				toAddr := rand.AccAddr()
 
-				err := lockableCoin.UnlockTo(ctx, toAddr)
+				err := lockableAsset.UnlockTo(ctx, toAddr)
 
 				assert.NoError(t, err)
 				assert.Len(t, bank.MintCoinsCalls(), 1)
 				assert.Equal(t, types.ModuleName, bank.MintCoinsCalls()[0].ModuleName)
-				assert.Equal(t, sdk.NewCoins(lockableCoin.GetOriginalCoin(ctx)), bank.MintCoinsCalls()[0].Amt)
+				assert.Equal(t, sdk.NewCoins(lockableAsset.GetCoin(ctx)), bank.MintCoinsCalls()[0].Amt)
 				assert.Len(t, bank.SendCoinsFromModuleToAccountCalls(), 1)
 				assert.Equal(t, types.ModuleName, bank.SendCoinsFromModuleToAccountCalls()[0].SenderModule)
 				assert.Equal(t, toAddr, bank.SendCoinsFromModuleToAccountCalls()[0].RecipientAddr)

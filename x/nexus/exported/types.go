@@ -19,12 +19,12 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . MaintainerState LockableCoin
+//go:generate moq -out ./mock/types.go -pkg mock . MaintainerState LockableAsset
 
-// LockableCoin defines a coin that can be locked and unlocked
-type LockableCoin interface {
-	GetCoin() sdk.Coin
-	GetOriginalCoin(ctx sdk.Context) sdk.Coin
+// LockableAsset defines a coin that can be locked and unlocked
+type LockableAsset interface {
+	GetAsset() sdk.Coin
+	GetCoin(ctx sdk.Context) sdk.Coin
 	LockFrom(ctx sdk.Context, fromAddr sdk.AccAddress) error
 	UnlockTo(ctx sdk.Context, toAddr sdk.AccAddress) error
 }

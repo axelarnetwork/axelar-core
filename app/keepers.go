@@ -444,11 +444,11 @@ func initBankKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepe
 		GetKeeper[authkeeper.AccountKeeper](keepers),
 		keepers.getSubspace(banktypes.ModuleName),
 		maps.Filter(moduleAccountAddrs(moduleAccPerms), func(addr string, _ bool) bool {
-			// we do not rely on internal balance tracking for invariance checks in the axelarnet module
+			// we do not rely on internal balance tracking for invariance checks in the nexus module
 			// (https://github.com/cosmos/cosmos-sdk/issues/12825 for more details on the purpose of the blocked list),
 			// but the module address must be able to use ibc transfers,
 			// so we exclude this address from the blocked list
-			return addr != authtypes.NewModuleAddress(axelarnetTypes.ModuleName).String()
+			return addr != authtypes.NewModuleAddress(nexusTypes.ModuleName).String()
 		}),
 	)
 	return &bankK

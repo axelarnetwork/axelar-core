@@ -83,12 +83,12 @@ func TestNewMessageRoute(t *testing.T) {
 		msg        nexus.GeneralMessage
 		route      nexus.MessageRoute
 
-		feegrantK    *mock.FeegrantKeeperMock
-		ibcK         *mock.IBCKeeperMock
-		bankK        *mock.BankKeeperMock
-		nexusK       *mock.NexusMock
-		stakingK     *mock.StakingKeeperMock
-		lockableCoin *nexusmock.LockableCoinMock
+		feegrantK     *mock.FeegrantKeeperMock
+		ibcK          *mock.IBCKeeperMock
+		bankK         *mock.BankKeeperMock
+		nexusK        *mock.NexusMock
+		stakingK      *mock.StakingKeeperMock
+		lockableAsset *nexusmock.LockableAssetMock
 	)
 
 	givenMessageRoute := Given("the message route", func() {
@@ -202,13 +202,13 @@ func TestNewMessageRoute(t *testing.T) {
 			msg = randMsg(nexus.Processing, routingCtx.Payload, &coin)
 		}).
 		Then("should unlock from the corresponding account", func(t *testing.T) {
-			nexusK.NewLockableCoinFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
-				lockableCoin = &nexusmock.LockableCoinMock{
-					GetOriginalCoinFunc: func(ctx sdk.Context) sdk.Coin { return coin },
-					UnlockToFunc:        func(ctx sdk.Context, toAddr sdk.AccAddress) error { return nil },
+			nexusK.NewLockableAssetFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+				lockableAsset = &nexusmock.LockableAssetMock{
+					GetCoinFunc:  func(ctx sdk.Context) sdk.Coin { return coin },
+					UnlockToFunc: func(ctx sdk.Context, toAddr sdk.AccAddress) error { return nil },
 				}
 
-				return lockableCoin, nil
+				return lockableAsset, nil
 			}
 
 			ibcK.SendMessageFunc = func(_ context.Context, _ nexus.CrossChainAddress, _ sdk.Coin, _, _ string) error {
@@ -217,8 +217,8 @@ func TestNewMessageRoute(t *testing.T) {
 
 			assert.NoError(t, route(ctx, routingCtx, msg))
 
-			assert.Len(t, lockableCoin.UnlockToCalls(), 1)
-			assert.Equal(t, types.AxelarIBCAccount, lockableCoin.UnlockToCalls()[0].ToAddr)
+			assert.Len(t, lockableAsset.UnlockToCalls(), 1)
+			assert.Equal(t, types.AxelarIBCAccount, lockableAsset.UnlockToCalls()[0].ToAddr)
 
 			assert.Len(t, ibcK.SendMessageCalls(), 1)
 			assert.Equal(t, msg.Recipient, ibcK.SendMessageCalls()[0].Recipient)

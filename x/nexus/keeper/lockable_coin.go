@@ -13,13 +13,13 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 )
 
-// NewLockableCoin creates a new lockable coin
-func (k Keeper) NewLockableCoin(ctx sdk.Context, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (exported.LockableCoin, error) {
-	return newLockableCoin(ctx, k, ibc, bank, coin)
+// NewLockableAsset creates a new lockable asset
+func (k Keeper) NewLockableAsset(ctx sdk.Context, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (exported.LockableAsset, error) {
+	return newLockableAsset(ctx, k, ibc, bank, coin)
 }
 
-// lockableCoin provides functionality to lock and release coins
-type lockableCoin struct {
+// lockableAsset provides functionality to lock and release coins
+type lockableAsset struct {
 	sdk.Coin
 	coinType types.CoinType
 	nexus    types.Nexus
@@ -27,13 +27,13 @@ type lockableCoin struct {
 	bank     types.BankKeeper
 }
 
-// newLockableCoin creates a coin struct, assign a coin type and normalize the denom if it's a ICS20 token
-func newLockableCoin(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (lockableCoin, error) {
+// newLockableAsset creates a coin struct, assign a coin type and normalize the denom if it's a ICS20 token
+func newLockableAsset(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (lockableAsset, error) {
 	denom := coin.GetDenom()
 
 	coinType, err := getCoinType(ctx, nexus, denom)
 	if err != nil {
-		return lockableCoin{}, err
+		return lockableAsset{}, err
 	}
 
 	// If coin type is ICS20, we need to normalize it to convert from 'ibc/{hash}'
@@ -41,13 +41,13 @@ func newLockableCoin(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, ba
 	if coinType == types.ICS20 {
 		denomTrace, err := ibc.ParseIBCDenom(ctx, denom)
 		if err != nil {
-			return lockableCoin{}, err
+			return lockableAsset{}, err
 		}
 
 		coin = sdk.NewCoin(denomTrace.GetBaseDenom(), coin.Amount)
 	}
 
-	c := lockableCoin{
+	c := lockableAsset{
 		Coin:     coin,
 		coinType: coinType,
 		nexus:    nexus,
@@ -57,28 +57,29 @@ func newLockableCoin(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, ba
 
 	originalCoin, err := c.getOriginalCoin(ctx)
 	if err != nil {
-		return lockableCoin{}, err
+		return lockableAsset{}, err
 	}
 	if originalCoin.GetDenom() != denom {
-		return lockableCoin{}, fmt.Errorf("denom mismatch, expected %s, got %s", denom, originalCoin.GetDenom())
+		return lockableAsset{}, fmt.Errorf("denom mismatch, expected %s, got %s", denom, originalCoin.GetDenom())
 	}
 
 	return c, nil
 }
 
-func (c lockableCoin) GetCoin() sdk.Coin {
+// GetAsset returns the coin in nexus registered denomination
+func (c lockableAsset) GetAsset() sdk.Coin {
 	return c.Coin
 }
 
-// GetOriginalCoin returns the original coin
-func (c lockableCoin) GetOriginalCoin(ctx sdk.Context) sdk.Coin {
+// GetCoin returns the original sdk coin
+func (c lockableAsset) GetCoin(ctx sdk.Context) sdk.Coin {
 	// NOTE: must not fail since it's already checked in NewCoin
 	return funcs.Must(c.getOriginalCoin(ctx))
 }
 
 // LockFrom locks the given coin from the given address
-func (c lockableCoin) LockFrom(ctx sdk.Context, fromAddr sdk.AccAddress) error {
-	coin := c.GetOriginalCoin(ctx)
+func (c lockableAsset) LockFrom(ctx sdk.Context, fromAddr sdk.AccAddress) error {
+	coin := c.GetCoin(ctx)
 
 	switch c.coinType {
 	case types.ICS20, types.Native:
@@ -91,8 +92,8 @@ func (c lockableCoin) LockFrom(ctx sdk.Context, fromAddr sdk.AccAddress) error {
 }
 
 // UnlockTo unlocks the given coin to the given address
-func (c lockableCoin) UnlockTo(ctx sdk.Context, toAddr sdk.AccAddress) error {
-	coin := c.GetOriginalCoin(ctx)
+func (c lockableAsset) UnlockTo(ctx sdk.Context, toAddr sdk.AccAddress) error {
+	coin := c.GetCoin(ctx)
 
 	switch c.coinType {
 	case types.ICS20, types.Native:
@@ -104,7 +105,7 @@ func (c lockableCoin) UnlockTo(ctx sdk.Context, toAddr sdk.AccAddress) error {
 	}
 }
 
-func (c lockableCoin) getOriginalCoin(ctx sdk.Context) (sdk.Coin, error) {
+func (c lockableAsset) getOriginalCoin(ctx sdk.Context) (sdk.Coin, error) {
 	switch c.coinType {
 	case types.ICS20:
 		return c.toICS20(ctx)
@@ -115,7 +116,7 @@ func (c lockableCoin) getOriginalCoin(ctx sdk.Context) (sdk.Coin, error) {
 	}
 }
 
-func (c lockableCoin) toICS20(ctx sdk.Context) (sdk.Coin, error) {
+func (c lockableAsset) toICS20(ctx sdk.Context) (sdk.Coin, error) {
 	if c.coinType != types.ICS20 {
 		return sdk.Coin{}, fmt.Errorf("%s is not ICS20 token", c.GetDenom())
 	}
