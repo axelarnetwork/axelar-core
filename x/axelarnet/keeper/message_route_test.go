@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"context"
+	"crypto/sha256"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,7 +17,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	evmtestutils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexusmock "github.com/axelarnetwork/axelar-core/x/nexus/exported/mock"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
+	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
@@ -53,6 +56,8 @@ func randMsg(status nexus.GeneralMessage_Status, payload []byte, token ...*sdk.C
 		asset = token[0]
 	}
 
+	payloadHash := sha256.Sum256(payload)
+
 	return nexus.GeneralMessage{
 		ID: rand.NormalizedStr(10),
 		Sender: nexus.CrossChainAddress{
@@ -63,7 +68,7 @@ func randMsg(status nexus.GeneralMessage_Status, payload []byte, token ...*sdk.C
 			Chain:   nexustestutils.RandomChain(),
 			Address: rand.NormalizedStr(42),
 		},
-		PayloadHash:   evmtestutils.RandomHash().Bytes(),
+		PayloadHash:   payloadHash[:],
 		Status:        status,
 		Asset:         asset,
 		SourceTxID:    evmtestutils.RandomHash().Bytes(),
@@ -78,28 +83,26 @@ func TestNewMessageRoute(t *testing.T) {
 		msg        nexus.GeneralMessage
 		route      nexus.MessageRoute
 
-		k         keeper.Keeper
-		feegrantK *mock.FeegrantKeeperMock
-		ibcK      *mock.IBCKeeperMock
-		bankK     *mock.BankKeeperMock
-		nexusK    *mock.NexusMock
-		accountK  *mock.AccountKeeperMock
-		stakingK  *mock.StakingKeeperMock
+		feegrantK     *mock.FeegrantKeeperMock
+		ibcK          *mock.IBCKeeperMock
+		bankK         *mock.BankKeeperMock
+		nexusK        *mock.NexusMock
+		stakingK      *mock.StakingKeeperMock
+		lockableAsset *nexusmock.LockableAssetMock
 	)
 
 	givenMessageRoute := Given("the message route", func() {
-		ctx, k, _, feegrantK = setup()
+		ctx, _, _, feegrantK = setup()
 
 		ibcK = &mock.IBCKeeperMock{}
 		bankK = &mock.BankKeeperMock{}
 		nexusK = &mock.NexusMock{}
-		accountK = &mock.AccountKeeperMock{}
 		stakingK = &mock.StakingKeeperMock{}
 		stakingK.BondDenomFunc = func(ctx sdk.Context) string {
 			return exported.NativeAsset
 		}
 
-		route = keeper.NewMessageRoute(k, ibcK, feegrantK, bankK, nexusK, accountK, stakingK)
+		route = keeper.NewMessageRoute(ibcK, feegrantK, bankK, nexusK, stakingK)
 	})
 
 	givenMessageRoute.
@@ -151,7 +154,7 @@ func TestNewMessageRoute(t *testing.T) {
 
 					assert.Len(t, bankK.SendCoinsCalls(), 1)
 					assert.Equal(t, routingCtx.Sender, bankK.SendCoinsCalls()[0].FromAddr)
-					assert.Equal(t, types.AxelarGMPAccount, bankK.SendCoinsCalls()[0].ToAddr)
+					assert.Equal(t, types.AxelarIBCAccount, bankK.SendCoinsCalls()[0].ToAddr)
 					assert.Equal(t, sdk.NewCoins(sdk.NewCoin(exported.NativeAsset, sdk.OneInt())), bankK.SendCoinsCalls()[0].Amt)
 
 					assert.Len(t, ibcK.SendMessageCalls(), 1)
@@ -181,7 +184,7 @@ func TestNewMessageRoute(t *testing.T) {
 
 					assert.Len(t, bankK.SendCoinsCalls(), 1)
 					assert.Equal(t, routingCtx.FeeGranter, bankK.SendCoinsCalls()[0].FromAddr)
-					assert.Equal(t, types.AxelarGMPAccount, bankK.SendCoinsCalls()[0].ToAddr)
+					assert.Equal(t, types.AxelarIBCAccount, bankK.SendCoinsCalls()[0].ToAddr)
 					assert.Equal(t, sdk.NewCoins(sdk.NewCoin(exported.NativeAsset, sdk.OneInt())), bankK.SendCoinsCalls()[0].Amt)
 
 					assert.Len(t, ibcK.SendMessageCalls(), 1)
@@ -198,21 +201,24 @@ func TestNewMessageRoute(t *testing.T) {
 			coin := rand.Coin()
 			msg = randMsg(nexus.Processing, routingCtx.Payload, &coin)
 		}).
-		Then("should deduct from the corresponding account", func(t *testing.T) {
-			nexusK.GetChainByNativeAssetFunc = func(_ sdk.Context, _ string) (nexus.Chain, bool) {
-				return exported.Axelarnet, true
+		Then("should unlock from the corresponding account", func(t *testing.T) {
+			nexusK.NewLockableAssetFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+				lockableAsset = &nexusmock.LockableAssetMock{
+					GetCoinFunc:  func(ctx sdk.Context) sdk.Coin { return coin },
+					UnlockToFunc: func(ctx sdk.Context, toAddr sdk.AccAddress) error { return nil },
+				}
+
+				return lockableAsset, nil
 			}
-			bankK.SendCoinsFunc = func(_ sdk.Context, _, _ sdk.AccAddress, _ sdk.Coins) error { return nil }
+
 			ibcK.SendMessageFunc = func(_ context.Context, _ nexus.CrossChainAddress, _ sdk.Coin, _, _ string) error {
 				return nil
 			}
 
 			assert.NoError(t, route(ctx, routingCtx, msg))
 
-			assert.Len(t, bankK.SendCoinsCalls(), 1)
-			assert.Equal(t, types.GetEscrowAddress(msg.Asset.Denom), bankK.SendCoinsCalls()[0].FromAddr)
-			assert.Equal(t, types.AxelarGMPAccount, bankK.SendCoinsCalls()[0].ToAddr)
-			assert.Equal(t, sdk.NewCoins(*msg.Asset), bankK.SendCoinsCalls()[0].Amt)
+			assert.Len(t, lockableAsset.UnlockToCalls(), 1)
+			assert.Equal(t, types.AxelarIBCAccount, lockableAsset.UnlockToCalls()[0].ToAddr)
 
 			assert.Len(t, ibcK.SendMessageCalls(), 1)
 			assert.Equal(t, msg.Recipient, ibcK.SendMessageCalls()[0].Recipient)

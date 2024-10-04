@@ -304,7 +304,6 @@ func NewAxelarApp(
 			*GetKeeper[axelarnetKeeper.IBCKeeper](keepers),
 			GetKeeper[nexusKeeper.Keeper](keepers),
 			axelarbankkeeper.NewBankKeeper(GetKeeper[bankkeeper.BaseKeeper](keepers)),
-			GetKeeper[authkeeper.AccountKeeper](keepers),
 			logger,
 		),
 	)
@@ -440,12 +439,10 @@ func initMessageRouter(keepers *KeeperCache) nexusTypes.MessageRouter {
 	messageRouter := nexusTypes.NewMessageRouter().
 		AddRoute(evmTypes.ModuleName, evmKeeper.NewMessageRoute()).
 		AddRoute(axelarnetTypes.ModuleName, axelarnetKeeper.NewMessageRoute(
-			*GetKeeper[axelarnetKeeper.Keeper](keepers),
 			GetKeeper[axelarnetKeeper.IBCKeeper](keepers),
 			GetKeeper[feegrantkeeper.Keeper](keepers),
 			axelarbankkeeper.NewBankKeeper(GetKeeper[bankkeeper.BaseKeeper](keepers)),
 			GetKeeper[nexusKeeper.Keeper](keepers),
-			GetKeeper[authkeeper.AccountKeeper](keepers),
 			GetKeeper[stakingkeeper.Keeper](keepers),
 		))
 
@@ -599,6 +596,8 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 			GetKeeper[stakingkeeper.Keeper](keepers),
 			GetKeeper[axelarnetKeeper.Keeper](keepers),
 			GetKeeper[rewardKeeper.Keeper](keepers),
+			GetKeeper[bankkeeper.BaseKeeper](keepers),
+			GetKeeper[authkeeper.AccountKeeper](keepers),
 		),
 		evm.NewAppModule(
 			GetKeeper[evmKeeper.BaseKeeper](keepers),
@@ -718,10 +717,10 @@ func InitModuleAccountPermissions() map[string][]string {
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		govtypes.ModuleName:            {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
-		axelarnetTypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
+		axelarnetTypes.ModuleName:      nil,
 		rewardTypes.ModuleName:         {authtypes.Minter},
 		wasm.ModuleName:                {authtypes.Burner},
-		nexusTypes.ModuleName:          nil,
+		nexusTypes.ModuleName:          {authtypes.Minter, authtypes.Burner},
 	}
 }
 

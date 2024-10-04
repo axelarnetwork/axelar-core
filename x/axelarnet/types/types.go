@@ -40,12 +40,6 @@ func NewLinkedAddress(ctx sdk.Context, chain nexus.ChainName, symbol, recipientA
 	return hash[:address.Len]
 }
 
-// GetEscrowAddress creates an address for an ibc denomination
-func GetEscrowAddress(denom string) sdk.AccAddress {
-	hash := sha256.Sum256([]byte(denom))
-	return hash[:address.Len]
-}
-
 // Validate checks the stateless validity of the transfer
 func (m IBCTransfer) Validate() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
@@ -256,8 +250,8 @@ const (
 )
 
 var (
-	// AxelarGMPAccount account is the canonical general message sender
-	AxelarGMPAccount = GetEscrowAddress(fmt.Sprintf("%s_%s", ModuleName, "gmp"))
+	// AxelarIBCAccount account is the canonical general message and IBC transfer sender
+	AxelarIBCAccount = nexus.GetEscrowAddress(fmt.Sprintf("%s_%s", ModuleName, "gmp"))
 )
 
 // ValidateBasic returns an error if the given Fee is invalid; nil otherwise

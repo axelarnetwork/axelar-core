@@ -560,3 +560,206 @@ func (mock *MaintainerStateMock) UnmarshalCalls() []struct {
 	mock.lockUnmarshal.RUnlock()
 	return calls
 }
+
+// Ensure, that LockableAssetMock does implement exported.LockableAsset.
+// If this is not the case, regenerate this file with moq.
+var _ exported.LockableAsset = &LockableAssetMock{}
+
+// LockableAssetMock is a mock implementation of exported.LockableAsset.
+//
+//	func TestSomethingThatUsesLockableAsset(t *testing.T) {
+//
+//		// make and configure a mocked exported.LockableAsset
+//		mockedLockableAsset := &LockableAssetMock{
+//			GetAssetFunc: func() types.Coin {
+//				panic("mock out the GetAsset method")
+//			},
+//			GetCoinFunc: func(ctx types.Context) types.Coin {
+//				panic("mock out the GetCoin method")
+//			},
+//			LockFromFunc: func(ctx types.Context, fromAddr types.AccAddress) error {
+//				panic("mock out the LockFrom method")
+//			},
+//			UnlockToFunc: func(ctx types.Context, toAddr types.AccAddress) error {
+//				panic("mock out the UnlockTo method")
+//			},
+//		}
+//
+//		// use mockedLockableAsset in code that requires exported.LockableAsset
+//		// and then make assertions.
+//
+//	}
+type LockableAssetMock struct {
+	// GetAssetFunc mocks the GetAsset method.
+	GetAssetFunc func() types.Coin
+
+	// GetCoinFunc mocks the GetCoin method.
+	GetCoinFunc func(ctx types.Context) types.Coin
+
+	// LockFromFunc mocks the LockFrom method.
+	LockFromFunc func(ctx types.Context, fromAddr types.AccAddress) error
+
+	// UnlockToFunc mocks the UnlockTo method.
+	UnlockToFunc func(ctx types.Context, toAddr types.AccAddress) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetAsset holds details about calls to the GetAsset method.
+		GetAsset []struct {
+		}
+		// GetCoin holds details about calls to the GetCoin method.
+		GetCoin []struct {
+			// Ctx is the ctx argument value.
+			Ctx types.Context
+		}
+		// LockFrom holds details about calls to the LockFrom method.
+		LockFrom []struct {
+			// Ctx is the ctx argument value.
+			Ctx types.Context
+			// FromAddr is the fromAddr argument value.
+			FromAddr types.AccAddress
+		}
+		// UnlockTo holds details about calls to the UnlockTo method.
+		UnlockTo []struct {
+			// Ctx is the ctx argument value.
+			Ctx types.Context
+			// ToAddr is the toAddr argument value.
+			ToAddr types.AccAddress
+		}
+	}
+	lockGetAsset sync.RWMutex
+	lockGetCoin  sync.RWMutex
+	lockLockFrom sync.RWMutex
+	lockUnlockTo sync.RWMutex
+}
+
+// GetAsset calls GetAssetFunc.
+func (mock *LockableAssetMock) GetAsset() types.Coin {
+	if mock.GetAssetFunc == nil {
+		panic("LockableAssetMock.GetAssetFunc: method is nil but LockableAsset.GetAsset was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetAsset.Lock()
+	mock.calls.GetAsset = append(mock.calls.GetAsset, callInfo)
+	mock.lockGetAsset.Unlock()
+	return mock.GetAssetFunc()
+}
+
+// GetAssetCalls gets all the calls that were made to GetAsset.
+// Check the length with:
+//
+//	len(mockedLockableAsset.GetAssetCalls())
+func (mock *LockableAssetMock) GetAssetCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetAsset.RLock()
+	calls = mock.calls.GetAsset
+	mock.lockGetAsset.RUnlock()
+	return calls
+}
+
+// GetCoin calls GetCoinFunc.
+func (mock *LockableAssetMock) GetCoin(ctx types.Context) types.Coin {
+	if mock.GetCoinFunc == nil {
+		panic("LockableAssetMock.GetCoinFunc: method is nil but LockableAsset.GetCoin was just called")
+	}
+	callInfo := struct {
+		Ctx types.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetCoin.Lock()
+	mock.calls.GetCoin = append(mock.calls.GetCoin, callInfo)
+	mock.lockGetCoin.Unlock()
+	return mock.GetCoinFunc(ctx)
+}
+
+// GetCoinCalls gets all the calls that were made to GetCoin.
+// Check the length with:
+//
+//	len(mockedLockableAsset.GetCoinCalls())
+func (mock *LockableAssetMock) GetCoinCalls() []struct {
+	Ctx types.Context
+} {
+	var calls []struct {
+		Ctx types.Context
+	}
+	mock.lockGetCoin.RLock()
+	calls = mock.calls.GetCoin
+	mock.lockGetCoin.RUnlock()
+	return calls
+}
+
+// LockFrom calls LockFromFunc.
+func (mock *LockableAssetMock) LockFrom(ctx types.Context, fromAddr types.AccAddress) error {
+	if mock.LockFromFunc == nil {
+		panic("LockableAssetMock.LockFromFunc: method is nil but LockableAsset.LockFrom was just called")
+	}
+	callInfo := struct {
+		Ctx      types.Context
+		FromAddr types.AccAddress
+	}{
+		Ctx:      ctx,
+		FromAddr: fromAddr,
+	}
+	mock.lockLockFrom.Lock()
+	mock.calls.LockFrom = append(mock.calls.LockFrom, callInfo)
+	mock.lockLockFrom.Unlock()
+	return mock.LockFromFunc(ctx, fromAddr)
+}
+
+// LockFromCalls gets all the calls that were made to LockFrom.
+// Check the length with:
+//
+//	len(mockedLockableAsset.LockFromCalls())
+func (mock *LockableAssetMock) LockFromCalls() []struct {
+	Ctx      types.Context
+	FromAddr types.AccAddress
+} {
+	var calls []struct {
+		Ctx      types.Context
+		FromAddr types.AccAddress
+	}
+	mock.lockLockFrom.RLock()
+	calls = mock.calls.LockFrom
+	mock.lockLockFrom.RUnlock()
+	return calls
+}
+
+// UnlockTo calls UnlockToFunc.
+func (mock *LockableAssetMock) UnlockTo(ctx types.Context, toAddr types.AccAddress) error {
+	if mock.UnlockToFunc == nil {
+		panic("LockableAssetMock.UnlockToFunc: method is nil but LockableAsset.UnlockTo was just called")
+	}
+	callInfo := struct {
+		Ctx    types.Context
+		ToAddr types.AccAddress
+	}{
+		Ctx:    ctx,
+		ToAddr: toAddr,
+	}
+	mock.lockUnlockTo.Lock()
+	mock.calls.UnlockTo = append(mock.calls.UnlockTo, callInfo)
+	mock.lockUnlockTo.Unlock()
+	return mock.UnlockToFunc(ctx, toAddr)
+}
+
+// UnlockToCalls gets all the calls that were made to UnlockTo.
+// Check the length with:
+//
+//	len(mockedLockableAsset.UnlockToCalls())
+func (mock *LockableAssetMock) UnlockToCalls() []struct {
+	Ctx    types.Context
+	ToAddr types.AccAddress
+} {
+	var calls []struct {
+		Ctx    types.Context
+		ToAddr types.AccAddress
+	}
+	mock.lockUnlockTo.RLock()
+	calls = mock.calls.UnlockTo
+	mock.lockUnlockTo.RUnlock()
+	return calls
+}

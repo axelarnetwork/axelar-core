@@ -23,7 +23,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	axelartestutils "github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/math"
@@ -108,7 +107,7 @@ func TestEndBlocker(t *testing.T) {
 					return false
 				}
 
-				transfer := testutils.RandomIBCTransfer()
+				transfer := axelartestutils.RandomIBCTransfer()
 				bz, _ := transfer.Marshal()
 				if err := value.Unmarshal(bz); err != nil {
 					panic(err)

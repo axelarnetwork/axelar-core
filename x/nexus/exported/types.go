@@ -1,6 +1,7 @@
 package exported
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/address"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -17,7 +19,17 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . MaintainerState
+//go:generate moq -out ./mock/types.go -pkg mock . MaintainerState LockableAsset
+
+// LockableAsset defines a nexus registered asset that can be locked and unlocked
+type LockableAsset interface {
+	// GetAsset returns a sdk.Coin using the nexus registered asset as the denom
+	GetAsset() sdk.Coin
+	// GetCoin returns a sdk.Coin with the actual denom used by x/bank (e.g. ICS20 coins)
+	GetCoin(ctx sdk.Context) sdk.Coin
+	LockFrom(ctx sdk.Context, fromAddr sdk.AccAddress) error
+	UnlockTo(ctx sdk.Context, toAddr sdk.AccAddress) error
+}
 
 // AddressValidator defines a function that implements address verification upon a request to link addresses
 type AddressValidator func(ctx sdk.Context, address CrossChainAddress) error
@@ -425,6 +437,13 @@ type WasmQueryRequest struct {
 type WasmQueryTxHashAndNonceResponse struct {
 	TxHash [32]byte `json:"tx_hash,omitempty"` // the hash of the current transaction
 	Nonce  uint64   `json:"nonce,omitempty"`   // the nonce of the current execution, which increments with each entry of any wasm execution
+}
+
+// GetEscrowAddress creates an address for the given denomination
+func GetEscrowAddress(denom string) sdk.AccAddress {
+	hash := sha256.Sum256([]byte(denom))
+
+	return hash[:address.Len]
 }
 
 type IsChainRegisteredRequest struct {

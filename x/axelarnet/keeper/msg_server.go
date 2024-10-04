@@ -9,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -25,20 +24,18 @@ var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
 	Keeper
-	nexus   types.Nexus
-	bank    types.BankKeeper
-	account types.AccountKeeper
-	ibcK    IBCKeeper
+	nexus types.Nexus
+	bank  types.BankKeeper
+	ibcK  IBCKeeper
 }
 
 // NewMsgServerImpl returns an implementation of the axelarnet MsgServiceServer interface for the provided Keeper.
-func NewMsgServerImpl(k Keeper, n types.Nexus, b types.BankKeeper, a types.AccountKeeper, ibcK IBCKeeper) types.MsgServiceServer {
+func NewMsgServerImpl(k Keeper, n types.Nexus, b types.BankKeeper, ibcK IBCKeeper) types.MsgServiceServer {
 	return msgServer{
-		Keeper:  k,
-		nexus:   n,
-		bank:    b,
-		account: a,
-		ibcK:    ibcK,
+		Keeper: k,
+		nexus:  n,
+		bank:   b,
+		ibcK:   ibcK,
 	}
 }
 
@@ -82,7 +79,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	})
 
 	if req.Fee != nil {
-		token, err := NewCoin(ctx, s.ibcK, s.nexus, req.Fee.Amount)
+		lockableAsset, err := s.nexus.NewLockableAsset(ctx, s.ibcK, s.bank, req.Fee.Amount)
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "unrecognized fee denom")
 		}
@@ -96,7 +93,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 			MessageID: msgID,
 			Recipient: req.Fee.Recipient,
 			Fee:       req.Fee.Amount,
-			Asset:     token.GetDenom(),
+			Asset:     lockableAsset.GetAsset().Denom,
 		}
 		if req.Fee.RefundRecipient != nil {
 			feePaidEvent.RefundRecipient = req.Fee.RefundRecipient.String()
@@ -188,16 +185,16 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("recipient chain '%s' is not activated", recipient.Chain.Name)
 	}
 
-	normalizedCoin, err := NewCoin(ctx, s.ibcK, s.nexus, coin)
+	lockableAsset, err := s.nexus.NewLockableAsset(ctx, s.ibcK, s.bank, coin)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := normalizedCoin.Lock(s.bank, req.DepositAddress); err != nil {
+	if err := lockableAsset.LockFrom(ctx, req.DepositAddress); err != nil {
 		return nil, err
 	}
 
-	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, normalizedCoin.Coin)
+	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, lockableAsset.GetAsset())
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +260,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 			continue
 		}
 
-		if err = transfer(ctx, s.Keeper, s.nexus, s.bank, s.account, recipient, pendingTransfer.Asset); err != nil {
+		if err = transfer(ctx, s.Keeper, s.nexus, s.bank, s.ibcK, recipient, pendingTransfer.Asset); err != nil {
 			s.Logger(ctx).Error("failed to transfer asset to axelarnet", "err", err)
 			continue
 		}
@@ -282,7 +279,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 	// release transfer fees
 	if collector, ok := s.GetFeeCollector(ctx); ok {
 		for _, fee := range s.nexus.GetTransferFees(ctx) {
-			if err := transfer(ctx, s.Keeper, s.nexus, s.bank, s.account, collector, fee); err != nil {
+			if err := transfer(ctx, s.Keeper, s.nexus, s.bank, s.ibcK, collector, fee); err != nil {
 				s.Logger(ctx).Error("failed to collect fees", "err", err)
 				continue
 			}
@@ -406,13 +403,18 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 			return nil, err
 		}
 		for _, p := range pendingTransfers {
-			token, sender, err := prepareTransfer(ctx, s.Keeper, s.nexus, s.bank, s.account, p.Asset)
+			lockableAsset, err := s.nexus.NewLockableAsset(ctx, s.ibcK, s.bank, p.Asset)
 			if err != nil {
-				s.Logger(ctx).Error(fmt.Sprintf("failed to prepare transfer %s: %s", p.String(), err))
+				s.Logger(ctx).Error(fmt.Sprintf("failed to route IBC transfer %s: %s", p.String(), err))
 				continue
 			}
 
-			funcs.MustNoErr(s.EnqueueIBCTransfer(ctx, types.NewIBCTransfer(sender, p.Recipient.Address, token, portID, channelID, p.ID)))
+			if err := lockableAsset.UnlockTo(ctx, types.AxelarIBCAccount); err != nil {
+				s.Logger(ctx).Error(fmt.Sprintf("failed to route IBC transfer %s: %s", p.String(), err))
+				continue
+			}
+
+			funcs.MustNoErr(s.EnqueueIBCTransfer(ctx, types.NewIBCTransfer(types.AxelarIBCAccount, p.Recipient.Address, lockableAsset.GetCoin(ctx), portID, channelID, p.ID)))
 			s.nexus.ArchivePendingTransfer(ctx, p)
 		}
 	}
@@ -496,71 +498,17 @@ func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageReques
 	return &types.RouteMessageResponse{}, nil
 }
 
-// toICS20 converts a cross chain transfer to ICS20 token
-func toICS20(ctx sdk.Context, k Keeper, n types.Nexus, coin sdk.Coin) sdk.Coin {
-	// if chain or path not found, it will create coin with base denom
-	chain, _ := n.GetChainByNativeAsset(ctx, coin.GetDenom())
-	path, _ := k.GetIBCPath(ctx, chain.Name)
-
-	prefixedDenom := types.NewIBCPath(path, coin.Denom)
-	// construct the denomination trace from the full raw denomination
-	denomTrace := ibctransfertypes.ParseDenomTrace(prefixedDenom)
-	return sdk.NewCoin(denomTrace.IBCDenom(), coin.Amount)
-}
-
-// isFromExternalCosmosChain returns true if the asset origins from cosmos chains
-func isFromExternalCosmosChain(ctx sdk.Context, k Keeper, n types.Nexus, coin sdk.Coin) bool {
-	chain, ok := n.GetChainByNativeAsset(ctx, coin.GetDenom())
-	if !ok {
-		return false
-	}
-
-	if _, ok = k.GetCosmosChainByName(ctx, chain.Name); !ok {
-		return false
-	}
-
-	_, ok = k.GetIBCPath(ctx, chain.Name)
-	return ok
-}
-
-func transfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeeper, a types.AccountKeeper, recipient sdk.AccAddress, coin sdk.Coin) error {
-	coin, escrowAddress, err := prepareTransfer(ctx, k, n, b, a, coin)
+func transfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeeper, ibc types.IBCKeeper, recipient sdk.AccAddress, coin sdk.Coin) error {
+	lockableAsset, err := n.NewLockableAsset(ctx, ibc, b, coin)
 	if err != nil {
-		return fmt.Errorf("failed to prepare transfer %s: %s", coin, err)
+		return err
 	}
 
-	if err = b.SendCoins(
-		ctx, escrowAddress, recipient, sdk.NewCoins(coin),
-	); err != nil {
-		return fmt.Errorf("failed to send %s from %s to %s: %s", coin, escrowAddress, recipient, err)
+	if err := lockableAsset.UnlockTo(ctx, recipient); err != nil {
+		return err
 	}
-	k.Logger(ctx).Debug(fmt.Sprintf("successfully sent %s from %s to %s", coin, escrowAddress, recipient))
+
+	k.Logger(ctx).Debug(fmt.Sprintf("successfully sent %s to %s", coin, recipient))
 
 	return nil
-}
-
-func prepareTransfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeeper, a types.AccountKeeper, coin sdk.Coin) (sdk.Coin, sdk.AccAddress, error) {
-	var sender sdk.AccAddress
-	// pending transfer can be either of cosmos chains assets, Axelarnet native asset, assets from supported chain
-	switch {
-	// asset origins from cosmos chains, it will be converted to ICS20 token
-	case isFromExternalCosmosChain(ctx, k, n, coin):
-		coin = toICS20(ctx, k, n, coin)
-		sender = types.GetEscrowAddress(coin.GetDenom())
-	case isNativeAssetOnAxelarnet(ctx, n, coin.Denom):
-		sender = types.GetEscrowAddress(coin.Denom)
-	case n.IsAssetRegistered(ctx, exported.Axelarnet, coin.Denom):
-		if err := b.MintCoins(
-			ctx, types.ModuleName, sdk.NewCoins(coin),
-		); err != nil {
-			return sdk.Coin{}, nil, err
-		}
-
-		sender = a.GetModuleAddress(types.ModuleName)
-	default:
-		// should not reach here
-		panic(fmt.Sprintf("unrecognized %s token", coin.Denom))
-	}
-
-	return coin, sender, nil
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/stretchr/testify/assert"
 	"github.com/tendermint/tendermint/libs/log"
-	abci "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -58,7 +57,7 @@ func TestQuerier_PendingIBCTransferCount(t *testing.T) {
 			querier = keeper.NewGRPCQuerier(k, n)
 		}).
 		When("IBC transfer counts are queried", func() {
-			ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 			var err error
 			response, err = querier.PendingIBCTransferCount(sdk.WrapSDKContext(ctx), &types.PendingIBCTransferCountRequest{})
 			assert.NoError(t, err)

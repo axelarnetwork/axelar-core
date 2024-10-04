@@ -96,16 +96,15 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	logger  log.Logger
-	ibcK    keeper.IBCKeeper
-	keeper  keeper.Keeper
-	nexus   types.Nexus
-	bank    types.BankKeeper
-	account types.AccountKeeper
+	logger log.Logger
+	ibcK   keeper.IBCKeeper
+	keeper keeper.Keeper
+	nexus  types.Nexus
+	bank   types.BankKeeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(ibcK keeper.IBCKeeper, nexus types.Nexus, bank types.BankKeeper, account types.AccountKeeper, logger log.Logger) AppModule {
+func NewAppModule(ibcK keeper.IBCKeeper, nexus types.Nexus, bank types.BankKeeper, logger log.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		logger:         logger,
@@ -113,7 +112,6 @@ func NewAppModule(ibcK keeper.IBCKeeper, nexus types.Nexus, bank types.BankKeepe
 		keeper:         ibcK.Keeper,
 		nexus:          nexus,
 		bank:           bank,
-		account:        account,
 	}
 }
 
@@ -141,7 +139,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 
 // Route returns the module's route
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.account, am.ibcK))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.ibcK))
 }
 
 // QuerierRoute returns this module's query route
@@ -157,7 +155,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	msgServer := keeper.NewMsgServerImpl(am.keeper, am.nexus, am.bank, am.account, am.ibcK)
+	msgServer := keeper.NewMsgServerImpl(am.keeper, am.nexus, am.bank, am.ibcK)
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrAxelarnet, Logger: am.keeper.Logger}, msgServer)
 
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus))
@@ -344,6 +342,16 @@ func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channe
 	// check if the packet is Axelar routed cross chain transfer
 	transferID, ok := getSeqIDMapping(ctx, m.keeper, port, channel, sequence)
 	if ok {
+		lockableAsset, err := m.nexus.NewLockableAsset(ctx, m.ibcK, m.bank, funcs.MustOk(m.keeper.GetTransfer(ctx, transferID)).Token)
+		if err != nil {
+			return err
+		}
+
+		err = lockableAsset.LockFrom(ctx, types.AxelarIBCAccount)
+		if err != nil {
+			return err
+		}
+
 		events.Emit(ctx,
 			&types.IBCTransferFailed{
 				ID:        transferID,
@@ -360,12 +368,12 @@ func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channe
 	// check if the packet is Axelar routed general message
 	messageID, ok := getSeqMessageIDMapping(ctx, m.keeper, port, channel, sequence)
 	if ok {
-		coin, err := keeper.NewCoin(ctx, m.ibcK, m.nexus, extractTokenFromAckOrTimeoutPacket(packet))
+		lockableAsset, err := m.nexus.NewLockableAsset(ctx, m.ibcK, m.bank, extractTokenFromAckOrTimeoutPacket(packet))
 		if err != nil {
 			return err
 		}
 
-		err = coin.Lock(m.bank, types.AxelarGMPAccount)
+		err = lockableAsset.LockFrom(ctx, types.AxelarIBCAccount)
 		if err != nil {
 			return err
 		}

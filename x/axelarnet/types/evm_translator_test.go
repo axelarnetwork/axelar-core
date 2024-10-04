@@ -32,7 +32,6 @@ var (
 	addressType           = funcs.Must(abi.NewType("address", "address", nil))
 	stringType            = funcs.Must(abi.NewType("string", "string", nil))
 	bytesType             = funcs.Must(abi.NewType("bytes", "bytes", nil))
-	bytes32Type           = funcs.Must(abi.NewType("bytes32", "bytes32", nil))
 	uint8Type             = funcs.Must(abi.NewType("uint8", "uint8", nil))
 	uint64Type            = funcs.Must(abi.NewType("uint64", "uint64", nil))
 	uint64ArrayType       = funcs.Must(abi.NewType("uint64[]", "uint64[]", nil))
@@ -173,15 +172,15 @@ func TestConstructWasmMessageV1Large(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, boolTrue, actualBool)
 
-	arrayInterface, ok := executeMsg["string_array"].([]interface{})
+	arrayInterface, _ := executeMsg["string_array"].([]interface{})
 	actualStringArray := slices.Map(arrayInterface, func(t interface{}) string { return t.(string) })
 	assert.Equal(t, stringArray, actualStringArray)
 
-	arrayInterface, ok = executeMsg["uint64_array"].([]interface{})
+	arrayInterface, _ = executeMsg["uint64_array"].([]interface{})
 	uint64StrArray := slices.Map(arrayInterface, func(t interface{}) string { return t.(json.Number).String() })
 	assert.Equal(t, uint64Array, slices.Map(uint64StrArray, func(t string) uint64 { return funcs.Must(strconv.ParseUint(t, 10, 64)) }))
 
-	arrayInterface, ok = executeMsg["uint64_array_nested"].([]interface{})
+	arrayInterface, _ = executeMsg["uint64_array_nested"].([]interface{})
 	actualUint64NestedArray := slices.Map(arrayInterface, func(inner interface{}) []uint64 {
 		return slices.Map(inner.([]interface{}), func(t interface{}) uint64 {
 			return funcs.Must(strconv.ParseUint(t.(json.Number).String(), 10, 64))
@@ -189,7 +188,7 @@ func TestConstructWasmMessageV1Large(t *testing.T) {
 	})
 	assert.Equal(t, uint64NestedArray, actualUint64NestedArray)
 
-	arrayInterface, ok = executeMsg["string_array_nested"].([]interface{})
+	arrayInterface, _ = executeMsg["string_array_nested"].([]interface{})
 	actualStringNestedArray := slices.Map(arrayInterface, func(inner interface{}) []string {
 		return slices.Map(inner.([]interface{}), func(t interface{}) string {
 			return t.(string)
