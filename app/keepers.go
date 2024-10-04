@@ -446,7 +446,7 @@ func initBankKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepe
 		maps.Filter(moduleAccountAddrs(moduleAccPerms), func(addr string, _ bool) bool {
 			// we do not rely on internal balance tracking for invariance checks in the nexus module
 			// (https://github.com/cosmos/cosmos-sdk/issues/12825 for more details on the purpose of the blocked list),
-			// but the module address must be able to use ibc transfers,
+			// but the nexus module account must be able to send or receive coins to mint/burn them for cross-chain transfers,
 			// so we exclude this address from the blocked list
 			return addr != authtypes.NewModuleAddress(nexusTypes.ModuleName).String()
 		}),

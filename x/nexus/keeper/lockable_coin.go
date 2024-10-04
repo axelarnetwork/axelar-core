@@ -55,7 +55,7 @@ func newLockableAsset(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, b
 		bank:     bank,
 	}
 
-	originalCoin, err := c.getOriginalCoin(ctx)
+	originalCoin, err := c.getCoin(ctx)
 	if err != nil {
 		return lockableAsset{}, err
 	}
@@ -66,15 +66,15 @@ func newLockableAsset(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, b
 	return c, nil
 }
 
-// GetAsset returns the coin in nexus registered denomination
+// GetAsset returns a sdk.Coin using the nexus registered asset as the denom
 func (c lockableAsset) GetAsset() sdk.Coin {
 	return c.Coin
 }
 
-// GetCoin returns the original sdk coin
+// GetCoin returns a sdk.Coin with the actual denom used by x/bank (e.g. ICS20 coins)
 func (c lockableAsset) GetCoin(ctx sdk.Context) sdk.Coin {
 	// NOTE: must not fail since it's already checked in NewCoin
-	return funcs.Must(c.getOriginalCoin(ctx))
+	return funcs.Must(c.getCoin(ctx))
 }
 
 // LockFrom locks the given coin from the given address
@@ -105,7 +105,7 @@ func (c lockableAsset) UnlockTo(ctx sdk.Context, toAddr sdk.AccAddress) error {
 	}
 }
 
-func (c lockableAsset) getOriginalCoin(ctx sdk.Context) (sdk.Coin, error) {
+func (c lockableAsset) getCoin(ctx sdk.Context) (sdk.Coin, error) {
 	switch c.coinType {
 	case types.ICS20:
 		return c.toICS20(ctx)

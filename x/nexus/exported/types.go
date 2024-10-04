@@ -21,9 +21,11 @@ import (
 
 //go:generate moq -out ./mock/types.go -pkg mock . MaintainerState LockableAsset
 
-// LockableAsset defines a coin that can be locked and unlocked
+// LockableAsset defines a nexus registered asset that can be locked and unlocked
 type LockableAsset interface {
+	// GetAsset returns a sdk.Coin using the nexus registered asset as the denom
 	GetAsset() sdk.Coin
+	// GetCoin returns a sdk.Coin with the actual denom used by x/bank (e.g. ICS20 coins)
 	GetCoin(ctx sdk.Context) sdk.Coin
 	LockFrom(ctx sdk.Context, fromAddr sdk.AccAddress) error
 	UnlockTo(ctx sdk.Context, toAddr sdk.AccAddress) error

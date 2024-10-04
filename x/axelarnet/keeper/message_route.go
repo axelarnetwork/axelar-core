@@ -77,12 +77,12 @@ func escrowAssetToMessageSender(
 
 		return asset, bankK.SendCoins(ctx, sender, types.AxelarIBCAccount, sdk.NewCoins(asset))
 	case nexus.TypeGeneralMessageWithToken:
-		coin, err := nexusK.NewLockableAsset(ctx, ibcK, bankK, *msg.Asset)
+		lockableAsset, err := nexusK.NewLockableAsset(ctx, ibcK, bankK, *msg.Asset)
 		if err != nil {
 			return sdk.Coin{}, err
 		}
 
-		return coin.GetCoin(ctx), coin.UnlockTo(ctx, types.AxelarIBCAccount)
+		return lockableAsset.GetCoin(ctx), lockableAsset.UnlockTo(ctx, types.AxelarIBCAccount)
 	default:
 		return sdk.Coin{}, fmt.Errorf("unrecognized message type")
 	}
