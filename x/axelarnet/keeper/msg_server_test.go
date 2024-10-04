@@ -236,7 +236,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 					When("suceeded to create a lockable coin but lock fails", func() {
 						nexusK.NewLockableCoinFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
 							lockbleCoin := &nexusmock.LockableCoinMock{
-								LockFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
+								LockFromFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
 									return fmt.Errorf("failed to lock coin")
 								},
 							}
@@ -253,7 +253,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 					When("suceeded to create a lockable coin but lock succeeds", func() {
 						nexusK.NewLockableCoinFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
 							lockbleCoin := &nexusmock.LockableCoinMock{
-								LockFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
+								LockFromFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
 									return nil
 								},
 								GetCoinFunc: func() sdk.Coin {
@@ -314,7 +314,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 
 	unlocksCoinSucceeds := When("unlock coins succeeds", func() {
 		lockableCoin = &nexusmock.LockableCoinMock{
-			UnlockFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
+			UnlockToFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
 				return nil
 			},
 		}
@@ -348,7 +348,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 				whenHasPendingTransfers.
 					When("unlock coins fails", func() {
 						lockableCoin = &nexusmock.LockableCoinMock{
-							UnlockFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
+							UnlockToFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
 								return fmt.Errorf("failed to unlock coin")
 							},
 						}
@@ -372,7 +372,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 						assert.NoError(t, err)
 
 						assert.Len(t, nexusK.ArchivePendingTransferCalls(), 1)
-						assert.Len(t, lockableCoin.UnlockCalls(), 1)
+						assert.Len(t, lockableCoin.UnlockToCalls(), 1)
 					}),
 
 				When("has many pending transfers", func() {
@@ -390,7 +390,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 
 						assert.NoError(t, err)
 						assert.Len(t, nexusK.ArchivePendingTransferCalls(), transferLimit)
-						assert.Len(t, lockableCoin.UnlockCalls(), transferLimit)
+						assert.Len(t, lockableCoin.UnlockToCalls(), transferLimit)
 					}),
 			).Run(t)
 	})
@@ -495,7 +495,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 					When2(requestIsMade).
 					When("unlock coin succeeds", func() {
 						lockableCoin = &nexusmock.LockableCoinMock{
-							UnlockFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
+							UnlockToFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
 								return nil
 							},
 							GetOriginalCoinFunc: func(ctx sdk.Context) sdk.Coin {
@@ -512,7 +512,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 
 						assert.NoError(t, err)
 						assert.Len(t, nexusK.ArchivePendingTransferCalls(), transfersNum, fmt.Sprintf("expected %d got %d", transfersNum, len(nexusK.ArchivePendingTransferCalls())))
-						assert.Len(t, lockableCoin.UnlockCalls(), transfersNum)
+						assert.Len(t, lockableCoin.UnlockToCalls(), transfersNum)
 					}),
 			).Run(t)
 	})

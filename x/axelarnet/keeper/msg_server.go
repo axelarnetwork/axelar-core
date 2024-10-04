@@ -190,7 +190,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, err
 	}
 
-	if err := normalizedCoin.Lock(ctx, req.DepositAddress); err != nil {
+	if err := normalizedCoin.LockFrom(ctx, req.DepositAddress); err != nil {
 		return nil, err
 	}
 
@@ -409,7 +409,7 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 				continue
 			}
 
-			if err := coin.Unlock(ctx, types.AxelarIBCAccount); err != nil {
+			if err := coin.UnlockTo(ctx, types.AxelarIBCAccount); err != nil {
 				s.Logger(ctx).Error(fmt.Sprintf("failed to route IBC transfer %s: %s", p.String(), err))
 				continue
 			}
@@ -504,7 +504,7 @@ func transfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeeper, ibc 
 		return err
 	}
 
-	if err := c.Unlock(ctx, recipient); err != nil {
+	if err := c.UnlockTo(ctx, recipient); err != nil {
 		return err
 	}
 

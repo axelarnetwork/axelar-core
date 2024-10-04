@@ -131,7 +131,7 @@ func TestLockableCoin(t *testing.T) {
 			Run(t)
 	})
 
-	t.Run("Lock", func(t *testing.T) {
+	t.Run("LockFrom", func(t *testing.T) {
 		givenKeeper.
 			When2(whenCoinIsICS20).
 			Then("should lock the coin", func(t *testing.T) {
@@ -140,7 +140,7 @@ func TestLockableCoin(t *testing.T) {
 				lockableCoin := funcs.Must(newLockableCoin(ctx, nexus, ibc, bank, coin))
 				fromAddr := rand.AccAddr()
 
-				err := lockableCoin.Lock(ctx, fromAddr)
+				err := lockableCoin.LockFrom(ctx, fromAddr)
 
 				assert.NoError(t, err)
 				assert.Len(t, bank.SendCoinsCalls(), 1)
@@ -158,7 +158,7 @@ func TestLockableCoin(t *testing.T) {
 				lockableCoin := funcs.Must(newLockableCoin(ctx, nexus, ibc, bank, coin))
 				fromAddr := rand.AccAddr()
 
-				err := lockableCoin.Lock(ctx, fromAddr)
+				err := lockableCoin.LockFrom(ctx, fromAddr)
 
 				assert.NoError(t, err)
 				assert.Len(t, bank.SendCoinsCalls(), 1)
@@ -179,7 +179,7 @@ func TestLockableCoin(t *testing.T) {
 				lockableCoin := funcs.Must(newLockableCoin(ctx, nexus, ibc, bank, coin))
 				fromAddr := rand.AccAddr()
 
-				err := lockableCoin.Lock(ctx, fromAddr)
+				err := lockableCoin.LockFrom(ctx, fromAddr)
 
 				assert.NoError(t, err)
 				assert.Len(t, bank.SendCoinsFromAccountToModuleCalls(), 1)
@@ -193,7 +193,7 @@ func TestLockableCoin(t *testing.T) {
 			Run(t)
 	})
 
-	t.Run("Unlock", func(t *testing.T) {
+	t.Run("UnlockTo", func(t *testing.T) {
 		givenKeeper.
 			When2(whenCoinIsICS20).
 			Then("should unlock the coin", func(t *testing.T) {
@@ -202,7 +202,7 @@ func TestLockableCoin(t *testing.T) {
 				lockableCoin := funcs.Must(newLockableCoin(ctx, nexus, ibc, bank, coin))
 				toAddr := rand.AccAddr()
 
-				err := lockableCoin.Unlock(ctx, toAddr)
+				err := lockableCoin.UnlockTo(ctx, toAddr)
 
 				assert.NoError(t, err)
 				assert.Len(t, bank.SendCoinsCalls(), 1)
@@ -220,7 +220,7 @@ func TestLockableCoin(t *testing.T) {
 				lockableCoin := funcs.Must(newLockableCoin(ctx, nexus, ibc, bank, coin))
 				toAddr := rand.AccAddr()
 
-				err := lockableCoin.Unlock(ctx, toAddr)
+				err := lockableCoin.UnlockTo(ctx, toAddr)
 
 				assert.NoError(t, err)
 				assert.Len(t, bank.SendCoinsCalls(), 1)
@@ -241,7 +241,7 @@ func TestLockableCoin(t *testing.T) {
 				lockableCoin := funcs.Must(newLockableCoin(ctx, nexus, ibc, bank, coin))
 				toAddr := rand.AccAddr()
 
-				err := lockableCoin.Unlock(ctx, toAddr)
+				err := lockableCoin.UnlockTo(ctx, toAddr)
 
 				assert.NoError(t, err)
 				assert.Len(t, bank.MintCoinsCalls(), 1)

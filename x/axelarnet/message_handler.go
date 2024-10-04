@@ -292,7 +292,7 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		return err
 	}
 
-	if err = token.Lock(ctx, types.AxelarIBCAccount); err != nil {
+	if err = token.LockFrom(ctx, types.AxelarIBCAccount); err != nil {
 		return err
 	}
 
@@ -327,7 +327,7 @@ func handleTokenSent(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossCh
 	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	crossChainAddr := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 
-	if err := token.Lock(ctx, types.AxelarIBCAccount); err != nil {
+	if err := token.LockFrom(ctx, types.AxelarIBCAccount); err != nil {
 		return err
 	}
 

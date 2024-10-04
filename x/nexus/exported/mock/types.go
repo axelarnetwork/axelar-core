@@ -577,11 +577,11 @@ var _ exported.LockableCoin = &LockableCoinMock{}
 //			GetOriginalCoinFunc: func(ctx types.Context) types.Coin {
 //				panic("mock out the GetOriginalCoin method")
 //			},
-//			LockFunc: func(ctx types.Context, fromAddr types.AccAddress) error {
-//				panic("mock out the Lock method")
+//			LockFromFunc: func(ctx types.Context, fromAddr types.AccAddress) error {
+//				panic("mock out the LockFrom method")
 //			},
-//			UnlockFunc: func(ctx types.Context, toAddr types.AccAddress) error {
-//				panic("mock out the Unlock method")
+//			UnlockToFunc: func(ctx types.Context, toAddr types.AccAddress) error {
+//				panic("mock out the UnlockTo method")
 //			},
 //		}
 //
@@ -596,11 +596,11 @@ type LockableCoinMock struct {
 	// GetOriginalCoinFunc mocks the GetOriginalCoin method.
 	GetOriginalCoinFunc func(ctx types.Context) types.Coin
 
-	// LockFunc mocks the Lock method.
-	LockFunc func(ctx types.Context, fromAddr types.AccAddress) error
+	// LockFromFunc mocks the LockFrom method.
+	LockFromFunc func(ctx types.Context, fromAddr types.AccAddress) error
 
-	// UnlockFunc mocks the Unlock method.
-	UnlockFunc func(ctx types.Context, toAddr types.AccAddress) error
+	// UnlockToFunc mocks the UnlockTo method.
+	UnlockToFunc func(ctx types.Context, toAddr types.AccAddress) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -612,15 +612,15 @@ type LockableCoinMock struct {
 			// Ctx is the ctx argument value.
 			Ctx types.Context
 		}
-		// Lock holds details about calls to the Lock method.
-		Lock []struct {
+		// LockFrom holds details about calls to the LockFrom method.
+		LockFrom []struct {
 			// Ctx is the ctx argument value.
 			Ctx types.Context
 			// FromAddr is the fromAddr argument value.
 			FromAddr types.AccAddress
 		}
-		// Unlock holds details about calls to the Unlock method.
-		Unlock []struct {
+		// UnlockTo holds details about calls to the UnlockTo method.
+		UnlockTo []struct {
 			// Ctx is the ctx argument value.
 			Ctx types.Context
 			// ToAddr is the toAddr argument value.
@@ -629,8 +629,8 @@ type LockableCoinMock struct {
 	}
 	lockGetCoin         sync.RWMutex
 	lockGetOriginalCoin sync.RWMutex
-	lockLock            sync.RWMutex
-	lockUnlock          sync.RWMutex
+	lockLockFrom        sync.RWMutex
+	lockUnlockTo        sync.RWMutex
 }
 
 // GetCoin calls GetCoinFunc.
@@ -692,10 +692,10 @@ func (mock *LockableCoinMock) GetOriginalCoinCalls() []struct {
 	return calls
 }
 
-// Lock calls LockFunc.
-func (mock *LockableCoinMock) Lock(ctx types.Context, fromAddr types.AccAddress) error {
-	if mock.LockFunc == nil {
-		panic("LockableCoinMock.LockFunc: method is nil but LockableCoin.Lock was just called")
+// LockFrom calls LockFromFunc.
+func (mock *LockableCoinMock) LockFrom(ctx types.Context, fromAddr types.AccAddress) error {
+	if mock.LockFromFunc == nil {
+		panic("LockableCoinMock.LockFromFunc: method is nil but LockableCoin.LockFrom was just called")
 	}
 	callInfo := struct {
 		Ctx      types.Context
@@ -704,17 +704,17 @@ func (mock *LockableCoinMock) Lock(ctx types.Context, fromAddr types.AccAddress)
 		Ctx:      ctx,
 		FromAddr: fromAddr,
 	}
-	mock.lockLock.Lock()
-	mock.calls.Lock = append(mock.calls.Lock, callInfo)
-	mock.lockLock.Unlock()
-	return mock.LockFunc(ctx, fromAddr)
+	mock.lockLockFrom.Lock()
+	mock.calls.LockFrom = append(mock.calls.LockFrom, callInfo)
+	mock.lockLockFrom.Unlock()
+	return mock.LockFromFunc(ctx, fromAddr)
 }
 
-// LockCalls gets all the calls that were made to Lock.
+// LockFromCalls gets all the calls that were made to LockFrom.
 // Check the length with:
 //
-//	len(mockedLockableCoin.LockCalls())
-func (mock *LockableCoinMock) LockCalls() []struct {
+//	len(mockedLockableCoin.LockFromCalls())
+func (mock *LockableCoinMock) LockFromCalls() []struct {
 	Ctx      types.Context
 	FromAddr types.AccAddress
 } {
@@ -722,16 +722,16 @@ func (mock *LockableCoinMock) LockCalls() []struct {
 		Ctx      types.Context
 		FromAddr types.AccAddress
 	}
-	mock.lockLock.RLock()
-	calls = mock.calls.Lock
-	mock.lockLock.RUnlock()
+	mock.lockLockFrom.RLock()
+	calls = mock.calls.LockFrom
+	mock.lockLockFrom.RUnlock()
 	return calls
 }
 
-// Unlock calls UnlockFunc.
-func (mock *LockableCoinMock) Unlock(ctx types.Context, toAddr types.AccAddress) error {
-	if mock.UnlockFunc == nil {
-		panic("LockableCoinMock.UnlockFunc: method is nil but LockableCoin.Unlock was just called")
+// UnlockTo calls UnlockToFunc.
+func (mock *LockableCoinMock) UnlockTo(ctx types.Context, toAddr types.AccAddress) error {
+	if mock.UnlockToFunc == nil {
+		panic("LockableCoinMock.UnlockToFunc: method is nil but LockableCoin.UnlockTo was just called")
 	}
 	callInfo := struct {
 		Ctx    types.Context
@@ -740,17 +740,17 @@ func (mock *LockableCoinMock) Unlock(ctx types.Context, toAddr types.AccAddress)
 		Ctx:    ctx,
 		ToAddr: toAddr,
 	}
-	mock.lockUnlock.Lock()
-	mock.calls.Unlock = append(mock.calls.Unlock, callInfo)
-	mock.lockUnlock.Unlock()
-	return mock.UnlockFunc(ctx, toAddr)
+	mock.lockUnlockTo.Lock()
+	mock.calls.UnlockTo = append(mock.calls.UnlockTo, callInfo)
+	mock.lockUnlockTo.Unlock()
+	return mock.UnlockToFunc(ctx, toAddr)
 }
 
-// UnlockCalls gets all the calls that were made to Unlock.
+// UnlockToCalls gets all the calls that were made to UnlockTo.
 // Check the length with:
 //
-//	len(mockedLockableCoin.UnlockCalls())
-func (mock *LockableCoinMock) UnlockCalls() []struct {
+//	len(mockedLockableCoin.UnlockToCalls())
+func (mock *LockableCoinMock) UnlockToCalls() []struct {
 	Ctx    types.Context
 	ToAddr types.AccAddress
 } {
@@ -758,8 +758,8 @@ func (mock *LockableCoinMock) UnlockCalls() []struct {
 		Ctx    types.Context
 		ToAddr types.AccAddress
 	}
-	mock.lockUnlock.RLock()
-	calls = mock.calls.Unlock
-	mock.lockUnlock.RUnlock()
+	mock.lockUnlockTo.RLock()
+	calls = mock.calls.UnlockTo
+	mock.lockUnlockTo.RUnlock()
 	return calls
 }

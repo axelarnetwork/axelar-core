@@ -82,7 +82,7 @@ func escrowAssetToMessageSender(
 			return sdk.Coin{}, err
 		}
 
-		return coin.GetOriginalCoin(ctx), coin.Unlock(ctx, types.AxelarIBCAccount)
+		return coin.GetOriginalCoin(ctx), coin.UnlockTo(ctx, types.AxelarIBCAccount)
 	default:
 		return sdk.Coin{}, fmt.Errorf("unrecognized message type")
 	}

@@ -600,12 +600,12 @@ func TestHandleMessageWithToken(t *testing.T) {
 	lockCoin := func(success bool) func() {
 		if success {
 			return func() {
-				lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
+				lockableCoin.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
 			}
 		}
 
 		return func() {
-			lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
+			lockableCoin.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
 		}
 	}
 
@@ -835,12 +835,12 @@ func TestHandleSendToken(t *testing.T) {
 	lockCoin := func(success bool) func() {
 		if success {
 			return func() {
-				lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
+				lockableCoin.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
 			}
 		}
 
 		return func() {
-			lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
+			lockableCoin.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
 		}
 	}
 

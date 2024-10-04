@@ -169,12 +169,12 @@ func TestIBCModule(t *testing.T) {
 	lockCoin := func(success bool) func() {
 		if success {
 			return func() {
-				lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
+				lockableCoin.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
 			}
 		}
 
 		return func() {
-			lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
+			lockableCoin.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
 		}
 	}
 
@@ -196,7 +196,7 @@ func TestIBCModule(t *testing.T) {
 				Then("should set transfer to failed", func(t *testing.T) {
 					transfer := funcs.MustOk(k.GetTransfer(ctx, transfer.ID))
 					assert.Equal(t, types.TransferFailed, transfer.Status)
-					assert.Len(t, lockableCoin.LockCalls(), 1)
+					assert.Len(t, lockableCoin.LockFromCalls(), 1)
 				}),
 
 			whenPendingTransfersExist.
@@ -219,7 +219,7 @@ func TestIBCModule(t *testing.T) {
 				Then("should set transfer to failed", func(t *testing.T) {
 					transfer := funcs.MustOk(k.GetTransfer(ctx, transfer.ID))
 					assert.Equal(t, types.TransferFailed, transfer.Status)
-					assert.Len(t, lockableCoin.LockCalls(), 1)
+					assert.Len(t, lockableCoin.LockFromCalls(), 1)
 				}),
 
 			whenPendingTransfersExist.
@@ -235,7 +235,7 @@ func TestIBCModule(t *testing.T) {
 				When2(whenOnAck).
 				Then("should set message to failed", func(t *testing.T) {
 					assert.Equal(t, nexus.Failed, message.Status)
-					assert.Len(t, lockableCoin.LockCalls(), 1)
+					assert.Len(t, lockableCoin.LockFromCalls(), 1)
 				}),
 		).Run(t)
 }

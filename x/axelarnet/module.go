@@ -347,7 +347,7 @@ func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channe
 			return err
 		}
 
-		err = coin.Lock(ctx, types.AxelarIBCAccount)
+		err = coin.LockFrom(ctx, types.AxelarIBCAccount)
 		if err != nil {
 			return err
 		}
@@ -373,7 +373,7 @@ func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channe
 			return err
 		}
 
-		err = coin.Lock(ctx, types.AxelarIBCAccount)
+		err = coin.LockFrom(ctx, types.AxelarIBCAccount)
 		if err != nil {
 			return err
 		}

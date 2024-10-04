@@ -25,8 +25,8 @@ import (
 type LockableCoin interface {
 	GetCoin() sdk.Coin
 	GetOriginalCoin(ctx sdk.Context) sdk.Coin
-	Lock(ctx sdk.Context, fromAddr sdk.AccAddress) error
-	Unlock(ctx sdk.Context, toAddr sdk.AccAddress) error
+	LockFrom(ctx sdk.Context, fromAddr sdk.AccAddress) error
+	UnlockTo(ctx sdk.Context, toAddr sdk.AccAddress) error
 }
 
 // AddressValidator defines a function that implements address verification upon a request to link addresses

@@ -31,6 +31,7 @@ import (
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	snapshotkeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapshottypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
@@ -200,8 +201,8 @@ func prepareAnteHandler(ctx sdk.Context, sender sdk.AccAddress, encConfig params
 	bankKeeper := app.GetKeeper[bankkeeper.BaseKeeper](axelarApp.Keepers)
 	bankKeeper.SetParams(ctx, banktypes.DefaultParams())
 	balance := sdk.NewCoins(sdk.NewInt64Coin("stake", 1e10))
-	funcs.MustNoErr(bankKeeper.MintCoins(ctx, axelarnet.ModuleName, balance))
-	funcs.MustNoErr(bankKeeper.SendCoinsFromModuleToAccount(ctx, axelarnet.ModuleName, sender, balance))
+	funcs.MustNoErr(bankKeeper.MintCoins(ctx, nexustypes.ModuleName, balance))
+	funcs.MustNoErr(bankKeeper.SendCoinsFromModuleToAccount(ctx, nexustypes.ModuleName, sender, balance))
 
 	stakingKeeper := app.GetKeeper[stakingkeeper.Keeper](axelarApp.Keepers)
 	stakingKeeper.SetParams(ctx, stakingtypes.DefaultParams())

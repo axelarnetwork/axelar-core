@@ -29,7 +29,9 @@ type lockableCoin struct {
 
 // newLockableCoin creates a coin struct, assign a coin type and normalize the denom if it's a ICS20 token
 func newLockableCoin(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (lockableCoin, error) {
-	coinType, err := getCoinType(ctx, nexus, coin.GetDenom())
+	denom := coin.GetDenom()
+
+	coinType, err := getCoinType(ctx, nexus, denom)
 	if err != nil {
 		return lockableCoin{}, err
 	}
@@ -37,7 +39,7 @@ func newLockableCoin(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, ba
 	// If coin type is ICS20, we need to normalize it to convert from 'ibc/{hash}'
 	// to native asset denom so that nexus could recognize it
 	if coinType == types.ICS20 {
-		denomTrace, err := ibc.ParseIBCDenom(ctx, coin.GetDenom())
+		denomTrace, err := ibc.ParseIBCDenom(ctx, denom)
 		if err != nil {
 			return lockableCoin{}, err
 		}
@@ -52,8 +54,13 @@ func newLockableCoin(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, ba
 		ibc:      ibc,
 		bank:     bank,
 	}
-	if _, err := c.getOriginalCoin(ctx); err != nil {
+
+	originalCoin, err := c.getOriginalCoin(ctx)
+	if err != nil {
 		return lockableCoin{}, err
+	}
+	if originalCoin.GetDenom() != denom {
+		return lockableCoin{}, fmt.Errorf("denom mismatch, expected %s, got %s", denom, originalCoin.GetDenom())
 	}
 
 	return c, nil
@@ -69,8 +76,8 @@ func (c lockableCoin) GetOriginalCoin(ctx sdk.Context) sdk.Coin {
 	return funcs.Must(c.getOriginalCoin(ctx))
 }
 
-// Lock locks the given coin from the given address
-func (c lockableCoin) Lock(ctx sdk.Context, fromAddr sdk.AccAddress) error {
+// LockFrom locks the given coin from the given address
+func (c lockableCoin) LockFrom(ctx sdk.Context, fromAddr sdk.AccAddress) error {
 	coin := c.GetOriginalCoin(ctx)
 
 	switch c.coinType {
@@ -83,8 +90,8 @@ func (c lockableCoin) Lock(ctx sdk.Context, fromAddr sdk.AccAddress) error {
 	}
 }
 
-// Unlock unlocks the given coin to the given address
-func (c lockableCoin) Unlock(ctx sdk.Context, toAddr sdk.AccAddress) error {
+// UnlockTo unlocks the given coin to the given address
+func (c lockableCoin) UnlockTo(ctx sdk.Context, toAddr sdk.AccAddress) error {
 	coin := c.GetOriginalCoin(ctx)
 
 	switch c.coinType {

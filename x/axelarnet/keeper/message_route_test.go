@@ -205,7 +205,7 @@ func TestNewMessageRoute(t *testing.T) {
 			nexusK.NewLockableCoinFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
 				lockableCoin = &nexusmock.LockableCoinMock{
 					GetOriginalCoinFunc: func(ctx sdk.Context) sdk.Coin { return coin },
-					UnlockFunc:          func(ctx sdk.Context, toAddr sdk.AccAddress) error { return nil },
+					UnlockToFunc:        func(ctx sdk.Context, toAddr sdk.AccAddress) error { return nil },
 				}
 
 				return lockableCoin, nil
@@ -217,8 +217,8 @@ func TestNewMessageRoute(t *testing.T) {
 
 			assert.NoError(t, route(ctx, routingCtx, msg))
 
-			assert.Len(t, lockableCoin.UnlockCalls(), 1)
-			assert.Equal(t, types.AxelarIBCAccount, lockableCoin.UnlockCalls()[0].ToAddr)
+			assert.Len(t, lockableCoin.UnlockToCalls(), 1)
+			assert.Equal(t, types.AxelarIBCAccount, lockableCoin.UnlockToCalls()[0].ToAddr)
 
 			assert.Len(t, ibcK.SendMessageCalls(), 1)
 			assert.Equal(t, msg.Recipient, ibcK.SendMessageCalls()[0].Recipient)
