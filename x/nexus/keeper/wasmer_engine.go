@@ -22,7 +22,7 @@ func NewWasmerEngine(inner wasmtypes.WasmerEngine, msgIDGenerator types.MsgIDGen
 }
 
 func getCtx(querier wasmvm.Querier) sdk.Context {
-	return querier.(wasmkeeper.QueryHandler).Ctx
+	return querier.(*wasmkeeper.QueryHandler).Ctx
 }
 
 // Instantiate calls the inner engine and increments the transaction ID
