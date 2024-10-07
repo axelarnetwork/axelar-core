@@ -120,7 +120,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrNexus, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.axelarnet))
 
-	err := cfg.RegisterMigration(types.ModuleName, 7, keeper.Migrate7to8(am.keeper, am.bank, am.account))
+	err := cfg.RegisterMigration(types.ModuleName, 6, keeper.Migrate6to7(am.keeper))
 	if err != nil {
 		panic(err)
 	}
@@ -171,4 +171,4 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 8 }
+func (AppModule) ConsensusVersion() uint64 { return 7 }
