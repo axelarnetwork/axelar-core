@@ -399,6 +399,10 @@ func (m WasmMessage) ValidateBasic() error {
 		return fmt.Errorf("invalid wasm message source tx id")
 	}
 
+	if m.Asset != nil {
+		return m.Asset.Validate()
+	}
+
 	return nil
 }
 
