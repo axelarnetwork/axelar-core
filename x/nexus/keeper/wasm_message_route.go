@@ -31,7 +31,7 @@ func NewMessageRoute(nexus types.Nexus, ibc types.IBCKeeper, bank types.BankKeep
 			return err
 		}
 
-		coins, err := unlockAssetIfAny(ctx, nexus, ibc, bank, account, wasmMsg)
+		coins, err := unlockCoinIfAny(ctx, nexus, ibc, bank, account, wasmMsg)
 		if err != nil {
 			return err
 		}
@@ -53,7 +53,7 @@ func NewMessageRoute(nexus types.Nexus, ibc types.IBCKeeper, bank types.BankKeep
 	}
 }
 
-func unlockAssetIfAny(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, bank types.BankKeeper, account types.AccountKeeper, msg exported.WasmMessage) (sdk.Coins, error) {
+func unlockCoinIfAny(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, bank types.BankKeeper, account types.AccountKeeper, msg exported.WasmMessage) (sdk.Coins, error) {
 	if msg.Asset == nil {
 		return sdk.NewCoins(), nil
 	}
