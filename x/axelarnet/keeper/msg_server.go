@@ -79,7 +79,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	})
 
 	if req.Fee != nil {
-		normalizedCoin, err := s.nexus.NewLockableCoin(ctx, s.ibcK, s.bank, req.Fee.Amount)
+		lockableAsset, err := s.nexus.NewLockableAsset(ctx, s.ibcK, s.bank, req.Fee.Amount)
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "unrecognized fee denom")
 		}
@@ -93,7 +93,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 			MessageID: msgID,
 			Recipient: req.Fee.Recipient,
 			Fee:       req.Fee.Amount,
-			Asset:     normalizedCoin.GetCoin().Denom,
+			Asset:     lockableAsset.GetAsset().Denom,
 		}
 		if req.Fee.RefundRecipient != nil {
 			feePaidEvent.RefundRecipient = req.Fee.RefundRecipient.String()
@@ -185,16 +185,16 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("recipient chain '%s' is not activated", recipient.Chain.Name)
 	}
 
-	normalizedCoin, err := s.nexus.NewLockableCoin(ctx, s.ibcK, s.bank, coin)
+	lockableAsset, err := s.nexus.NewLockableAsset(ctx, s.ibcK, s.bank, coin)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := normalizedCoin.Lock(ctx, req.DepositAddress); err != nil {
+	if err := lockableAsset.LockFrom(ctx, req.DepositAddress); err != nil {
 		return nil, err
 	}
 
-	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, normalizedCoin.GetCoin())
+	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, lockableAsset.GetAsset())
 	if err != nil {
 		return nil, err
 	}
@@ -403,18 +403,18 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 			return nil, err
 		}
 		for _, p := range pendingTransfers {
-			coin, err := s.nexus.NewLockableCoin(ctx, s.ibcK, s.bank, p.Asset)
+			lockableAsset, err := s.nexus.NewLockableAsset(ctx, s.ibcK, s.bank, p.Asset)
 			if err != nil {
 				s.Logger(ctx).Error(fmt.Sprintf("failed to route IBC transfer %s: %s", p.String(), err))
 				continue
 			}
 
-			if err := coin.Unlock(ctx, types.AxelarIBCAccount); err != nil {
+			if err := lockableAsset.UnlockTo(ctx, types.AxelarIBCAccount); err != nil {
 				s.Logger(ctx).Error(fmt.Sprintf("failed to route IBC transfer %s: %s", p.String(), err))
 				continue
 			}
 
-			funcs.MustNoErr(s.EnqueueIBCTransfer(ctx, types.NewIBCTransfer(types.AxelarIBCAccount, p.Recipient.Address, coin.GetOriginalCoin(ctx), portID, channelID, p.ID)))
+			funcs.MustNoErr(s.EnqueueIBCTransfer(ctx, types.NewIBCTransfer(types.AxelarIBCAccount, p.Recipient.Address, lockableAsset.GetCoin(ctx), portID, channelID, p.ID)))
 			s.nexus.ArchivePendingTransfer(ctx, p)
 		}
 	}
@@ -499,12 +499,12 @@ func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageReques
 }
 
 func transfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeeper, ibc types.IBCKeeper, recipient sdk.AccAddress, coin sdk.Coin) error {
-	c, err := n.NewLockableCoin(ctx, ibc, b, coin)
+	lockableAsset, err := n.NewLockableAsset(ctx, ibc, b, coin)
 	if err != nil {
 		return err
 	}
 
-	if err := c.Unlock(ctx, recipient); err != nil {
+	if err := lockableAsset.UnlockTo(ctx, recipient); err != nil {
 		return err
 	}
 

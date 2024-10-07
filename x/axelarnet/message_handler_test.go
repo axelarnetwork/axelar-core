@@ -38,15 +38,15 @@ import (
 
 func TestHandleMessage(t *testing.T) {
 	var (
-		ctx          sdk.Context
-		k            keeper.Keeper
-		packet       ibcchanneltypes.Packet
-		b            *mock.BankKeeperMock
-		n            *mock.NexusMock
-		channelK     *mock.ChannelKeeperMock
-		ibcK         keeper.IBCKeeper
-		r            axelarnet.RateLimiter
-		lockableCoin *nexusmock.LockableCoinMock
+		ctx           sdk.Context
+		k             keeper.Keeper
+		packet        ibcchanneltypes.Packet
+		b             *mock.BankKeeperMock
+		n             *mock.NexusMock
+		channelK      *mock.ChannelKeeperMock
+		ibcK          keeper.IBCKeeper
+		r             axelarnet.RateLimiter
+		lockableAsset *nexusmock.LockableAssetMock
 
 		ics20Packet ibctransfertypes.FungibleTokenPacketData
 		message     axelarnet.Message
@@ -77,13 +77,13 @@ func TestHandleMessage(t *testing.T) {
 		}))
 		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
 		n = &mock.NexusMock{
-			NewLockableCoinFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
-				lockableCoin = &nexusmock.LockableCoinMock{
-					GetCoinFunc:         func() sdk.Coin { return coin },
-					GetOriginalCoinFunc: func(_ sdk.Context) sdk.Coin { return coin },
+			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+				lockableAsset = &nexusmock.LockableAssetMock{
+					GetAssetFunc: func() sdk.Coin { return coin },
+					GetCoinFunc:  func(_ sdk.Context) sdk.Coin { return coin },
 				}
 
-				return lockableCoin, nil
+				return lockableAsset, nil
 			},
 			SetNewMessageFunc: func(ctx sdk.Context, msg nexus.GeneralMessage) error {
 				genMsg = msg
@@ -434,15 +434,15 @@ func TestHandleMessage(t *testing.T) {
 
 func TestHandleMessageWithToken(t *testing.T) {
 	var (
-		ctx          sdk.Context
-		k            keeper.Keeper
-		packet       ibcchanneltypes.Packet
-		b            *mock.BankKeeperMock
-		n            *mock.NexusMock
-		channelK     *mock.ChannelKeeperMock
-		ibcK         keeper.IBCKeeper
-		r            axelarnet.RateLimiter
-		lockableCoin *nexusmock.LockableCoinMock
+		ctx           sdk.Context
+		k             keeper.Keeper
+		packet        ibcchanneltypes.Packet
+		b             *mock.BankKeeperMock
+		n             *mock.NexusMock
+		channelK      *mock.ChannelKeeperMock
+		ibcK          keeper.IBCKeeper
+		r             axelarnet.RateLimiter
+		lockableAsset *nexusmock.LockableAssetMock
 
 		denom       string
 		amount      string
@@ -491,13 +491,13 @@ func TestHandleMessageWithToken(t *testing.T) {
 		}))
 
 		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
-		lockableCoin = &nexusmock.LockableCoinMock{
-			GetCoinFunc:         func() sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
-			GetOriginalCoinFunc: func(_ sdk.Context) sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
+		lockableAsset = &nexusmock.LockableAssetMock{
+			GetAssetFunc: func() sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
+			GetCoinFunc:  func(_ sdk.Context) sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
 		}
 		n = &mock.NexusMock{
-			NewLockableCoinFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
-				return lockableCoin, nil
+			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+				return lockableAsset, nil
 			},
 			SetNewMessageFunc: func(ctx sdk.Context, msg nexus.GeneralMessage) error {
 				genMsg = msg
@@ -600,12 +600,12 @@ func TestHandleMessageWithToken(t *testing.T) {
 	lockCoin := func(success bool) func() {
 		if success {
 			return func() {
-				lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
+				lockableAsset.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
 			}
 		}
 
 		return func() {
-			lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
+			lockableAsset.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
 		}
 	}
 
@@ -677,24 +677,24 @@ func TestHandleMessageWithToken(t *testing.T) {
 		Then("should return ack success", func(t *testing.T) {
 			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
 			assert.Equal(t, genMsg.Status, nexus.Approved)
-			assert.Len(t, n.NewLockableCoinCalls(), 2)
-			assert.Equal(t, n.NewLockableCoinCalls()[0].Coin.Amount, funcs.MustOk(sdk.NewIntFromString(amount)))
-			assert.Equal(t, n.NewLockableCoinCalls()[1].Coin.Amount, sdk.OneInt())
+			assert.Len(t, n.NewLockableAssetCalls(), 2)
+			assert.Equal(t, n.NewLockableAssetCalls()[0].Coin.Amount, funcs.MustOk(sdk.NewIntFromString(amount)))
+			assert.Equal(t, n.NewLockableAssetCalls()[1].Coin.Amount, sdk.OneInt())
 		}).
 		Run(t)
 }
 
 func TestHandleSendToken(t *testing.T) {
 	var (
-		ctx          sdk.Context
-		k            keeper.Keeper
-		packet       ibcchanneltypes.Packet
-		b            *mock.BankKeeperMock
-		n            *mock.NexusMock
-		channelK     *mock.ChannelKeeperMock
-		ibcK         keeper.IBCKeeper
-		r            axelarnet.RateLimiter
-		lockableCoin *nexusmock.LockableCoinMock
+		ctx           sdk.Context
+		k             keeper.Keeper
+		packet        ibcchanneltypes.Packet
+		b             *mock.BankKeeperMock
+		n             *mock.NexusMock
+		channelK      *mock.ChannelKeeperMock
+		ibcK          keeper.IBCKeeper
+		r             axelarnet.RateLimiter
+		lockableAsset *nexusmock.LockableAssetMock
 
 		denom       string
 		amount      string
@@ -739,13 +739,13 @@ func TestHandleSendToken(t *testing.T) {
 		}))
 
 		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
-		lockableCoin = &nexusmock.LockableCoinMock{
-			GetCoinFunc:         func() sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
-			GetOriginalCoinFunc: func(_ sdk.Context) sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
+		lockableAsset = &nexusmock.LockableAssetMock{
+			GetAssetFunc: func() sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
+			GetCoinFunc:  func(_ sdk.Context) sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
 		}
 		n = &mock.NexusMock{
-			NewLockableCoinFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
-				return lockableCoin, nil
+			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+				return lockableAsset, nil
 			},
 			SetNewMessageFunc: func(sdk.Context, nexus.GeneralMessage) error { return nil },
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -835,12 +835,12 @@ func TestHandleSendToken(t *testing.T) {
 	lockCoin := func(success bool) func() {
 		if success {
 			return func() {
-				lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
+				lockableAsset.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
 			}
 		}
 
 		return func() {
-			lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
+			lockableAsset.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
 		}
 	}
 
@@ -882,15 +882,15 @@ func TestHandleSendToken(t *testing.T) {
 
 func TestTokenAndDestChainNotFound(t *testing.T) {
 	var (
-		ctx          sdk.Context
-		k            keeper.Keeper
-		packet       ibcchanneltypes.Packet
-		b            *mock.BankKeeperMock
-		n            *mock.NexusMock
-		channelK     *mock.ChannelKeeperMock
-		ibcK         keeper.IBCKeeper
-		r            axelarnet.RateLimiter
-		lockableCoin *nexusmock.LockableCoinMock
+		ctx           sdk.Context
+		k             keeper.Keeper
+		packet        ibcchanneltypes.Packet
+		b             *mock.BankKeeperMock
+		n             *mock.NexusMock
+		channelK      *mock.ChannelKeeperMock
+		ibcK          keeper.IBCKeeper
+		r             axelarnet.RateLimiter
+		lockableAsset *nexusmock.LockableAssetMock
 
 		ics20Packet  ibctransfertypes.FungibleTokenPacketData
 		gmpWithToken axelarnet.Message
@@ -927,10 +927,10 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 			AddrPrefix: "cosmos",
 		}))
 		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
-		lockableCoin = &nexusmock.LockableCoinMock{}
+		lockableAsset = &nexusmock.LockableAssetMock{}
 		n = &mock.NexusMock{
-			NewLockableCoinFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
-				return lockableCoin, nil
+			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+				return lockableAsset, nil
 			},
 			SetNewMessageFunc: func(ctx sdk.Context, msg nexus.GeneralMessage) error {
 				return nil

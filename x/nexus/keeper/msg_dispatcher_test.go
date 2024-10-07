@@ -143,10 +143,10 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 				Then("should lock the coin and set new message", func(t *testing.T) {
 					moduleAccount := rand.AccAddr()
 					account.GetModuleAddressFunc = func(_ string) sdk.AccAddress { return moduleAccount }
-					lockableCoin := &exportedmock.LockableCoinMock{}
-					lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
-					nexus.NewLockableCoinFunc = func(ctx sdk.Context, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (exported.LockableCoin, error) {
-						return lockableCoin, nil
+					lockableAsset := &exportedmock.LockableAssetMock{}
+					lockableAsset.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
+					nexus.NewLockableAssetFunc = func(ctx sdk.Context, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (exported.LockableAsset, error) {
+						return lockableAsset, nil
 					}
 					nexus.SetNewMessageFunc = func(_ sdk.Context, msg exported.GeneralMessage) error {
 						return msg.ValidateBasic()
@@ -156,8 +156,8 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 
 					assert.NoError(t, err)
-					assert.Len(t, lockableCoin.LockCalls(), 1)
-					assert.Equal(t, lockableCoin.LockCalls()[0].FromAddr, moduleAccount)
+					assert.Len(t, lockableAsset.LockFromCalls(), 1)
+					assert.Equal(t, lockableAsset.LockFromCalls()[0].FromAddr, moduleAccount)
 					assert.Len(t, nexus.SetNewMessageCalls(), 1)
 					assert.Len(t, nexus.RouteMessageCalls(), 1)
 					assert.NotNil(t, nexus.SetNewMessageCalls()[0].Msg.Asset)

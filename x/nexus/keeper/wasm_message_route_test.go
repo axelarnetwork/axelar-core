@@ -81,11 +81,11 @@ func TestNewMessageRoute(t *testing.T) {
 					moduleAddr := rand.AccAddr()
 					accountK.GetModuleAddressFunc = func(_ string) sdk.AccAddress { return moduleAddr }
 
-					lockableCoin := &exportedmock.LockableCoinMock{}
-					nexusK.NewLockableCoinFunc = func(ctx sdk.Context, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (exported.LockableCoin, error) {
-						return lockableCoin, nil
+					lockableAsset := &exportedmock.LockableAssetMock{}
+					nexusK.NewLockableAssetFunc = func(ctx sdk.Context, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (exported.LockableAsset, error) {
+						return lockableAsset, nil
 					}
-					lockableCoin.UnlockFunc = func(ctx sdk.Context, toAddr sdk.AccAddress) error { return nil }
+					lockableAsset.UnlockToFunc = func(ctx sdk.Context, toAddr sdk.AccAddress) error { return nil }
 
 					wasmK.ExecuteFunc = func(_ sdk.Context, _, _ sdk.AccAddress, _ []byte, _ sdk.Coins) ([]byte, error) {
 						return nil, nil
@@ -93,8 +93,8 @@ func TestNewMessageRoute(t *testing.T) {
 
 					assert.NoError(t, route(ctx, exported.RoutingContext{}, msg))
 
-					assert.Len(t, lockableCoin.UnlockCalls(), 1)
-					assert.Equal(t, moduleAddr, lockableCoin.UnlockCalls()[0].ToAddr)
+					assert.Len(t, lockableAsset.UnlockToCalls(), 1)
+					assert.Equal(t, moduleAddr, lockableAsset.UnlockToCalls()[0].ToAddr)
 
 					assert.Len(t, wasmK.ExecuteCalls(), 1)
 					assert.Equal(t, gateway, wasmK.ExecuteCalls()[0].ContractAddress)

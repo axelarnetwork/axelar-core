@@ -36,12 +36,12 @@ import (
 
 func TestIBCModule(t *testing.T) {
 	var (
-		ctx          sdk.Context
-		ibcModule    axelarnet.AxelarnetIBCModule
-		k            keeper.Keeper
-		n            *mock.NexusMock
-		bankK        *mock.BankKeeperMock
-		lockableCoin *nexusmock.LockableCoinMock
+		ctx           sdk.Context
+		ibcModule     axelarnet.AxelarnetIBCModule
+		k             keeper.Keeper
+		n             *mock.NexusMock
+		bankK         *mock.BankKeeperMock
+		lockableAsset *nexusmock.LockableAssetMock
 
 		ack       channeltypes.Acknowledgement
 		transfer  types.IBCTransfer
@@ -89,10 +89,10 @@ func TestIBCModule(t *testing.T) {
 		transferSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey(ibctransfertypes.StoreKey), sdk.NewKVStoreKey("tTrasferKey"), ibctransfertypes.ModuleName)
 
 		transferK := ibctransferkeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK)
-		lockableCoin = &nexusmock.LockableCoinMock{}
+		lockableAsset = &nexusmock.LockableAssetMock{}
 		n = &mock.NexusMock{
-			NewLockableCoinFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableCoin, error) {
-				return lockableCoin, nil
+			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+				return lockableAsset, nil
 			},
 		}
 		ibcModule = axelarnet.NewAxelarnetIBCModule(ibcTransfer.NewIBCModule(transferK), ibcK, axelarnet.NewRateLimiter(&k, n), n, bankK)
@@ -169,12 +169,12 @@ func TestIBCModule(t *testing.T) {
 	lockCoin := func(success bool) func() {
 		if success {
 			return func() {
-				lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
+				lockableAsset.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
 			}
 		}
 
 		return func() {
-			lockableCoin.LockFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
+			lockableAsset.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
 		}
 	}
 
@@ -196,7 +196,7 @@ func TestIBCModule(t *testing.T) {
 				Then("should set transfer to failed", func(t *testing.T) {
 					transfer := funcs.MustOk(k.GetTransfer(ctx, transfer.ID))
 					assert.Equal(t, types.TransferFailed, transfer.Status)
-					assert.Len(t, lockableCoin.LockCalls(), 1)
+					assert.Len(t, lockableAsset.LockFromCalls(), 1)
 				}),
 
 			whenPendingTransfersExist.
@@ -219,7 +219,7 @@ func TestIBCModule(t *testing.T) {
 				Then("should set transfer to failed", func(t *testing.T) {
 					transfer := funcs.MustOk(k.GetTransfer(ctx, transfer.ID))
 					assert.Equal(t, types.TransferFailed, transfer.Status)
-					assert.Len(t, lockableCoin.LockCalls(), 1)
+					assert.Len(t, lockableAsset.LockFromCalls(), 1)
 				}),
 
 			whenPendingTransfersExist.
@@ -235,7 +235,7 @@ func TestIBCModule(t *testing.T) {
 				When2(whenOnAck).
 				Then("should set message to failed", func(t *testing.T) {
 					assert.Equal(t, nexus.Failed, message.Status)
-					assert.Len(t, lockableCoin.LockCalls(), 1)
+					assert.Len(t, lockableAsset.LockFromCalls(), 1)
 				}),
 		).Run(t)
 }

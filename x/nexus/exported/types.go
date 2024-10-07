@@ -19,14 +19,16 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-//go:generate moq -out ./mock/types.go -pkg mock . MaintainerState LockableCoin
+//go:generate moq -out ./mock/types.go -pkg mock . MaintainerState LockableAsset
 
-// LockableCoin defines a coin that can be locked and unlocked
-type LockableCoin interface {
-	GetCoin() sdk.Coin
-	GetOriginalCoin(ctx sdk.Context) sdk.Coin
-	Lock(ctx sdk.Context, fromAddr sdk.AccAddress) error
-	Unlock(ctx sdk.Context, toAddr sdk.AccAddress) error
+// LockableAsset defines a nexus registered asset that can be locked and unlocked
+type LockableAsset interface {
+	// GetAsset returns a sdk.Coin using the nexus registered asset as the denom
+	GetAsset() sdk.Coin
+	// GetCoin returns a sdk.Coin with the actual denom used by x/bank (e.g. ICS20 coins)
+	GetCoin(ctx sdk.Context) sdk.Coin
+	LockFrom(ctx sdk.Context, fromAddr sdk.AccAddress) error
+	UnlockTo(ctx sdk.Context, toAddr sdk.AccAddress) error
 }
 
 // AddressValidator defines a function that implements address verification upon a request to link addresses

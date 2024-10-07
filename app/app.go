@@ -719,7 +719,7 @@ func InitModuleAccountPermissions() map[string][]string {
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		govtypes.ModuleName:            {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
-		axelarnetTypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
+		axelarnetTypes.ModuleName:      nil,
 		rewardTypes.ModuleName:         {authtypes.Minter},
 		wasm.ModuleName:                {authtypes.Burner},
 		nexusTypes.ModuleName:          {authtypes.Minter, authtypes.Burner},

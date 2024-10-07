@@ -109,12 +109,12 @@ func (m Messenger) lockCoinIfAny(ctx sdk.Context, msg exported.WasmMessage) erro
 		return fmt.Errorf("asset %s is not registered on chain %s", msg.Asset.Denom, destinationChain.Name)
 	}
 
-	lockableCoin, err := m.NewLockableCoin(ctx, m.ibc, m.bank, *msg.Asset)
+	lockableAsset, err := m.NewLockableAsset(ctx, m.ibc, m.bank, *msg.Asset)
 	if err != nil {
 		return err
 	}
 
-	return lockableCoin.Lock(ctx, m.account.GetModuleAddress(types.ModuleName))
+	return lockableAsset.LockFrom(ctx, m.account.GetModuleAddress(types.ModuleName))
 }
 
 // EncodeRoutingMessage encodes the message from the wasm contract into a sdk.Msg
