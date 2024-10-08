@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: Github branch to checkout for build
+        description: Github branch or tag to checkout for compilation
         required: true
         default: main
         type: string
@@ -21,15 +21,15 @@ jobs:
             packages: write
             id-token: write
         steps:
-            - name: Determine branch
-              id: get-branch-name
+            - name: Determine checkout ref
+              id: get-checkout-ref
               run: |
                 if [ "${{ github.event_name }}" == "push" ]; then
-                  branch="main"
+                  ref="main"
                 else
-                  branch="${{ inputs.branch }}"
+                  ref="${{ inputs.branch }}"
                 fi
-                echo "branch=$branch" >> $GITHUB_OUTPUT
+                echo "ref=$ref" >> $GITHUB_OUTPUT
 
             - name: Checkout code
               uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
                 fetch-depth: "0"
                 path: axelar-core
                 submodules: recursive
-                ref: ${{ steps.get-branch-name.outputs.branch }}
+                ref: ${{ steps.get-checkout-ref.outputs.ref }}
 
             - name: Build axelard binary with version and commit hash
               id: build-binary
@@ -51,9 +51,6 @@ jobs:
                 mkdir -p ./$commit_hash/
                 sudo mv axelar-core/bin/axelard ./$commit_hash/axelard-linux-amd64-$semver
                 echo "binary-directory=./$commit_hash" >> $GITHUB_OUTPUT
-
-            - name: List contents of root directory
-              run: ls -la
 
             - uses: ryand56/r2-upload-action@v1.3.2
               with:
