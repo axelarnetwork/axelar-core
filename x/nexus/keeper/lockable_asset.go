@@ -31,14 +31,14 @@ type lockableAsset struct {
 func newLockableAsset(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (lockableAsset, error) {
 	denom := coin.GetDenom()
 
-	coinType, err := getCoinType(ctx, nexus, denom)
+	coinType, err := getCoinType(ctx, nexus, ibc, denom)
 	if err != nil {
 		return lockableAsset{}, err
 	}
 
 	// If coin type is ICS20, we need to normalize it to convert from 'ibc/{hash}'
 	// to native asset denom so that nexus could recognize it
-	if coinType == types.ICS20 {
+	if coinType == types.ICS20 && isIBCDenom(denom) {
 		denomTrace, err := ibc.ParseIBCDenom(ctx, denom)
 		if err != nil {
 			return lockableAsset{}, err
@@ -55,12 +55,8 @@ func newLockableAsset(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, b
 		bank:     bank,
 	}
 
-	originalCoin, err := c.getCoin(ctx)
-	if err != nil {
+	if _, err := c.getCoin(ctx); err != nil {
 		return lockableAsset{}, err
-	}
-	if originalCoin.GetDenom() != denom {
-		return lockableAsset{}, fmt.Errorf("denom mismatch, expected %s, got %s", denom, originalCoin.GetDenom())
 	}
 
 	return c, nil
@@ -176,10 +172,12 @@ func mint(ctx sdk.Context, bank types.BankKeeper, toAddr sdk.AccAddress, coin sd
 	return nil
 }
 
-func getCoinType(ctx sdk.Context, nexus types.Nexus, denom string) (types.CoinType, error) {
+func getCoinType(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, denom string) (types.CoinType, error) {
 	switch {
 	// check if the format of token denomination is 'ibc/{hash}'
 	case isIBCDenom(denom):
+		return types.ICS20, nil
+	case isFromExternalCosmosChain(ctx, nexus, ibc, denom):
 		return types.ICS20, nil
 	case isNativeAssetOnAxelarnet(ctx, nexus, denom):
 		return types.Native, nil
@@ -188,6 +186,18 @@ func getCoinType(ctx sdk.Context, nexus types.Nexus, denom string) (types.CoinTy
 	default:
 		return types.Unrecognized, fmt.Errorf("unrecognized coin %s", denom)
 	}
+}
+
+// isFromExternalCosmosChain returns true if the asset origins from cosmos chains
+func isFromExternalCosmosChain(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, denom string) bool {
+	chain, ok := nexus.GetChainByNativeAsset(ctx, denom)
+	if !ok {
+		return false
+	}
+
+	_, ok = ibc.GetIBCPath(ctx, chain.Name)
+
+	return ok
 }
 
 // isIBCDenom validates that the given denomination is a valid ICS token representation (ibc/{hash})
