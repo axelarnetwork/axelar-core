@@ -22,6 +22,12 @@ func NewWasmerEngine(inner wasmtypes.WasmerEngine, msgIDGenerator types.MsgIDGen
 }
 
 func getCtx(querier wasmvm.Querier) sdk.Context {
+	// wasmd passes a reference to the querier only for the Migrate method
+	// https://github.com/CosmWasm/wasmd/blob/21ec15a5c025bc0fa8c634691dc839ab77b9a7d2/x/wasm/keeper/keeper.go#L433
+	if querier, ok := querier.(*wasmkeeper.QueryHandler); ok {
+		return querier.Ctx
+	}
+
 	return querier.(wasmkeeper.QueryHandler).Ctx
 }
 
@@ -73,9 +79,7 @@ func (w *WasmerEngine) Migrate(
 	gasLimit uint64,
 	deserCost wasmvmtypes.UFraction,
 ) (*wasmvmtypes.Response, uint64, error) {
-	// wasmd passes a reference to the querier only for the Migrate method
-	// https://github.com/CosmWasm/wasmd/blob/21ec15a5c025bc0fa8c634691dc839ab77b9a7d2/x/wasm/keeper/keeper.go#L433
-	defer w.msgIDGenerator.IncrID(querier.(*wasmkeeper.QueryHandler).Ctx)
+	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
 	return w.WasmerEngine.Migrate(checksum, env, migrateMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
 }
