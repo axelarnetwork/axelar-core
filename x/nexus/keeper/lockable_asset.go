@@ -13,7 +13,9 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 )
 
-// NewLockableAsset creates a new lockable asset
+// NewLockableAsset creates a new lockable asset.
+// The coin denom can either be an actual bank Coin (e.g. uaxl, ICS20 coin) ,
+// or the registered asset name (e.g. base denom for an ICS20 coin)
 func (k Keeper) NewLockableAsset(ctx sdk.Context, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (exported.LockableAsset, error) {
 	return newLockableAsset(ctx, k, ibc, bank, coin)
 }
@@ -177,6 +179,7 @@ func getCoinType(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, denom 
 	// check if the format of token denomination is 'ibc/{hash}'
 	case isIBCDenom(denom):
 		return types.ICS20, nil
+	// check if the denom is the registered asset name for an ICS20 coin from a cosmos chain
 	case isFromExternalCosmosChain(ctx, nexus, ibc, denom):
 		return types.ICS20, nil
 	case isNativeAssetOnAxelarnet(ctx, nexus, denom):
@@ -188,7 +191,8 @@ func getCoinType(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, denom 
 	}
 }
 
-// isFromExternalCosmosChain returns true if the asset origins from cosmos chains
+// isFromExternalCosmosChain returns true if the denom is a nexus-registered
+// asset name for an ICS20 coin originating from a cosmos chain
 func isFromExternalCosmosChain(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, denom string) bool {
 	chain, ok := nexus.GetChainByNativeAsset(ctx, denom)
 	if !ok {
