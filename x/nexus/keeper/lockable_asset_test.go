@@ -49,6 +49,7 @@ func TestLockableAsset(t *testing.T) {
 
 			return exported.Chain{}, false
 		}
+		ibc.GetIBCPathFunc = func(ctx sdk.Context, chain exported.ChainName) (string, bool) { return "", false }
 	})
 
 	whenCoinIsExternal := When("coin is external", func() {
@@ -59,6 +60,27 @@ func TestLockableAsset(t *testing.T) {
 		nexus.IsAssetRegisteredFunc = func(ctx sdk.Context, chain exported.Chain, asset string) bool {
 			return chain == axelarnet.Axelarnet && asset == coin.Denom
 		}
+	})
+
+	whenCoinIsICS20FromExternalCosmosChain := When("coin is ICS20 from external cosmos chain", func() {
+		path := testutils.RandomIBCPath()
+		trace = ibctypes.DenomTrace{
+			Path:      path,
+			BaseDenom: rand.Denom(5, 10),
+		}
+
+		nexus.GetChainByNativeAssetFunc = func(ctx sdk.Context, asset string) (exported.Chain, bool) {
+			if asset == trace.GetBaseDenom() {
+				return axelarnet.Axelarnet, true
+			}
+
+			return exported.Chain{}, false
+		}
+		ibc.GetIBCPathFunc = func(ctx sdk.Context, chain exported.ChainName) (string, bool) {
+			return path, chain == axelarnet.Axelarnet.Name
+		}
+
+		coin = sdk.NewCoin(trace.GetBaseDenom(), sdk.NewInt(rand.PosI64()))
 	})
 
 	whenCoinIsICS20 := When("coin is ICS20", func() {
@@ -103,6 +125,18 @@ func TestLockableAsset(t *testing.T) {
 				assert.Equal(t, types.CoinType(types.ICS20), lockableAsset.coinType)
 				assert.Equal(t, sdk.NewCoin(trace.GetBaseDenom(), coin.Amount), lockableAsset.GetAsset())
 				assert.Equal(t, coin, lockableAsset.GetCoin(ctx))
+			}).
+			Run(t)
+
+		givenKeeper.
+			When2(whenCoinIsICS20FromExternalCosmosChain).
+			Then("should create a new lockable asset of type ICS20", func(t *testing.T) {
+				lockableAsset, err := newLockableAsset(ctx, nexus, ibc, bank, coin)
+
+				assert.NoError(t, err)
+				assert.Equal(t, types.CoinType(types.ICS20), lockableAsset.coinType)
+				assert.Equal(t, coin, lockableAsset.GetAsset())
+				assert.Equal(t, sdk.NewCoin(trace.IBCDenom(), coin.Amount), lockableAsset.GetCoin(ctx))
 			}).
 			Run(t)
 
