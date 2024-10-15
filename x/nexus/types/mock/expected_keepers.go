@@ -52,6 +52,9 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			ExportGenesisFunc: func(ctx cosmossdktypes.Context) *nexustypes.GenesisState {
 //				panic("mock out the ExportGenesis method")
 //			},
+//			GenerateMessageIDFunc: func(ctx cosmossdktypes.Context) (string, []byte, uint64) {
+//				panic("mock out the GenerateMessageID method")
+//			},
 //			GetChainFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool) {
 //				panic("mock out the GetChain method")
 //			},
@@ -78,9 +81,6 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			},
 //			InitGenesisFunc: func(ctx cosmossdktypes.Context, genState *nexustypes.GenesisState)  {
 //				panic("mock out the InitGenesis method")
-//			},
-//			IsAssetRegisteredFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, denom string) bool {
-//				panic("mock out the IsAssetRegistered method")
 //			},
 //			IsChainActivatedFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) bool {
 //				panic("mock out the IsChainActivated method")
@@ -152,6 +152,9 @@ type NexusMock struct {
 	// ExportGenesisFunc mocks the ExportGenesis method.
 	ExportGenesisFunc func(ctx cosmossdktypes.Context) *nexustypes.GenesisState
 
+	// GenerateMessageIDFunc mocks the GenerateMessageID method.
+	GenerateMessageIDFunc func(ctx cosmossdktypes.Context) (string, []byte, uint64)
+
 	// GetChainFunc mocks the GetChain method.
 	GetChainFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, bool)
 
@@ -178,9 +181,6 @@ type NexusMock struct {
 
 	// InitGenesisFunc mocks the InitGenesis method.
 	InitGenesisFunc func(ctx cosmossdktypes.Context, genState *nexustypes.GenesisState)
-
-	// IsAssetRegisteredFunc mocks the IsAssetRegistered method.
-	IsAssetRegisteredFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, denom string) bool
 
 	// IsChainActivatedFunc mocks the IsChainActivated method.
 	IsChainActivatedFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) bool
@@ -271,6 +271,11 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
+		// GenerateMessageID holds details about calls to the GenerateMessageID method.
+		GenerateMessageID []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+		}
 		// GetChain holds details about calls to the GetChain method.
 		GetChain []struct {
 			// Ctx is the ctx argument value.
@@ -331,15 +336,6 @@ type NexusMock struct {
 			Ctx cosmossdktypes.Context
 			// GenState is the genState argument value.
 			GenState *nexustypes.GenesisState
-		}
-		// IsAssetRegistered holds details about calls to the IsAssetRegistered method.
-		IsAssetRegistered []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-			// Denom is the denom argument value.
-			Denom string
 		}
 		// IsChainActivated holds details about calls to the IsChainActivated method.
 		IsChainActivated []struct {
@@ -455,6 +451,7 @@ type NexusMock struct {
 	lockDeactivateWasmConnection  sync.RWMutex
 	lockDequeueRouteMessage       sync.RWMutex
 	lockExportGenesis             sync.RWMutex
+	lockGenerateMessageID         sync.RWMutex
 	lockGetChain                  sync.RWMutex
 	lockGetChainByNativeAsset     sync.RWMutex
 	lockGetChainMaintainerStates  sync.RWMutex
@@ -464,7 +461,6 @@ type NexusMock struct {
 	lockGetMessage                sync.RWMutex
 	lockGetParams                 sync.RWMutex
 	lockInitGenesis               sync.RWMutex
-	lockIsAssetRegistered         sync.RWMutex
 	lockIsChainActivated          sync.RWMutex
 	lockIsChainMaintainer         sync.RWMutex
 	lockIsWasmConnectionActivated sync.RWMutex
@@ -749,6 +745,38 @@ func (mock *NexusMock) ExportGenesisCalls() []struct {
 	mock.lockExportGenesis.RLock()
 	calls = mock.calls.ExportGenesis
 	mock.lockExportGenesis.RUnlock()
+	return calls
+}
+
+// GenerateMessageID calls GenerateMessageIDFunc.
+func (mock *NexusMock) GenerateMessageID(ctx cosmossdktypes.Context) (string, []byte, uint64) {
+	if mock.GenerateMessageIDFunc == nil {
+		panic("NexusMock.GenerateMessageIDFunc: method is nil but Nexus.GenerateMessageID was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGenerateMessageID.Lock()
+	mock.calls.GenerateMessageID = append(mock.calls.GenerateMessageID, callInfo)
+	mock.lockGenerateMessageID.Unlock()
+	return mock.GenerateMessageIDFunc(ctx)
+}
+
+// GenerateMessageIDCalls gets all the calls that were made to GenerateMessageID.
+// Check the length with:
+//
+//	len(mockedNexus.GenerateMessageIDCalls())
+func (mock *NexusMock) GenerateMessageIDCalls() []struct {
+	Ctx cosmossdktypes.Context
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+	}
+	mock.lockGenerateMessageID.RLock()
+	calls = mock.calls.GenerateMessageID
+	mock.lockGenerateMessageID.RUnlock()
 	return calls
 }
 
@@ -1069,46 +1097,6 @@ func (mock *NexusMock) InitGenesisCalls() []struct {
 	mock.lockInitGenesis.RLock()
 	calls = mock.calls.InitGenesis
 	mock.lockInitGenesis.RUnlock()
-	return calls
-}
-
-// IsAssetRegistered calls IsAssetRegisteredFunc.
-func (mock *NexusMock) IsAssetRegistered(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, denom string) bool {
-	if mock.IsAssetRegisteredFunc == nil {
-		panic("NexusMock.IsAssetRegisteredFunc: method is nil but Nexus.IsAssetRegistered was just called")
-	}
-	callInfo := struct {
-		Ctx   cosmossdktypes.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Denom string
-	}{
-		Ctx:   ctx,
-		Chain: chain,
-		Denom: denom,
-	}
-	mock.lockIsAssetRegistered.Lock()
-	mock.calls.IsAssetRegistered = append(mock.calls.IsAssetRegistered, callInfo)
-	mock.lockIsAssetRegistered.Unlock()
-	return mock.IsAssetRegisteredFunc(ctx, chain, denom)
-}
-
-// IsAssetRegisteredCalls gets all the calls that were made to IsAssetRegistered.
-// Check the length with:
-//
-//	len(mockedNexus.IsAssetRegisteredCalls())
-func (mock *NexusMock) IsAssetRegisteredCalls() []struct {
-	Ctx   cosmossdktypes.Context
-	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	Denom string
-} {
-	var calls []struct {
-		Ctx   cosmossdktypes.Context
-		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Denom string
-	}
-	mock.lockIsAssetRegistered.RLock()
-	calls = mock.calls.IsAssetRegistered
-	mock.lockIsAssetRegistered.RUnlock()
 	return calls
 }
 
