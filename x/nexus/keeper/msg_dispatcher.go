@@ -21,14 +21,11 @@ var _ wasmkeeper.Messenger = (*Messenger)(nil)
 
 type Messenger struct {
 	types.Nexus
-	ibc     types.IBCKeeper
-	bank    types.BankKeeper
-	account types.AccountKeeper
 }
 
 // NewMessenger returns a new Messenger
-func NewMessenger(nexus types.Nexus, ibc types.IBCKeeper, bank types.BankKeeper, account types.AccountKeeper) Messenger {
-	return Messenger{nexus, ibc, bank, account}
+func NewMessenger(nexus types.Nexus) Messenger {
+	return Messenger{nexus}
 }
 
 // DispatchMsg decodes the messages from the cosmowasm gateway and routes them to the nexus module if possible
@@ -76,8 +73,8 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 		return nil
 	}
 
-	if err := m.lockCoinIfAny(ctx, msg); err != nil {
-		return err
+	if msg.Asset != nil && !m.IsAssetRegistered(ctx, destinationChain, msg.Asset.Denom) {
+		return fmt.Errorf("asset %s is not registered on chain %s", msg.Asset.Denom, destinationChain.Name)
 	}
 
 	sourceChain := exported.Chain{Name: msg.SourceChain, SupportsForeignAssets: false, KeyType: tss.None, Module: wasmtypes.ModuleName}
@@ -95,26 +92,6 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 	})
 
 	return nil
-}
-
-func (m Messenger) lockCoinIfAny(ctx sdk.Context, msg exported.WasmMessage) error {
-	if msg.Asset == nil {
-		return nil
-	}
-
-	// destination chain existence is already checked in routeMsg
-	destinationChain := funcs.MustOk(m.GetChain(ctx, msg.DestinationChain))
-
-	if !m.IsAssetRegistered(ctx, destinationChain, msg.Asset.Denom) {
-		return fmt.Errorf("asset %s is not registered on chain %s", msg.Asset.Denom, destinationChain.Name)
-	}
-
-	lockableAsset, err := m.NewLockableAsset(ctx, m.ibc, m.bank, *msg.Asset)
-	if err != nil {
-		return err
-	}
-
-	return lockableAsset.LockFrom(ctx, m.account.GetModuleAddress(types.ModuleName))
 }
 
 // EncodeRoutingMessage encodes the message from the wasm contract into a sdk.Msg

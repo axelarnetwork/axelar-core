@@ -53,7 +53,6 @@ type Nexus interface {
 	IsAssetRegistered(ctx sdk.Context, chain exported.Chain, denom string) bool
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain exported.Chain, ok bool)
 	CurrID(ctx sdk.Context) ([32]byte, uint64)
-	NewLockableAsset(ctx sdk.Context, ibc IBCKeeper, bank BankKeeper, coin sdk.Coin) (exported.LockableAsset, error)
 }
 
 // MsgIDGenerator provides functionality to generate msg IDs

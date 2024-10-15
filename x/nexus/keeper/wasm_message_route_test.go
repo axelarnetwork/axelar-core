@@ -12,7 +12,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	exportedmock "github.com/axelarnetwork/axelar-core/x/nexus/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -32,8 +31,6 @@ func TestNewMessageRoute(t *testing.T) {
 		msg   exported.GeneralMessage
 
 		nexusK   *mock.NexusMock
-		ibcK     *mock.IBCKeeperMock
-		bankK    *mock.BankKeeperMock
 		accountK *mock.AccountKeeperMock
 		wasmK    *mock.WasmKeeperMock
 		gateway  sdk.AccAddress
@@ -44,12 +41,10 @@ func TestNewMessageRoute(t *testing.T) {
 
 		nexusK = &mock.NexusMock{}
 		nexusK.IsWasmConnectionActivatedFunc = func(_ sdk.Context) bool { return true }
-		ibcK = &mock.IBCKeeperMock{}
-		bankK = &mock.BankKeeperMock{}
 		accountK = &mock.AccountKeeperMock{}
 		wasmK = &mock.WasmKeeperMock{}
 
-		route = keeper.NewMessageRoute(nexusK, ibcK, bankK, accountK, wasmK)
+		route = keeper.NewMessageRoute(nexusK, accountK, wasmK)
 	})
 
 	givenMessageRoute.
@@ -77,36 +72,8 @@ func TestNewMessageRoute(t *testing.T) {
 			When("the message has an asset", func() {
 				msg = randMsg(exported.Processing, true)
 			}).
-				Then("should execute the wasm message with token sent to the gateway", func(t *testing.T) {
-					moduleAddr := rand.AccAddr()
-					accountK.GetModuleAddressFunc = func(_ string) sdk.AccAddress { return moduleAddr }
-
-					lockableAsset := &exportedmock.LockableAssetMock{}
-					nexusK.NewLockableAssetFunc = func(ctx sdk.Context, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (exported.LockableAsset, error) {
-						return lockableAsset, nil
-					}
-					lockableAsset.UnlockToFunc = func(ctx sdk.Context, toAddr sdk.AccAddress) error { return nil }
-
-					wasmK.ExecuteFunc = func(_ sdk.Context, _, _ sdk.AccAddress, _ []byte, _ sdk.Coins) ([]byte, error) {
-						return nil, nil
-					}
-
-					assert.NoError(t, route(ctx, exported.RoutingContext{}, msg))
-
-					assert.Len(t, lockableAsset.UnlockToCalls(), 1)
-					assert.Equal(t, moduleAddr, lockableAsset.UnlockToCalls()[0].ToAddr)
-
-					assert.Len(t, wasmK.ExecuteCalls(), 1)
-					assert.Equal(t, gateway, wasmK.ExecuteCalls()[0].ContractAddress)
-					assert.Equal(t, moduleAddr, wasmK.ExecuteCalls()[0].Caller)
-					assert.Equal(t, sdk.NewCoins(*msg.Asset), wasmK.ExecuteCalls()[0].Coins)
-
-					var actual req
-					assert.NoError(t, json.Unmarshal(wasmK.ExecuteCalls()[0].Msg, &actual))
-					assert.Len(t, actual.RouteMessages, 1)
-					assert.Equal(t, exported.FromGeneralMessage(msg), actual.RouteMessages[0])
-
-					assert.Equal(t, len(nexusK.SetMessageExecutedCalls()), 1)
+				Then("should return error", func(t *testing.T) {
+					assert.ErrorContains(t, route(ctx, exported.RoutingContext{}, msg), "asset transfer is not supported")
 				}),
 
 			When("the message has no asset", func() {
@@ -143,8 +110,6 @@ func TestMessageRoute_WasmConnectionNotActivated(t *testing.T) {
 		ctx      sdk.Context
 		route    exported.MessageRoute
 		nexusK   *mock.NexusMock
-		ibcK     *mock.IBCKeeperMock
-		bankK    *mock.BankKeeperMock
 		accountK *mock.AccountKeeperMock
 		wasmK    *mock.WasmKeeperMock
 	)
@@ -161,14 +126,13 @@ func TestMessageRoute_WasmConnectionNotActivated(t *testing.T) {
 			return params
 		}
 		nexusK.SetMessageExecutedFunc = func(_ sdk.Context, _ string) error { return nil }
-		ibcK = &mock.IBCKeeperMock{}
-		bankK = &mock.BankKeeperMock{}
+
 		accountK = &mock.AccountKeeperMock{}
 		accountK.GetModuleAddressFunc = func(_ string) sdk.AccAddress { return rand.AccAddr() }
 		wasmK = &mock.WasmKeeperMock{}
 		wasmK.ExecuteFunc = func(_ sdk.Context, _, _ sdk.AccAddress, _ []byte, _ sdk.Coins) ([]byte, error) { return nil, nil }
 
-		route = keeper.NewMessageRoute(nexusK, ibcK, bankK, accountK, wasmK)
+		route = keeper.NewMessageRoute(nexusK, accountK, wasmK)
 	}).
 		When("the wasm connection is not activated", func() {
 			nexusK.IsWasmConnectionActivatedFunc = func(_ sdk.Context) bool { return false }

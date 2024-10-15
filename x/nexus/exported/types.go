@@ -362,7 +362,6 @@ func FromGeneralMessage(msg GeneralMessage) WasmMessage {
 		SourceTxID:         msg.SourceTxID,
 		SourceTxIndex:      msg.SourceTxIndex,
 		ID:                 msg.ID,
-		Asset:              msg.Asset,
 	}
 }
 
@@ -397,10 +396,6 @@ func (m WasmMessage) ValidateBasic() error {
 
 	if len(m.SourceTxID) != 32 {
 		return fmt.Errorf("invalid wasm message source tx id")
-	}
-
-	if m.Asset != nil {
-		return m.Asset.Validate()
 	}
 
 	return nil

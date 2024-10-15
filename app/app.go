@@ -449,8 +449,6 @@ func initMessageRouter(keepers *KeeperCache) nexusTypes.MessageRouter {
 	if IsWasmEnabled() {
 		messageRouter.AddRoute(wasm.ModuleName, nexusKeeper.NewMessageRoute(
 			GetKeeper[nexusKeeper.Keeper](keepers),
-			GetKeeper[axelarnetKeeper.IBCKeeper](keepers),
-			GetKeeper[bankkeeper.BaseKeeper](keepers),
 			GetKeeper[authkeeper.AccountKeeper](keepers),
 			GetKeeper[wasmkeeper.PermissionedKeeper](keepers),
 		))
