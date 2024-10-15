@@ -179,7 +179,7 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 					encoders,
 					initMessageAnteDecorators(encodingConfig, keepers),
 					// for security reasons we disallow some msg types that can be used for arbitrary calls
-					wasmkeeper.NewMessageHandlerChain(NewMsgTypeBlacklistMessenger(), old, nexusKeeper.NewMessenger(nexusK, GetKeeper[axelarnetKeeper.IBCKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers))))
+					wasmkeeper.NewMessageHandlerChain(NewMsgTypeBlacklistMessenger(), old, nexusKeeper.NewMessenger(nexusK)))
 			}),
 		wasmkeeper.WithWasmEngineDecorator(func(old wasmtypes.WasmerEngine) wasmtypes.WasmerEngine {
 			return nexusKeeper.NewWasmerEngine(old, nexusK)
