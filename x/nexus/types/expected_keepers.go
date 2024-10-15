@@ -45,6 +45,7 @@ type Nexus interface {
 	GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) exported.FeeInfo
 	SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limit sdk.Coin, window time.Duration) error
 	RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection) error
+	GenerateMessageID(ctx sdk.Context) (string, []byte, uint64)
 	SetNewMessage(ctx sdk.Context, msg exported.GeneralMessage) error
 	GetMessage(ctx sdk.Context, id string) (exported.GeneralMessage, bool)
 	SetMessageExecuted(ctx sdk.Context, id string) error
@@ -53,7 +54,6 @@ type Nexus interface {
 	IsAssetRegistered(ctx sdk.Context, chain exported.Chain, denom string) bool
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain exported.Chain, ok bool)
 	CurrID(ctx sdk.Context) ([32]byte, uint64)
-	NewLockableAsset(ctx sdk.Context, ibc IBCKeeper, bank BankKeeper, coin sdk.Coin) (exported.LockableAsset, error)
 }
 
 // MsgIDGenerator provides functionality to generate msg IDs
