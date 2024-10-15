@@ -79,7 +79,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	})
 
 	if req.Fee != nil {
-		lockableAsset, err := s.nexus.NewLockableAsset(ctx, s.ibcK, s.bank, req.Fee.Amount)
+		lockableAsset, err := s.nexus.NewLockableAssetFromCosmosCoin(ctx, s.ibcK, s.bank, req.Fee.Amount)
 		if err != nil {
 			return nil, sdkerrors.Wrap(err, "unrecognized fee denom")
 		}
@@ -185,7 +185,7 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 		return nil, fmt.Errorf("recipient chain '%s' is not activated", recipient.Chain.Name)
 	}
 
-	lockableAsset, err := s.nexus.NewLockableAsset(ctx, s.ibcK, s.bank, coin)
+	lockableAsset, err := s.nexus.NewLockableAssetFromCosmosCoin(ctx, s.ibcK, s.bank, coin)
 	if err != nil {
 		return nil, err
 	}

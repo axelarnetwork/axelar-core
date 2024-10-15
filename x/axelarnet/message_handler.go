@@ -389,7 +389,7 @@ func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.
 		denom = denomTrace.IBCDenom()
 	}
 
-	return n.NewLockableAsset(ctx, ibcK, b, sdk.NewCoin(denom, amount))
+	return n.NewLockableAssetFromCosmosCoin(ctx, ibcK, b, sdk.NewCoin(denom, amount))
 }
 
 // deductFee pays the fee and returns the updated transfer amount with the fee deducted
@@ -416,7 +416,7 @@ func deductFee(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK types.IB
 	// subtract fee from transfer value
 	coinAfterFee := token.GetCoin(ctx).Sub(feeCoin)
 
-	return funcs.Must(n.NewLockableAsset(ctx, ibcK, b, coinAfterFee)), b.SendCoins(ctx, types.AxelarIBCAccount, recipient, sdk.NewCoins(feeCoin))
+	return funcs.Must(n.NewLockableAssetFromCosmosCoin(ctx, ibcK, b, coinAfterFee)), b.SendCoins(ctx, types.AxelarIBCAccount, recipient, sdk.NewCoins(feeCoin))
 }
 
 // validateReceiver rejects uppercase GMP account address

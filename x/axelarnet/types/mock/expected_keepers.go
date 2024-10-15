@@ -754,6 +754,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			NewLockableAssetFunc: func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableAsset, error) {
 //				panic("mock out the NewLockableAsset method")
 //			},
+//			NewLockableAssetFromCosmosCoinFunc: func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableAsset, error) {
+//				panic("mock out the NewLockableAssetFromCosmosCoin method")
+//			},
 //			RateLimitTransferFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
 //				panic("mock out the RateLimitTransfer method")
 //			},
@@ -889,6 +892,9 @@ type NexusMock struct {
 
 	// NewLockableAssetFunc mocks the NewLockableAsset method.
 	NewLockableAssetFunc func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableAsset, error)
+
+	// NewLockableAssetFromCosmosCoinFunc mocks the NewLockableAssetFromCosmosCoin method.
+	NewLockableAssetFromCosmosCoinFunc func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableAsset, error)
 
 	// RateLimitTransferFunc mocks the RateLimitTransfer method.
 	RateLimitTransferFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error
@@ -1145,6 +1151,17 @@ type NexusMock struct {
 			// Coin is the coin argument value.
 			Coin cosmossdktypes.Coin
 		}
+		// NewLockableAssetFromCosmosCoin holds details about calls to the NewLockableAssetFromCosmosCoin method.
+		NewLockableAssetFromCosmosCoin []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Ibc is the ibc argument value.
+			Ibc nexustypes.IBCKeeper
+			// Bank is the bank argument value.
+			Bank nexustypes.BankKeeper
+			// Coin is the coin argument value.
+			Coin cosmossdktypes.Coin
+		}
 		// RateLimitTransfer holds details about calls to the RateLimitTransfer method.
 		RateLimitTransfer []struct {
 			// Ctx is the ctx argument value.
@@ -1257,49 +1274,50 @@ type NexusMock struct {
 			Address github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
 		}
 	}
-	lockActivateChain                 sync.RWMutex
-	lockActivateWasmConnection        sync.RWMutex
-	lockAddChainMaintainer            sync.RWMutex
-	lockArchivePendingTransfer        sync.RWMutex
-	lockDeactivateChain               sync.RWMutex
-	lockDeactivateWasmConnection      sync.RWMutex
-	lockDequeueRouteMessage           sync.RWMutex
-	lockEnqueueForTransfer            sync.RWMutex
-	lockEnqueueTransfer               sync.RWMutex
-	lockExportGenesis                 sync.RWMutex
-	lockGenerateMessageID             sync.RWMutex
-	lockGetChain                      sync.RWMutex
-	lockGetChainByNativeAsset         sync.RWMutex
-	lockGetChainMaintainerStates      sync.RWMutex
-	lockGetChainMaintainers           sync.RWMutex
-	lockGetChains                     sync.RWMutex
-	lockGetFeeInfo                    sync.RWMutex
-	lockGetMessage                    sync.RWMutex
-	lockGetParams                     sync.RWMutex
-	lockGetRecipient                  sync.RWMutex
-	lockGetTransferFees               sync.RWMutex
-	lockGetTransfersForChainPaginated sync.RWMutex
-	lockInitGenesis                   sync.RWMutex
-	lockIsAssetRegistered             sync.RWMutex
-	lockIsChainActivated              sync.RWMutex
-	lockIsChainMaintainer             sync.RWMutex
-	lockIsWasmConnectionActivated     sync.RWMutex
-	lockLinkAddresses                 sync.RWMutex
-	lockLogger                        sync.RWMutex
-	lockNewLockableAsset              sync.RWMutex
-	lockRateLimitTransfer             sync.RWMutex
-	lockRegisterAsset                 sync.RWMutex
-	lockRegisterFee                   sync.RWMutex
-	lockRemoveChainMaintainer         sync.RWMutex
-	lockRouteMessage                  sync.RWMutex
-	lockSetChain                      sync.RWMutex
-	lockSetMessageExecuted            sync.RWMutex
-	lockSetMessageFailed              sync.RWMutex
-	lockSetNewMessage                 sync.RWMutex
-	lockSetParams                     sync.RWMutex
-	lockSetRateLimit                  sync.RWMutex
-	lockSubTransferFee                sync.RWMutex
-	lockValidateAddress               sync.RWMutex
+	lockActivateChain                  sync.RWMutex
+	lockActivateWasmConnection         sync.RWMutex
+	lockAddChainMaintainer             sync.RWMutex
+	lockArchivePendingTransfer         sync.RWMutex
+	lockDeactivateChain                sync.RWMutex
+	lockDeactivateWasmConnection       sync.RWMutex
+	lockDequeueRouteMessage            sync.RWMutex
+	lockEnqueueForTransfer             sync.RWMutex
+	lockEnqueueTransfer                sync.RWMutex
+	lockExportGenesis                  sync.RWMutex
+	lockGenerateMessageID              sync.RWMutex
+	lockGetChain                       sync.RWMutex
+	lockGetChainByNativeAsset          sync.RWMutex
+	lockGetChainMaintainerStates       sync.RWMutex
+	lockGetChainMaintainers            sync.RWMutex
+	lockGetChains                      sync.RWMutex
+	lockGetFeeInfo                     sync.RWMutex
+	lockGetMessage                     sync.RWMutex
+	lockGetParams                      sync.RWMutex
+	lockGetRecipient                   sync.RWMutex
+	lockGetTransferFees                sync.RWMutex
+	lockGetTransfersForChainPaginated  sync.RWMutex
+	lockInitGenesis                    sync.RWMutex
+	lockIsAssetRegistered              sync.RWMutex
+	lockIsChainActivated               sync.RWMutex
+	lockIsChainMaintainer              sync.RWMutex
+	lockIsWasmConnectionActivated      sync.RWMutex
+	lockLinkAddresses                  sync.RWMutex
+	lockLogger                         sync.RWMutex
+	lockNewLockableAsset               sync.RWMutex
+	lockNewLockableAssetFromCosmosCoin sync.RWMutex
+	lockRateLimitTransfer              sync.RWMutex
+	lockRegisterAsset                  sync.RWMutex
+	lockRegisterFee                    sync.RWMutex
+	lockRemoveChainMaintainer          sync.RWMutex
+	lockRouteMessage                   sync.RWMutex
+	lockSetChain                       sync.RWMutex
+	lockSetMessageExecuted             sync.RWMutex
+	lockSetMessageFailed               sync.RWMutex
+	lockSetNewMessage                  sync.RWMutex
+	lockSetParams                      sync.RWMutex
+	lockSetRateLimit                   sync.RWMutex
+	lockSubTransferFee                 sync.RWMutex
+	lockValidateAddress                sync.RWMutex
 }
 
 // ActivateChain calls ActivateChainFunc.
@@ -2387,6 +2405,50 @@ func (mock *NexusMock) NewLockableAssetCalls() []struct {
 	mock.lockNewLockableAsset.RLock()
 	calls = mock.calls.NewLockableAsset
 	mock.lockNewLockableAsset.RUnlock()
+	return calls
+}
+
+// NewLockableAssetFromCosmosCoin calls NewLockableAssetFromCosmosCoinFunc.
+func (mock *NexusMock) NewLockableAssetFromCosmosCoin(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableAsset, error) {
+	if mock.NewLockableAssetFromCosmosCoinFunc == nil {
+		panic("NexusMock.NewLockableAssetFromCosmosCoinFunc: method is nil but Nexus.NewLockableAssetFromCosmosCoin was just called")
+	}
+	callInfo := struct {
+		Ctx  cosmossdktypes.Context
+		Ibc  nexustypes.IBCKeeper
+		Bank nexustypes.BankKeeper
+		Coin cosmossdktypes.Coin
+	}{
+		Ctx:  ctx,
+		Ibc:  ibc,
+		Bank: bank,
+		Coin: coin,
+	}
+	mock.lockNewLockableAssetFromCosmosCoin.Lock()
+	mock.calls.NewLockableAssetFromCosmosCoin = append(mock.calls.NewLockableAssetFromCosmosCoin, callInfo)
+	mock.lockNewLockableAssetFromCosmosCoin.Unlock()
+	return mock.NewLockableAssetFromCosmosCoinFunc(ctx, ibc, bank, coin)
+}
+
+// NewLockableAssetFromCosmosCoinCalls gets all the calls that were made to NewLockableAssetFromCosmosCoin.
+// Check the length with:
+//
+//	len(mockedNexus.NewLockableAssetFromCosmosCoinCalls())
+func (mock *NexusMock) NewLockableAssetFromCosmosCoinCalls() []struct {
+	Ctx  cosmossdktypes.Context
+	Ibc  nexustypes.IBCKeeper
+	Bank nexustypes.BankKeeper
+	Coin cosmossdktypes.Coin
+} {
+	var calls []struct {
+		Ctx  cosmossdktypes.Context
+		Ibc  nexustypes.IBCKeeper
+		Bank nexustypes.BankKeeper
+		Coin cosmossdktypes.Coin
+	}
+	mock.lockNewLockableAssetFromCosmosCoin.RLock()
+	calls = mock.calls.NewLockableAssetFromCosmosCoin
+	mock.lockNewLockableAssetFromCosmosCoin.RUnlock()
 	return calls
 }
 
