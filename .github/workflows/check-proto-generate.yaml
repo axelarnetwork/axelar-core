@@ -3,12 +3,16 @@ name: Check protobuf generated files up-to-date
 on:
   - pull_request
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check-proto-generate-up-to-date:
-    runs-on: ubuntu-22.04
+    runs-on: blacksmith-2vcpu-ubuntu-2204
     steps:
       - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v2
+        uses: useblacksmith/setup-go@v6
         with:
           go-version: 1.23
 
