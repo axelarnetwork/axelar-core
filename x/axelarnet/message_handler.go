@@ -246,18 +246,18 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK types.IBCKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token nexus.LockableAsset) error {
 	id, txID, nonce := n.GenerateMessageID(ctx)
 
-	// ignore token for call contract
-	_, err := deductFee(ctx, n, b, ibcK, msg.Fee, token, id, sourceAddress.Chain.Name, nexus.ChainName(msg.DestinationChain))
-	if err != nil {
-		return err
-	}
-
 	destChain, ok := n.GetChain(ctx, nexus.ChainName(msg.DestinationChain))
 	if !ok {
 		// try forwarding it to wasm router if destination chain is not registered
 		// Wasm chain names are always lower case, so normalize it for consistency in core
 		destChainName := nexus.ChainName(strings.ToLower(msg.DestinationChain))
 		destChain = nexus.Chain{Name: destChainName, SupportsForeignAssets: false, KeyType: tss.None, Module: wasm.ModuleName}
+	}
+
+	// ignore token for call contract
+	_, err := deductFee(ctx, n, b, ibcK, msg.Fee, token, id, sourceAddress.Chain.Name, destChain.GetName())
+	if err != nil {
+		return err
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
@@ -286,8 +286,9 @@ func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK type
 
 func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK types.IBCKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token nexus.LockableAsset) error {
 	id, txID, nonce := n.GenerateMessageID(ctx)
+	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 
-	token, err := deductFee(ctx, n, b, ibcK, msg.Fee, token, id, sourceAddress.Chain.Name, nexus.ChainName(msg.DestinationChain))
+	token, err := deductFee(ctx, n, b, ibcK, msg.Fee, token, id, sourceAddress.Chain.Name, destChain.GetName())
 	if err != nil {
 		return err
 	}
@@ -296,7 +297,6 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 		return err
 	}
 
-	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
 	recipient := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
 	coin := token.GetAsset()
 	m := nexus.NewGeneralMessage(
@@ -401,8 +401,6 @@ func deductFee(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK types.IB
 	feeAmount := funcs.MustOk(sdk.NewIntFromString(fee.Amount))
 	feeCoin := sdk.NewCoin(token.GetCoin(ctx).Denom, feeAmount)
 	recipient := funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))
-	// destination chain is from user input, normalize it to lowercase
-	destinationChain = nexus.ChainName(strings.ToLower(destinationChain.String()))
 
 	feePaidEvent := types.FeePaid{
 		MessageID:        msgID,
