@@ -22,7 +22,7 @@ func (k Keeper) NewLockableAsset(ctx sdk.Context, ibc types.IBCKeeper, bank type
 
 // lockableAsset provides functionality to lock and release coins
 type lockableAsset struct {
-	sdk.Coin
+	asset    sdk.Coin
 	coinType types.CoinType
 	nexus    types.Nexus
 	ibc      types.IBCKeeper
@@ -31,13 +31,13 @@ type lockableAsset struct {
 
 // newLockableAsset creates a coin struct, assign a coin type and normalize the denom if it's a ICS20 token
 func newLockableAsset(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, bank types.BankKeeper, coin sdk.Coin) (lockableAsset, error) {
-	coinType, normalizedCoin, err := normalizeCoin(ctx, nexus, ibc, coin)
+	asset, coinType, err := toAssetAndType(ctx, nexus, ibc, coin)
 	if err != nil {
 		return lockableAsset{}, err
 	}
 
 	c := lockableAsset{
-		Coin:     normalizedCoin,
+		asset:    asset,
 		coinType: coinType,
 		nexus:    nexus,
 		ibc:      ibc,
@@ -53,7 +53,7 @@ func newLockableAsset(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, b
 
 // GetAsset returns a sdk.Coin using the nexus registered asset as the denom
 func (c lockableAsset) GetAsset() sdk.Coin {
-	return c.Coin
+	return c.asset
 }
 
 // GetCoin returns a sdk.Coin with the actual denom used by x/bank (e.g. ICS20 coins)
@@ -93,9 +93,9 @@ func (c lockableAsset) UnlockTo(ctx sdk.Context, toAddr sdk.AccAddress) error {
 func (c lockableAsset) getCoin(ctx sdk.Context) (sdk.Coin, error) {
 	switch c.coinType {
 	case types.ICS20:
-		return toICS20(ctx, c.nexus, c.ibc, c.Coin)
+		return toICS20(ctx, c.nexus, c.ibc, c.asset)
 	case types.Native, types.External:
-		return c.Coin, nil
+		return c.asset, nil
 	default:
 		return sdk.Coin{}, fmt.Errorf("unrecognized coin type %d", c.coinType)
 	}
@@ -167,8 +167,8 @@ func mint(ctx sdk.Context, bank types.BankKeeper, toAddr sdk.AccAddress, coin sd
 	return nil
 }
 
-// normalizeCoin normalizes the given denom to the corresponding registered asset and returns the coin type
-func normalizeCoin(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, coin sdk.Coin) (types.CoinType, sdk.Coin, error) {
+// toAssetAndType normalizes the given denom to the corresponding registered asset and returns the coin type
+func toAssetAndType(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, coin sdk.Coin) (sdk.Coin, types.CoinType, error) {
 	denom := coin.GetDenom()
 
 	switch {
@@ -177,41 +177,39 @@ func normalizeCoin(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, coin
 		{
 			denomTrace, err := ibc.ParseIBCDenom(ctx, denom)
 			if err != nil {
-				return types.Unrecognized, sdk.Coin{}, err
+				return sdk.Coin{}, types.Unrecognized, err
 			}
 
 			path, err := getIBCPath(ctx, nexus, ibc, denomTrace.GetBaseDenom())
 			if err != nil {
-				return types.Unrecognized, sdk.Coin{}, err
+				return sdk.Coin{}, types.Unrecognized, err
 			}
 			if path != denomTrace.GetPath() {
-				return types.Unrecognized, sdk.Coin{}, fmt.Errorf("expected ics20 coin IBC path %s, got %s", path, denomTrace.GetPath())
+				return sdk.Coin{}, types.Unrecognized, fmt.Errorf("expected ics20 coin IBC path %s, got %s", path, denomTrace.GetPath())
 			}
 
-			normalizedCoin := sdk.NewCoin(denomTrace.GetBaseDenom(), coin.Amount)
+			asset := sdk.NewCoin(denomTrace.GetBaseDenom(), coin.Amount)
 
-			return types.ICS20, normalizedCoin, nil
+			return asset, types.ICS20, nil
 		}
 	// check if the denom is the registered asset name for an ICS20 coin from a cosmos chain
 	case isFromExternalCosmosChain(ctx, nexus, ibc, denom):
-		return types.ICS20, coin, nil
+		return coin, types.ICS20, nil
 	case isNativeAssetOnAxelarnet(ctx, nexus, denom):
-		return types.Native, coin, nil
+		return coin, types.Native, nil
 	case nexus.IsAssetRegistered(ctx, axelarnet.Axelarnet, denom):
-		return types.External, coin, nil
+		return coin, types.External, nil
 	default:
-		return types.Unrecognized, sdk.Coin{}, fmt.Errorf("unrecognized coin %s", denom)
+		return sdk.Coin{}, types.Unrecognized, fmt.Errorf("unrecognized coin %s", denom)
 	}
 }
 
 // isFromExternalCosmosChain returns true if the denom is a nexus-registered
 // asset name for an ICS20 coin originating from a cosmos chain
 func isFromExternalCosmosChain(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, denom string) bool {
-	if _, err := getIBCPath(ctx, nexus, ibc, denom); err != nil {
-		return false
-	}
+	_, err := getIBCPath(ctx, nexus, ibc, denom)
 
-	return true
+	return err == nil
 }
 
 // isICS20Denom validates that the given denomination is a valid ICS token representation (ibc/{hash})
