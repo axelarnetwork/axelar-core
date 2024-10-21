@@ -129,6 +129,23 @@ func TestLockableAsset(t *testing.T) {
 			Run(t)
 
 		givenKeeper.
+			When2(whenCoinIsICS20).
+			When("registered ibc path differs from ics20 trace", func() {
+				registeredPath := testutils.RandomIBCPath()
+				ibc.GetIBCPathFunc = func(ctx sdk.Context, chain exported.ChainName) (string, bool) {
+					if chain == axelarnet.Axelarnet.Name {
+						return registeredPath, true
+					}
+					return "", false
+				}
+			}).
+			Then("should fail to create a new lockable asset", func(t *testing.T) {
+				_, err := newLockableAsset(ctx, nexus, ibc, bank, coin)
+				assert.ErrorContains(t, err, "expected ics20 coin IBC path")
+			}).
+			Run(t)
+
+		givenKeeper.
 			When2(whenCoinIsICS20FromExternalCosmosChain).
 			Then("should create a new lockable asset of type ICS20", func(t *testing.T) {
 				lockableAsset, err := newLockableAsset(ctx, nexus, ibc, bank, coin)
