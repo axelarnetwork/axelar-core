@@ -357,11 +357,12 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 						}
 					}).
 					When2(requestIsMade).
-					Then("should not archive the transfer", func(t *testing.T) {
+					Then("should archive the failed transfer", func(t *testing.T) {
 						_, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), req)
 						assert.NoError(t, err)
 
-						assert.Len(t, nexusK.ArchivePendingTransferCalls(), 0)
+						assert.Len(t, nexusK.ArchivePendingTransferCalls(), 1)
+						assert.Len(t, ctx.EventManager().Events(), 0)
 					}),
 
 				whenHasPendingTransfers.
