@@ -79,6 +79,7 @@ type Nexus interface {
 	EnqueueTransfer(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error)
 	GetTransfersForChainPaginated(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, pageRequest *query.PageRequest) ([]nexus.CrossChainTransfer, *query.PageResponse, error)
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
+	MarkTransferAsFailed(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Uint, window time.Duration) error
 	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 	SetChain(ctx sdk.Context, chain nexus.Chain)

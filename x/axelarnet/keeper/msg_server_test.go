@@ -298,7 +298,8 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 			GetTransferFeesFunc: func(sdk.Context) sdk.Coins {
 				return sdk.Coins{}
 			},
-			SubTransferFeeFunc: func(sdk.Context, sdk.Coin) {},
+			SubTransferFeeFunc:       func(sdk.Context, sdk.Coin) {},
+			MarkTransferAsFailedFunc: func(sdk.Context, nexus.CrossChainTransfer) {},
 		}
 		bankK = &mock.BankKeeperMock{}
 		transferK = &mock.IBCTransferKeeperMock{}
@@ -357,11 +358,12 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 						}
 					}).
 					When2(requestIsMade).
-					Then("should archive the failed transfer", func(t *testing.T) {
+					Then("should mark the transfer as failed", func(t *testing.T) {
 						_, err := server.ExecutePendingTransfers(sdk.WrapSDKContext(ctx), req)
 						assert.NoError(t, err)
 
-						assert.Len(t, nexusK.ArchivePendingTransferCalls(), 1)
+						assert.Len(t, nexusK.ArchivePendingTransferCalls(), 0)
+						assert.Len(t, nexusK.MarkTransferAsFailedCalls(), 1)
 						assert.Len(t, ctx.EventManager().Events(), 0)
 					}),
 

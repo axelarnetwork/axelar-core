@@ -228,6 +228,14 @@ func (k Keeper) ArchivePendingTransfer(ctx sdk.Context, transfer exported.CrossC
 	k.setTransfer(ctx, transfer)
 }
 
+// MarkTransferAsFailed marks the transfer as failed
+func (k Keeper) MarkTransferAsFailed(ctx sdk.Context, transfer exported.CrossChainTransfer) {
+	k.deleteTransfer(ctx, transfer)
+
+	transfer.State = exported.TransferFailed
+	k.setTransfer(ctx, transfer)
+}
+
 // GetTransfersForChain returns the current set of transfers with the given state for the given chain
 func (k Keeper) GetTransfersForChain(ctx sdk.Context, chain exported.Chain, state exported.TransferState) (transfers []exported.CrossChainTransfer) {
 	if !k.IsChainActivated(ctx, chain) {

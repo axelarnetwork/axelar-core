@@ -255,8 +255,6 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 	}
 
 	for _, pendingTransfer := range pendingTransfers {
-		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
-
 		success := utils.RunCached(ctx, s, func(ctx sdk.Context) (bool, error) {
 			recipient, err := sdk.AccAddressFromBech32(pendingTransfer.Recipient.Address)
 			if err != nil {
@@ -269,10 +267,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 				return false, err
 			}
 
-			return true, nil
-		})
-
-		if success {
+			s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 			events.Emit(ctx,
 				&types.AxelarTransferCompleted{
 					ID:         pendingTransfer.ID,
@@ -280,6 +275,12 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 					Asset:      pendingTransfer.Asset,
 					Recipient:  pendingTransfer.Recipient.Address,
 				})
+
+			return true, nil
+		})
+
+		if !success {
+			s.nexus.MarkTransferAsFailed(ctx, pendingTransfer)
 		}
 	}
 
