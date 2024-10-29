@@ -262,7 +262,7 @@ func (m AxelarnetIBCModule) OnAcknowledgementPacket(
 			return err
 		}
 
-		return m.setRoutedPacketFailed(ctx, packet)
+		return m.setRoutedPacketFailed(ctx, packet, m.bank)
 	}
 }
 
@@ -287,7 +287,7 @@ func (m AxelarnetIBCModule) OnTimeoutPacket(
 		return err
 	}
 
-	return m.setRoutedPacketFailed(ctx, packet)
+	return m.setRoutedPacketFailed(ctx, packet, m.bank)
 }
 
 // returns the transfer id and delete the existing mapping
@@ -334,7 +334,7 @@ func setRoutedPacketCompleted(ctx sdk.Context, k keeper.Keeper, n types.Nexus, p
 	return nil
 }
 
-func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channeltypes.Packet) error {
+func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channeltypes.Packet, bank types.BankKeeper) error {
 	// IBC ack/timeout packets, by convention, use the source port/channel to represent native chain -> counterparty chain channel id
 	// https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics#definitions
 	port, channel, sequence := packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence()
@@ -343,6 +343,11 @@ func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channe
 	transferID, ok := getSeqIDMapping(ctx, m.keeper, port, channel, sequence)
 	if ok {
 		lockableAsset, err := m.nexus.NewLockableAsset(ctx, m.ibcK, m.bank, funcs.MustOk(m.keeper.GetTransfer(ctx, transferID)).Token)
+		if err != nil {
+			return err
+		}
+
+		err = refundFromAssetEscrowAddressToIBCAccount(ctx, packet, bank)
 		if err != nil {
 			return err
 		}
@@ -394,4 +399,25 @@ func extractTokenFromAckOrTimeoutPacket(packet channeltypes.Packet) sdk.Coin {
 	amount := funcs.MustOk(sdk.NewIntFromString(data.Amount))
 
 	return sdk.NewCoin(trace.IBCDenom(), amount)
+}
+
+// Temporary logic to handle in-transit IBC transfers during upgrade. Previously IBC transfers were sent from the asset
+// escrow address, but now they're sent from Axelar IBC account. IBC refunds the token to the original sender, so we move
+// the tokens from the asset escrow to the Axelar IBC account for correct processing.
+//
+// Deprecated: Remove this function after the v1.1 upgrade and ensure no in-transit IBC transfers are left.
+func refundFromAssetEscrowAddressToIBCAccount(ctx sdk.Context, packet channeltypes.Packet, bank types.BankKeeper) error {
+	// Packet is validated by the IBC module, so we can safely assume it's a valid ICS20 packet
+	data := funcs.Must(types.ToICS20Packet(packet))
+
+	originalSender := funcs.Must(sdk.AccAddressFromBech32(data.Sender))
+	if originalSender.Equals(types.AxelarIBCAccount) {
+		return nil
+	}
+
+	denom := ibctransfertypes.ParseDenomTrace(data.Denom).IBCDenom()
+	transferAmount := funcs.MustOk(sdk.NewIntFromString(data.Amount))
+
+	token := sdk.NewCoin(denom, transferAmount)
+	return bank.SendCoins(ctx, originalSender, types.AxelarIBCAccount, sdk.NewCoins(token))
 }
