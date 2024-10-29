@@ -347,7 +347,7 @@ func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channe
 			return err
 		}
 
-		err = refund_from_asset_escrow_address_to_ibc_account(ctx, packet, bank)
+		err = refundFromAssetEscrowAddressToIBCAccount(ctx, packet, bank)
 		if err != nil {
 			return err
 		}
@@ -401,24 +401,23 @@ func extractTokenFromAckOrTimeoutPacket(packet channeltypes.Packet) sdk.Coin {
 	return sdk.NewCoin(trace.IBCDenom(), amount)
 }
 
-// Temporary logic to handle in-transit IBC transfers during upgrade. Previously IBC transfers sent from asset escrow address; now sent from IBC account.
-// Deprecated: Remove this function after the v1.1 upgrade
-func refund_from_asset_escrow_address_to_ibc_account(ctx sdk.Context, packet channeltypes.Packet, bank types.BankKeeper) error {
+// Temporary logic to handle in-transit IBC transfers during upgrade. Previously IBC transfers were sent from the asset
+// escrow address, but now they're sent from Axelar IBC account. IBC refunds the token to the original sender, so we move
+// the tokens from the asset escrow to the Axelar IBC account for correct processing.
+//
+// Deprecated: Remove this function after the v1.1 upgrade and ensure no in-transit IBC transfers are left.
+func refundFromAssetEscrowAddressToIBCAccount(ctx sdk.Context, packet channeltypes.Packet, bank types.BankKeeper) error {
 	// Packet is validated by the IBC module, so we can safely assume it's a valid ICS20 packet
 	data := funcs.Must(types.ToICS20Packet(packet))
 
-	// decode the sender address
 	originalSender := funcs.Must(sdk.AccAddressFromBech32(data.Sender))
 	if originalSender.Equals(types.AxelarIBCAccount) {
 		return nil
 	}
 
-	// parse the denomination from the full denom path
-	trace := ibctransfertypes.ParseDenomTrace(data.Denom)
-
-	// parse the transfer amount
+	denom := ibctransfertypes.ParseDenomTrace(data.Denom).IBCDenom()
 	transferAmount := funcs.MustOk(sdk.NewIntFromString(data.Amount))
 
-	token := sdk.NewCoin(trace.IBCDenom(), transferAmount)
+	token := sdk.NewCoin(denom, transferAmount)
 	return bank.SendCoins(ctx, originalSender, types.AxelarIBCAccount, sdk.NewCoins(token))
 }
