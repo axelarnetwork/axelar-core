@@ -258,7 +258,8 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 		success := utils.RunCached(ctx, s, func(ctx sdk.Context) (bool, error) {
 			recipient, err := sdk.AccAddressFromBech32(pendingTransfer.Recipient.Address)
 			if err != nil {
-				s.Logger(ctx).Error(fmt.Sprintf("discard invalid recipient %s and continue", pendingTransfer.Recipient.Address))
+				// NOTICE: Addresses that previously failed validation were marked as Archived. Starting in v1.1, they are now marked as TransferFailed.
+				s.Logger(ctx).Error(fmt.Sprintf("transfer failed due to invalid recipient %s", pendingTransfer.Recipient.Address))
 				return false, err
 			}
 
