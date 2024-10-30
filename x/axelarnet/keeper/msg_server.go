@@ -255,27 +255,34 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 	}
 
 	for _, pendingTransfer := range pendingTransfers {
-		recipient, err := sdk.AccAddressFromBech32(pendingTransfer.Recipient.Address)
-		if err != nil {
-			s.Logger(ctx).Error(fmt.Sprintf("discard invalid recipient %s and continue", pendingTransfer.Recipient.Address))
+		success := utils.RunCached(ctx, s, func(ctx sdk.Context) (bool, error) {
+			recipient, err := sdk.AccAddressFromBech32(pendingTransfer.Recipient.Address)
+			if err != nil {
+				// NOTICE: Addresses that previously failed validation were marked as Archived. Starting in v1.1, they are now marked as TransferFailed.
+				s.Logger(ctx).Error(fmt.Sprintf("transfer failed due to invalid recipient %s", pendingTransfer.Recipient.Address))
+				return false, err
+			}
+
+			if err = transfer(ctx, s.Keeper, s.nexus, s.bank, s.ibcK, recipient, pendingTransfer.Asset); err != nil {
+				s.Logger(ctx).Error("failed to transfer asset to axelarnet", "err", err)
+				return false, err
+			}
+
 			s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
-			continue
+			events.Emit(ctx,
+				&types.AxelarTransferCompleted{
+					ID:         pendingTransfer.ID,
+					Receipient: pendingTransfer.Recipient.Address,
+					Asset:      pendingTransfer.Asset,
+					Recipient:  pendingTransfer.Recipient.Address,
+				})
+
+			return true, nil
+		})
+
+		if !success {
+			s.nexus.MarkTransferAsFailed(ctx, pendingTransfer)
 		}
-
-		if err = transfer(ctx, s.Keeper, s.nexus, s.bank, s.ibcK, recipient, pendingTransfer.Asset); err != nil {
-			s.Logger(ctx).Error("failed to transfer asset to axelarnet", "err", err)
-			continue
-		}
-
-		events.Emit(ctx,
-			&types.AxelarTransferCompleted{
-				ID:         pendingTransfer.ID,
-				Receipient: pendingTransfer.Recipient.Address,
-				Asset:      pendingTransfer.Asset,
-				Recipient:  pendingTransfer.Recipient.Address,
-			})
-
-		s.nexus.ArchivePendingTransfer(ctx, pendingTransfer)
 	}
 
 	// release transfer fees
