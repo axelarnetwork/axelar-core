@@ -197,6 +197,7 @@ func TestIBCModule(t *testing.T) {
 					transfer := funcs.MustOk(k.GetTransfer(ctx, transfer.ID))
 					assert.Equal(t, types.TransferFailed, transfer.Status)
 					assert.Len(t, lockableAsset.LockFromCalls(), 1)
+					assert.Len(t, bankK.SendCoinsCalls(), 2)
 				}),
 
 			whenPendingTransfersExist.
@@ -236,6 +237,21 @@ func TestIBCModule(t *testing.T) {
 				Then("should set message to failed", func(t *testing.T) {
 					assert.Equal(t, nexus.Failed, message.Status)
 					assert.Len(t, lockableAsset.LockFromCalls(), 1)
+				}),
+
+			seqMapsToID.
+				When2(whenChainIsActivated).
+				When("lock coin succeeds", lockCoin(true)).
+				When("packet sender is from IBC account", func() {
+					fungibleTokenPacket.Sender = types.AxelarIBCAccount.String()
+					packet = channeltypes.NewPacket(fungibleTokenPacket.GetBytes(), packetSeq, ibctransfertypes.PortID, channelID, ibctransfertypes.PortID, channelID, clienttypes.NewHeight(0, 110), 0)
+				}).
+				When2(whenOnTimeout).
+				Then("should not trigger refund from asset escrow to IBC account", func(t *testing.T) {
+					transfer := funcs.MustOk(k.GetTransfer(ctx, transfer.ID))
+					assert.Equal(t, types.TransferFailed, transfer.Status)
+					assert.Len(t, lockableAsset.LockFromCalls(), 1)
+					assert.Len(t, bankK.SendCoinsCalls(), 1)
 				}),
 		).Run(t)
 }
