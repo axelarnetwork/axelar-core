@@ -191,7 +191,7 @@ type AxelarApp struct {
 
 	interfaceRegistry types.InterfaceRegistry
 
-	mm *module.Manager
+	mm *FilteredModuleManager
 }
 
 // NewAxelarApp is a constructor function for axelar
@@ -309,7 +309,7 @@ func NewAxelarApp(
 		),
 	)
 
-	mm := module.NewManager(appModules...)
+	mm := NewFilteredModuleManager(appModules, []string{vestingtypes.ModuleName})
 	mm.SetOrderMigrations(orderMigrations()...)
 	mm.SetOrderBeginBlockers(orderBeginBlockers()...)
 	mm.SetOrderEndBlockers(orderEndBlockers()...)
