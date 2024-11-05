@@ -35,7 +35,11 @@ func TestMigrate6to7(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 
 	Given("keeper setup before migration", func() {
-		bank = &mock.BankKeeperMock{}
+		bank = &mock.BankKeeperMock{
+			SendCoinsFromModuleToModuleFunc: func(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error {
+				return nil
+			},
+		}
 		account = &mock.AccountKeeperMock{
 			GetModuleAddressFunc: func(_ string) sdk.AccAddress {
 				return rand.AccAddr()
