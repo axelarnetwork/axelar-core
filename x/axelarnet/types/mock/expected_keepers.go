@@ -751,6 +751,9 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 //				panic("mock out the Logger method")
 //			},
+//			MarkTransferAsFailedFunc: func(ctx cosmossdktypes.Context, transfer github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer)  {
+//				panic("mock out the MarkTransferAsFailed method")
+//			},
 //			NewLockableAssetFunc: func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableAsset, error) {
 //				panic("mock out the NewLockableAsset method")
 //			},
@@ -886,6 +889,9 @@ type NexusMock struct {
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
+
+	// MarkTransferAsFailedFunc mocks the MarkTransferAsFailed method.
+	MarkTransferAsFailedFunc func(ctx cosmossdktypes.Context, transfer github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer)
 
 	// NewLockableAssetFunc mocks the NewLockableAsset method.
 	NewLockableAssetFunc func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableAsset, error)
@@ -1134,6 +1140,13 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
+		// MarkTransferAsFailed holds details about calls to the MarkTransferAsFailed method.
+		MarkTransferAsFailed []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Transfer is the transfer argument value.
+			Transfer github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer
+		}
 		// NewLockableAsset holds details about calls to the NewLockableAsset method.
 		NewLockableAsset []struct {
 			// Ctx is the ctx argument value.
@@ -1286,6 +1299,7 @@ type NexusMock struct {
 	lockIsWasmConnectionActivated     sync.RWMutex
 	lockLinkAddresses                 sync.RWMutex
 	lockLogger                        sync.RWMutex
+	lockMarkTransferAsFailed          sync.RWMutex
 	lockNewLockableAsset              sync.RWMutex
 	lockRateLimitTransfer             sync.RWMutex
 	lockRegisterAsset                 sync.RWMutex
@@ -2343,6 +2357,42 @@ func (mock *NexusMock) LoggerCalls() []struct {
 	mock.lockLogger.RLock()
 	calls = mock.calls.Logger
 	mock.lockLogger.RUnlock()
+	return calls
+}
+
+// MarkTransferAsFailed calls MarkTransferAsFailedFunc.
+func (mock *NexusMock) MarkTransferAsFailed(ctx cosmossdktypes.Context, transfer github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer) {
+	if mock.MarkTransferAsFailedFunc == nil {
+		panic("NexusMock.MarkTransferAsFailedFunc: method is nil but Nexus.MarkTransferAsFailed was just called")
+	}
+	callInfo := struct {
+		Ctx      cosmossdktypes.Context
+		Transfer github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer
+	}{
+		Ctx:      ctx,
+		Transfer: transfer,
+	}
+	mock.lockMarkTransferAsFailed.Lock()
+	mock.calls.MarkTransferAsFailed = append(mock.calls.MarkTransferAsFailed, callInfo)
+	mock.lockMarkTransferAsFailed.Unlock()
+	mock.MarkTransferAsFailedFunc(ctx, transfer)
+}
+
+// MarkTransferAsFailedCalls gets all the calls that were made to MarkTransferAsFailed.
+// Check the length with:
+//
+//	len(mockedNexus.MarkTransferAsFailedCalls())
+func (mock *NexusMock) MarkTransferAsFailedCalls() []struct {
+	Ctx      cosmossdktypes.Context
+	Transfer github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer
+} {
+	var calls []struct {
+		Ctx      cosmossdktypes.Context
+		Transfer github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer
+	}
+	mock.lockMarkTransferAsFailed.RLock()
+	calls = mock.calls.MarkTransferAsFailed
+	mock.lockMarkTransferAsFailed.RUnlock()
 	return calls
 }
 
