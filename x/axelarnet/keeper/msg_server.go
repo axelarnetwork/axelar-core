@@ -479,8 +479,6 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 	if err != nil {
 		return nil, err
 	}
-	// Notice: all IBC transfer are routed from AxelarIBCAccount after v1.1
-	t.Sender = types.AxelarIBCAccount
 
 	err = s.ibcK.SendIBCTransfer(ctx, t)
 	if err != nil {

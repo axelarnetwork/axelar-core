@@ -13,10 +13,13 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
+	axelartestutils "github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusmock "github.com/axelarnetwork/axelar-core/x/nexus/exported/mock"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/funcs"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -26,6 +29,7 @@ func TestMigrate6to7(t *testing.T) {
 		account       *mock.AccountKeeperMock
 		nexusK        *mock.NexusMock
 		lockableAsset *nexusmock.LockableAssetMock
+		transfers     []types.IBCTransfer
 	)
 
 	encCfg := app.MakeEncodingConfig()
@@ -59,15 +63,33 @@ func TestMigrate6to7(t *testing.T) {
 			},
 		}
 	}).
-		When("Axelarnet module account has balance for failed cross chain transfers", func() {
+		When("there are some failed transfers and Axelarnet module account has balances", func() {
 			bank.SpendableCoinsFunc = func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
 				return sdk.NewCoins(rand.Coin(), rand.Coin(), rand.Coin())
 			}
+
+			for i := 0; i < 50; i++ {
+				transfer := axelartestutils.RandomIBCTransfer()
+				if i%2 == 0 {
+					transfer.Status = types.TransferFailed
+				}
+				transfers = append(transfers, transfer)
+				assert.NoError(t, k.EnqueueIBCTransfer(ctx, transfer))
+			}
 		}).
-		Then("the migration should lock back to escrow account", func(t *testing.T) {
+		Then("the migration should lock back to escrow account and update sender of failed transfers", func(t *testing.T) {
 			err := keeper.Migrate6to7(k, bank, account, nexusK, ibcK)(ctx)
 			assert.NoError(t, err)
 			assert.Len(t, lockableAsset.LockFromCalls(), 3)
+
+			for _, transfer := range transfers {
+				actual := funcs.MustOk(k.GetTransfer(ctx, transfer.ID))
+				if transfer.Status == types.TransferFailed {
+					assert.Equal(t, types.AxelarIBCAccount, actual.Sender)
+				} else {
+					assert.Equal(t, transfer.Sender, actual.Sender)
+				}
+			}
 		}).
 		Run(t)
 }
