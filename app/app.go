@@ -304,6 +304,7 @@ func NewAxelarApp(
 			*GetKeeper[axelarnetKeeper.IBCKeeper](keepers),
 			GetKeeper[nexusKeeper.Keeper](keepers),
 			axelarbankkeeper.NewBankKeeper(GetKeeper[bankkeeper.BaseKeeper](keepers)),
+			GetKeeper[authkeeper.AccountKeeper](keepers),
 			logger,
 		),
 	)
