@@ -565,7 +565,17 @@ func TestRetryIBCTransfer(t *testing.T) {
 			EnqueueForTransferFunc: func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) (nexus.TransferID, error) {
 				return nexus.TransferID(rand.I64Between(1, 9999)), nil
 			},
+			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+				lockableAsset := &nexusmock.LockableAssetMock{
+					UnlockToFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
+						return nil
+					},
+				}
+
+				return lockableAsset, nil
+			},
 		}
+
 		channelK.GetNextSequenceSendFunc = func(sdk.Context, string, string) (uint64, bool) {
 			return uint64(rand.I64Between(1, 99999)), true
 		}

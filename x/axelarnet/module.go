@@ -96,15 +96,16 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	logger log.Logger
-	ibcK   keeper.IBCKeeper
-	keeper keeper.Keeper
-	nexus  types.Nexus
-	bank   types.BankKeeper
+	logger  log.Logger
+	ibcK    keeper.IBCKeeper
+	keeper  keeper.Keeper
+	nexus   types.Nexus
+	bank    types.BankKeeper
+	account types.AccountKeeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(ibcK keeper.IBCKeeper, nexus types.Nexus, bank types.BankKeeper, logger log.Logger) AppModule {
+func NewAppModule(ibcK keeper.IBCKeeper, nexus types.Nexus, bank types.BankKeeper, account types.AccountKeeper, logger log.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		logger:         logger,
@@ -112,6 +113,7 @@ func NewAppModule(ibcK keeper.IBCKeeper, nexus types.Nexus, bank types.BankKeepe
 		keeper:         ibcK.Keeper,
 		nexus:          nexus,
 		bank:           bank,
+		account:        account,
 	}
 }
 
@@ -160,7 +162,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus))
 
-	err := cfg.RegisterMigration(types.ModuleName, 5, keeper.Migrate5to6(am.keeper))
+	err := cfg.RegisterMigration(types.ModuleName, 6, keeper.Migrate6to7(am.keeper, am.bank, am.account, am.nexus, am.ibcK))
 	if err != nil {
 		panic(err)
 	}
@@ -179,7 +181,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 6 }
+func (AppModule) ConsensusVersion() uint64 { return 7 }
 
 // AxelarnetIBCModule is an IBCModule that adds rate limiting and gmp processing to the ibc middleware
 type AxelarnetIBCModule struct {

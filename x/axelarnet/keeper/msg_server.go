@@ -470,7 +470,17 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 		return nil, fmt.Errorf("chain %s is not activated", chain.Name)
 	}
 
-	err := s.ibcK.SendIBCTransfer(ctx, t)
+	lockableAsset, err := s.nexus.NewLockableAsset(ctx, s.ibcK, s.bank, t.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	err = lockableAsset.UnlockTo(ctx, types.AxelarIBCAccount)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.ibcK.SendIBCTransfer(ctx, t)
 	if err != nil {
 		return nil, err
 	}

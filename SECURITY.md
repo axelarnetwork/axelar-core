@@ -1,4 +1,4 @@
- # Security Policy
+# Security Policy
 
 ## Introduction
 
@@ -7,10 +7,11 @@ Security researchers are essential in identifying vulnerabilities that may impac
 ### Guidelines for Responsible Vulnerability Testing and Reporting
 
 1. **Refrain from testing vulnerabilities on our publicly accessible environments**, including but not limited to:
-  - Axelar mainnet
-  - Axelar Frontend Apps e.g satellite.money
-  - Axelar Testnet
-  - Axelar Testnet Frontend Apps e.g testnet.satellite.money
+
+    - Axelar mainnet
+    - Axelar Powered Frontend Apps e.g satellite.money, Squid etc.
+    - Axelar Testnet
+    - Axelar Testnet Powered Frontend Apps e.g testnet.satellite.money
 
 2. **Avoid reporting security vulnerabilities through public channels, including GitHub issues**
 
@@ -20,7 +21,7 @@ To privately report a security vulnerability, please choose one of the following
 
 ### 1. Email
 
-Send your detailed vulnerability report to `security@axelar.network`.
+Send your detailed vulnerability report to `security@interoplabs.io`.
 
 ### 2. Bug Bounty Program
 
@@ -45,7 +46,7 @@ When reporting a vulnerability through either method, please include the followi
 2. **Confirmation**: We will confirm receipt of your report within 48 hours.
 3. **Assessment**: Our security team will evaluate the vulnerability and inform you of its severity and the estimated time frame for resolution.
 4. **Resolution**: Once fixed, you will be contacted to verify the solution.
-5. **Public Disclosure**: Details of the vulnerability may be publicly disclosed after ensuring it poses no further risk.
+5. **Public Disclosure**: Details of the vulnerability may be publicly disclosed after approval from the team, ensuring it poses no further risk.
 
 During the vulnerability disclosure process, we ask security researchers to keep vulnerabilities and communications around vulnerability submissions private and confidential until a patch is developed. Should a security issue require a network upgrade, additional time may be needed to raise a governance proposal and complete the upgrade.
 
@@ -58,7 +59,7 @@ During this time:
 
 | Severity     | Description                                                             |
 |--------------|-------------------------------------------------------------------------|
-| **CRITICAL** | Immediate threat to critical systems (e.g., chain halts, funds at risk) |
+| **CRITICAL** | Immediate threat to critical systems (e.g. funds at risk) |
 | **HIGH**     | Significant impact on major functionality                               |
 | **MEDIUM**   | Impacts minor features or exposes non-sensitive data                    |
 | **LOW**      | Minimal impact                                                          |
