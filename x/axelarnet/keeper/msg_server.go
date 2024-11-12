@@ -480,6 +480,13 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 		return nil, err
 	}
 
+	// Note: Starting from version 1.1, all IBC transfers are routed through AxelarIBCAccount,
+	// and all previously failed transfers have been migrated to use AxelarIBCAccount as the sender.
+	//
+	// This is a temporary measure to prevent pending transfers that would fail during the upgrade process.
+	// It can be removed if no such cases exists during upgrade, or the migration can be re-run to update senders in version 1.2.
+	t.Sender = types.AxelarIBCAccount
+
 	err = s.ibcK.SendIBCTransfer(ctx, t)
 	if err != nil {
 		return nil, err
