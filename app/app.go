@@ -478,18 +478,14 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keep
 	upgradeKeeper.SetUpgradeHandler(
 		upgradeName(app.Version()),
 		func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+			err := MigratePreInitializedModuleAccounts(ctx, *GetKeeper[authkeeper.AccountKeeper](keepers), []string{nexusTypes.ModuleName})
+			if err != nil {
+				return nil, err
+			}
+
 			updatedVM, err := app.mm.RunMigrations(ctx, configurator, fromVM)
 			if err != nil {
 				return updatedVM, err
-			}
-
-			// TODO: remove after v35 upgrade
-			// Override wasm module default params
-			if upgradeName(app.Version()) == "v0.35" && IsWasmEnabled() {
-				GetKeeper[wasm.Keeper](keepers).SetParams(ctx, wasmtypes.Params{
-					CodeUploadAccess:             wasmtypes.AllowNobody,
-					InstantiateDefaultPermission: wasmtypes.AccessTypeNobody,
-				})
 			}
 
 			return updatedVM, err
