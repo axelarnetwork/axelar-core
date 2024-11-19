@@ -1,13 +1,13 @@
 ## axelard debug raw-bytes
 
-Convert raw bytes output (eg. \[10 21 13 255\]) to hex
+Convert raw bytes output (eg. [10 21 13 255]) to hex
 
 ### Synopsis
 
 Convert raw-bytes to hex.
 
 Example:
-$ axelard debug raw-bytes \[72 101 108 108 111 44 32 112 108 97 121 103 114 111 117 110 100\]
+$ axelard debug raw-bytes [72 101 108 108 111 44 32 112 108 97 121 103 114 111 117 110 100]
 
 ```
 axelard debug raw-bytes [raw-bytes] [flags]
@@ -31,4 +31,4 @@ axelard debug raw-bytes [raw-bytes] [flags]
 
 ### SEE ALSO
 
-- [axelard debug](axelard_debug.md)	 - Tool for helping with debugging your application
+- [axelard debug](axelard_debug.md) - Tool for helping with debugging your application

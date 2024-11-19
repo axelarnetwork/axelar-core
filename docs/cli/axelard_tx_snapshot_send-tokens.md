@@ -45,4 +45,4 @@ axelard tx snapshot send-tokens [amount] [address 1] ... [address n] [flags]
 
 ### SEE ALSO
 
-- [axelard tx snapshot](axelard_tx_snapshot.md)	 - snapshot transactions subcommands
+- [axelard tx snapshot](axelard_tx_snapshot.md) - snapshot transactions subcommands

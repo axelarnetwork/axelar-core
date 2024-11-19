@@ -25,5 +25,5 @@ axelard tx ibc-transfer [flags]
 
 ### SEE ALSO
 
-- [axelard tx](axelard_tx.md)	 - Transactions subcommands
-- [axelard tx ibc-transfer transfer](axelard_tx_ibc-transfer_transfer.md)	 - Transfer a fungible token through IBC
+- [axelard tx](axelard_tx.md) - Transactions subcommands
+- [axelard tx ibc-transfer transfer](axelard_tx_ibc-transfer_transfer.md) - Transfer a fungible token through IBC

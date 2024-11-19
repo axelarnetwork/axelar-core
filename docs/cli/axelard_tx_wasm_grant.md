@@ -62,4 +62,4 @@ axelard tx wasm grant [grantee] [message_type="execution"|"migration"] [contract
 
 ### SEE ALSO
 
-- [axelard tx wasm](axelard_tx_wasm.md)	 - Wasm transaction subcommands
+- [axelard tx wasm](axelard_tx_wasm.md) - Wasm transaction subcommands

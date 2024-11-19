@@ -57,4 +57,4 @@ axelard tx ibc client create [path/to/client_state.json] [path/to/consensus_stat
 
 ### SEE ALSO
 
-- [axelard tx ibc client](axelard_tx_ibc_client.md)	 - IBC client transaction subcommands
+- [axelard tx ibc client](axelard_tx_ibc_client.md) - IBC client transaction subcommands

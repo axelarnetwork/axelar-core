@@ -10,7 +10,7 @@ Example:
 $ axelard query bank total
 
 To query for the total supply of a specific coin denomination use:
-$ axelard query bank total --denom=\[denom\]
+$ axelard query bank total --denom=[denom]
 
 ```
 axelard query bank total [flags]
@@ -44,4 +44,4 @@ axelard query bank total [flags]
 
 ### SEE ALSO
 
-- [axelard query bank](axelard_query_bank.md)	 - Querying commands for the bank module
+- [axelard query bank](axelard_query_bank.md) - Querying commands for the bank module
