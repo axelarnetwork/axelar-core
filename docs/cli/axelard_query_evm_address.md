@@ -28,4 +28,4 @@ axelard query evm address [chain] [flags]
 
 ### SEE ALSO
 
-- [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
+- [axelard query evm](axelard_query_evm.md) - Querying commands for the evm module

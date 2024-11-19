@@ -57,4 +57,4 @@ axelard tx ibc client upgrade [client-identifier] [path/to/client_state.json] [p
 
 ### SEE ALSO
 
-- [axelard tx ibc client](axelard_tx_ibc_client.md)	 - IBC client transaction subcommands
+- [axelard tx ibc client](axelard_tx_ibc_client.md) - IBC client transaction subcommands

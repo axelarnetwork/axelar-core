@@ -34,4 +34,4 @@ axelard query gov params [flags]
 
 ### SEE ALSO
 
-- [axelard query gov](axelard_query_gov.md)	 - Querying commands for the governance module
+- [axelard query gov](axelard_query_gov.md) - Querying commands for the governance module

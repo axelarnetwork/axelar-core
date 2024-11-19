@@ -45,4 +45,4 @@ axelard tx axelarnet confirm-deposit [denom] [burnerAddr] [flags]
 
 ### SEE ALSO
 
-- [axelard tx axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
+- [axelard tx axelarnet](axelard_tx_axelarnet.md) - axelarnet transactions subcommands

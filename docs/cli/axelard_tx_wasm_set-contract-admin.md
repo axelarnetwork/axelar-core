@@ -45,4 +45,4 @@ axelard tx wasm set-contract-admin [contract_addr_bech32] [new_admin_addr_bech32
 
 ### SEE ALSO
 
-- [axelard tx wasm](axelard_tx_wasm.md)	 - Wasm transaction subcommands
+- [axelard tx wasm](axelard_tx_wasm.md) - Wasm transaction subcommands

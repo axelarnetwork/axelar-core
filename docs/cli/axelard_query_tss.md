@@ -25,5 +25,5 @@ axelard query tss [flags]
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md)	 - Querying subcommands
-- [axelard query tss params](axelard_query_tss_params.md)	 - Returns the params for the tss module
+- [axelard query](axelard_query.md) - Querying subcommands
+- [axelard query tss params](axelard_query_tss_params.md) - Returns the params for the tss module

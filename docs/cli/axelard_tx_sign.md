@@ -5,7 +5,7 @@ Sign a transaction generated offline
 ### Synopsis
 
 Sign a transaction created with the --generate-only flag.
-It will read a transaction from \[file\], sign it, and print its JSON encoding.
+It will read a transaction from [file], sign it, and print its JSON encoding.
 
 If the --signature-only flag is set, it will output the signature parts only.
 
@@ -66,4 +66,4 @@ axelard tx sign [file] [flags]
 
 ### SEE ALSO
 
-- [axelard tx](axelard_tx.md)	 - Transactions subcommands
+- [axelard tx](axelard_tx.md) - Transactions subcommands

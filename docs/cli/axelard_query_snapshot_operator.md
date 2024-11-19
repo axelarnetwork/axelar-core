@@ -1,6 +1,6 @@
 ## axelard query snapshot operator
 
-Fetch the operator address associated with \[proxy address\]
+Fetch the operator address associated with [proxy address]
 
 ```
 axelard query snapshot operator [proxy address] [flags]
@@ -27,4 +27,4 @@ axelard query snapshot operator [proxy address] [flags]
 
 ### SEE ALSO
 
-- [axelard query snapshot](axelard_query_snapshot.md)	 - Querying commands for the snapshot module
+- [axelard query snapshot](axelard_query_snapshot.md) - Querying commands for the snapshot module
