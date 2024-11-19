@@ -5,7 +5,7 @@ revoke fee-grant
 ### Synopsis
 
 revoke fee grant from a granter to a grantee. Note, the'--from' flag is
-ignored as it is implied from \[granter\].
+ignored as it is implied from [granter].
 
 Example:
 $ axelard tx feegrant revoke cosmos1skj.. cosmos1skj..
@@ -53,4 +53,4 @@ axelard tx feegrant revoke [granter] [grantee] [flags]
 
 ### SEE ALSO
 
-- [axelard tx feegrant](axelard_tx_feegrant.md)	 - Feegrant transactions subcommands
+- [axelard tx feegrant](axelard_tx_feegrant.md) - Feegrant transactions subcommands

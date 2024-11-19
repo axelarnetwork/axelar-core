@@ -25,7 +25,7 @@ axelard tx bank [flags]
 
 ### SEE ALSO
 
-- [axelard tx](axelard_tx.md)	 - Transactions subcommands
-- [axelard tx bank send](axelard_tx_bank_send.md)	 - Send funds from one account to another.
-  Note, the'--from' flag is ignored as it is implied from \[from_key_or_address\].
+- [axelard tx](axelard_tx.md) - Transactions subcommands
+- [axelard tx bank send](axelard_tx_bank_send.md) - Send funds from one account to another.
+  Note, the'--from' flag is ignored as it is implied from [from_key_or_address].
   When using '--dry-run' a key name cannot be used, only a bech32 address.

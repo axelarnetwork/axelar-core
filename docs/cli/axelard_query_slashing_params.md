@@ -33,4 +33,4 @@ axelard query slashing params [flags]
 
 ### SEE ALSO
 
-- [axelard query slashing](axelard_query_slashing.md)	 - Querying commands for the slashing module
+- [axelard query slashing](axelard_query_slashing.md) - Querying commands for the slashing module

@@ -35,4 +35,4 @@ axelard tx ibc client update [client-id] [path/to/header.json] --from node0 --ho
 
 ### SEE ALSO
 
-- [axelard tx ibc client](axelard_tx_ibc_client.md)	 - IBC client transaction subcommands
+- [axelard tx ibc client](axelard_tx_ibc_client.md) - IBC client transaction subcommands

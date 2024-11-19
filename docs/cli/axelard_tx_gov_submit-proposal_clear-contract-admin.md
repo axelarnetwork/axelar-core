@@ -48,4 +48,4 @@ axelard tx gov submit-proposal clear-contract-admin [contract_addr_bech32] [flag
 
 ### SEE ALSO
 
-- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
+- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md) - Submit a proposal along with an initial deposit

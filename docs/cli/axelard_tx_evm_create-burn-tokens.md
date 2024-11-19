@@ -45,4 +45,4 @@ axelard tx evm create-burn-tokens [chain] [flags]
 
 ### SEE ALSO
 
-- [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+- [axelard tx evm](axelard_tx_evm.md) - evm transactions subcommands

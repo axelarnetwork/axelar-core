@@ -40,4 +40,4 @@ axelard query txs [flags]
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md)	 - Querying subcommands
+- [axelard query](axelard_query.md) - Querying subcommands
