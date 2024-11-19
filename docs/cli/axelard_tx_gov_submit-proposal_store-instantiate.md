@@ -61,4 +61,4 @@ axelard tx gov submit-proposal store-instantiate [wasm file] [json_encoded_init_
 
 ### SEE ALSO
 
-- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
+- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md) - Submit a proposal along with an initial deposit

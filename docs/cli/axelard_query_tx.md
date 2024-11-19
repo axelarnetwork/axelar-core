@@ -35,4 +35,4 @@ axelard query tx --type=[hash|acc_seq|signature] [hash|acc_seq|signature] [flags
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md)	 - Querying subcommands
+- [axelard query](axelard_query.md) - Querying subcommands

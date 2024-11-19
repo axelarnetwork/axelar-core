@@ -25,11 +25,14 @@ import (
 
 func TestMigrate6to7(t *testing.T) {
 	var (
-		bank          *mock.BankKeeperMock
-		account       *mock.AccountKeeperMock
-		nexusK        *mock.NexusMock
-		lockableAsset *nexusmock.LockableAssetMock
-		transfers     []types.IBCTransfer
+		bank                   *mock.BankKeeperMock
+		account                *mock.AccountKeeperMock
+		nexusK                 *mock.NexusMock
+		lockableAsset          *nexusmock.LockableAssetMock
+		transfers              []types.IBCTransfer
+		balances               sdk.Coins
+		nexusModuleAccAddr     sdk.AccAddress
+		axelarnetModuleAccAddr sdk.AccAddress
 	)
 
 	encCfg := app.MakeEncodingConfig()
@@ -44,9 +47,18 @@ func TestMigrate6to7(t *testing.T) {
 				return nil
 			},
 		}
+		nexusModuleAccAddr = rand.AccAddr()
+		axelarnetModuleAccAddr = rand.AccAddr()
 		account = &mock.AccountKeeperMock{
-			GetModuleAddressFunc: func(_ string) sdk.AccAddress {
-				return rand.AccAddr()
+			GetModuleAddressFunc: func(module string) sdk.AccAddress {
+				switch module {
+				case types.ModuleName:
+					return axelarnetModuleAccAddr
+				case nexustypes.ModuleName:
+					return nexusModuleAccAddr
+				default:
+					panic("unexpected module")
+				}
 			},
 		}
 		lockableAsset = &nexusmock.LockableAssetMock{
@@ -64,8 +76,9 @@ func TestMigrate6to7(t *testing.T) {
 		}
 	}).
 		When("there are some failed transfers and Axelarnet module account has balances", func() {
+			balances = sdk.NewCoins(rand.Coin(), rand.Coin(), rand.Coin())
 			bank.SpendableCoinsFunc = func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
-				return sdk.NewCoins(rand.Coin(), rand.Coin(), rand.Coin())
+				return balances
 			}
 
 			for i := 0; i < 50; i++ {
@@ -81,6 +94,15 @@ func TestMigrate6to7(t *testing.T) {
 			err := keeper.Migrate6to7(k, bank, account, nexusK, ibcK)(ctx)
 			assert.NoError(t, err)
 			assert.Len(t, lockableAsset.LockFromCalls(), 3)
+			for _, call := range lockableAsset.LockFromCalls() {
+				assert.Equal(t, nexusModuleAccAddr, call.FromAddr)
+			}
+
+			assert.Len(t, bank.SendCoinsFromModuleToModuleCalls(), 3)
+			for _, call := range bank.SendCoinsFromModuleToModuleCalls() {
+				assert.Equal(t, types.ModuleName, call.SenderModule)
+				assert.Equal(t, nexustypes.ModuleName, call.RecipientModule)
+			}
 
 			for _, transfer := range transfers {
 				actual := funcs.MustOk(k.GetTransfer(ctx, transfer.ID))

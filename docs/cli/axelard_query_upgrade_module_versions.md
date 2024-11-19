@@ -33,4 +33,4 @@ axelard query upgrade module_versions [optional module_name] [flags]
 
 ### SEE ALSO
 
-- [axelard query upgrade](axelard_query_upgrade.md)	 - Querying commands for the upgrade module
+- [axelard query upgrade](axelard_query_upgrade.md) - Querying commands for the upgrade module

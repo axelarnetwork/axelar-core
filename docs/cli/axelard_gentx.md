@@ -84,4 +84,4 @@ axelard gentx [key_name] [amount] [flags]
 
 ### SEE ALSO
 
-- [axelard](axelard.md)	 - Axelar App
+- [axelard](axelard.md) - Axelar App

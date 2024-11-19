@@ -7,7 +7,7 @@ Query all grants of a grantee
 Queries all the grants for a grantee address.
 
 Example:
-$ axelard query feegrant grants-by-grantee \[grantee\]
+$ axelard query feegrant grants-by-grantee [grantee]
 
 ```
 axelard query feegrant grants-by-grantee [grantee] [flags]
@@ -40,4 +40,4 @@ axelard query feegrant grants-by-grantee [grantee] [flags]
 
 ### SEE ALSO
 
-- [axelard query feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module
+- [axelard query feegrant](axelard_query_feegrant.md) - Querying commands for the feegrant module

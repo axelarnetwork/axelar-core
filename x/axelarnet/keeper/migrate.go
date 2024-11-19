@@ -44,7 +44,7 @@ func escrowFundsFromFailedTransfers(ctx sdk.Context, k Keeper, bankK types.BankK
 
 		// Transfer coins from the Axelarnet module account to the Nexus module account for subsequent locking,
 		// as the Axelarnet module account is now restricted from sending coins.
-		err = bankK.SendCoinsFromModuleToModule(ctx, axelarnetModuleAccount.String(), nexusModuleAccount.String(), sdk.NewCoins(asset.GetAsset()))
+		err = bankK.SendCoinsFromModuleToModule(ctx, types.ModuleName, nexus.ModuleName, sdk.NewCoins(asset.GetAsset()))
 		if err != nil {
 			return err
 		}

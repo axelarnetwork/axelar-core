@@ -45,4 +45,4 @@ axelard tx wasm clear-contract-admin [contract_addr_bech32] [flags]
 
 ### SEE ALSO
 
-- [axelard tx wasm](axelard_tx_wasm.md)	 - Wasm transaction subcommands
+- [axelard tx wasm](axelard_tx_wasm.md) - Wasm transaction subcommands

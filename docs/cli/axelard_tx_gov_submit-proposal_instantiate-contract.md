@@ -53,4 +53,4 @@ axelard tx gov submit-proposal instantiate-contract [code_id_int64] [json_encode
 
 ### SEE ALSO
 
-- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
+- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md) - Submit a proposal along with an initial deposit

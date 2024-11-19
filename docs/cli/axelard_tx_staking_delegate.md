@@ -52,4 +52,4 @@ axelard tx staking delegate [validator-addr] [amount] [flags]
 
 ### SEE ALSO
 
-- [axelard tx staking](axelard_tx_staking.md)	 - Staking transaction subcommands
+- [axelard tx staking](axelard_tx_staking.md) - Staking transaction subcommands

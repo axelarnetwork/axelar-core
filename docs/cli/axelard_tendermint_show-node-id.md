@@ -24,4 +24,4 @@ axelard tendermint show-node-id [flags]
 
 ### SEE ALSO
 
-- [axelard tendermint](axelard_tendermint.md)	 - Tendermint subcommands
+- [axelard tendermint](axelard_tendermint.md) - Tendermint subcommands

@@ -37,4 +37,4 @@ axelard query wasm list-code [flags]
 
 ### SEE ALSO
 
-- [axelard query wasm](axelard_query_wasm.md)	 - Querying commands for the wasm module
+- [axelard query wasm](axelard_query_wasm.md) - Querying commands for the wasm module

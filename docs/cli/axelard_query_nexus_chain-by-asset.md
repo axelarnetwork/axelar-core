@@ -27,4 +27,4 @@ axelard query nexus chain-by-asset [asset] [flags]
 
 ### SEE ALSO
 
-- [axelard query nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
+- [axelard query nexus](axelard_query_nexus.md) - Querying commands for the nexus module

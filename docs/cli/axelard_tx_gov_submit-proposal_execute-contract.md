@@ -50,4 +50,4 @@ axelard tx gov submit-proposal execute-contract [contract_addr_bech32] [json_enc
 
 ### SEE ALSO
 
-- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
+- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md) - Submit a proposal along with an initial deposit

@@ -42,4 +42,4 @@ axelard query ibc channel unreceived-acks [port-id] [channel-id] --sequences=1,2
 
 ### SEE ALSO
 
-- [axelard query ibc channel](axelard_query_ibc_channel.md)	 - IBC channel query subcommands
+- [axelard query ibc channel](axelard_query_ibc_channel.md) - IBC channel query subcommands

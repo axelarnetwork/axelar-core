@@ -5,7 +5,7 @@ Grant Fee allowance to an address
 ### Synopsis
 
 Grant authorization to pay fees from your address. Note, the'--from' flag is
-ignored as it is implied from \[granter\].
+ignored as it is implied from [granter].
 
 Examples:
 axelard tx feegrant grant cosmos1skjw... cosmos1skjw... --spend-limit 100stake --expiration 2022-01-30T15:04:05Z or
@@ -61,4 +61,4 @@ axelard tx feegrant grant [granter_key_or_address] [grantee] [flags]
 
 ### SEE ALSO
 
-- [axelard tx feegrant](axelard_tx_feegrant.md)	 - Feegrant transactions subcommands
+- [axelard tx feegrant](axelard_tx_feegrant.md) - Feegrant transactions subcommands

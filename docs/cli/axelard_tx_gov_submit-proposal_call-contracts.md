@@ -71,4 +71,4 @@ axelard tx gov submit-proposal call-contracts [proposal-file] [flags]
 
 ### SEE ALSO
 
-- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md)	 - Submit a proposal along with an initial deposit
+- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md) - Submit a proposal along with an initial deposit
