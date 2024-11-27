@@ -694,8 +694,8 @@ github.com/aws/aws-sdk-go-v2/service/route53 v1.1.1/go.mod h1:rLiOUrPLW/Er5kRcQ7
 github.com/aws/aws-sdk-go-v2/service/sso v1.1.1/go.mod h1:SuZJxklHxLAXgLTc1iFXbEWkXs7QRTQpCLGaKIprQW0=
 github.com/aws/aws-sdk-go-v2/service/sts v1.1.1/go.mod h1:Wi0EBZwiz/K44YliU0EKxqTCJGUfYTWXrrBwkq736bM=
 github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB9LgIw=
-github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20240321205000-47c0c80e20ca h1:8pY+xR4RKOJhVEY+9eFodfGVcucYB/v/wjtflGl1STY=
-github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20240321205000-47c0c80e20ca/go.mod h1:bScuNwWAP0TZJpUf+SHXRU3xGoUPp+X9nAzfeIXts40=
+github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20241127184440-bd1464cb7b4b h1:M5u0LsrivsOq4pQIbKQE45nMWW/Z6RkFEOMqMfEU3r8=
+github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20241127184440-bd1464cb7b4b/go.mod h1:bScuNwWAP0TZJpUf+SHXRU3xGoUPp+X9nAzfeIXts40=
 github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b h1:qTbA+WlbMRiPtK5zn5evVfU2XhmIOrOZNIE8VNU1O3Q=
 github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b/go.mod h1:vDpqqxWxMvMIKbF6DN3BkxXAI4UJjolCHvaMGhE/FCI=
 github.com/axelarnetwork/utils v0.0.0-20230706045331-b7aacc1f4a2f h1:Q0Qh79MuZ/PWKzytqU8/4dt+S2QemdYYPXkjwp/i4l0=
