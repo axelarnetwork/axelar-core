@@ -20,12 +20,12 @@ func (k Keeper) IncrID(ctx sdk.Context) {
 	utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx)).Incr(ctx)
 }
 
-// nextID returns the transaction hash of the current transaction and the incremented nonce
-func (k Keeper) nextID(ctx sdk.Context) ([32]byte, uint64) {
+// currIDAndIncr returns the current transaction hash and nonce, and increments the nonce
+func (k Keeper) currIDAndIncr(ctx sdk.Context) ([32]byte, uint64) {
 	return getTxHash(ctx), utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx)).Incr(ctx)
 }
 
-// CurrID returns the current transaction hash and index
+// CurrID returns the current transaction hash and nonce
 func (k Keeper) CurrID(ctx sdk.Context) ([32]byte, uint64) {
 	return getTxHash(ctx), utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx)).Curr(ctx)
 }
