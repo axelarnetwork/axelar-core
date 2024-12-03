@@ -24,7 +24,6 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&RegisterFeeCollectorRequest{}, "axelarnet/RegisterFeeCollector", nil)
 	cdc.RegisterConcrete(&RetryIBCTransferRequest{}, "axelarnet/RetryIBCTransfer", nil)
 	cdc.RegisterConcrete(&RouteMessageRequest{}, "axelarnet/RouteMessage", nil)
-	cdc.RegisterConcrete(&CallContractRequest{}, "axelarnet/CallContract", nil)
 
 	cdc.RegisterConcrete(&CallContractsProposal{}, "axelarnet/CallContractsProposal", nil)
 }
@@ -45,7 +44,6 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&RegisterFeeCollectorRequest{},
 		&RetryIBCTransferRequest{},
 		&RouteMessageRequest{},
-		&CallContractRequest{},
 	)
 	registry.RegisterInterface("reward.v1beta1.Refundable",
 		(*exported.Refundable)(nil))
