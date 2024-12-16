@@ -210,6 +210,6 @@ replace github.com/rjeczalik/notify => github.com/rjeczalik/notify v0.9.3
 replace github.com/tendermint/tendermint => github.com/cometbft/cometbft v0.34.31
 
 // Temporary replacement for rosetta support
-replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20241216180716-1d6bdbe6c42a
+replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20241216210753-523fb865146c
 
 replace github.com/CosmWasm/wasmd => github.com/axelarnetwork/wasmd v0.33.1-0.20241022183459-add3571298b2
