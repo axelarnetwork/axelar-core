@@ -101,9 +101,9 @@ func NewMsgTypeBlacklistMessenger() MsgTypeBlacklistMessenger {
 }
 
 func (m MsgTypeBlacklistMessenger) DispatchMsg(_ sdk.Context, _ sdk.AccAddress, _ string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error) {
-	if isIBCSendPacketMsg(msg) || isStargateMsg(msg) {
-		return nil, nil, fmt.Errorf("ibc send packet and stargate messages are not supported")
-	}
+	//if isIBCSendPacketMsg(msg) || isStargateMsg(msg) {
+	//	return nil, nil, fmt.Errorf("ibc send packet and stargate messages are not supported")
+	//}
 
 	// this means that this message handler doesn't know how to deal with these messages (i.e. they can pass through),
 	// other handlers might be able to deal with them

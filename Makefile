@@ -13,14 +13,9 @@ PUSH_DOCKER_IMAGE := true
 WASM := true
 # 3 MB max wasm bytecode size
 MAX_WASM_SIZE := $(shell echo "$$((3 * 1024 * 1024))")
-IBC_WASM_HOOKS := false
+IBC_WASM_HOOKS := true
 # Export env var to go build so Cosmos SDK can see it
 export CGO_ENABLED := 1
-
-$(info $$WASM is [${WASM}])
-$(info $$IBC_WASM_HOOKS is [${IBC_WASM_HOOKS}])
-$(info $$MAX_WASM_SIZE is [${MAX_WASM_SIZE}])
-$(info $$CGO_ENABLED is [${CGO_ENABLED}])
 
 ifndef $(WASM_CAPABILITIES)
 # Wasm capabilities: https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
@@ -28,6 +23,12 @@ WASM_CAPABILITIES := "iterator,staking,stargate,cosmwasm_1_1,cosmwasm_1_2,cosmwa
 else
 WASM_CAPABILITIES := ""
 endif
+
+$(info $$WASM is [${WASM}])
+$(info $$IBC_WASM_HOOKS is [${IBC_WASM_HOOKS}])
+$(info $$MAX_WASM_SIZE is [${MAX_WASM_SIZE}])
+$(info $$CGO_ENABLED is [${CGO_ENABLED}])
+$(info $$WASM_CAPABILITIES is [${WASM_CAPABILITIES}])
 
 ifeq ($(MUSLC), true)
 STATIC_LINK_FLAGS := -linkmode=external -extldflags '-Wl,-z,muldefs -static'
