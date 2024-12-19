@@ -2805,7 +2805,6 @@ Msg defines the axelarnet Msg service.
 | `RegisterFeeCollector` | [RegisterFeeCollectorRequest](#axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest) | [RegisterFeeCollectorResponse](#axelar.axelarnet.v1beta1.RegisterFeeCollectorResponse) |  | POST|/axelar/axelarnet/register_fee_collector|
 | `RetryIBCTransfer` | [RetryIBCTransferRequest](#axelar.axelarnet.v1beta1.RetryIBCTransferRequest) | [RetryIBCTransferResponse](#axelar.axelarnet.v1beta1.RetryIBCTransferResponse) |  | POST|/axelar/axelarnet/retry_ibc_transfer|
 | `RouteMessage` | [RouteMessageRequest](#axelar.axelarnet.v1beta1.RouteMessageRequest) | [RouteMessageResponse](#axelar.axelarnet.v1beta1.RouteMessageResponse) |  | POST|/axelar/axelarnet/route_message|
-| `CallContract` | [CallContractRequest](#axelar.axelarnet.v1beta1.CallContractRequest) | [CallContractResponse](#axelar.axelarnet.v1beta1.CallContractResponse) |  | POST|/axelar/axelarnet/call_contract|
 
 
 <a name="axelar.axelarnet.v1beta1.QueryService"></a>

@@ -2,14 +2,11 @@ package keeper
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -37,85 +34,6 @@ func NewMsgServerImpl(k Keeper, n types.Nexus, b types.BankKeeper, ibcK IBCKeepe
 		bank:   b,
 		ibcK:   ibcK,
 	}
-}
-
-func (s msgServer) CallContract(c context.Context, req *types.CallContractRequest) (*types.CallContractResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
-	}
-
-	if !s.nexus.IsChainActivated(ctx, exported.Axelarnet) {
-		return nil, fmt.Errorf("chain %s is not activated yet", exported.Axelarnet.Name)
-	}
-
-	if !s.nexus.IsChainActivated(ctx, chain) {
-		return nil, fmt.Errorf("chain %s is not activated yet", chain.Name)
-	}
-
-	recipient := nexus.CrossChainAddress{Chain: chain, Address: req.ContractAddress}
-	if err := s.nexus.ValidateAddress(ctx, recipient); err != nil {
-		return nil, err
-	}
-
-	sender := nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: req.Sender.String()}
-
-	// axelar gateway expects keccak256 hashes for payloads
-	payloadHash := crypto.Keccak256(req.Payload)
-
-	msgID, txID, nonce := s.nexus.GenerateMessageID(ctx)
-	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, txID, nonce, nil)
-
-	events.Emit(ctx, &types.ContractCallSubmitted{
-		MessageID:        msg.ID,
-		Sender:           msg.GetSourceAddress(),
-		SourceChain:      msg.GetSourceChain(),
-		DestinationChain: msg.GetDestinationChain(),
-		ContractAddress:  msg.GetDestinationAddress(),
-		PayloadHash:      msg.PayloadHash,
-		Payload:          req.Payload,
-	})
-
-	if req.Fee != nil {
-		lockableAsset, err := s.nexus.NewLockableAsset(ctx, s.ibcK, s.bank, req.Fee.Amount)
-		if err != nil {
-			return nil, sdkerrors.Wrap(err, "unrecognized fee denom")
-		}
-
-		err = s.bank.SendCoins(ctx, req.Sender, req.Fee.Recipient, sdk.NewCoins(req.Fee.Amount))
-		if err != nil {
-			return nil, sdkerrors.Wrap(err, "failed to transfer fee")
-		}
-
-		feePaidEvent := types.FeePaid{
-			MessageID:        msgID,
-			Recipient:        req.Fee.Recipient,
-			Fee:              req.Fee.Amount,
-			Asset:            lockableAsset.GetAsset().Denom,
-			SourceChain:      msg.GetSourceChain(),
-			DestinationChain: msg.GetDestinationChain(),
-		}
-		if req.Fee.RefundRecipient != nil {
-			feePaidEvent.RefundRecipient = req.Fee.RefundRecipient.String()
-		}
-		events.Emit(ctx, &feePaidEvent)
-	}
-
-	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to add general message")
-	}
-
-	s.Logger(ctx).Debug(fmt.Sprintf("successfully enqueued contract call for contract address %s on chain %s from sender %s with message id %s", req.ContractAddress, req.Chain.String(), req.Sender, msg.ID),
-		types.AttributeKeyDestinationChain, req.Chain.String(),
-		types.AttributeKeyDestinationAddress, req.ContractAddress,
-		types.AttributeKeySourceAddress, req.Sender,
-		types.AttributeKeyMessageID, msg.ID,
-		types.AttributeKeyPayloadHash, hex.EncodeToString(payloadHash),
-	)
-
-	return &types.CallContractResponse{}, nil
 }
 
 // Link handles address linking

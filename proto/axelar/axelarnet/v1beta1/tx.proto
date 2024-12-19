@@ -173,6 +173,7 @@ message RouteMessageRequest {
 message RouteMessageResponse {}
 
 message CallContractRequest {
+  option deprecated = true;
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
 
   bytes sender = 1 [ (gogoproto.casttype) =
@@ -185,4 +186,4 @@ message CallContractRequest {
   Fee fee = 5;
 }
 
-message CallContractResponse {}
+message CallContractResponse { option deprecated = true;}
