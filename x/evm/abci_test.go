@@ -133,7 +133,7 @@ func TestHandleGeneralMessage(t *testing.T) {
 		return func() {
 			destinationCk.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error {
 				if !isSuccessful {
-					return fmt.Errorf("enqueue error")
+					return errors.New("enqueue error")
 				}
 
 				return nil
@@ -420,7 +420,7 @@ func TestHandleGeneralMessages(t *testing.T) {
 		When("rate limit is triggered", func() {
 			n.SetMessageFailedFunc = func(ctx sdk.Context, id string) error { return nil }
 			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-				return fmt.Errorf("rate limit triggered")
+				return errors.New("rate limit triggered")
 			}
 		}).
 		Then("should handle", func(t *testing.T) {
@@ -548,7 +548,7 @@ func TestHandleContractCall(t *testing.T) {
 		return func() {
 			destinationCk.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error {
 				if !isSuccessful {
-					return fmt.Errorf("enqueue error")
+					return errors.New("enqueue error")
 				}
 
 				return nil
@@ -560,7 +560,7 @@ func TestHandleContractCall(t *testing.T) {
 		return func() {
 			n.SetNewMessageFunc = func(sdk.Context, nexus.GeneralMessage) error {
 				if !isSuccessful {
-					return fmt.Errorf("set general message error")
+					return errors.New("set general message error")
 				}
 
 				return nil
@@ -779,7 +779,7 @@ func TestHandleTokenSent(t *testing.T) {
 	whenTokensAreConfirmed.
 		When("failed to enqueue the transfer", func() {
 			n.EnqueueTransferFunc = func(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error) {
-				return 0, fmt.Errorf("err")
+				return 0, errors.New("err")
 			}
 		}).
 		Then("should fail", assertFail).
@@ -1272,7 +1272,7 @@ func TestHandleConfirmDeposit(t *testing.T) {
 		return func() {
 			n.EnqueueForTransferFunc = func(sdk.Context, nexus.CrossChainAddress, sdk.Coin) (nexus.TransferID, error) {
 				if !succeed {
-					return 0, fmt.Errorf("err")
+					return 0, errors.New("err")
 				}
 				return 0, nil
 			}
