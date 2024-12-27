@@ -1,6 +1,6 @@
 ## axelard query staking unbonding-delegations-from
 
-Query all unbonding delegatations from a validator
+Query all unbonding delegations from a validator
 
 ### Synopsis
 

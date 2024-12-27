@@ -1,6 +1,6 @@
 ## axelard query staking redelegations-from
 
-Query all outgoing redelegatations from a validator
+Query all outgoing redelegations from a validator
 
 ### Synopsis
 
