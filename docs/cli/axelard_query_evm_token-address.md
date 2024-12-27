@@ -1,6 +1,6 @@
 ## axelard query evm token-address
 
-Query a token address by by either symbol or asset
+Query a token address by either symbol or asset
 
 ```
 axelard query evm token-address [chain] [flags]

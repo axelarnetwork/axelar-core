@@ -62,7 +62,7 @@
       - [latest-batched-commands [chain]](axelard_query_evm_latest-batched-commands.md) - Get the latest batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
       - [params [chain]](axelard_query_evm_params.md) - Returns the params for the evm module
       - [pending-commands [chain]](axelard_query_evm_pending-commands.md) - Get the list of commands not yet added to a batch
-      - [token-address [chain]](axelard_query_evm_token-address.md) - Query a token address by by either symbol or asset
+      - [token-address [chain]](axelard_query_evm_token-address.md) - Query a token address by either symbol or asset
       - [token-info [chain]](axelard_query_evm_token-info.md) - Returns the info of token by either symbol, asset, or address
     - [feegrant](axelard_query_feegrant.md) - Querying commands for the feegrant module
       - [grant [granter] [grantee]](axelard_query_feegrant_grant.md) - Query details of a single grant
@@ -161,10 +161,10 @@
       - [pool](axelard_query_staking_pool.md) - Query the current staking pool values
       - [redelegation [delegator-addr] [src-validator-addr] [dst-validator-addr]](axelard_query_staking_redelegation.md) - Query a redelegation record based on delegator and a source and destination validator address
       - [redelegations [delegator-addr]](axelard_query_staking_redelegations.md) - Query all redelegations records for one delegator
-      - [redelegations-from [validator-addr]](axelard_query_staking_redelegations-from.md) - Query all outgoing redelegatations from a validator
+      - [redelegations-from [validator-addr]](axelard_query_staking_redelegations-from.md) - Query all outgoing redelegations from a validator
       - [unbonding-delegation [delegator-addr] [validator-addr]](axelard_query_staking_unbonding-delegation.md) - Query an unbonding-delegation record based on delegator and validator address
       - [unbonding-delegations [delegator-addr]](axelard_query_staking_unbonding-delegations.md) - Query all unbonding-delegations records for one delegator
-      - [unbonding-delegations-from [validator-addr]](axelard_query_staking_unbonding-delegations-from.md) - Query all unbonding delegatations from a validator
+      - [unbonding-delegations-from [validator-addr]](axelard_query_staking_unbonding-delegations-from.md) - Query all unbonding delegations from a validator
       - [validator [validator-addr]](axelard_query_staking_validator.md) - Query a validator
       - [validators](axelard_query_staking_validators.md) - Query for all validators
     - [tendermint-validator-set [height]](axelard_query_tendermint-validator-set.md) - Get the full tendermint validator set at given height
