@@ -93,7 +93,7 @@ func getCmdAddress() *cobra.Command {
 func getCmdTokenAddress(queryRoute string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "token-address [chain]",
-		Short: fmt.Sprintf("Query a token address by by either %s or %s", keeper.BySymbol, keeper.ByAsset),
+		Short: fmt.Sprintf("Query a token address by either %s or %s", keeper.BySymbol, keeper.ByAsset),
 		Args:  cobra.ExactArgs(1),
 	}
 
