@@ -62,7 +62,7 @@ service MsgService {
 
 // QueryService defines the gRPC querier service.
 service QueryService {
-  // LatestDepositAddress queries the a deposit address by recipient
+  // LatestDepositAddress queries a deposit address by recipient
   rpc LatestDepositAddress(LatestDepositAddressRequest)
       returns (LatestDepositAddressResponse) {
     option (google.api.http).get =
