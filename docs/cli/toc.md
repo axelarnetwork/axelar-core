@@ -39,7 +39,7 @@
       - [balances [address]](axelard_query_bank_balances.md) - Query for account balances by address
       - [denom-metadata](axelard_query_bank_denom-metadata.md) - Query the client metadata for coin denominations
       - [total](axelard_query_bank_total.md) - Query the total supply of coins of the chain
-    - [block [height]](axelard_query_block.md) - Get verified data for a the block at given height
+    - [block [height]](axelard_query_block.md) - Get verified data for the block at given height
     - [distribution](axelard_query_distribution.md) - Querying commands for the distribution module
       - [commission [validator]](axelard_query_distribution_commission.md) - Query distribution validator commission
       - [community-pool](axelard_query_distribution_community-pool.md) - Query the amount of coins in the community pool

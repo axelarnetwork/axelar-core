@@ -367,7 +367,7 @@ var _MsgService_serviceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type QueryServiceClient interface {
-	// LatestDepositAddress queries the a deposit address by recipient
+	// LatestDepositAddress queries a deposit address by recipient
 	LatestDepositAddress(ctx context.Context, in *LatestDepositAddressRequest, opts ...grpc.CallOption) (*LatestDepositAddressResponse, error)
 	// TransfersForChain queries transfers by chain
 	TransfersForChain(ctx context.Context, in *TransfersForChainRequest, opts ...grpc.CallOption) (*TransfersForChainResponse, error)
@@ -522,7 +522,7 @@ func (c *queryServiceClient) Params(ctx context.Context, in *ParamsRequest, opts
 
 // QueryServiceServer is the server API for QueryService service.
 type QueryServiceServer interface {
-	// LatestDepositAddress queries the a deposit address by recipient
+	// LatestDepositAddress queries a deposit address by recipient
 	LatestDepositAddress(context.Context, *LatestDepositAddressRequest) (*LatestDepositAddressResponse, error)
 	// TransfersForChain queries transfers by chain
 	TransfersForChain(context.Context, *TransfersForChainRequest) (*TransfersForChainResponse, error)

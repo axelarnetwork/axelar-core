@@ -15008,7 +15008,7 @@ paths:
         - QueryService
   /axelar/nexus/v1beta1/latest_deposit_address/{recipient_addr}/{recipient_chain}/{deposit_chain}:
     get:
-      summary: LatestDepositAddress queries the a deposit address by recipient
+      summary: LatestDepositAddress queries a deposit address by recipient
       operationId: LatestDepositAddress
       responses:
         '200':
