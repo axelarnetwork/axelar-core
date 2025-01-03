@@ -40,7 +40,7 @@ func TestMigratePreInitializedModuleAccounts(t *testing.T) {
 			authtypes.ProtoBaseAccount,
 			moduleAccPerms,
 		)
-	}).When("there is an pre-initialized module account", func() {
+	}).When("there is a pre-initialized module account", func() {
 		account := accountK.NewAccountWithAddress(ctx, authtypes.NewModuleAddress(nexusTypes.ModuleName))
 		accountK.SetAccount(ctx, account)
 

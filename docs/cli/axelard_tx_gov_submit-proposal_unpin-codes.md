@@ -1,6 +1,6 @@
 ## axelard tx gov submit-proposal unpin-codes
 
-Submit a unpin code proposal for unpinning a code to cache
+Submit an unpin code proposal for unpinning a code to cache
 
 ```
 axelard tx gov submit-proposal unpin-codes [code-ids] [flags]
