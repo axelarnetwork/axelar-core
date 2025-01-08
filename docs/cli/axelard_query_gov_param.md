@@ -4,7 +4,7 @@ Query the parameters (voting|tallying|deposit) of the governance process
 
 ### Synopsis
 
-Query the all the parameters for the governance process.
+Query all the parameters for the governance process.
 
 Example:
 $ axelard query gov param voting

@@ -4,7 +4,7 @@ Query proposals with optional filters
 
 ### Synopsis
 
-Query for a all paginated proposals that match optional filters:
+Query for all paginated proposals that match optional filters:
 
 Example:
 $ axelard query gov proposals --depositor cosmos1skjwj5whet0lpe65qaq4rpq03hjxlwd9nf39lk
