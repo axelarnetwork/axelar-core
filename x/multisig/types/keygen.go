@@ -4,6 +4,7 @@ import (
 	fmt "fmt"
 	time "time"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"golang.org/x/exp/maps"
 
@@ -157,7 +158,7 @@ func (m Key) GetParticipants() []sdk.ValAddress {
 
 // GetParticipantsWeight returns the total weight of all participants who have submitted their public keys
 func (m Key) GetParticipantsWeight() sdk.Uint {
-	return slices.Reduce(m.GetParticipants(), sdk.ZeroUint(), func(total sdk.Uint, p sdk.ValAddress) sdk.Uint {
+	return slices.Reduce(m.GetParticipants(), math.ZeroUint(), func(total sdk.Uint, p sdk.ValAddress) sdk.Uint {
 		return total.Add(m.Snapshot.GetParticipantWeight(p))
 	})
 }

@@ -8,14 +8,14 @@ import (
 	exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	_ "github.com/axelarnetwork/axelar-core/x/permission/exported"
+	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/cosmos-sdk/codec/types"
 	_ "github.com/cosmos/cosmos-sdk/types"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-	github_com_gogo_protobuf_types "github.com/gogo/protobuf/types"
-	_ "github.com/regen-network/cosmos-proto"
-	_ "google.golang.org/protobuf/types/known/durationpb"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
+	_ "github.com/cosmos/gogoproto/types"
+	github_com_cosmos_gogoproto_types "github.com/cosmos/gogoproto/types"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -1367,7 +1367,7 @@ func (m *RegisterAssetRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	n2, err2 := github_com_gogo_protobuf_types.StdDurationMarshalTo(m.Window, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdDuration(m.Window):])
+	n2, err2 := github_com_cosmos_gogoproto_types.StdDurationMarshalTo(m.Window, dAtA[i-github_com_cosmos_gogoproto_types.SizeOfStdDuration(m.Window):])
 	if err2 != nil {
 		return 0, err2
 	}
@@ -1964,7 +1964,7 @@ func (m *RegisterAssetRequest) Size() (n int) {
 	n += 1 + l + sovTx(uint64(l))
 	l = m.Limit.Size()
 	n += 1 + l + sovTx(uint64(l))
-	l = github_com_gogo_protobuf_types.SizeOfStdDuration(m.Window)
+	l = github_com_cosmos_gogoproto_types.SizeOfStdDuration(m.Window)
 	n += 1 + l + sovTx(uint64(l))
 	return n
 }
@@ -3414,7 +3414,7 @@ func (m *RegisterAssetRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := github_com_gogo_protobuf_types.StdDurationUnmarshal(&m.Window, dAtA[iNdEx:postIndex]); err != nil {
+			if err := github_com_cosmos_gogoproto_types.StdDurationUnmarshal(&m.Window, dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

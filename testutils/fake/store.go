@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/cosmos/cosmos-sdk/store/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake/interfaces"
@@ -101,12 +102,12 @@ func newTestKVStore() *TestKVStore {
 }
 
 // GetStoreType is not implemented
-func (t TestKVStore) GetStoreType() sdk.StoreType {
+func (t TestKVStore) GetStoreType() storetypes.StoreType {
 	panic("implement me")
 }
 
 // CacheWrap is not implemented
-func (t *TestKVStore) CacheWrap() sdk.CacheWrap {
+func (t *TestKVStore) CacheWrap() storetypes.CacheWrap {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
 
@@ -124,7 +125,7 @@ func (t *TestKVStore) CacheWrap() sdk.CacheWrap {
 }
 
 // CacheWrapWithTrace is not implemented
-func (t TestKVStore) CacheWrapWithTrace(_ io.Writer, _ sdk.TraceContext) sdk.CacheWrap {
+func (t TestKVStore) CacheWrapWithTrace(_ io.Writer, _ sdk.TraceContext) storetypes.CacheWrap {
 	panic("implement me")
 }
 

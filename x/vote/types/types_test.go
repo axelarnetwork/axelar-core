@@ -1,11 +1,11 @@
 package types_test
 
 import (
+	"cosmossdk.io/math"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	gogoprototypes "github.com/gogo/protobuf/types"
+	gogoprototypes "github.com/cosmos/gogoproto/types"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -27,7 +27,7 @@ func TestNewTalliedVote(t *testing.T) {
 		actual := types.NewTalliedVote(pollID, &gogoprototypes.StringValue{Value: rand.Str(5)})
 
 		assert.Equal(t, pollID, actual.PollID)
-		assert.Equal(t, sdk.ZeroUint(), actual.Tally)
+		assert.Equal(t, math.ZeroUint(), actual.Tally)
 		assert.NotNil(t, actual.Data)
 		assert.Nil(t, actual.IsVoterLate)
 	})
@@ -88,7 +88,7 @@ func TestTalliedVote(t *testing.T) {
 
 	t.Run("TallyVote", func(t *testing.T) {
 		whenTalliedVoteIsNew := When("when tallied vote is new", func() {
-			talliedVote.Tally = sdk.ZeroUint()
+			talliedVote.Tally = math.ZeroUint()
 			talliedVote.IsVoterLate = nil
 		})
 
@@ -96,7 +96,7 @@ func TestTalliedVote(t *testing.T) {
 			When2(whenTalliedVoteIsNew).
 			Then("should panic if given voter is nil", func(t *testing.T) {
 				assert.Panics(t, func() {
-					talliedVote.TallyVote(nil, sdk.OneUint(), true)
+					talliedVote.TallyVote(nil, math.OneUint(), true)
 				})
 			}).
 			Run(t)
@@ -105,10 +105,10 @@ func TestTalliedVote(t *testing.T) {
 			When2(whenTalliedVoteIsNew).
 			Then("should tally the vote", func(t *testing.T) {
 				voter := rand.ValAddr()
-				talliedVote.TallyVote(voter, sdk.OneUint(), true)
+				talliedVote.TallyVote(voter, math.OneUint(), true)
 
 				assert.True(t, talliedVote.IsVoterLate[voter.String()])
-				assert.Equal(t, sdk.OneUint(), talliedVote.Tally)
+				assert.Equal(t, math.OneUint(), talliedVote.Tally)
 				assert.NoError(t, talliedVote.ValidateBasic())
 			}).
 			Run(t)

@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -19,11 +20,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/gogo/protobuf/proto"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -94,7 +94,11 @@ func GetValdCommand() *cobra.Command {
 			}
 
 			// dynamically adjust gas limit by simulating the tx first
-			txf := tx.NewFactoryCLI(cliCtx, cmd.Flags()).WithSimulateAndExecute(true)
+			txf, err := tx.NewFactoryCLI(cliCtx, cmd.Flags())
+			if err != nil {
+				return err
+			}
+			txf = txf.WithSimulateAndExecute(true)
 
 			return runVald(cliCtx, txf, v)
 		},
@@ -178,13 +182,14 @@ func setPersistentFlags(cmd *cobra.Command) {
 func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr sdk.ValAddress, stateSource ReadWriter) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
+
 	sender, err := clientCtx.Keyring.Key(clientCtx.From)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to read broadcaster account info from keyring"))
 	}
 	clientCtx = clientCtx.
-		WithFromAddress(sender.GetAddress()).
-		WithFromName(sender.GetName())
+		WithFromAddress(funcs.Must(sender.GetAddress())).
+		WithFromName(sender.Name)
 
 	bc := createRefundableBroadcaster(txf, clientCtx, axelarCfg)
 

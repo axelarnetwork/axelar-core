@@ -7,11 +7,10 @@ import (
 	"sync"
 	"time"
 
+	abci "github.com/cometbft/cometbft/abci/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
-	"github.com/gogo/protobuf/proto"
-	abci "github.com/tendermint/tendermint/abci/types"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"github.com/cosmos/gogoproto/proto"
 )
 
 // Result contains either the result of a successful message execution or the error that occurred
@@ -224,11 +223,9 @@ func deepCopy(bc BlockChain) *BlockChain {
 // unpacking the messages and routing them to the correct modules
 type Node struct {
 	in             chan block
-	router         sdk.Router
 	endBlockers    []func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate
 	Ctx            sdk.Context
 	Moniker        string
-	queriers       map[string]sdk.Querier
 	events         chan abci.Event
 	eventListeners []struct {
 		predicate func(event abci.Event) bool
@@ -239,14 +236,12 @@ type Node struct {
 // NewNode creates a new node that can be added to the blockchain.
 // The moniker is used to differentiate nodes for logging purposes.
 // The context will be passed on to the registered handlers.
-func NewNode(moniker string, ctx sdk.Context, router sdk.Router, queriers map[string]sdk.Querier) *Node {
+func NewNode(moniker string, ctx sdk.Context) *Node {
 	return &Node{
 		in:          make(chan block, 1),
-		router:      router,
 		endBlockers: make([]func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate, 0),
 		Ctx:         ctx,
 		Moniker:     moniker,
-		queriers:    queriers,
 		events:      make(chan abci.Event, 10000),
 		eventListeners: []struct {
 			predicate func(event abci.Event) bool
@@ -260,11 +255,6 @@ func NewNode(moniker string, ctx sdk.Context, router sdk.Router, queriers map[st
 func (n *Node) WithEndBlockers(endBlockers ...func(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate) *Node {
 	n.endBlockers = append(n.endBlockers, endBlockers...)
 	return n
-}
-
-// Query allows to query a node. Returns a serialized response
-func (n Node) Query(path []string, query abci.RequestQuery) ([]byte, error) {
-	return n.queriers[path[0]](n.Ctx, path[1:], query)
 }
 
 // RegisterEventListener registers a listener for events that satisfy the predicate. Events will be dropped if the event channel fills up
@@ -309,36 +299,6 @@ func (n *Node) start() {
 
 				msg.out <- &Result{nil, err}
 
-			} else if legacyMsg, ok := msg.Msg.(legacytx.LegacyMsg); ok {
-				msgRoute := legacyMsg.Route()
-				handler := n.router.Route(n.Ctx, msgRoute)
-				if handler == nil {
-					panic(fmt.Sprintf("no handler for route %s defined", msgRoute))
-				}
-
-				res, err := handler(n.Ctx, msg.Msg)
-				if err != nil {
-					n.Ctx.Logger().Error(fmt.Sprintf("error from handler for route %s: %s", msgRoute, err.Error()))
-					// to allow failed messages we need to implement a cache for the multistore to revert in case of failure
-					// outputting the error message here so that we can have a sense for why it panics in case verbose mode is not active.
-					panic(fmt.Sprintf("no failing messages allowed for now: error from handler for route %s: %s\nmessage: %v", msgRoute, err.Error(), msg))
-				}
-				msgEvents := sdk.Events{
-					sdk.NewEvent(sdk.EventTypeMessage, sdk.NewAttribute(sdk.AttributeKeyAction, proto.MessageName(msg))),
-				}
-
-				if res != nil {
-					msgEvents = msgEvents.AppendEvents(res.GetEvents())
-				}
-
-				events := msgEvents.ToABCIEvents()
-				for _, event := range events {
-					if len(n.events) >= cap(n.events) {
-						panic(fmt.Sprintf("node %s event queue ran out of space", n.Moniker))
-					}
-					n.events <- event
-				}
-				msg.out <- &Result{res, err}
 			} else {
 				panic(fmt.Sprintf("can't route message %+v", msg))
 			}
@@ -354,29 +314,4 @@ func (n *Node) start() {
 			}
 		}
 	}
-}
-
-// Router is a fake that is used by the Node to route messages to the correct module handlers
-type Router struct {
-	handlers map[string]sdk.Handler
-}
-
-// NewRouter returns a new Router that deals with handler routing
-func NewRouter() sdk.Router {
-	return Router{handlers: map[string]sdk.Handler{}}
-}
-
-// AddRoute adds a new handler route
-func (r Router) AddRoute(route sdk.Route) sdk.Router {
-	r.handlers[route.Path()] = route.Handler()
-	return r
-}
-
-// Route tries to route the given path to a registered handler. Returns nil when the path is not found.
-func (r Router) Route(_ sdk.Context, path string) sdk.Handler {
-	h, ok := r.handlers[path]
-	if !ok {
-		return nil
-	}
-	return h
 }

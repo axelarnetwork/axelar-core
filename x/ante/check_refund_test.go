@@ -1,11 +1,16 @@
 package ante_test
 
 import (
+	mathrand "math/rand"
 	"testing"
+	"time"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
-	"github.com/cosmos/cosmos-sdk/simapp"
-	"github.com/cosmos/cosmos-sdk/simapp/helpers"
+	dbm "github.com/cometbft/cometbft-db"
+	"github.com/cometbft/cometbft/libs/log"
+	abci "github.com/cometbft/cometbft/proto/tendermint/types"
+	abcitypes "github.com/cometbft/cometbft/proto/tendermint/types"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -15,10 +20,6 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/assert"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	abci "github.com/tendermint/tendermint/proto/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
@@ -46,7 +47,7 @@ func TestCheckRefundFeeDecorator_AnteHandle(t *testing.T) {
 	version.Version = "0.35.0"
 	encConfig := app.MakeEncodingConfig()
 	sender := rand.AccAddr()
-
+	
 	testCases := []struct {
 		label       string
 		succeeds    bool
@@ -193,7 +194,7 @@ func prepareAnteHandler(ctx sdk.Context, sender sdk.AccAddress, encConfig params
 		"",
 		0,
 		encConfig,
-		simapp.EmptyAppOptions{},
+		simtestutil.EmptyAppOptions{},
 		[]wasm.Option{},
 	)
 
@@ -230,7 +231,8 @@ func prepareAnteHandler(ctx sdk.Context, sender sdk.AccAddress, encConfig params
 func prepareTx(encConfig params.EncodingConfig, msgs []sdk.Msg) sdk.FeeTx {
 	sk, _, _ := testdata.KeyTestPubAddr()
 
-	tx := funcs.Must(helpers.GenTx(
+	tx := funcs.Must(simtestutil.GenSignedMockTx(
+		mathrand.New(mathrand.NewSource(time.Now().UnixNano())),
 		encConfig.TxConfig,
 		msgs,
 		sdk.NewCoins(sdk.NewInt64Coin("stake", 1000)),

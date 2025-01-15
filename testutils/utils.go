@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 )
 
 // Func wraps a regular testing function so it can be used as a pointer function receiver

@@ -292,6 +292,6 @@ func (k Keeper) GetTransferFees(ctx sdk.Context) sdk.Coins {
 // SubTransferFee subtracts coin from transfer fee
 func (k Keeper) SubTransferFee(ctx sdk.Context, coin sdk.Coin) {
 	fee := k.getTransferFee(ctx)
-	fee.Coins = fee.Coins.Sub(sdk.NewCoins(coin))
+	fee.Coins = fee.Coins.Sub(sdk.NewCoins(coin)...)
 	k.setTransferFee(ctx, fee)
 }

@@ -1,21 +1,22 @@
 package axelarnet_test
 
 import (
+	"cosmossdk.io/math"
 	"fmt"
 	"testing"
 
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	ibcTransfer "github.com/cosmos/ibc-go/v4/modules/apps/transfer"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v4/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
+	ibcTransfer "github.com/cosmos/ibc-go/v7/modules/apps/transfer"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v7/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -42,11 +43,14 @@ func TestIBCModule(t *testing.T) {
 		n             *mock.NexusMock
 		bankK         *mock.BankKeeperMock
 		lockableAsset *nexusmock.LockableAssetMock
+		transferK     ibctransferkeeper.Keeper
 
-		ack       channeltypes.Acknowledgement
-		transfer  types.IBCTransfer
-		message   nexus.GeneralMessage
-		transfers []types.IBCTransfer
+		ack                 channeltypes.Acknowledgement
+		transfer            types.IBCTransfer
+		message             nexus.GeneralMessage
+		transfers           []types.IBCTransfer
+		packet              channeltypes.Packet
+		fungibleTokenPacket ibctransfertypes.FungibleTokenPacketData
 	)
 
 	const (
@@ -81,14 +85,16 @@ func TestIBCModule(t *testing.T) {
 			SendCoinsFromAccountToModuleFunc: func(sdk.Context, sdk.AccAddress, string, sdk.Coins) error {
 				return nil
 			},
-			BurnCoinsFunc: func(sdk.Context, string, sdk.Coins) error { return nil },
+			BurnCoinsFunc:      func(sdk.Context, string, sdk.Coins) error { return nil },
+			GetAllBalancesFunc: func(sdk.Context, sdk.AccAddress) sdk.Coins { return sdk.NewCoins() },
 		}
 
 		scopeKeeper := capabilitykeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(capabilitytypes.StoreKey), sdk.NewKVStoreKey(capabilitytypes.MemStoreKey))
 		scopedTransferK := scopeKeeper.ScopeToModule(ibctransfertypes.ModuleName)
 		transferSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey(ibctransfertypes.StoreKey), sdk.NewKVStoreKey("tTrasferKey"), ibctransfertypes.ModuleName)
 
-		transferK := ibctransferkeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK)
+		transferK = ibctransferkeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK)
+
 		lockableAsset = &nexusmock.LockableAssetMock{}
 		n = &mock.NexusMock{
 			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
@@ -96,11 +102,11 @@ func TestIBCModule(t *testing.T) {
 			},
 		}
 		ibcModule = axelarnet.NewAxelarnetIBCModule(ibcTransfer.NewIBCModule(transferK), ibcK, axelarnet.NewRateLimiter(&k, n), n, bankK)
+
+		fungibleTokenPacket = ibctransfertypes.NewFungibleTokenPacketData(rand.Denom(5, 10), "1", rand.AccAddr().String(), rand.AccAddr().String(), "")
+		transferK.SetTotalEscrowForDenom(ctx, sdk.NewCoin(fungibleTokenPacket.GetDenom(), funcs.MustOk(math.NewIntFromString(fungibleTokenPacket.GetAmount()))))
+		packet = channeltypes.NewPacket(fungibleTokenPacket.GetBytes(), packetSeq, ibctransfertypes.PortID, channelID, ibctransfertypes.PortID, channelID, clienttypes.NewHeight(0, 110), 0)
 	})
-
-	fungibleTokenPacket := ibctransfertypes.NewFungibleTokenPacketData(rand.Denom(5, 10), "1", rand.AccAddr().String(), rand.AccAddr().String())
-
-	packet := channeltypes.NewPacket(fungibleTokenPacket.GetBytes(), packetSeq, ibctransfertypes.PortID, channelID, ibctransfertypes.PortID, channelID, clienttypes.NewHeight(0, 110), 0)
 
 	whenGetValidAckResult := When("get valid acknowledgement result", func() {
 		ack = channeltypes.NewResultAcknowledgement([]byte{byte(1)})
@@ -124,6 +130,7 @@ func TestIBCModule(t *testing.T) {
 		transfer.ChannelID = channelID
 		funcs.MustNoErr(k.SetSeqIDMapping(ctx, transfer))
 		funcs.MustNoErr(k.EnqueueIBCTransfer(ctx, transfer))
+		transferK.SetTotalEscrowForDenom(ctx, transfer.Token)
 	})
 
 	seqMapsToMessageID := When("packet seq maps to message ID", func() {

@@ -3,13 +3,12 @@ package app_test
 import (
 	"testing"
 
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -26,7 +25,6 @@ func TestMigratePreInitializedModuleAccounts(t *testing.T) {
 	Given("an account keeper", func() {
 		encodingConfig := app.MakeEncodingConfig()
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		storeKey := sdk.NewKVStoreKey(authtypes.StoreKey)
 
 		moduleAccPerms := map[string][]string{
 			"module1":             nil,
@@ -36,9 +34,10 @@ func TestMigratePreInitializedModuleAccounts(t *testing.T) {
 		accountK = authkeeper.NewAccountKeeper(
 			encodingConfig.Codec,
 			sdk.NewKVStoreKey(authtypes.StoreKey),
-			params.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, storeKey, storeKey, authtypes.ModuleName),
 			authtypes.ProtoBaseAccount,
 			moduleAccPerms,
+			app.AccountAddressPrefix,
+			app.GovModuleAddress.String(),
 		)
 	}).When("there is an pre-initialized module account", func() {
 		account := accountK.NewAccountWithAddress(ctx, authtypes.NewModuleAddress(nexusTypes.ModuleName))

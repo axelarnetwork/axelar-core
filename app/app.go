@@ -10,25 +10,29 @@ import (
 	"path/filepath"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
-	wasmclient "github.com/CosmWasm/wasmd/x/wasm/client"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	dbm "github.com/cometbft/cometbft-db"
+	abci "github.com/cometbft/cometbft/abci/types"
+	tmjson "github.com/cometbft/cometbft/libs/json"
+	"github.com/cometbft/cometbft/libs/log"
+	tmos "github.com/cometbft/cometbft/libs/os"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
+	nodeservice "github.com/cosmos/cosmos-sdk/client/grpc/node"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
-	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-	store "github.com/cosmos/cosmos-sdk/store/types"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authAnte "github.com/cosmos/cosmos-sdk/x/auth/ante"
-	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -40,11 +44,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/capability"
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
+	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
+	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
-	distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/evidence"
@@ -76,27 +81,21 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	"github.com/cosmos/ibc-go/v4/modules/apps/transfer"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v4/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	ibc "github.com/cosmos/ibc-go/v4/modules/core"
-	ibcclientclient "github.com/cosmos/ibc-go/v4/modules/core/02-client/client"
-	porttypes "github.com/cosmos/ibc-go/v4/modules/core/05-port/types"
-	ibchost "github.com/cosmos/ibc-go/v4/modules/core/24-host"
-	ibcante "github.com/cosmos/ibc-go/v4/modules/core/ante"
-	ibckeeper "github.com/cosmos/ibc-go/v4/modules/core/keeper"
+	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7"
+	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/keeper"
+	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/types"
+	"github.com/cosmos/ibc-go/v7/modules/apps/transfer"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v7/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v7/modules/core"
+	ibcclientclient "github.com/cosmos/ibc-go/v7/modules/core/02-client/client"
+	porttypes "github.com/cosmos/ibc-go/v7/modules/core/05-port/types"
+	ibcante "github.com/cosmos/ibc-go/v7/modules/core/ante"
+	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
+	ibckeeper "github.com/cosmos/ibc-go/v7/modules/core/keeper"
 	"github.com/gorilla/mux"
-	ibchooks "github.com/osmosis-labs/osmosis/x/ibc-hooks"
-	ibchookskeeper "github.com/osmosis-labs/osmosis/x/ibc-hooks/keeper"
-	ibchookstypes "github.com/osmosis-labs/osmosis/x/ibc-hooks/types"
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cast"
-	abci "github.com/tendermint/tendermint/abci/types"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/libs/log"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 
 	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/x/ante"
@@ -131,6 +130,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote"
 	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
+	"github.com/axelarnetwork/utils/funcs"
 
 	// Override with generated statik docs
 	_ "github.com/axelarnetwork/axelar-core/client/docs/statik"
@@ -185,7 +185,7 @@ type AxelarApp struct {
 	*bam.BaseApp
 	// Keys and Keepers are necessary for the app to interact with the cosmos-sdk and to be able to test the app in isolation without mocks
 	Keepers *KeeperCache
-	Keys    map[string]*sdk.KVStoreKey
+	Keys    map[string]*storetypes.KVStoreKey
 
 	appCodec codec.Codec
 
@@ -215,22 +215,24 @@ func NewAxelarApp(
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
 	keepers := NewKeeperCache()
+	appCodec := encodingConfig.Codec
+
 	SetKeeper(keepers, initParamsKeeper(encodingConfig, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
+	SetKeeper(keepers, initConsensusParamsKeeper(appCodec, keys))
 
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
 	bApp := initBaseApp(db, traceStore, encodingConfig, keepers, baseAppOptions, logger)
 
-	appCodec := encodingConfig.Codec
 	moduleAccountPermissions := InitModuleAccountPermissions()
 
 	// set up predefined keepers
-	SetKeeper(keepers, initAccountKeeper(appCodec, keys, keepers, moduleAccountPermissions))
+	SetKeeper(keepers, initAccountKeeper(appCodec, keys, moduleAccountPermissions))
 	SetKeeper(keepers, initBankKeeper(appCodec, keys, keepers, moduleAccountPermissions))
 	SetKeeper(keepers, initStakingKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initMintKeeper(appCodec, keys, keepers))
-	SetKeeper(keepers, initDistributionKeeper(appCodec, keys, keepers, moduleAccountPermissions))
-	SetKeeper(keepers, initSlashingKeeper(appCodec, keys, keepers))
-	SetKeeper(keepers, initCrisisKeeper(keepers, invCheckPeriod))
+	SetKeeper(keepers, initDistributionKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initSlashingKeeper(appCodec, encodingConfig.Amino, keys, keepers))
+	SetKeeper(keepers, initCrisisKeeper(appCodec, keys, keepers, invCheckPeriod))
 	SetKeeper(keepers, initUpgradeKeeper(appCodec, keys, skipUpgradeHeights, homePath, bApp))
 	SetKeeper(keepers, initEvidenceKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initFeegrantKeeper(appCodec, keys, keepers))
@@ -271,12 +273,12 @@ func NewAxelarApp(
 
 		// set the contract keeper for the Ics20WasmHooks
 		if wasmHooks != nil {
-			wasmHooks.ContractKeeper = GetKeeper[wasmkeeper.PermissionedKeeper](keepers)
+			wasmHooks.ContractKeeper = GetKeeper[wasm.Keeper](keepers)
 		}
 	}
 
 	// set up governance keeper last when it has access to all other keepers to set up governance routes
-	SetKeeper(keepers, initGovernanceKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initGovernanceKeeper(appCodec, keys, keepers, bApp.MsgServiceRouter()))
 
 	// seal capability keeper after all keepers are set to be certain that all capabilities have been registered
 	GetKeeper[capabilitykeeper.Keeper](keepers).Seal()
@@ -317,8 +319,6 @@ func NewAxelarApp(
 
 	mm.RegisterInvariants(GetKeeper[crisiskeeper.Keeper](keepers))
 
-	// register all module routes and module queriers
-	mm.RegisterRoutes(bApp.Router(), bApp.QueryRouter(), encodingConfig.Amino)
 	configurator := module.NewConfigurator(appCodec, bApp.MsgServiceRouter(), bApp.GRPCQueryRouter())
 	mm.RegisterServices(configurator)
 
@@ -406,7 +406,7 @@ func initIBCMiddleware(keepers *KeeperCache, ics4Middleware ibchooks.ICS4Middlew
 	return ibchooks.NewIBCMiddleware(ibcModule, &ics4Middleware)
 }
 
-func InitWasmHooks(keys map[string]*sdk.KVStoreKey) *ibchooks.WasmHooks {
+func InitWasmHooks(keys map[string]*storetypes.KVStoreKey) *ibchooks.WasmHooks {
 	if !(IsWasmEnabled() && IsIBCWasmHooksEnabled()) {
 		return nil
 	}
@@ -498,7 +498,7 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keep
 	}
 
 	if upgradeInfo.Name == upgradeName(app.Version()) && !upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{}
+		storeUpgrades := storetypes.StoreUpgrades{}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
@@ -510,7 +510,7 @@ func initBaseApp(db dbm.DB, traceStore io.Writer, encodingConfig axelarParams.En
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(encodingConfig.InterfaceRegistry)
-	bApp.SetParamStore(keepers.getSubspace(bam.Paramspace))
+	bApp.SetParamStore(GetKeeper[consensusparamkeeper.Keeper](keepers))
 	return bApp
 }
 
@@ -520,24 +520,25 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
 	appCodec := encodingConfig.Codec
+	paramsKeeper := GetKeeper[paramskeeper.Keeper](keepers)
 
 	appModules := []module.AppModule{
 		genutil.NewAppModule(GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers), bApp.DeliverTx, encodingConfig.TxConfig),
-		auth.NewAppModule(appCodec, *GetKeeper[authkeeper.AccountKeeper](keepers), nil),
+		auth.NewAppModule(appCodec, *GetKeeper[authkeeper.AccountKeeper](keepers), nil, funcs.MustOk(paramsKeeper.GetSubspace(authtypes.ModuleName))),
 		vesting.NewAppModule(*GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers)),
 
 		// bank module accepts a reference to the base keeper, but panics when RegisterService is called on a reference, so we need to dereference it
-		bank.NewAppModule(appCodec, *GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers)),
-		crisis.NewAppModule(GetKeeper[crisiskeeper.Keeper](keepers), skipGenesisInvariants),
-		gov.NewAppModule(appCodec, *GetKeeper[govkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers)),
-		mint.NewAppModule(appCodec, *GetKeeper[mintkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers)),
-		slashing.NewAppModule(appCodec, *GetKeeper[slashingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers)),
-		distr.NewAppModule(appCodec, *GetKeeper[distrkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers)),
-		staking.NewAppModule(appCodec, *GetKeeper[stakingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers)),
-		upgrade.NewAppModule(*GetKeeper[upgradekeeper.Keeper](keepers)),
+		bank.NewAppModule(appCodec, *GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(banktypes.ModuleName))),
+		crisis.NewAppModule(GetKeeper[crisiskeeper.Keeper](keepers), skipGenesisInvariants, funcs.MustOk(paramsKeeper.GetSubspace(crisistypes.ModuleName))),
+		gov.NewAppModule(appCodec, GetKeeper[govkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(govtypes.ModuleName))),
+		mint.NewAppModule(appCodec, *GetKeeper[mintkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), nil, funcs.MustOk(paramsKeeper.GetSubspace(govtypes.ModuleName))),
+		slashing.NewAppModule(appCodec, *GetKeeper[slashingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(slashingtypes.ModuleName))),
+		distr.NewAppModule(appCodec, *GetKeeper[distrkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(distrtypes.ModuleName))),
+		staking.NewAppModule(appCodec, GetKeeper[stakingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(stakingtypes.ModuleName))),
+		upgrade.NewAppModule(GetKeeper[upgradekeeper.Keeper](keepers)),
 		evidence.NewAppModule(*GetKeeper[evidencekeeper.Keeper](keepers)),
 		params.NewAppModule(*GetKeeper[paramskeeper.Keeper](keepers)),
-		capability.NewAppModule(appCodec, *GetKeeper[capabilitykeeper.Keeper](keepers)),
+		capability.NewAppModule(appCodec, *GetKeeper[capabilitykeeper.Keeper](keepers), false),
 	}
 
 	// wasm module needs to be added in a specific order, so we cannot just append it at the end
@@ -550,12 +551,14 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 				GetKeeper[stakingkeeper.Keeper](keepers),
 				GetKeeper[authkeeper.AccountKeeper](keepers),
 				GetKeeper[bankkeeper.BaseKeeper](keepers),
+				bApp.MsgServiceRouter(),
+				funcs.MustOk(paramsKeeper.GetSubspace(wasmtypes.ModuleName)),
 			),
 		)
 	}
 
 	if IsIBCWasmHooksEnabled() {
-		appModules = append(appModules, ibchooks.NewAppModule(GetKeeper[authkeeper.AccountKeeper](keepers)))
+		appModules = append(appModules, ibchooks.NewAppModule(*GetKeeper[authkeeper.AccountKeeper](keepers)))
 	}
 
 	appModules = append(appModules,
@@ -616,7 +619,6 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 			GetKeeper[snapKeeper.Keeper](keepers),
 			GetKeeper[bankkeeper.BaseKeeper](keepers),
 			bApp.MsgServiceRouter(),
-			bApp.Router(),
 		),
 		permission.NewAppModule(*GetKeeper[permissionKeeper.Keeper](keepers)),
 		auxiliary.NewAppModule(encodingConfig.Codec, bApp.MsgServiceRouter()),
@@ -632,7 +634,7 @@ func mustReadWasmConfig(appOpts servertypes.AppOptions) wasmtypes.WasmConfig {
 	return wasmConfig
 }
 
-func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[string]*sdk.KVStoreKey, keepers *KeeperCache, appOpts servertypes.AppOptions) sdk.AnteHandler {
+func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[string]*storetypes.KVStoreKey, keepers *KeeperCache, appOpts servertypes.AppOptions) sdk.AnteHandler {
 	// The baseAnteHandler handles signature verification and transaction pre-processing
 	baseAnteHandler, err := authAnte.NewAnteHandler(
 		authAnte.HandlerOptions{
@@ -655,7 +657,7 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 
 func InitCustomAnteDecorators(
 	encodingConfig axelarParams.EncodingConfig,
-	keys map[string]*sdk.KVStoreKey,
+	keys map[string]*storetypes.KVStoreKey,
 	keepers *KeeperCache,
 	appOpts servertypes.AppOptions,
 ) []sdk.AnteDecorator {
@@ -676,7 +678,7 @@ func InitCustomAnteDecorators(
 	}
 
 	anteDecorators = append(anteDecorators,
-		ibcante.NewAnteDecorator(GetKeeper[ibckeeper.Keeper](keepers)),
+		ibcante.NewRedundantRelayDecorator(GetKeeper[ibckeeper.Keeper](keepers)),
 		ante.NewCheckRefundFeeDecorator(
 			encodingConfig.InterfaceRegistry,
 			GetKeeper[authkeeper.AccountKeeper](keepers),
@@ -732,7 +734,7 @@ func orderMigrations() []string {
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
 		ibctransfertypes.ModuleName,
-		ibchost.ModuleName,
+		ibcexported.ModuleName,
 		banktypes.ModuleName,
 		distrtypes.ModuleName,
 		slashingtypes.ModuleName,
@@ -742,6 +744,7 @@ func orderMigrations() []string {
 		feegrant.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
+		consensusparamtypes.ModuleName,
 	}
 
 	// wasm module needs to be added in a specific order, so we cannot just append it at the end
@@ -782,7 +785,7 @@ func orderBeginBlockers() []string {
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
 		ibctransfertypes.ModuleName,
-		ibchost.ModuleName,
+		ibcexported.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
 		distrtypes.ModuleName,
@@ -793,6 +796,7 @@ func orderBeginBlockers() []string {
 		feegrant.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
+		consensusparamtypes.ModuleName,
 	}
 
 	// wasm module needs to be added in a specific order, so we cannot just append it at the end
@@ -826,7 +830,7 @@ func orderEndBlockers() []string {
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
 		ibctransfertypes.ModuleName,
-		ibchost.ModuleName,
+		ibcexported.ModuleName,
 		feegrant.ModuleName,
 		capabilitytypes.ModuleName,
 		authtypes.ModuleName,
@@ -839,6 +843,7 @@ func orderEndBlockers() []string {
 		paramstypes.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
+		consensusparamtypes.ModuleName,
 	}
 
 	// wasm module needs to be added in a specific order, so we cannot just append it at the end
@@ -882,13 +887,14 @@ func orderModulesForGenesis() []string {
 		crisistypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
-		ibchost.ModuleName,
+		ibcexported.ModuleName,
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
 		feegrant.ModuleName,
 		paramstypes.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
+		consensusparamtypes.ModuleName,
 	}
 
 	// wasm module needs to be added in a specific order, so we cannot just append it at the end
@@ -915,7 +921,7 @@ func orderModulesForGenesis() []string {
 	return genesisOrder
 }
 
-func CreateStoreKeys() map[string]*sdk.KVStoreKey {
+func CreateStoreKeys() map[string]*storetypes.KVStoreKey {
 	keys := []string{authtypes.StoreKey,
 		banktypes.StoreKey,
 		stakingtypes.StoreKey,
@@ -926,10 +932,11 @@ func CreateStoreKeys() map[string]*sdk.KVStoreKey {
 		paramstypes.StoreKey,
 		upgradetypes.StoreKey,
 		evidencetypes.StoreKey,
-		ibchost.StoreKey,
+		ibcexported.StoreKey,
 		ibctransfertypes.StoreKey,
 		capabilitytypes.StoreKey,
 		feegrant.StoreKey,
+		consensusparamtypes.StoreKey,
 		voteTypes.StoreKey,
 		evmTypes.StoreKey,
 		snapTypes.StoreKey,
@@ -994,16 +1001,17 @@ func (app *AxelarApp) AppCodec() codec.Codec {
 // API server.
 func (app *AxelarApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
 	clientCtx := apiSvr.ClientCtx
-	rpc.RegisterRoutes(clientCtx, apiSvr.Router)
-	// Register legacy tx routes.
-	authrest.RegisterTxRoutes(clientCtx, apiSvr.Router)
+
 	// Register new tx routes from grpc-gateway.
 	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+
 	// Register new tendermint queries routes from grpc-gateway.
 	tmservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
-	// Register legacy and grpc-gateway routes for all modules.
-	GetModuleBasics().RegisterRESTRoutes(clientCtx, apiSvr.Router)
+	// Register node gRPC service for grpc-gateway.
+	nodeservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+
+	// Register grpc-gateway routes for all modules.
 	GetModuleBasics().RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// register swagger API from root so that other applications can override easily
@@ -1030,37 +1038,34 @@ func (app *AxelarApp) RegisterTxService(clientCtx client.Context) {
 
 // RegisterTendermintService implements the Application.RegisterTendermintService method.
 func (app *AxelarApp) RegisterTendermintService(clientCtx client.Context) {
-	tmservice.RegisterTendermintService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.interfaceRegistry)
+	tmservice.RegisterTendermintService(clientCtx, app.BaseApp.GRPCQueryRouter(), app.interfaceRegistry, app.Query)
+}
+
+func (app *AxelarApp) RegisterNodeService(clientCtx client.Context) {
+	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter())
 }
 
 // GetModuleBasics initializes the module BasicManager is in charge of setting up basic,
 // non-dependant module elements, such as codec registration and genesis verification.
 // Initialization is dependent on whether wasm is enabled.
 func GetModuleBasics() module.BasicManager {
-	var wasmProposals []govclient.ProposalHandler
-	if IsWasmEnabled() {
-		wasmProposals = wasmclient.ProposalHandlers
-	}
-
 	managers := []module.AppModuleBasic{
 		auth.AppModuleBasic{},
-		genutil.AppModuleBasic{},
+		genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
 		bank.AppModuleBasic{},
 		capability.AppModuleBasic{},
 		staking.AppModuleBasic{},
 		mint.AppModuleBasic{},
 		distr.AppModuleBasic{},
 		gov.NewAppModuleBasic(
-			append(
-				wasmProposals,
+			[]govclient.ProposalHandler{
 				paramsclient.ProposalHandler,
-				distrclient.ProposalHandler,
-				upgradeclient.ProposalHandler,
-				upgradeclient.CancelProposalHandler,
+				upgradeclient.LegacyProposalHandler,
+				upgradeclient.LegacyCancelProposalHandler,
 				ibcclientclient.UpdateClientProposalHandler,
 				ibcclientclient.UpgradeProposalHandler,
 				axelarnetclient.ProposalHandler,
-			)...,
+			},
 		),
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},

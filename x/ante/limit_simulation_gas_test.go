@@ -3,11 +3,10 @@ package ante_test
 import (
 	"testing"
 
+	"github.com/cometbft/cometbft/libs/log"
+	abciproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	abciproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/x/ante"
@@ -17,7 +16,7 @@ func TestLimitSimulationGasDecorator_AnteHandle_WithBlockGasLimit(t *testing.T) 
 	anteHandler := sdk.ChainAnteDecorators(ante.NewLimitSimulationGasDecorator(nil))
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abciproto.Header{}, true, log.TestingLogger()).
-		WithConsensusParams(&abci.ConsensusParams{Block: &abci.BlockParams{MaxGas: 1000}}).
+		WithConsensusParams(&abciproto.ConsensusParams{Block: &abciproto.BlockParams{MaxGas: 1000}}).
 		WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	ctx.GasMeter().ConsumeGas(100, "test")
@@ -50,7 +49,7 @@ func TestLimitSimulationGasDecorator_AnteHandle_WithoutBlockGasLimit(t *testing.
 	anteHandler := sdk.ChainAnteDecorators(ante.NewLimitSimulationGasDecorator(nil))
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abciproto.Header{}, true, log.TestingLogger()).
-		WithConsensusParams(&abci.ConsensusParams{Block: &abci.BlockParams{MaxGas: 0}}).
+		WithConsensusParams(&abciproto.ConsensusParams{Block: &abciproto.BlockParams{MaxGas: 0}}).
 		WithGasMeter(sdk.NewInfiniteGasMeter())
 
 	ctx.GasMeter().ConsumeGas(100, "test")

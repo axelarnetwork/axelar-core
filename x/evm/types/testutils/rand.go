@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"cosmossdk.io/math"
 	"fmt"
 	"math/big"
 	"strings"
@@ -225,7 +226,7 @@ func RandomCommand() types.Command {
 func RandomEventTransfer() types.EventTransfer {
 	return types.EventTransfer{
 		To:     RandomAddress(),
-		Amount: rand.UintBetween(sdk.OneUint(), sdk.NewUint(100000)),
+		Amount: rand.UintBetween(math.OneUint(), sdk.NewUint(100000)),
 	}
 }
 

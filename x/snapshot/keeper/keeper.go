@@ -5,11 +5,13 @@ import (
 	"errors"
 	"fmt"
 
+	"cosmossdk.io/math"
+	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/codec"
+	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -23,7 +25,7 @@ const (
 
 // Keeper represents the snapshot keeper
 type Keeper struct {
-	storeKey sdk.StoreKey
+	storeKey store.StoreKey
 	staking  types.StakingKeeper
 	bank     types.BankKeeper
 	slasher  types.Slasher
@@ -32,7 +34,7 @@ type Keeper struct {
 }
 
 // NewKeeper creates a new keeper for the staking module
-func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, bank types.BankKeeper, slasher types.Slasher) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, key store.StoreKey, paramSpace params.Subspace, staking types.StakingKeeper, bank types.BankKeeper, slasher types.Slasher) Keeper {
 	return Keeper{
 		storeKey: key,
 		cdc:      cdc,
@@ -204,7 +206,7 @@ func (k Keeper) CreateSnapshot(
 		participants = append(participants, exported.NewParticipant(validator.GetOperator(), weight))
 	}
 
-	bondedWeight := sdk.ZeroUint()
+	bondedWeight := math.ZeroUint()
 	k.staking.IterateBondedValidatorsByPower(ctx, func(_ int64, v stakingtypes.ValidatorI) (stop bool) {
 		if v == nil {
 			panic("nil bonded validator received")

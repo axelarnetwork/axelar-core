@@ -3,11 +3,12 @@ package keeper
 import (
 	"fmt"
 
+	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/codec"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
@@ -30,12 +31,12 @@ type BaseKeeper struct {
 
 type internalKeeper struct {
 	cdc          codec.BinaryCodec
-	storeKey     sdk.StoreKey
+	storeKey     storetypes.StoreKey
 	paramsKeeper types.ParamsKeeper
 }
 
 // NewKeeper returns a new EVM base keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramsKeeper types.ParamsKeeper) *BaseKeeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey storetypes.StoreKey, paramsKeeper types.ParamsKeeper) *BaseKeeper {
 	return &BaseKeeper{
 		internalKeeper: internalKeeper{
 			cdc:          cdc,

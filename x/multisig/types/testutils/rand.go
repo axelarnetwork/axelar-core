@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"cosmossdk.io/math"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -74,8 +75,8 @@ func KeyWithMissingParticipants() types.Key {
 
 	participants = append(participants, missingParticipants...)
 	weightAdder := func(total sdk.Uint, p snapshottypes.Participant) sdk.Uint { total = total.Add(p.Weight); return total }
-	participantWeight := slices.Reduce(participants, sdk.ZeroUint(), weightAdder)
-	missingParticipantWeight := slices.Reduce(missingParticipants, sdk.ZeroUint(), weightAdder)
+	participantWeight := slices.Reduce(participants, math.ZeroUint(), weightAdder)
+	missingParticipantWeight := slices.Reduce(missingParticipants, math.ZeroUint(), weightAdder)
 
 	bondedWeight := rand.UintBetween(participantWeight, participantWeight.MulUint64(2))
 	threshold := utils.NewThreshold(rand.I64Between(1, participantWeight.Sub(missingParticipantWeight).BigInt().Int64()), bondedWeight.BigInt().Int64())

@@ -8,14 +8,13 @@ import (
 	"strings"
 	"time"
 
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/config"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/config"
 
 	errors2 "github.com/axelarnetwork/axelar-core/utils/errors"
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
@@ -50,7 +49,7 @@ func PrepareTx(ctx sdkClient.Context, txf tx.Factory, msgs ...sdk.Msg) ([]byte, 
 		txf = txf.WithGas(adjusted)
 	}
 
-	txBuilder, err := tx.BuildUnsignedTx(txf, msgs...)
+	txBuilder, err := txf.BuildUnsignedTx(msgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -78,22 +77,23 @@ func isSequenceMismatch(err error) bool {
 // Broadcast sends the given tx to the blockchain and blocks until it is added to a block (or timeout).
 func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcasterOption) (*sdk.TxResponse, error) {
 	res, err := ctx.BroadcastTx(txBytes)
+
 	switch {
 	case err != nil:
 		return nil, err
 	case res.Code != abci.CodeTypeOK:
 		return nil, sdkerrors.ABCIError(res.Codespace, res.Code, res.RawLog)
-	case ctx.BroadcastMode != flags.BroadcastBlock:
-		params := broadcastParams{
-			Timeout:         config.DefaultRPCConfig().TimeoutBroadcastTxCommit,
-			PollingInterval: 2 * time.Second,
-		}
-		for _, option := range options {
-			params = option(params)
-		}
-
-		res, err = waitForBlockInclusion(ctx, res.TxHash, params)
 	}
+
+	params := broadcastParams{
+		Timeout:         config.DefaultRPCConfig().TimeoutBroadcastTxCommit,
+		PollingInterval: 2 * time.Second,
+	}
+	for _, option := range options {
+		params = option(params)
+	}
+
+	res, err = waitForBlockInclusion(ctx, res.TxHash, params)
 
 	switch {
 	case err != nil:

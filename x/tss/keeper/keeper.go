@@ -3,11 +3,12 @@ package keeper
 import (
 	"fmt"
 
+	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/codec"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	gogoprototypes "github.com/gogo/protobuf/types"
-	"github.com/tendermint/tendermint/libs/log"
+	gogoprototypes "github.com/cosmos/gogoproto/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
@@ -21,12 +22,12 @@ var (
 // Keeper allows access to the broadcast state
 type Keeper struct {
 	params   params.Subspace
-	storeKey sdk.StoreKey
+	storeKey storetypes.StoreKey
 	cdc      codec.BinaryCodec
 }
 
 // NewKeeper constructs a tss keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey storetypes.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{
 		cdc:      cdc,
 		params:   paramSpace.WithKeyTable(types.KeyTable()),

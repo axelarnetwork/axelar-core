@@ -7,13 +7,14 @@ import (
 	"strings"
 	"time"
 
+	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/gov/client/cli"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -182,7 +183,7 @@ func GetCmdRegisterAsset() *cobra.Command {
 		if err != nil {
 			return err
 		}
-		limit, err := sdk.ParseUint(limitArg)
+		limit, err := sdkmath.ParseUint(limitArg)
 		if err != nil {
 			return err
 		}
@@ -296,7 +297,7 @@ func getGeneralMessage() *cobra.Command {
 				return err
 			}
 
-			feegranter, err := cmd.Flags().GetString(flags.FlagFeeAccount)
+			feegranter, err := cmd.Flags().GetString(flags.FlagFeeGranter)
 			if err != nil {
 				return err
 			}

@@ -5,7 +5,7 @@ import (
 	fmt "fmt"
 	"strings"
 
-	gov "github.com/cosmos/cosmos-sdk/x/gov/types"
+	gov "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/utils/slices"
@@ -17,7 +17,6 @@ const (
 
 func init() {
 	gov.RegisterProposalType(ProposalTypeCallContracts)
-	gov.RegisterProposalTypeCodec(&CallContractsProposal{}, "axelarnet/CallContractsProposal")
 }
 
 // ValidateBasic validates the contract call

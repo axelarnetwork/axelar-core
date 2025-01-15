@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"cosmossdk.io/math"
 	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -1115,7 +1116,7 @@ func (m EventMultisigOperatorshipTransferred) ValidateBasic() error {
 		return fmt.Errorf("length of new operators does not match new weights")
 	}
 
-	totalWeight := sdk.ZeroUint()
+	totalWeight := math.ZeroUint()
 	slices.ForEach(m.NewWeights, func(w sdk.Uint) { totalWeight = totalWeight.Add(w) })
 
 	if m.NewThreshold.IsZero() || m.NewThreshold.GT(totalWeight) {

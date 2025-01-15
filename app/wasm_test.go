@@ -9,12 +9,13 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
-	"github.com/cosmos/cosmos-sdk/simapp"
+	dbm "github.com/cometbft/cometbft-db"
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	ibcclient "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/mock"
@@ -285,7 +286,7 @@ func TestICSMiddleWare(t *testing.T) {
 				"",
 				0,
 				app.MakeEncodingConfig(),
-				simapp.EmptyAppOptions{},
+				simtestutil.EmptyAppOptions{},
 				[]wasm.Option{},
 			)
 
@@ -303,7 +304,8 @@ func TestICSMiddleWare(t *testing.T) {
 			}
 
 			// these must not panic and return an error unrelated to the wasm hook
-			assert.ErrorContains(t, ics4Wrapper.SendPacket(ctx, nil, packet), "channel: channel not found")
+			_, err := ics4Wrapper.SendPacket(ctx, nil, packet.GetSourcePort(), packet.GetSourceChannel(), ibcclient.ZeroHeight(), 0, nil)
+			assert.ErrorContains(t, err, "channel: channel not found")
 			assert.ErrorContains(t, ics4Wrapper.WriteAcknowledgement(ctx, nil, packet, nil), "channel: channel not found")
 			_, ok := ics4Wrapper.GetAppVersion(ctx, "port", "channel")
 			assert.False(t, ok)

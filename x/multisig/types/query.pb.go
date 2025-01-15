@@ -9,10 +9,10 @@ import (
 	exported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	github_com_axelarnetwork_axelar_core_x_multisig_exported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-	github_com_gogo_protobuf_types "github.com/gogo/protobuf/types"
-	_ "google.golang.org/protobuf/types/known/timestamppb"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
+	_ "github.com/cosmos/gogoproto/types"
+	github_com_cosmos_gogoproto_types "github.com/cosmos/gogoproto/types"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -783,7 +783,7 @@ func (m *KeyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x2a
-	n1, err1 := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.StartedAtTimestamp, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(m.StartedAtTimestamp):])
+	n1, err1 := github_com_cosmos_gogoproto_types.StdTimeMarshalTo(m.StartedAtTimestamp, dAtA[i-github_com_cosmos_gogoproto_types.SizeOfStdTime(m.StartedAtTimestamp):])
 	if err1 != nil {
 		return 0, err1
 	}
@@ -925,7 +925,7 @@ func (m *KeygenSessionResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x18
 	}
-	n2, err2 := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.StartedAtTimestamp, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(m.StartedAtTimestamp):])
+	n2, err2 := github_com_cosmos_gogoproto_types.StdTimeMarshalTo(m.StartedAtTimestamp, dAtA[i-github_com_cosmos_gogoproto_types.SizeOfStdTime(m.StartedAtTimestamp):])
 	if err2 != nil {
 		return 0, err2
 	}
@@ -1108,7 +1108,7 @@ func (m *KeyResponse) Size() (n int) {
 	if m.StartedAt != 0 {
 		n += 1 + sovQuery(uint64(m.StartedAt))
 	}
-	l = github_com_gogo_protobuf_types.SizeOfStdTime(m.StartedAtTimestamp)
+	l = github_com_cosmos_gogoproto_types.SizeOfStdTime(m.StartedAtTimestamp)
 	n += 1 + l + sovQuery(uint64(l))
 	l = m.ThresholdWeight.Size()
 	n += 1 + l + sovQuery(uint64(l))
@@ -1145,7 +1145,7 @@ func (m *KeygenSessionResponse) Size() (n int) {
 	if m.StartedAt != 0 {
 		n += 1 + sovQuery(uint64(m.StartedAt))
 	}
-	l = github_com_gogo_protobuf_types.SizeOfStdTime(m.StartedAtTimestamp)
+	l = github_com_cosmos_gogoproto_types.SizeOfStdTime(m.StartedAtTimestamp)
 	n += 1 + l + sovQuery(uint64(l))
 	if m.ExpiresAt != 0 {
 		n += 1 + sovQuery(uint64(m.ExpiresAt))
@@ -1885,7 +1885,7 @@ func (m *KeyResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := github_com_gogo_protobuf_types.StdTimeUnmarshal(&m.StartedAtTimestamp, dAtA[iNdEx:postIndex]); err != nil {
+			if err := github_com_cosmos_gogoproto_types.StdTimeUnmarshal(&m.StartedAtTimestamp, dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2169,7 +2169,7 @@ func (m *KeygenSessionResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := github_com_gogo_protobuf_types.StdTimeUnmarshal(&m.StartedAtTimestamp, dAtA[iNdEx:postIndex]); err != nil {
+			if err := github_com_cosmos_gogoproto_types.StdTimeUnmarshal(&m.StartedAtTimestamp, dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

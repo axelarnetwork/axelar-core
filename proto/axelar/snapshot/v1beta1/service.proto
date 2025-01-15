@@ -38,4 +38,17 @@ service QueryService {
       get : "/axelar/snapshot/v1beta1/params"
     };
   }
+
+  rpc Operator(OperatorByProxyRequest) returns (OperatorByProxyResponse) {
+    option (google.api.http) = {
+      get : "/axelar/snapshot/v1beta1/operator"
+    };
+  }
+
+
+  rpc Proxy(ProxyByOperatorRequest) returns (ProxyByOperatorResponse) {
+    option (google.api.http) = {
+      get : "/axelar/snapshot/v1beta1/proxy"
+    };
+  }
 }

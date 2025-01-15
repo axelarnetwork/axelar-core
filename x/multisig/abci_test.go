@@ -1,15 +1,16 @@
 package multisig_test
 
 import (
+	"cosmossdk.io/math"
 	"fmt"
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
 	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -348,7 +349,7 @@ func newSigningSessionWithMissingParticipants(module string, missingCount uint64
 
 	participants := make(map[string]snapshot.Participant)
 	for _, v := range validators {
-		participants[v] = snapshot.NewParticipant(funcs.Must(sdk.ValAddressFromBech32(v)), sdk.OneUint())
+		participants[v] = snapshot.NewParticipant(funcs.Must(sdk.ValAddressFromBech32(v)), math.OneUint())
 	}
 
 	return types.SigningSession{
@@ -358,7 +359,7 @@ func newSigningSessionWithMissingParticipants(module string, missingCount uint64
 			PubKeys: pubKeys,
 			Snapshot: snapshot.Snapshot{
 				Participants: participants,
-				BondedWeight: sdk.OneUint().MulUint64(uint64(len(participants))),
+				BondedWeight: math.OneUint().MulUint64(uint64(len(participants))),
 			},
 			SigningThreshold: utils.NewThreshold(int64(len(participants))-int64(missingCount), int64(len(participants))),
 		},

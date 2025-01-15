@@ -4,10 +4,11 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/codec"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
@@ -25,7 +26,7 @@ var _ types.Rewarder = Keeper{}
 
 // Keeper provides access to all state changes regarding the reward module
 type Keeper struct {
-	storeKey    sdk.StoreKey
+	storeKey    storetypes.StoreKey
 	cdc         codec.BinaryCodec
 	paramSpace  paramtypes.Subspace
 	banker      types.Banker
@@ -34,7 +35,7 @@ type Keeper struct {
 }
 
 // NewKeeper returns a new reward keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace paramtypes.Subspace, banker types.Banker, distributor types.Distributor, staker types.Staker) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey storetypes.StoreKey, paramSpace paramtypes.Subspace, banker types.Banker, distributor types.Distributor, staker types.Staker) Keeper {
 	return Keeper{
 		cdc:         cdc,
 		storeKey:    storeKey,

@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -72,7 +73,7 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 		return err
 	}
 
-	if _, err := sdk.ParseUint(m.DailyMintLimit); err != nil {
+	if _, err := math.ParseUint(m.DailyMintLimit); err != nil {
 		return err
 	}
 

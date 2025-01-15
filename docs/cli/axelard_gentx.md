@@ -36,24 +36,26 @@ axelard gentx [key_name] [amount] [flags]
 ```
   -a, --account-number uint                 The account number of the signing account (offline mode only)
       --amount string                       Amount of coins to bond
-  -b, --broadcast-mode string               Transaction broadcasting mode (sync|async|block) (default "block")
+      --aux                                 Generate aux signer data instead of sending a tx
+  -b, --broadcast-mode string               Transaction broadcasting mode (sync|async) (default "sync")
       --chain-id string                     The network chain ID (default "axelar")
       --commission-max-change-rate string   The maximum commission change rate percentage (per day)
       --commission-max-rate string          The maximum commission rate percentage
       --commission-rate string              The initial commission rate percentage
       --details string                      The validator's (optional) details
       --dry-run                             ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it (when enabled, the local Keybase is not accessible)
-      --fee-account string                  Fee account pays fees for the transaction instead of deducting from the signer
+      --fee-granter string                  Fee granter grants fees for the transaction
+      --fee-payer string                    Fee payer pays fees for the transaction instead of deducting from the signer
       --fees string                         Fees to pay along with transaction; eg: 10uatom
       --from string                         Name or address of private key with which to sign
-      --gas string                          gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas string                          gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically. Note: "auto" option doesn't always report accurate results. Set a valid coin value to adjust the result. Can be used instead of "fees". (default 200000)
       --gas-adjustment float                adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string                   Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.007uaxl")
-      --generate-only                       Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+      --generate-only                       Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase only accessed when providing a key name)
   -h, --help                                help for gentx
       --home string                         The application home directory (default "$HOME/.axelar")
       --identity string                     The (optional) identity signature (ex. UPort or Keybase)
-      --ip string                           The node's public IP (default "127.0.0.1")
+      --ip string                           The node's public P2P IP (default "127.0.0.1")
       --keyring-backend string              Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string                  The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                              Use a connected Ledger device
@@ -62,14 +64,15 @@ axelard gentx [key_name] [amount] [flags]
       --node string                         <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --node-id string                      The node's NodeID
       --note string                         Note to add a description to the transaction (previously --memo)
-      --offline                             Offline mode (does not allow any online functionality
-  -o, --output string                       Output format (text|json) (default "json")
+      --offline                             Offline mode (does not allow any online functionality)
       --output-document string              Write the genesis transaction JSON document to the given file instead of the default location
+      --p2p-port uint                       The node's public P2P port (default 26656)
       --pubkey string                       The validator's Protobuf JSON encoded public key
       --security-contact string             The validator's (optional) security contact email
   -s, --sequence uint                       The sequence number of the signing account (offline mode only)
-      --sign-mode string                    Choose sign mode (direct|amino-json), this is an advanced feature
+      --sign-mode string                    Choose sign mode (direct|amino-json|direct-aux), this is an advanced feature
       --timeout-height uint                 Set a block timeout height to prevent the tx from being committed past a certain height
+      --tip string                          Tip is the amount that is going to be transferred to the fee payer on the target chain. This flag is only valid when used with --aux, and is ignored if the target chain didn't enable the TipDecorator
       --website string                      The validator's (optional) website
   -y, --yes                                 Skip tx broadcasting prompt confirmation (default true)
 ```

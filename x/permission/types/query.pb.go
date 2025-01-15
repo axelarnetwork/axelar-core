@@ -6,9 +6,9 @@ package types
 import (
 	fmt "fmt"
 	multisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-	_ "google.golang.org/protobuf/types/known/timestamppb"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
+	_ "github.com/cosmos/gogoproto/types"
 	io "io"
 	math "math"
 	math_bits "math/bits"

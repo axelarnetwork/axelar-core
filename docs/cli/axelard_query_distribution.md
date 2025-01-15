@@ -31,4 +31,5 @@ axelard query distribution [flags]
 - [axelard query distribution params](axelard_query_distribution_params.md) - Query distribution params
 - [axelard query distribution rewards](axelard_query_distribution_rewards.md) - Query all distribution delegator rewards or rewards from a particular validator
 - [axelard query distribution slashes](axelard_query_distribution_slashes.md) - Query distribution validator slashes
+- [axelard query distribution validator-distribution-info](axelard_query_distribution_validator-distribution-info.md) - Query validator distribution info
 - [axelard query distribution validator-outstanding-rewards](axelard_query_distribution_validator-outstanding-rewards.md) - Query distribution outstanding (un-withdrawn) rewards for a validator and all their delegations

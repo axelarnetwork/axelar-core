@@ -1,6 +1,7 @@
 package rand
 
 import (
+	"cosmossdk.io/math"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -70,8 +71,8 @@ func between0And50GreaterThan25LesserThan30OrExactly45Take20(t *testing.T) {
 
 func uintbetween0And10(t *testing.T) {
 	for i := 0; i < 10; i++ {
-		g := UintBetween(sdk.ZeroUint(), sdk.NewUint(10))
-		assert.True(t, g.GTE(sdk.ZeroUint()))
+		g := UintBetween(math.ZeroUint(), sdk.NewUint(10))
+		assert.True(t, g.GTE(math.ZeroUint()))
 		assert.True(t, g.LT(sdk.NewUint(10)))
 	}
 }

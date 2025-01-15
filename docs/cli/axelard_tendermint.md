@@ -21,6 +21,7 @@ Tendermint subcommands
 ### SEE ALSO
 
 - [axelard](axelard.md) - Axelar App
+- [axelard tendermint bootstrap-state](axelard_tendermint_bootstrap-state.md) - Bootstrap CometBFT state at an arbitrary block height using a light client
 - [axelard tendermint reset-state](axelard_tendermint_reset-state.md) - Remove all the data and WAL
 - [axelard tendermint show-address](axelard_tendermint_show-address.md) - Shows this node's tendermint validator consensus address
 - [axelard tendermint show-node-id](axelard_tendermint_show-node-id.md) - Show this node's ID

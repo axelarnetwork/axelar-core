@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -24,6 +25,25 @@ import (
 )
 
 var _ types.QueryServiceServer = Querier{}
+
+// Query labels
+const (
+	QTokenAddressBySymbol = "token-address-symbol"
+	QTokenAddressByAsset  = "token-address-asset"
+)
+
+// Bytecode labels
+const (
+	BCToken  = "token"
+	BCBurner = "burner"
+)
+
+// Token address labels
+const (
+	BySymbol  = "symbol"
+	ByAsset   = "asset"
+	ByAddress = "address"
+)
 
 // Querier implements the grpc querier
 type Querier struct {
@@ -139,7 +159,7 @@ func optimizeSignatureSet(operators []types.Operator, minPassingWeight sdk.Uint)
 		return operators[i].Weight.GT(operators[j].Weight)
 	})
 
-	cumWeight := sdk.ZeroUint()
+	cumWeight := math.ZeroUint()
 	operators = slices.Filter(operators, func(operator types.Operator) bool {
 		if cumWeight.GTE(minPassingWeight) {
 			return false

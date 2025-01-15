@@ -4,10 +4,11 @@
 package mock
 
 import (
+	"cosmossdk.io/math"
+	"github.com/cometbft/cometbft/proto/tendermint/crypto"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmossdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 	"sync"
 )
 
@@ -24,22 +25,22 @@ var _ ValidatorI = &ValidatorIMock{}
 //			ConsPubKeyFunc: func() (cryptotypes.PubKey, error) {
 //				panic("mock out the ConsPubKey method")
 //			},
-//			GetBondedTokensFunc: func() cosmossdktypes.Int {
+//			GetBondedTokensFunc: func() math.Int {
 //				panic("mock out the GetBondedTokens method")
 //			},
-//			GetCommissionFunc: func() cosmossdktypes.Dec {
+//			GetCommissionFunc: func() math.LegacyDec {
 //				panic("mock out the GetCommission method")
 //			},
 //			GetConsAddrFunc: func() (cosmossdktypes.ConsAddress, error) {
 //				panic("mock out the GetConsAddr method")
 //			},
-//			GetConsensusPowerFunc: func(intMoqParam cosmossdktypes.Int) int64 {
+//			GetConsensusPowerFunc: func(intMoqParam math.Int) int64 {
 //				panic("mock out the GetConsensusPower method")
 //			},
-//			GetDelegatorSharesFunc: func() cosmossdktypes.Dec {
+//			GetDelegatorSharesFunc: func() math.LegacyDec {
 //				panic("mock out the GetDelegatorShares method")
 //			},
-//			GetMinSelfDelegationFunc: func() cosmossdktypes.Int {
+//			GetMinSelfDelegationFunc: func() math.Int {
 //				panic("mock out the GetMinSelfDelegation method")
 //			},
 //			GetMonikerFunc: func() string {
@@ -51,7 +52,7 @@ var _ ValidatorI = &ValidatorIMock{}
 //			GetStatusFunc: func() types.BondStatus {
 //				panic("mock out the GetStatus method")
 //			},
-//			GetTokensFunc: func() cosmossdktypes.Int {
+//			GetTokensFunc: func() math.Int {
 //				panic("mock out the GetTokens method")
 //			},
 //			IsBondedFunc: func() bool {
@@ -66,22 +67,22 @@ var _ ValidatorI = &ValidatorIMock{}
 //			IsUnbondingFunc: func() bool {
 //				panic("mock out the IsUnbonding method")
 //			},
-//			SharesFromTokensFunc: func(amt cosmossdktypes.Int) (cosmossdktypes.Dec, error) {
+//			SharesFromTokensFunc: func(amt math.Int) (math.LegacyDec, error) {
 //				panic("mock out the SharesFromTokens method")
 //			},
-//			SharesFromTokensTruncatedFunc: func(amt cosmossdktypes.Int) (cosmossdktypes.Dec, error) {
+//			SharesFromTokensTruncatedFunc: func(amt math.Int) (math.LegacyDec, error) {
 //				panic("mock out the SharesFromTokensTruncated method")
 //			},
 //			TmConsPublicKeyFunc: func() (crypto.PublicKey, error) {
 //				panic("mock out the TmConsPublicKey method")
 //			},
-//			TokensFromSharesFunc: func(dec cosmossdktypes.Dec) cosmossdktypes.Dec {
+//			TokensFromSharesFunc: func(legacyDec math.LegacyDec) math.LegacyDec {
 //				panic("mock out the TokensFromShares method")
 //			},
-//			TokensFromSharesRoundUpFunc: func(dec cosmossdktypes.Dec) cosmossdktypes.Dec {
+//			TokensFromSharesRoundUpFunc: func(legacyDec math.LegacyDec) math.LegacyDec {
 //				panic("mock out the TokensFromSharesRoundUp method")
 //			},
-//			TokensFromSharesTruncatedFunc: func(dec cosmossdktypes.Dec) cosmossdktypes.Dec {
+//			TokensFromSharesTruncatedFunc: func(legacyDec math.LegacyDec) math.LegacyDec {
 //				panic("mock out the TokensFromSharesTruncated method")
 //			},
 //		}
@@ -95,22 +96,22 @@ type ValidatorIMock struct {
 	ConsPubKeyFunc func() (cryptotypes.PubKey, error)
 
 	// GetBondedTokensFunc mocks the GetBondedTokens method.
-	GetBondedTokensFunc func() cosmossdktypes.Int
+	GetBondedTokensFunc func() math.Int
 
 	// GetCommissionFunc mocks the GetCommission method.
-	GetCommissionFunc func() cosmossdktypes.Dec
+	GetCommissionFunc func() math.LegacyDec
 
 	// GetConsAddrFunc mocks the GetConsAddr method.
 	GetConsAddrFunc func() (cosmossdktypes.ConsAddress, error)
 
 	// GetConsensusPowerFunc mocks the GetConsensusPower method.
-	GetConsensusPowerFunc func(intMoqParam cosmossdktypes.Int) int64
+	GetConsensusPowerFunc func(intMoqParam math.Int) int64
 
 	// GetDelegatorSharesFunc mocks the GetDelegatorShares method.
-	GetDelegatorSharesFunc func() cosmossdktypes.Dec
+	GetDelegatorSharesFunc func() math.LegacyDec
 
 	// GetMinSelfDelegationFunc mocks the GetMinSelfDelegation method.
-	GetMinSelfDelegationFunc func() cosmossdktypes.Int
+	GetMinSelfDelegationFunc func() math.Int
 
 	// GetMonikerFunc mocks the GetMoniker method.
 	GetMonikerFunc func() string
@@ -122,7 +123,7 @@ type ValidatorIMock struct {
 	GetStatusFunc func() types.BondStatus
 
 	// GetTokensFunc mocks the GetTokens method.
-	GetTokensFunc func() cosmossdktypes.Int
+	GetTokensFunc func() math.Int
 
 	// IsBondedFunc mocks the IsBonded method.
 	IsBondedFunc func() bool
@@ -137,22 +138,22 @@ type ValidatorIMock struct {
 	IsUnbondingFunc func() bool
 
 	// SharesFromTokensFunc mocks the SharesFromTokens method.
-	SharesFromTokensFunc func(amt cosmossdktypes.Int) (cosmossdktypes.Dec, error)
+	SharesFromTokensFunc func(amt math.Int) (math.LegacyDec, error)
 
 	// SharesFromTokensTruncatedFunc mocks the SharesFromTokensTruncated method.
-	SharesFromTokensTruncatedFunc func(amt cosmossdktypes.Int) (cosmossdktypes.Dec, error)
+	SharesFromTokensTruncatedFunc func(amt math.Int) (math.LegacyDec, error)
 
 	// TmConsPublicKeyFunc mocks the TmConsPublicKey method.
 	TmConsPublicKeyFunc func() (crypto.PublicKey, error)
 
 	// TokensFromSharesFunc mocks the TokensFromShares method.
-	TokensFromSharesFunc func(dec cosmossdktypes.Dec) cosmossdktypes.Dec
+	TokensFromSharesFunc func(legacyDec math.LegacyDec) math.LegacyDec
 
 	// TokensFromSharesRoundUpFunc mocks the TokensFromSharesRoundUp method.
-	TokensFromSharesRoundUpFunc func(dec cosmossdktypes.Dec) cosmossdktypes.Dec
+	TokensFromSharesRoundUpFunc func(legacyDec math.LegacyDec) math.LegacyDec
 
 	// TokensFromSharesTruncatedFunc mocks the TokensFromSharesTruncated method.
-	TokensFromSharesTruncatedFunc func(dec cosmossdktypes.Dec) cosmossdktypes.Dec
+	TokensFromSharesTruncatedFunc func(legacyDec math.LegacyDec) math.LegacyDec
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -171,7 +172,7 @@ type ValidatorIMock struct {
 		// GetConsensusPower holds details about calls to the GetConsensusPower method.
 		GetConsensusPower []struct {
 			// IntMoqParam is the intMoqParam argument value.
-			IntMoqParam cosmossdktypes.Int
+			IntMoqParam math.Int
 		}
 		// GetDelegatorShares holds details about calls to the GetDelegatorShares method.
 		GetDelegatorShares []struct {
@@ -206,30 +207,30 @@ type ValidatorIMock struct {
 		// SharesFromTokens holds details about calls to the SharesFromTokens method.
 		SharesFromTokens []struct {
 			// Amt is the amt argument value.
-			Amt cosmossdktypes.Int
+			Amt math.Int
 		}
 		// SharesFromTokensTruncated holds details about calls to the SharesFromTokensTruncated method.
 		SharesFromTokensTruncated []struct {
 			// Amt is the amt argument value.
-			Amt cosmossdktypes.Int
+			Amt math.Int
 		}
 		// TmConsPublicKey holds details about calls to the TmConsPublicKey method.
 		TmConsPublicKey []struct {
 		}
 		// TokensFromShares holds details about calls to the TokensFromShares method.
 		TokensFromShares []struct {
-			// Dec is the dec argument value.
-			Dec cosmossdktypes.Dec
+			// LegacyDec is the legacyDec argument value.
+			LegacyDec math.LegacyDec
 		}
 		// TokensFromSharesRoundUp holds details about calls to the TokensFromSharesRoundUp method.
 		TokensFromSharesRoundUp []struct {
-			// Dec is the dec argument value.
-			Dec cosmossdktypes.Dec
+			// LegacyDec is the legacyDec argument value.
+			LegacyDec math.LegacyDec
 		}
 		// TokensFromSharesTruncated holds details about calls to the TokensFromSharesTruncated method.
 		TokensFromSharesTruncated []struct {
-			// Dec is the dec argument value.
-			Dec cosmossdktypes.Dec
+			// LegacyDec is the legacyDec argument value.
+			LegacyDec math.LegacyDec
 		}
 	}
 	lockConsPubKey                sync.RWMutex
@@ -283,7 +284,7 @@ func (mock *ValidatorIMock) ConsPubKeyCalls() []struct {
 }
 
 // GetBondedTokens calls GetBondedTokensFunc.
-func (mock *ValidatorIMock) GetBondedTokens() cosmossdktypes.Int {
+func (mock *ValidatorIMock) GetBondedTokens() math.Int {
 	if mock.GetBondedTokensFunc == nil {
 		panic("ValidatorIMock.GetBondedTokensFunc: method is nil but ValidatorI.GetBondedTokens was just called")
 	}
@@ -310,7 +311,7 @@ func (mock *ValidatorIMock) GetBondedTokensCalls() []struct {
 }
 
 // GetCommission calls GetCommissionFunc.
-func (mock *ValidatorIMock) GetCommission() cosmossdktypes.Dec {
+func (mock *ValidatorIMock) GetCommission() math.LegacyDec {
 	if mock.GetCommissionFunc == nil {
 		panic("ValidatorIMock.GetCommissionFunc: method is nil but ValidatorI.GetCommission was just called")
 	}
@@ -364,12 +365,12 @@ func (mock *ValidatorIMock) GetConsAddrCalls() []struct {
 }
 
 // GetConsensusPower calls GetConsensusPowerFunc.
-func (mock *ValidatorIMock) GetConsensusPower(intMoqParam cosmossdktypes.Int) int64 {
+func (mock *ValidatorIMock) GetConsensusPower(intMoqParam math.Int) int64 {
 	if mock.GetConsensusPowerFunc == nil {
 		panic("ValidatorIMock.GetConsensusPowerFunc: method is nil but ValidatorI.GetConsensusPower was just called")
 	}
 	callInfo := struct {
-		IntMoqParam cosmossdktypes.Int
+		IntMoqParam math.Int
 	}{
 		IntMoqParam: intMoqParam,
 	}
@@ -384,10 +385,10 @@ func (mock *ValidatorIMock) GetConsensusPower(intMoqParam cosmossdktypes.Int) in
 //
 //	len(mockedValidatorI.GetConsensusPowerCalls())
 func (mock *ValidatorIMock) GetConsensusPowerCalls() []struct {
-	IntMoqParam cosmossdktypes.Int
+	IntMoqParam math.Int
 } {
 	var calls []struct {
-		IntMoqParam cosmossdktypes.Int
+		IntMoqParam math.Int
 	}
 	mock.lockGetConsensusPower.RLock()
 	calls = mock.calls.GetConsensusPower
@@ -396,7 +397,7 @@ func (mock *ValidatorIMock) GetConsensusPowerCalls() []struct {
 }
 
 // GetDelegatorShares calls GetDelegatorSharesFunc.
-func (mock *ValidatorIMock) GetDelegatorShares() cosmossdktypes.Dec {
+func (mock *ValidatorIMock) GetDelegatorShares() math.LegacyDec {
 	if mock.GetDelegatorSharesFunc == nil {
 		panic("ValidatorIMock.GetDelegatorSharesFunc: method is nil but ValidatorI.GetDelegatorShares was just called")
 	}
@@ -423,7 +424,7 @@ func (mock *ValidatorIMock) GetDelegatorSharesCalls() []struct {
 }
 
 // GetMinSelfDelegation calls GetMinSelfDelegationFunc.
-func (mock *ValidatorIMock) GetMinSelfDelegation() cosmossdktypes.Int {
+func (mock *ValidatorIMock) GetMinSelfDelegation() math.Int {
 	if mock.GetMinSelfDelegationFunc == nil {
 		panic("ValidatorIMock.GetMinSelfDelegationFunc: method is nil but ValidatorI.GetMinSelfDelegation was just called")
 	}
@@ -531,7 +532,7 @@ func (mock *ValidatorIMock) GetStatusCalls() []struct {
 }
 
 // GetTokens calls GetTokensFunc.
-func (mock *ValidatorIMock) GetTokens() cosmossdktypes.Int {
+func (mock *ValidatorIMock) GetTokens() math.Int {
 	if mock.GetTokensFunc == nil {
 		panic("ValidatorIMock.GetTokensFunc: method is nil but ValidatorI.GetTokens was just called")
 	}
@@ -666,12 +667,12 @@ func (mock *ValidatorIMock) IsUnbondingCalls() []struct {
 }
 
 // SharesFromTokens calls SharesFromTokensFunc.
-func (mock *ValidatorIMock) SharesFromTokens(amt cosmossdktypes.Int) (cosmossdktypes.Dec, error) {
+func (mock *ValidatorIMock) SharesFromTokens(amt math.Int) (math.LegacyDec, error) {
 	if mock.SharesFromTokensFunc == nil {
 		panic("ValidatorIMock.SharesFromTokensFunc: method is nil but ValidatorI.SharesFromTokens was just called")
 	}
 	callInfo := struct {
-		Amt cosmossdktypes.Int
+		Amt math.Int
 	}{
 		Amt: amt,
 	}
@@ -686,10 +687,10 @@ func (mock *ValidatorIMock) SharesFromTokens(amt cosmossdktypes.Int) (cosmossdkt
 //
 //	len(mockedValidatorI.SharesFromTokensCalls())
 func (mock *ValidatorIMock) SharesFromTokensCalls() []struct {
-	Amt cosmossdktypes.Int
+	Amt math.Int
 } {
 	var calls []struct {
-		Amt cosmossdktypes.Int
+		Amt math.Int
 	}
 	mock.lockSharesFromTokens.RLock()
 	calls = mock.calls.SharesFromTokens
@@ -698,12 +699,12 @@ func (mock *ValidatorIMock) SharesFromTokensCalls() []struct {
 }
 
 // SharesFromTokensTruncated calls SharesFromTokensTruncatedFunc.
-func (mock *ValidatorIMock) SharesFromTokensTruncated(amt cosmossdktypes.Int) (cosmossdktypes.Dec, error) {
+func (mock *ValidatorIMock) SharesFromTokensTruncated(amt math.Int) (math.LegacyDec, error) {
 	if mock.SharesFromTokensTruncatedFunc == nil {
 		panic("ValidatorIMock.SharesFromTokensTruncatedFunc: method is nil but ValidatorI.SharesFromTokensTruncated was just called")
 	}
 	callInfo := struct {
-		Amt cosmossdktypes.Int
+		Amt math.Int
 	}{
 		Amt: amt,
 	}
@@ -718,10 +719,10 @@ func (mock *ValidatorIMock) SharesFromTokensTruncated(amt cosmossdktypes.Int) (c
 //
 //	len(mockedValidatorI.SharesFromTokensTruncatedCalls())
 func (mock *ValidatorIMock) SharesFromTokensTruncatedCalls() []struct {
-	Amt cosmossdktypes.Int
+	Amt math.Int
 } {
 	var calls []struct {
-		Amt cosmossdktypes.Int
+		Amt math.Int
 	}
 	mock.lockSharesFromTokensTruncated.RLock()
 	calls = mock.calls.SharesFromTokensTruncated
@@ -757,19 +758,19 @@ func (mock *ValidatorIMock) TmConsPublicKeyCalls() []struct {
 }
 
 // TokensFromShares calls TokensFromSharesFunc.
-func (mock *ValidatorIMock) TokensFromShares(dec cosmossdktypes.Dec) cosmossdktypes.Dec {
+func (mock *ValidatorIMock) TokensFromShares(legacyDec math.LegacyDec) math.LegacyDec {
 	if mock.TokensFromSharesFunc == nil {
 		panic("ValidatorIMock.TokensFromSharesFunc: method is nil but ValidatorI.TokensFromShares was just called")
 	}
 	callInfo := struct {
-		Dec cosmossdktypes.Dec
+		LegacyDec math.LegacyDec
 	}{
-		Dec: dec,
+		LegacyDec: legacyDec,
 	}
 	mock.lockTokensFromShares.Lock()
 	mock.calls.TokensFromShares = append(mock.calls.TokensFromShares, callInfo)
 	mock.lockTokensFromShares.Unlock()
-	return mock.TokensFromSharesFunc(dec)
+	return mock.TokensFromSharesFunc(legacyDec)
 }
 
 // TokensFromSharesCalls gets all the calls that were made to TokensFromShares.
@@ -777,10 +778,10 @@ func (mock *ValidatorIMock) TokensFromShares(dec cosmossdktypes.Dec) cosmossdkty
 //
 //	len(mockedValidatorI.TokensFromSharesCalls())
 func (mock *ValidatorIMock) TokensFromSharesCalls() []struct {
-	Dec cosmossdktypes.Dec
+	LegacyDec math.LegacyDec
 } {
 	var calls []struct {
-		Dec cosmossdktypes.Dec
+		LegacyDec math.LegacyDec
 	}
 	mock.lockTokensFromShares.RLock()
 	calls = mock.calls.TokensFromShares
@@ -789,19 +790,19 @@ func (mock *ValidatorIMock) TokensFromSharesCalls() []struct {
 }
 
 // TokensFromSharesRoundUp calls TokensFromSharesRoundUpFunc.
-func (mock *ValidatorIMock) TokensFromSharesRoundUp(dec cosmossdktypes.Dec) cosmossdktypes.Dec {
+func (mock *ValidatorIMock) TokensFromSharesRoundUp(legacyDec math.LegacyDec) math.LegacyDec {
 	if mock.TokensFromSharesRoundUpFunc == nil {
 		panic("ValidatorIMock.TokensFromSharesRoundUpFunc: method is nil but ValidatorI.TokensFromSharesRoundUp was just called")
 	}
 	callInfo := struct {
-		Dec cosmossdktypes.Dec
+		LegacyDec math.LegacyDec
 	}{
-		Dec: dec,
+		LegacyDec: legacyDec,
 	}
 	mock.lockTokensFromSharesRoundUp.Lock()
 	mock.calls.TokensFromSharesRoundUp = append(mock.calls.TokensFromSharesRoundUp, callInfo)
 	mock.lockTokensFromSharesRoundUp.Unlock()
-	return mock.TokensFromSharesRoundUpFunc(dec)
+	return mock.TokensFromSharesRoundUpFunc(legacyDec)
 }
 
 // TokensFromSharesRoundUpCalls gets all the calls that were made to TokensFromSharesRoundUp.
@@ -809,10 +810,10 @@ func (mock *ValidatorIMock) TokensFromSharesRoundUp(dec cosmossdktypes.Dec) cosm
 //
 //	len(mockedValidatorI.TokensFromSharesRoundUpCalls())
 func (mock *ValidatorIMock) TokensFromSharesRoundUpCalls() []struct {
-	Dec cosmossdktypes.Dec
+	LegacyDec math.LegacyDec
 } {
 	var calls []struct {
-		Dec cosmossdktypes.Dec
+		LegacyDec math.LegacyDec
 	}
 	mock.lockTokensFromSharesRoundUp.RLock()
 	calls = mock.calls.TokensFromSharesRoundUp
@@ -821,19 +822,19 @@ func (mock *ValidatorIMock) TokensFromSharesRoundUpCalls() []struct {
 }
 
 // TokensFromSharesTruncated calls TokensFromSharesTruncatedFunc.
-func (mock *ValidatorIMock) TokensFromSharesTruncated(dec cosmossdktypes.Dec) cosmossdktypes.Dec {
+func (mock *ValidatorIMock) TokensFromSharesTruncated(legacyDec math.LegacyDec) math.LegacyDec {
 	if mock.TokensFromSharesTruncatedFunc == nil {
 		panic("ValidatorIMock.TokensFromSharesTruncatedFunc: method is nil but ValidatorI.TokensFromSharesTruncated was just called")
 	}
 	callInfo := struct {
-		Dec cosmossdktypes.Dec
+		LegacyDec math.LegacyDec
 	}{
-		Dec: dec,
+		LegacyDec: legacyDec,
 	}
 	mock.lockTokensFromSharesTruncated.Lock()
 	mock.calls.TokensFromSharesTruncated = append(mock.calls.TokensFromSharesTruncated, callInfo)
 	mock.lockTokensFromSharesTruncated.Unlock()
-	return mock.TokensFromSharesTruncatedFunc(dec)
+	return mock.TokensFromSharesTruncatedFunc(legacyDec)
 }
 
 // TokensFromSharesTruncatedCalls gets all the calls that were made to TokensFromSharesTruncated.
@@ -841,10 +842,10 @@ func (mock *ValidatorIMock) TokensFromSharesTruncated(dec cosmossdktypes.Dec) co
 //
 //	len(mockedValidatorI.TokensFromSharesTruncatedCalls())
 func (mock *ValidatorIMock) TokensFromSharesTruncatedCalls() []struct {
-	Dec cosmossdktypes.Dec
+	LegacyDec math.LegacyDec
 } {
 	var calls []struct {
-		Dec cosmossdktypes.Dec
+		LegacyDec math.LegacyDec
 	}
 	mock.lockTokensFromSharesTruncated.RLock()
 	calls = mock.calls.TokensFromSharesTruncated

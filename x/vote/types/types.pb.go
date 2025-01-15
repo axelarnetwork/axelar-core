@@ -7,12 +7,12 @@ import (
 	fmt "fmt"
 	_ "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	github_com_axelarnetwork_axelar_core_x_vote_exported "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	_ "github.com/cosmos/cosmos-proto"
 	types "github.com/cosmos/cosmos-sdk/codec/types"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-	github_com_gogo_protobuf_sortkeys "github.com/gogo/protobuf/sortkeys"
-	_ "github.com/regen-network/cosmos-proto"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
+	github_com_cosmos_gogoproto_sortkeys "github.com/cosmos/gogoproto/sortkeys"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -131,7 +131,7 @@ func (m *TalliedVote) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		for k := range m.IsVoterLate {
 			keysForIsVoterLate = append(keysForIsVoterLate, string(k))
 		}
-		github_com_gogo_protobuf_sortkeys.Strings(keysForIsVoterLate)
+		github_com_cosmos_gogoproto_sortkeys.Strings(keysForIsVoterLate)
 		for iNdEx := len(keysForIsVoterLate) - 1; iNdEx >= 0; iNdEx-- {
 			v := m.IsVoterLate[string(keysForIsVoterLate[iNdEx])]
 			baseI := i

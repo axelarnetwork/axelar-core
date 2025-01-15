@@ -10,11 +10,11 @@ import (
 	_ "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-	github_com_gogo_protobuf_types "github.com/gogo/protobuf/types"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
+	_ "github.com/cosmos/gogoproto/types"
+	github_com_cosmos_gogoproto_types "github.com/cosmos/gogoproto/types"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
-	_ "google.golang.org/protobuf/types/known/durationpb"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -875,7 +875,7 @@ func (m *SetTransferRateLimitRequest) MarshalToSizedBuffer(dAtA []byte) (int, er
 	_ = i
 	var l int
 	_ = l
-	n2, err2 := github_com_gogo_protobuf_types.StdDurationMarshalTo(m.Window, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdDuration(m.Window):])
+	n2, err2 := github_com_cosmos_gogoproto_types.StdDurationMarshalTo(m.Window, dAtA[i-github_com_cosmos_gogoproto_types.SizeOfStdDuration(m.Window):])
 	if err2 != nil {
 		return 0, err2
 	}
@@ -1096,7 +1096,7 @@ func (m *SetTransferRateLimitRequest) Size() (n int) {
 	}
 	l = m.Limit.Size()
 	n += 1 + l + sovTx(uint64(l))
-	l = github_com_gogo_protobuf_types.SizeOfStdDuration(m.Window)
+	l = github_com_cosmos_gogoproto_types.SizeOfStdDuration(m.Window)
 	n += 1 + l + sovTx(uint64(l))
 	return n
 }
@@ -2104,7 +2104,7 @@ func (m *SetTransferRateLimitRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := github_com_gogo_protobuf_types.StdDurationUnmarshal(&m.Window, dAtA[iNdEx:postIndex]); err != nil {
+			if err := github_com_cosmos_gogoproto_types.StdDurationUnmarshal(&m.Window, dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
