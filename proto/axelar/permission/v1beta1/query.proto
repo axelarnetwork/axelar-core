@@ -4,7 +4,6 @@ package axelar.permission.v1beta1;
 option go_package = "github.com/axelarnetwork/axelar-core/x/permission/types";
 
 import "gogoproto/gogo.proto";
-import "google/protobuf/timestamp.proto";
 import "cosmos/crypto/multisig/keys.proto";
 import "axelar/permission/v1beta1/params.proto";
 

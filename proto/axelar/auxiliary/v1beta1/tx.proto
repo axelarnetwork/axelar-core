@@ -15,8 +15,10 @@ message BatchRequest {
 
   bytes sender = 1 [ (gogoproto.casttype) =
                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  repeated google.protobuf.Any messages = 2
-      [ (gogoproto.nullable) = false,  (cosmos_proto.accepts_interface) = "cosmos.base.v1beta1.Msg" ];
+  repeated google.protobuf.Any messages = 2 [
+    (gogoproto.nullable) = false,
+    (cosmos_proto.accepts_interface) = "cosmos.base.v1beta1.Msg"
+  ];
 }
 
 message BatchResponse {
@@ -26,5 +28,5 @@ message BatchResponse {
       string err = 2;
     }
   }
-  repeated Response responses = 1  [ (gogoproto.nullable) = false ];
+  repeated Response responses = 1 [ (gogoproto.nullable) = false ];
 }

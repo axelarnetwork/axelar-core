@@ -10,10 +10,10 @@ import (
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
 	query "github.com/cosmos/cosmos-sdk/types/query"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-	github_com_gogo_protobuf_types "github.com/gogo/protobuf/types"
-	_ "google.golang.org/protobuf/types/known/durationpb"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
+	_ "github.com/cosmos/gogoproto/types"
+	github_com_cosmos_gogoproto_types "github.com/cosmos/gogoproto/types"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -2027,7 +2027,7 @@ func (m *TransferRateLimit) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x32
-	n7, err7 := github_com_gogo_protobuf_types.StdDurationMarshalTo(m.TimeLeft, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdDuration(m.TimeLeft):])
+	n7, err7 := github_com_cosmos_gogoproto_types.StdDurationMarshalTo(m.TimeLeft, dAtA[i-github_com_cosmos_gogoproto_types.SizeOfStdDuration(m.TimeLeft):])
 	if err7 != nil {
 		return 0, err7
 	}
@@ -2055,7 +2055,7 @@ func (m *TransferRateLimit) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	i--
 	dAtA[i] = 0x1a
-	n8, err8 := github_com_gogo_protobuf_types.StdDurationMarshalTo(m.Window, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdDuration(m.Window):])
+	n8, err8 := github_com_cosmos_gogoproto_types.StdDurationMarshalTo(m.Window, dAtA[i-github_com_cosmos_gogoproto_types.SizeOfStdDuration(m.Window):])
 	if err8 != nil {
 		return 0, err8
 	}
@@ -2548,13 +2548,13 @@ func (m *TransferRateLimit) Size() (n int) {
 	_ = l
 	l = m.Limit.Size()
 	n += 1 + l + sovQuery(uint64(l))
-	l = github_com_gogo_protobuf_types.SizeOfStdDuration(m.Window)
+	l = github_com_cosmos_gogoproto_types.SizeOfStdDuration(m.Window)
 	n += 1 + l + sovQuery(uint64(l))
 	l = m.Incoming.Size()
 	n += 1 + l + sovQuery(uint64(l))
 	l = m.Outgoing.Size()
 	n += 1 + l + sovQuery(uint64(l))
-	l = github_com_gogo_protobuf_types.SizeOfStdDuration(m.TimeLeft)
+	l = github_com_cosmos_gogoproto_types.SizeOfStdDuration(m.TimeLeft)
 	n += 1 + l + sovQuery(uint64(l))
 	l = m.From.Size()
 	n += 1 + l + sovQuery(uint64(l))
@@ -4854,7 +4854,7 @@ func (m *TransferRateLimit) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := github_com_gogo_protobuf_types.StdDurationUnmarshal(&m.Window, dAtA[iNdEx:postIndex]); err != nil {
+			if err := github_com_cosmos_gogoproto_types.StdDurationUnmarshal(&m.Window, dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4953,7 +4953,7 @@ func (m *TransferRateLimit) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := github_com_gogo_protobuf_types.StdDurationUnmarshal(&m.TimeLeft, dAtA[iNdEx:postIndex]); err != nil {
+			if err := github_com_cosmos_gogoproto_types.StdDurationUnmarshal(&m.TimeLeft, dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

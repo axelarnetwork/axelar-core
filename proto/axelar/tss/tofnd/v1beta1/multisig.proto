@@ -2,15 +2,8 @@
 syntax = "proto3";
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/tss/tofnd";
-import "axelar/tss/tofnd/v1beta1/common.proto"; // import key presence request/response
 
 package axelar.tss.tofnd.v1beta1;
-
-// service Multisig {
-//  rpc KeyPresence(KeyPresenceRequest) returns (KeyPresenceResponse);
-//  rpc Keygen(KeygenRequest) returns (KeygenResponse);
-//  rpc Sign(SignRequest) returns (SignResponse);
-//}
 
 message KeygenRequest {
   string key_uid = 1;
