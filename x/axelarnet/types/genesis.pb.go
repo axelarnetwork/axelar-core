@@ -7,9 +7,9 @@ import (
 	fmt "fmt"
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-	github_com_gogo_protobuf_sortkeys "github.com/gogo/protobuf/sortkeys"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
+	github_com_cosmos_gogoproto_sortkeys "github.com/cosmos/gogoproto/sortkeys"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -134,7 +134,7 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		for k := range m.SeqIDMapping {
 			keysForSeqIDMapping = append(keysForSeqIDMapping, string(k))
 		}
-		github_com_gogo_protobuf_sortkeys.Strings(keysForSeqIDMapping)
+		github_com_cosmos_gogoproto_sortkeys.Strings(keysForSeqIDMapping)
 		for iNdEx := len(keysForSeqIDMapping) - 1; iNdEx >= 0; iNdEx-- {
 			v := m.SeqIDMapping[string(keysForSeqIDMapping[iNdEx])]
 			baseI := i

@@ -5,9 +5,9 @@ package utils
 
 import (
 	fmt "fmt"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-	github_com_gogo_protobuf_sortkeys "github.com/gogo/protobuf/sortkeys"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
+	github_com_cosmos_gogoproto_sortkeys "github.com/cosmos/gogoproto/sortkeys"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -150,7 +150,7 @@ func (m *QueueState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		for k := range m.Items {
 			keysForItems = append(keysForItems, string(k))
 		}
-		github_com_gogo_protobuf_sortkeys.Strings(keysForItems)
+		github_com_cosmos_gogoproto_sortkeys.Strings(keysForItems)
 		for iNdEx := len(keysForItems) - 1; iNdEx >= 0; iNdEx-- {
 			v := m.Items[string(keysForItems[iNdEx])]
 			baseI := i

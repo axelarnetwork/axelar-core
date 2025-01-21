@@ -8,9 +8,9 @@ import (
 	github_com_axelarnetwork_axelar_core_x_multisig_exported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-	github_com_gogo_protobuf_sortkeys "github.com/gogo/protobuf/sortkeys"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
+	github_com_cosmos_gogoproto_sortkeys "github.com/cosmos/gogoproto/sortkeys"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -1007,7 +1007,7 @@ func (m *SigningStarted) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		for k := range m.PubKeys {
 			keysForPubKeys = append(keysForPubKeys, string(k))
 		}
-		github_com_gogo_protobuf_sortkeys.Strings(keysForPubKeys)
+		github_com_cosmos_gogoproto_sortkeys.Strings(keysForPubKeys)
 		for iNdEx := len(keysForPubKeys) - 1; iNdEx >= 0; iNdEx-- {
 			v := m.PubKeys[string(keysForPubKeys[iNdEx])]
 			baseI := i

@@ -4,8 +4,6 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
 
 import "gogoproto/gogo.proto";
 import "axelar/tss/v1beta1/params.proto";
-import "axelar/tss/v1beta1/types.proto";
-import "axelar/tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 

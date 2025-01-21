@@ -10,11 +10,11 @@ import (
 	github_com_axelarnetwork_axelar_core_x_multisig_exported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	exported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	_ "github.com/cosmos/cosmos-proto"
 	types "github.com/cosmos/cosmos-sdk/codec/types"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-	github_com_gogo_protobuf_sortkeys "github.com/gogo/protobuf/sortkeys"
-	_ "github.com/regen-network/cosmos-proto"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
+	github_com_cosmos_gogoproto_sortkeys "github.com/cosmos/gogoproto/sortkeys"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -530,7 +530,7 @@ func (m *Key) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		for k := range m.PubKeys {
 			keysForPubKeys = append(keysForPubKeys, string(k))
 		}
-		github_com_gogo_protobuf_sortkeys.Strings(keysForPubKeys)
+		github_com_cosmos_gogoproto_sortkeys.Strings(keysForPubKeys)
 		for iNdEx := len(keysForPubKeys) - 1; iNdEx >= 0; iNdEx-- {
 			v := m.PubKeys[string(keysForPubKeys[iNdEx])]
 			baseI := i
@@ -601,7 +601,7 @@ func (m *KeygenSession) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		for k := range m.IsPubKeyReceived {
 			keysForIsPubKeyReceived = append(keysForIsPubKeyReceived, string(k))
 		}
-		github_com_gogo_protobuf_sortkeys.Strings(keysForIsPubKeyReceived)
+		github_com_cosmos_gogoproto_sortkeys.Strings(keysForIsPubKeyReceived)
 		for iNdEx := len(keysForIsPubKeyReceived) - 1; iNdEx >= 0; iNdEx-- {
 			v := m.IsPubKeyReceived[string(keysForIsPubKeyReceived[iNdEx])]
 			baseI := i
@@ -686,7 +686,7 @@ func (m *MultiSig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		for k := range m.Sigs {
 			keysForSigs = append(keysForSigs, string(k))
 		}
-		github_com_gogo_protobuf_sortkeys.Strings(keysForSigs)
+		github_com_cosmos_gogoproto_sortkeys.Strings(keysForSigs)
 		for iNdEx := len(keysForSigs) - 1; iNdEx >= 0; iNdEx-- {
 			v := m.Sigs[string(keysForSigs[iNdEx])]
 			baseI := i

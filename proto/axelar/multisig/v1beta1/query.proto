@@ -6,8 +6,6 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/types";
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "axelar/multisig/exported/v1beta1/types.proto";
-import "axelar/multisig/v1beta1/types.proto";
-import "axelar/utils/v1beta1/threshold.proto";
 import "axelar/multisig/v1beta1/params.proto";
 
 option (gogoproto.goproto_getters_all) = false;
