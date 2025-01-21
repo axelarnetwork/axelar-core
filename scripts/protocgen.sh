@@ -2,6 +2,13 @@
 
 set -eo pipefail
 
+# Debug: Print user info
+echo "Current user: $(whoami)"
+echo "User ID: $(id -u)"
+echo "Group ID: $(id -g)"
+echo "Groups: $(groups)"
+
+
 protoc_gen_go() {
   if ! grep "github.com/gogo/protobuf => github.com/regen-network/protobuf" go.mod &>/dev/null ; then
     echo -e "\tPlease run this command from somewhere inside the axelar-core folder."
@@ -32,6 +39,9 @@ buf protoc \
 --doc_out=./docs/proto \
 --doc_opt=./docs/protodoc-markdown.tmpl,proto-docs.md \
 $(find "$(pwd)/proto" -maxdepth 5 -name '*.proto') # this needs to remain unquoted because we want word splitting
+
+echo "Current directory structure:"
+ls -la
 
 # move proto files to the right places
 cp -r github.com/axelarnetwork/axelar-core/* ./
