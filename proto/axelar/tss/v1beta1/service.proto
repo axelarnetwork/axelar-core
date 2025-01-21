@@ -5,7 +5,6 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "axelar/snapshot/v1beta1/tx.proto";
 import "axelar/tss/v1beta1/tx.proto";
 import "axelar/tss/v1beta1/query.proto";
 
