@@ -20,7 +20,7 @@ jobs:
           go install github.com/rakyll/statik
 
       - name: Generate proto files and docs
-        run: make proto-format proto-gen
+        run: make proto-format proto-gen proto-swagger-gen
 
       - name: Check for changes
         run: |

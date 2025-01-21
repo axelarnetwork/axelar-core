@@ -200,9 +200,9 @@ tofnd-client:
 
 proto-all: proto-format proto-lint proto-gen
 
-protoVer=0.13.0
+protoVer=0.14.0
 protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
-protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
+protoImage=$(DOCKER) run -u 0 --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
 
 proto-gen:
 	@echo "Generating Protobuf files"
@@ -211,8 +211,7 @@ proto-gen:
 proto-swagger-gen:
 	@make clean
 	@echo "Downloading Protobuf dependencies"
-	@make proto-swagger-download-dep
-
+	@make proto-swagger-download-deps
 	@echo "Generating Protobuf Swagger endpoint"
 	@$(protoImage) sh ./scripts/protoc-swagger-gen.sh
 

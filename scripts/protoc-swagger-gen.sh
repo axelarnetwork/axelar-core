@@ -34,7 +34,7 @@ done
 
 cd ..
 
-swagger-combine ./client/docs/config.json -o o ./client/docs/static/swagger/swagger.yaml -f yaml --continueOnConflictingPaths true --includeDefinitions true
+swagger-combine ./client/docs/config.json -o ./client/docs/static/swagger/swagger.yaml -f yaml --continueOnConflictingPaths true --includeDefinitions true
 
 # clean swagger files
 rm -rf "$SWAGGER_DIR"
