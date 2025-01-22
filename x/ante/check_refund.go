@@ -2,6 +2,7 @@ package ante
 
 import (
 	"fmt"
+	"slices"
 
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -119,12 +120,7 @@ func (d CheckRefundFeeDecorator) validateRefundQualification(ctx sdk.Context, ms
 }
 
 func msgRegistered(r cdctypes.InterfaceRegistry, targetURL string) bool {
-	for _, url := range r.ListImplementations("reward.v1beta1.Refundable") {
-		if targetURL == url {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(r.ListImplementations("reward.v1beta1.Refundable"), targetURL)
 }
 
 func (d CheckRefundFeeDecorator) splitFeesEvenly(refundableCount int, fees sdk.Coins) []sdk.Coins {
