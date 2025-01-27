@@ -53,7 +53,7 @@ type ErrorCache struct {
 	Error error
 }
 
-// Errorf records the given formatted string as an erro
+// Errorf records the given formatted string as an error
 func (ec *ErrorCache) Errorf(format string, args ...interface{}) {
 	ec.Error = fmt.Errorf(format, args...)
 }
