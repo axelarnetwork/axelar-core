@@ -107,6 +107,8 @@ import (
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	axelarbankkeeper "github.com/axelarnetwork/axelar-core/x/bank/keeper"
+	axelardistr "github.com/axelarnetwork/axelar-core/x/distribution"
+	axelardistrkeeper "github.com/axelarnetwork/axelar-core/x/distribution/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -238,6 +240,7 @@ func NewAxelarApp(
 	SetKeeper(keepers, initIBCKeeper(appCodec, keys, keepers))
 
 	// set up custom axelar keepers
+	SetKeeper(keepers, initAxelarDistributionKeeper(keepers))
 	SetKeeper(keepers, initAxelarnetKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initEvmKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initNexusKeeper(appCodec, keys, keepers))
@@ -521,6 +524,8 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 
 	appCodec := encodingConfig.Codec
 
+	distrAppModule := distr.NewAppModule(appCodec, *GetKeeper[distrkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers))
+
 	appModules := []module.AppModule{
 		genutil.NewAppModule(GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers), bApp.DeliverTx, encodingConfig.TxConfig),
 		auth.NewAppModule(appCodec, *GetKeeper[authkeeper.AccountKeeper](keepers), nil),
@@ -532,7 +537,7 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 		gov.NewAppModule(appCodec, *GetKeeper[govkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers)),
 		mint.NewAppModule(appCodec, *GetKeeper[mintkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers)),
 		slashing.NewAppModule(appCodec, *GetKeeper[slashingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers)),
-		distr.NewAppModule(appCodec, *GetKeeper[distrkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers)),
+		axelardistr.NewAppModule(distrAppModule, *GetKeeper[axelardistrkeeper.Keeper](keepers)),
 		staking.NewAppModule(appCodec, *GetKeeper[stakingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers)),
 		upgrade.NewAppModule(*GetKeeper[upgradekeeper.Keeper](keepers)),
 		evidence.NewAppModule(*GetKeeper[evidencekeeper.Keeper](keepers)),
@@ -708,7 +713,7 @@ func initMessageAnteDecorators(encodingConfig axelarParams.EncodingConfig, keepe
 func InitModuleAccountPermissions() map[string][]string {
 	return map[string][]string{
 		authtypes.FeeCollectorName:     nil,
-		distrtypes.ModuleName:          nil,
+		distrtypes.ModuleName:          {authtypes.Burner},
 		minttypes.ModuleName:           {authtypes.Minter},
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},

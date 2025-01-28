@@ -169,6 +169,9 @@
     - [MsgService](#axelar.axelarnet.v1beta1.MsgService)
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
   
+- [axelar/distribution/v1beta1/events.proto](#axelar/distribution/v1beta1/events.proto)
+    - [FeeBurnedEvent](#axelar.distribution.v1beta1.FeeBurnedEvent)
+  
 - [axelar/snapshot/exported/v1beta1/types.proto](#axelar/snapshot/exported/v1beta1/types.proto)
     - [Participant](#axelar.snapshot.exported.v1beta1.Participant)
     - [Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot)
@@ -2819,6 +2822,37 @@ QueryService defines the gRPC querier service.
 | `Params` | [ParamsRequest](#axelar.axelarnet.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.axelarnet.v1beta1.ParamsResponse) |  | GET|/axelar/axelarnet/v1beta1/params|
 | `IBCPath` | [IBCPathRequest](#axelar.axelarnet.v1beta1.IBCPathRequest) | [IBCPathResponse](#axelar.axelarnet.v1beta1.IBCPathResponse) |  | GET|/axelar/axelarnet/v1beta1/ibc_path/{chain}|
 | `ChainByIBCPath` | [ChainByIBCPathRequest](#axelar.axelarnet.v1beta1.ChainByIBCPathRequest) | [ChainByIBCPathResponse](#axelar.axelarnet.v1beta1.ChainByIBCPathResponse) |  | GET|/axelar/axelarnet/v1beta1/chain_by_ibc_path/{ibc_path}|
+
+ <!-- end services -->
+
+
+
+<a name="axelar/distribution/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/distribution/v1beta1/events.proto
+
+
+
+<a name="axelar.distribution.v1beta1.FeeBurnedEvent"></a>
+
+### FeeBurnedEvent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `coins` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 

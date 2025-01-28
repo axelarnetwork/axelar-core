@@ -55,6 +55,7 @@ import (
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	axelarbankkeeper "github.com/axelarnetwork/axelar-core/x/bank/keeper"
+	axelardistrkeeper "github.com/axelarnetwork/axelar-core/x/distribution/keeper"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisigKeeper "github.com/axelarnetwork/axelar-core/x/multisig/keeper"
@@ -422,6 +423,18 @@ func initDistributionKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKe
 		moduleAccountAddrs(moduleAccPerms),
 	)
 	return &distrK
+}
+
+func initAxelarDistributionKeeper(keepers *KeeperCache) *axelardistrkeeper.Keeper {
+	axelardistrK := axelardistrkeeper.NewKeeper(
+		*GetKeeper[distrkeeper.Keeper](keepers),
+		GetKeeper[authkeeper.AccountKeeper](keepers),
+		GetKeeper[bankkeeper.BaseKeeper](keepers),
+		GetKeeper[stakingkeeper.Keeper](keepers),
+		authtypes.FeeCollectorName,
+	)
+
+	return &axelardistrK
 }
 
 func initMintKeeper(appCodec codec.Codec, keys map[string]*sdk.KVStoreKey, keepers *KeeperCache) *mintkeeper.Keeper {
