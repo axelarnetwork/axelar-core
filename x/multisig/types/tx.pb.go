@@ -28,8 +28,12 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type StartKeygenRequest struct {
-	Sender github_com_cosmos_cosmos_sdk_types.AccAddress                  `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	KeyID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
+	// Deprecated: This is the original "sender" field, but was originally declared as a string,
+	// rather than a byte array.
+	SenderStr github_com_cosmos_cosmos_sdk_types.AccAddress                  `protobuf:"bytes,1,opt,name=sender_str,json=senderStr,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_str,omitempty"` // Deprecated: Do not use.
+	KeyID     github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
+	// New "sender" field, using the appropriate type
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,3,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 }
 
 func (m *StartKeygenRequest) Reset()         { *m = StartKeygenRequest{} }
@@ -102,10 +106,14 @@ func (m *StartKeygenResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_StartKeygenResponse proto.InternalMessageInfo
 
 type SubmitPubKeyRequest struct {
-	Sender    github_com_cosmos_cosmos_sdk_types.AccAddress                      `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	// Deprecated: This is the original "sender" field, but was originally declared as a string,
+	// rather than a byte array.
+	SenderStr github_com_cosmos_cosmos_sdk_types.AccAddress                      `protobuf:"bytes,1,opt,name=sender_str,json=senderStr,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_str,omitempty"` // Deprecated: Do not use.
 	KeyID     github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID     `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
 	PubKey    github_com_axelarnetwork_axelar_core_x_multisig_exported.PublicKey `protobuf:"bytes,3,opt,name=pub_key,json=pubKey,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.PublicKey" json:"pub_key,omitempty"`
 	Signature Signature                                                          `protobuf:"bytes,4,opt,name=signature,proto3,casttype=Signature" json:"signature,omitempty"`
+	// New "sender" field, using the appropriate type
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,5,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 }
 
 func (m *SubmitPubKeyRequest) Reset()         { *m = SubmitPubKeyRequest{} }
@@ -178,9 +186,13 @@ func (m *SubmitPubKeyResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_SubmitPubKeyResponse proto.InternalMessageInfo
 
 type SubmitSignatureRequest struct {
-	Sender    github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
+	// Deprecated: This is the original "sender" field, but was originally declared as a string,
+	// rather than a byte array.
+	SenderStr github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender_str,json=senderStr,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_str,omitempty"` // Deprecated: Do not use.
 	SigID     uint64                                        `protobuf:"varint,2,opt,name=sig_id,json=sigId,proto3" json:"sig_id,omitempty"`
 	Signature Signature                                     `protobuf:"bytes,3,opt,name=signature,proto3,casttype=Signature" json:"signature,omitempty"`
+	// New "sender" field, using the appropriate type
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,4,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 }
 
 func (m *SubmitSignatureRequest) Reset()         { *m = SubmitSignatureRequest{} }
@@ -253,9 +265,13 @@ func (m *SubmitSignatureResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_SubmitSignatureResponse proto.InternalMessageInfo
 
 type RotateKeyRequest struct {
-	Sender github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	KeyID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID  `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
+	// Deprecated: This is the original "sender" field, but was originally declared as a string,
+	// rather than a byte array.
+	SenderStr github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_str,json=senderStr,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_str,omitempty"` // Deprecated: Do not use.
+	Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	KeyID     github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID  `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
+	// New "sender" field, using the appropriate type
+	Sender github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,4,opt,name=sender,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender,omitempty"`
 }
 
 func (m *RotateKeyRequest) Reset()         { *m = RotateKeyRequest{} }
@@ -491,42 +507,44 @@ func init() {
 func init() { proto.RegisterFile("axelar/multisig/v1beta1/tx.proto", fileDescriptor_22993cd2eb246944) }
 
 var fileDescriptor_22993cd2eb246944 = []byte{
-	// 551 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x94, 0xcb, 0x6e, 0xd3, 0x4e,
-	0x14, 0xc6, 0xe3, 0xdc, 0xfe, 0xca, 0xa8, 0x7f, 0x09, 0x9c, 0x5e, 0x42, 0x17, 0x76, 0x94, 0x55,
-	0x25, 0x14, 0x5b, 0x11, 0x62, 0xc3, 0x02, 0xd4, 0x14, 0x21, 0x59, 0x91, 0x68, 0xe5, 0xac, 0x60,
-	0x13, 0xf9, 0x72, 0x70, 0x47, 0x89, 0x3d, 0x66, 0x2e, 0x10, 0xef, 0x78, 0x04, 0x9e, 0x81, 0x77,
-	0x40, 0xe2, 0x11, 0xca, 0xae, 0xcb, 0xae, 0x2c, 0x48, 0xde, 0x22, 0x2b, 0x64, 0x7b, 0x52, 0x27,
-	0x42, 0x48, 0x05, 0xda, 0x05, 0x2b, 0xdb, 0x33, 0x9f, 0xbf, 0x33, 0xdf, 0x6f, 0xce, 0x0c, 0xea,
-	0x3a, 0x73, 0x98, 0x39, 0xd4, 0x0c, 0xc5, 0x8c, 0x63, 0x86, 0x03, 0xf3, 0xdd, 0xc0, 0x05, 0xee,
-	0x0c, 0x4c, 0x3e, 0x37, 0x62, 0x4a, 0x38, 0x51, 0x0f, 0x0a, 0x85, 0xb1, 0x56, 0x18, 0x52, 0x71,
-	0xb8, 0x1b, 0x90, 0x80, 0xe4, 0x1a, 0x33, 0x7b, 0x2b, 0xe4, 0x87, 0x86, 0x34, 0x8c, 0x81, 0x86,
-	0x98, 0x31, 0x4c, 0x22, 0x13, 0xe6, 0x31, 0xa1, 0x1c, 0xfc, 0xd2, 0x3b, 0x89, 0x81, 0x15, 0xfa,
-	0xde, 0x57, 0x05, 0xa9, 0x63, 0xee, 0x50, 0x3e, 0x82, 0x24, 0x80, 0xc8, 0x86, 0xb7, 0x02, 0x18,
-	0x57, 0x2d, 0xd4, 0x64, 0x10, 0xf9, 0x40, 0x3b, 0x4a, 0x57, 0x39, 0x6a, 0x0d, 0x07, 0xab, 0x54,
-	0xef, 0x07, 0x98, 0x9f, 0x0b, 0xd7, 0xf0, 0x48, 0x68, 0x7a, 0x84, 0x85, 0x84, 0xc9, 0x47, 0x9f,
-	0xf9, 0x53, 0x69, 0x7a, 0xec, 0x79, 0xc7, 0xbe, 0x4f, 0x81, 0x31, 0x5b, 0x1a, 0xa8, 0x2e, 0x6a,
-	0x4e, 0x21, 0x99, 0x60, 0xbf, 0x53, 0xcd, 0xad, 0x46, 0x8b, 0x54, 0x6f, 0x8c, 0x20, 0xb1, 0x9e,
-	0xaf, 0x52, 0xfd, 0xe9, 0x86, 0x67, 0xb1, 0xf2, 0x08, 0xf8, 0x7b, 0x42, 0xa7, 0xf2, 0xab, 0xef,
-	0x11, 0x0a, 0xe6, 0xbc, 0xe4, 0xb3, 0x0e, 0x63, 0xe4, 0x0e, 0x76, 0x63, 0x0a, 0x89, 0xe5, 0x3f,
-	0xa9, 0x7f, 0xf8, 0xdc, 0xa9, 0xf6, 0xf6, 0x50, 0x7b, 0x2b, 0x0a, 0x8b, 0x49, 0xc4, 0xa0, 0x77,
-	0x55, 0x45, 0xed, 0xb1, 0x70, 0x43, 0xcc, 0xcf, 0x84, 0x3b, 0x82, 0xe4, 0xdf, 0xcc, 0xa8, 0x4e,
-	0xd0, 0x7f, 0xb1, 0x70, 0x27, 0x53, 0x48, 0x3a, 0xb5, 0xae, 0x72, 0xb4, 0x33, 0x7c, 0xb1, 0x4a,
-	0xf5, 0xe1, 0x1f, 0x7b, 0x9f, 0x09, 0x77, 0x86, 0xbd, 0x0c, 0x47, 0x33, 0xce, 0xb1, 0xa8, 0x0f,
-	0x51, 0x8b, 0xe1, 0x20, 0x72, 0xb8, 0xa0, 0xd0, 0xa9, 0xe7, 0x25, 0xfe, 0x5f, 0xa5, 0x7a, 0x6b,
-	0xbc, 0x1e, 0xb4, 0xcb, 0xf9, 0x9c, 0xb8, 0xd2, 0xdb, 0x47, 0xbb, 0xdb, 0x64, 0x25, 0xf2, 0x2f,
-	0x0a, 0xda, 0x2f, 0x26, 0xca, 0x9f, 0x6f, 0x9f, 0x7a, 0x17, 0x35, 0x19, 0x0e, 0xd6, 0xd4, 0xeb,
-	0xc3, 0x56, 0x46, 0x7d, 0x8c, 0x83, 0x8c, 0x19, 0xc3, 0x81, 0xe5, 0x6f, 0x47, 0xaa, 0xdd, 0x28,
-	0xd2, 0x03, 0x74, 0xf0, 0xd3, 0xca, 0x65, 0xaa, 0x4f, 0x55, 0x74, 0xcf, 0x26, 0xdc, 0xe1, 0xf0,
-	0xcb, 0x2e, 0xda, 0xf9, 0x9b, 0x3c, 0xaf, 0x50, 0xc3, 0x3b, 0x77, 0x70, 0x24, 0x9b, 0xe8, 0x64,
-	0x95, 0xea, 0xcf, 0x6e, 0xb8, 0xbf, 0x11, 0xcc, 0x05, 0x2b, 0x37, 0xf7, 0x24, 0xb3, 0x79, 0xe9,
-	0x84, 0x60, 0x17, 0x8e, 0x1b, 0x0d, 0x5a, 0xbb, 0xe3, 0x43, 0xd8, 0x46, 0xf7, 0x37, 0x18, 0x49,
-	0x72, 0x6f, 0x50, 0xbb, 0x38, 0x94, 0xa7, 0x31, 0x3f, 0x15, 0xfc, 0xf6, 0xd9, 0x95, 0xfd, 0xb8,
-	0x5d, 0x47, 0xd6, 0x07, 0xa4, 0x5e, 0x8f, 0x5b, 0xd1, 0x9d, 0x95, 0xdf, 0xdb, 0x88, 0x69, 0x5d,
-	0x5f, 0x40, 0xc3, 0xf1, 0xc5, 0x77, 0xad, 0x72, 0xb1, 0xd0, 0x94, 0xcb, 0x85, 0xa6, 0x7c, 0x5b,
-	0x68, 0xca, 0xc7, 0xa5, 0x56, 0xb9, 0x5c, 0x6a, 0x95, 0xab, 0xa5, 0x56, 0x79, 0xfd, 0xf8, 0x77,
-	0xe9, 0xe7, 0x8b, 0x70, 0x9b, 0xf9, 0xfd, 0xfd, 0xe8, 0x47, 0x00, 0x00, 0x00, 0xff, 0xff, 0xfc,
-	0x3b, 0x89, 0x77, 0x42, 0x06, 0x00, 0x00,
+	// 585 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x95, 0xbb, 0x8e, 0xd3, 0x4c,
+	0x14, 0xc7, 0xe3, 0xdc, 0x3e, 0x65, 0xf4, 0x21, 0x81, 0xb3, 0x17, 0xb3, 0x85, 0x1d, 0xa5, 0x5a,
+	0x09, 0xc5, 0x56, 0xb4, 0xa2, 0xa1, 0x00, 0x6d, 0x16, 0x21, 0x59, 0x91, 0xd8, 0x95, 0x5d, 0x41,
+	0x13, 0xf9, 0x72, 0xf0, 0x8e, 0x12, 0x7b, 0xcc, 0xcc, 0x18, 0xe2, 0x8e, 0x07, 0xa0, 0xe0, 0x05,
+	0x78, 0x03, 0x5a, 0xde, 0x61, 0xcb, 0x2d, 0xa9, 0x2c, 0x48, 0xde, 0x81, 0x22, 0x15, 0x8a, 0x3d,
+	0x59, 0x27, 0xa2, 0xd9, 0x45, 0x09, 0x12, 0x95, 0xed, 0x99, 0xa3, 0xff, 0x99, 0xf3, 0xfb, 0x9f,
+	0x39, 0x46, 0x1d, 0x67, 0x0a, 0x13, 0x87, 0x1a, 0x61, 0x32, 0xe1, 0x98, 0xe1, 0xc0, 0x78, 0xd7,
+	0x77, 0x81, 0x3b, 0x7d, 0x83, 0x4f, 0xf5, 0x98, 0x12, 0x4e, 0xe4, 0xc3, 0x22, 0x42, 0x5f, 0x45,
+	0xe8, 0x22, 0xe2, 0x68, 0x2f, 0x20, 0x01, 0xc9, 0x63, 0x8c, 0xe5, 0x5b, 0x11, 0x7e, 0xa4, 0x0b,
+	0xc1, 0x18, 0x68, 0x88, 0x19, 0xc3, 0x24, 0x32, 0x60, 0x1a, 0x13, 0xca, 0xc1, 0x2f, 0xb5, 0xd3,
+	0x18, 0x58, 0x11, 0xdf, 0xfd, 0x5c, 0x45, 0xb2, 0xcd, 0x1d, 0xca, 0x87, 0x90, 0x06, 0x10, 0x59,
+	0xf0, 0x36, 0x01, 0xc6, 0x65, 0x0b, 0x21, 0x06, 0x91, 0x0f, 0x74, 0xc4, 0x38, 0x55, 0xa4, 0x8e,
+	0x74, 0xdc, 0x1a, 0x9c, 0x2c, 0x32, 0xad, 0x17, 0x60, 0x7e, 0x99, 0xb8, 0xba, 0x47, 0x42, 0xc3,
+	0x23, 0x2c, 0x24, 0x4c, 0x3c, 0x7a, 0xcc, 0x1f, 0x0b, 0xe1, 0x53, 0xcf, 0x3b, 0xf5, 0x7d, 0x0a,
+	0x8c, 0x29, 0x92, 0xd5, 0x2a, 0x64, 0x6c, 0x4e, 0x65, 0x17, 0x35, 0xc7, 0x90, 0x8e, 0xb0, 0xaf,
+	0x54, 0x73, 0xbd, 0xe1, 0x2c, 0xd3, 0x1a, 0x43, 0x48, 0xcd, 0xe7, 0x8b, 0x4c, 0x7b, 0xba, 0x26,
+	0x5c, 0x94, 0x10, 0x01, 0x7f, 0x4f, 0xe8, 0x58, 0x7c, 0xf5, 0x3c, 0x42, 0xc1, 0x98, 0x96, 0xa0,
+	0x56, 0x55, 0xe9, 0xb9, 0x82, 0xd5, 0x18, 0x43, 0x6a, 0xfa, 0xb2, 0x89, 0x9a, 0x45, 0x42, 0xa5,
+	0xd6, 0x91, 0x8e, 0xff, 0x1f, 0xf4, 0xef, 0x7c, 0x66, 0x4b, 0x08, 0x3c, 0xa9, 0x7f, 0xf8, 0xaa,
+	0x54, 0xbb, 0xfb, 0xa8, 0xbd, 0x81, 0x87, 0xc5, 0x24, 0x62, 0xd0, 0xfd, 0x52, 0x43, 0x6d, 0x3b,
+	0x71, 0x43, 0xcc, 0x2f, 0x12, 0x77, 0x08, 0xe9, 0xbf, 0xce, 0x6d, 0x84, 0xfe, 0x8b, 0x13, 0x77,
+	0x34, 0x86, 0x54, 0x80, 0x7b, 0xb1, 0xc8, 0xb4, 0xc1, 0x1f, 0x6b, 0x5f, 0x24, 0xee, 0x04, 0x7b,
+	0x4b, 0x2e, 0xcd, 0x38, 0xe7, 0x23, 0x3f, 0x42, 0x2d, 0x86, 0x83, 0xc8, 0xe1, 0x09, 0x05, 0xa5,
+	0x9e, 0xa7, 0xb8, 0xb7, 0xc8, 0xb4, 0x96, 0xbd, 0x5a, 0xb4, 0xca, 0xfd, 0x35, 0x17, 0x1b, 0xdb,
+	0x70, 0x51, 0xea, 0x1e, 0xa0, 0xbd, 0x4d, 0xb7, 0x84, 0x8d, 0x1f, 0xab, 0xe8, 0xa0, 0xd8, 0x28,
+	0xcf, 0xb1, 0x43, 0x27, 0x3b, 0xa8, 0xc9, 0x70, 0xb0, 0x72, 0xb2, 0x3e, 0x68, 0x2d, 0x9d, 0xb4,
+	0x71, 0xb0, 0xf4, 0x81, 0xe1, 0xc0, 0xf4, 0x37, 0x31, 0xd5, 0x6e, 0x8d, 0xa9, 0xbe, 0x1d, 0x4c,
+	0x0f, 0xd1, 0xe1, 0x6f, 0x34, 0x04, 0xa9, 0x9f, 0x55, 0x74, 0xdf, 0x22, 0xdc, 0xe1, 0xb0, 0xe3,
+	0x6e, 0x7f, 0x85, 0x1a, 0xde, 0xa5, 0x83, 0x23, 0xd1, 0xec, 0x67, 0x8b, 0x4c, 0x7b, 0x76, 0xcb,
+	0x3e, 0x8c, 0x60, 0x9a, 0xb0, 0xb2, 0x09, 0xcf, 0x96, 0x32, 0x2f, 0x9d, 0x10, 0xac, 0x42, 0x71,
+	0xed, 0x22, 0xd5, 0xfe, 0xc2, 0x00, 0xaa, 0x6f, 0x67, 0x00, 0xb5, 0xd1, 0x83, 0x35, 0xee, 0xc2,
+	0x8d, 0x37, 0xa8, 0x5d, 0x0c, 0xa4, 0xf3, 0x98, 0x9f, 0x27, 0x7c, 0xe5, 0x47, 0x99, 0x5c, 0xda,
+	0xda, 0xbd, 0xd9, 0xcc, 0x23, 0xf2, 0x03, 0x92, 0x6f, 0xd6, 0xcd, 0x68, 0x67, 0xe9, 0xf7, 0xd7,
+	0xca, 0x34, 0x6f, 0x86, 0xef, 0xc0, 0xbe, 0xfa, 0xa1, 0x56, 0xae, 0x66, 0xaa, 0x74, 0x3d, 0x53,
+	0xa5, 0xef, 0x33, 0x55, 0xfa, 0x34, 0x57, 0x2b, 0xd7, 0x73, 0xb5, 0xf2, 0x6d, 0xae, 0x56, 0x5e,
+	0x3f, 0xbe, 0xab, 0x91, 0xf9, 0x21, 0xdc, 0x66, 0xfe, 0x3f, 0x3c, 0xf9, 0x15, 0x00, 0x00, 0xff,
+	0xff, 0xae, 0x20, 0x0b, 0xf8, 0x92, 0x07, 0x00, 0x00,
 }
 
 func (m *StartKeygenRequest) Marshal() (dAtA []byte, err error) {
@@ -549,6 +567,13 @@ func (m *StartKeygenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0x1a
+	}
 	if len(m.KeyID) > 0 {
 		i -= len(m.KeyID)
 		copy(dAtA[i:], m.KeyID)
@@ -556,10 +581,10 @@ func (m *StartKeygenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.Sender) > 0 {
-		i -= len(m.Sender)
-		copy(dAtA[i:], m.Sender)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+	if len(m.SenderStr) > 0 {
+		i -= len(m.SenderStr)
+		copy(dAtA[i:], m.SenderStr)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderStr)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -609,6 +634,13 @@ func (m *SubmitPubKeyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0x2a
+	}
 	if len(m.Signature) > 0 {
 		i -= len(m.Signature)
 		copy(dAtA[i:], m.Signature)
@@ -630,10 +662,10 @@ func (m *SubmitPubKeyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.Sender) > 0 {
-		i -= len(m.Sender)
-		copy(dAtA[i:], m.Sender)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+	if len(m.SenderStr) > 0 {
+		i -= len(m.SenderStr)
+		copy(dAtA[i:], m.SenderStr)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderStr)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -683,6 +715,13 @@ func (m *SubmitSignatureRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	_ = i
 	var l int
 	_ = l
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0x22
+	}
 	if len(m.Signature) > 0 {
 		i -= len(m.Signature)
 		copy(dAtA[i:], m.Signature)
@@ -695,10 +734,10 @@ func (m *SubmitSignatureRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		i--
 		dAtA[i] = 0x10
 	}
-	if len(m.Sender) > 0 {
-		i -= len(m.Sender)
-		copy(dAtA[i:], m.Sender)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+	if len(m.SenderStr) > 0 {
+		i -= len(m.SenderStr)
+		copy(dAtA[i:], m.SenderStr)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderStr)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -748,6 +787,13 @@ func (m *RotateKeyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.Sender) > 0 {
+		i -= len(m.Sender)
+		copy(dAtA[i:], m.Sender)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+		i--
+		dAtA[i] = 0x22
+	}
 	if len(m.KeyID) > 0 {
 		i -= len(m.KeyID)
 		copy(dAtA[i:], m.KeyID)
@@ -762,10 +808,10 @@ func (m *RotateKeyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.Sender) > 0 {
-		i -= len(m.Sender)
-		copy(dAtA[i:], m.Sender)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
+	if len(m.SenderStr) > 0 {
+		i -= len(m.SenderStr)
+		copy(dAtA[i:], m.SenderStr)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderStr)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -918,11 +964,15 @@ func (m *StartKeygenRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Sender)
+	l = len(m.SenderStr)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
 	l = len(m.KeyID)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Sender)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
@@ -944,7 +994,7 @@ func (m *SubmitPubKeyRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Sender)
+	l = len(m.SenderStr)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
@@ -957,6 +1007,10 @@ func (m *SubmitPubKeyRequest) Size() (n int) {
 		n += 1 + l + sovTx(uint64(l))
 	}
 	l = len(m.Signature)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Sender)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
@@ -978,7 +1032,7 @@ func (m *SubmitSignatureRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Sender)
+	l = len(m.SenderStr)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
@@ -986,6 +1040,10 @@ func (m *SubmitSignatureRequest) Size() (n int) {
 		n += 1 + sovTx(uint64(m.SigID))
 	}
 	l = len(m.Signature)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Sender)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
@@ -1007,7 +1065,7 @@ func (m *RotateKeyRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Sender)
+	l = len(m.SenderStr)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
@@ -1016,6 +1074,10 @@ func (m *RotateKeyRequest) Size() (n int) {
 		n += 1 + l + sovTx(uint64(l))
 	}
 	l = len(m.KeyID)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Sender)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
 	}
@@ -1112,7 +1174,7 @@ func (m *StartKeygenRequest) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderStr", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1140,7 +1202,7 @@ func (m *StartKeygenRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Sender = github_com_cosmos_cosmos_sdk_types.AccAddress(dAtA[iNdEx:postIndex])
+			m.SenderStr = github_com_cosmos_cosmos_sdk_types.AccAddress(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -1173,6 +1235,40 @@ func (m *StartKeygenRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.KeyID = github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
+			if m.Sender == nil {
+				m.Sender = []byte{}
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1276,7 +1372,7 @@ func (m *SubmitPubKeyRequest) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderStr", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1304,7 +1400,7 @@ func (m *SubmitPubKeyRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Sender = github_com_cosmos_cosmos_sdk_types.AccAddress(dAtA[iNdEx:postIndex])
+			m.SenderStr = github_com_cosmos_cosmos_sdk_types.AccAddress(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -1404,6 +1500,40 @@ func (m *SubmitPubKeyRequest) Unmarshal(dAtA []byte) error {
 			m.Signature = append(m.Signature[:0], dAtA[iNdEx:postIndex]...)
 			if m.Signature == nil {
 				m.Signature = []byte{}
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
+			if m.Sender == nil {
+				m.Sender = []byte{}
 			}
 			iNdEx = postIndex
 		default:
@@ -1508,7 +1638,7 @@ func (m *SubmitSignatureRequest) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderStr", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1536,7 +1666,7 @@ func (m *SubmitSignatureRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Sender = github_com_cosmos_cosmos_sdk_types.AccAddress(dAtA[iNdEx:postIndex])
+			m.SenderStr = github_com_cosmos_cosmos_sdk_types.AccAddress(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
@@ -1589,6 +1719,40 @@ func (m *SubmitSignatureRequest) Unmarshal(dAtA []byte) error {
 			m.Signature = append(m.Signature[:0], dAtA[iNdEx:postIndex]...)
 			if m.Signature == nil {
 				m.Signature = []byte{}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
+			if m.Sender == nil {
+				m.Sender = []byte{}
 			}
 			iNdEx = postIndex
 		default:
@@ -1693,9 +1857,9 @@ func (m *RotateKeyRequest) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderStr", wireType)
 			}
-			var byteLen int
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowTx
@@ -1705,25 +1869,23 @@ func (m *RotateKeyRequest) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				byteLen |= int(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if byteLen < 0 {
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return ErrInvalidLengthTx
 			}
-			postIndex := iNdEx + byteLen
+			postIndex := iNdEx + intStringLen
 			if postIndex < 0 {
 				return ErrInvalidLengthTx
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
-			if m.Sender == nil {
-				m.Sender = []byte{}
-			}
+			m.SenderStr = github_com_cosmos_cosmos_sdk_types.AccAddress(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -1788,6 +1950,40 @@ func (m *RotateKeyRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.KeyID = github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Sender = append(m.Sender[:0], dAtA[iNdEx:postIndex]...)
+			if m.Sender == nil {
+				m.Sender = []byte{}
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

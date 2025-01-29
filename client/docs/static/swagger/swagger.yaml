@@ -9795,13 +9795,21 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_str:
                 type: string
-                format: byte
+                description: >-
+                  Deprecated: This is the original "sender" field, but was
+                  originally declared as a string,
+
+                  rather than a byte array.
               chain:
                 type: string
               key_id:
                 type: string
+              sender:
+                type: string
+                format: byte
+                title: New "sender" field, using the appropriate type
       tags:
         - MsgService
   /axelar/multisig/start_keygen:
@@ -10011,10 +10019,19 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_str:
                 type: string
+                description: >-
+                  Deprecated: This is the original "sender" field, but was
+                  originally declared as a string,
+
+                  rather than a byte array.
               key_id:
                 type: string
+              sender:
+                type: string
+                format: byte
+                title: New "sender" field, using the appropriate type
       tags:
         - MsgService
   /axelar/multisig/submit_pub_key:
@@ -10224,8 +10241,13 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_str:
                 type: string
+                description: >-
+                  Deprecated: This is the original "sender" field, but was
+                  originally declared as a string,
+
+                  rather than a byte array.
               key_id:
                 type: string
               pub_key:
@@ -10234,6 +10256,10 @@ paths:
               signature:
                 type: string
                 format: byte
+              sender:
+                type: string
+                format: byte
+                title: New "sender" field, using the appropriate type
       tags:
         - MsgService
   /axelar/multisig/submit_signature:
@@ -10443,14 +10469,23 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_str:
                 type: string
+                description: >-
+                  Deprecated: This is the original "sender" field, but was
+                  originally declared as a string,
+
+                  rather than a byte array.
               sig_id:
                 type: string
                 format: uint64
               signature:
                 type: string
                 format: byte
+              sender:
+                type: string
+                format: byte
+                title: New "sender" field, using the appropriate type
       tags:
         - MsgService
   /axelar/multisig/v1beta1/key:
@@ -55843,29 +55878,51 @@ definitions:
   axelar.multisig.v1beta1.RotateKeyRequest:
     type: object
     properties:
-      sender:
+      sender_str:
         type: string
-        format: byte
+        description: >-
+          Deprecated: This is the original "sender" field, but was originally
+          declared as a string,
+
+          rather than a byte array.
       chain:
         type: string
       key_id:
         type: string
+      sender:
+        type: string
+        format: byte
+        title: New "sender" field, using the appropriate type
   axelar.multisig.v1beta1.RotateKeyResponse:
     type: object
   axelar.multisig.v1beta1.StartKeygenRequest:
     type: object
     properties:
-      sender:
+      sender_str:
         type: string
+        description: >-
+          Deprecated: This is the original "sender" field, but was originally
+          declared as a string,
+
+          rather than a byte array.
       key_id:
         type: string
+      sender:
+        type: string
+        format: byte
+        title: New "sender" field, using the appropriate type
   axelar.multisig.v1beta1.StartKeygenResponse:
     type: object
   axelar.multisig.v1beta1.SubmitPubKeyRequest:
     type: object
     properties:
-      sender:
+      sender_str:
         type: string
+        description: >-
+          Deprecated: This is the original "sender" field, but was originally
+          declared as a string,
+
+          rather than a byte array.
       key_id:
         type: string
       pub_key:
@@ -55874,19 +55931,32 @@ definitions:
       signature:
         type: string
         format: byte
+      sender:
+        type: string
+        format: byte
+        title: New "sender" field, using the appropriate type
   axelar.multisig.v1beta1.SubmitPubKeyResponse:
     type: object
   axelar.multisig.v1beta1.SubmitSignatureRequest:
     type: object
     properties:
-      sender:
+      sender_str:
         type: string
+        description: >-
+          Deprecated: This is the original "sender" field, but was originally
+          declared as a string,
+
+          rather than a byte array.
       sig_id:
         type: string
         format: uint64
       signature:
         type: string
         format: byte
+      sender:
+        type: string
+        format: byte
+        title: New "sender" field, using the appropriate type
   axelar.multisig.v1beta1.SubmitSignatureResponse:
     type: object
   axelar.nexus.exported.v1beta1.CrossChainAddress:

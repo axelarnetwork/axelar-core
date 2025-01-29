@@ -10,13 +10,19 @@ import "axelar/permission/exported/v1beta1/types.proto";
 message StartKeygenRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
 
-  string sender = 1 [ (gogoproto.casttype) =
-                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  // Deprecated: This is the original "sender" field, but was originally declared as a string,
+  // rather than a byte array.
+  string sender_str = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress", deprecated = true];
   string key_id = 2 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
+
+  // New "sender" field, using the appropriate type
+  bytes sender = 3 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress"];
 }
 
 message StartKeygenResponse {}
@@ -24,8 +30,10 @@ message StartKeygenResponse {}
 message SubmitPubKeyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
 
-  string sender = 1 [ (gogoproto.casttype) =
-                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  // Deprecated: This is the original "sender" field, but was originally declared as a string,
+  // rather than a byte array.
+  string sender_str = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress", deprecated = true];
   string key_id = 2 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
@@ -36,6 +44,10 @@ message SubmitPubKeyRequest {
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.PublicKey"
   ];
   bytes signature = 4 [ (gogoproto.casttype) = "Signature" ];
+
+  // New "sender" field, using the appropriate type
+  bytes sender = 5 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress"];
 }
 
 message SubmitPubKeyResponse {}
@@ -43,18 +55,26 @@ message SubmitPubKeyResponse {}
 message SubmitSignatureRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
 
-  string sender = 1 [ (gogoproto.casttype) =
-                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  // Deprecated: This is the original "sender" field, but was originally declared as a string,
+  // rather than a byte array.
+  string sender_str = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress", deprecated = true];
   uint64 sig_id = 2 [ (gogoproto.customname) = "SigID" ];
   bytes signature = 3 [ (gogoproto.casttype) = "Signature" ];
+
+  // New "sender" field, using the appropriate type
+  bytes sender = 4 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress"];
 }
 
 message SubmitSignatureResponse {}
 
 message RotateKeyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  // Deprecated: This is the original "sender" field, but was originally declared as a string,
+  // rather than a byte array.
+  string sender_str = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress", deprecated = true];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -63,6 +83,10 @@ message RotateKeyRequest {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
+
+  // New "sender" field, using the appropriate type
+  bytes sender = 4 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.AccAddress"];
 }
 
 message RotateKeyResponse {}

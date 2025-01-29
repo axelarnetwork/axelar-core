@@ -5961,9 +5961,10 @@ ParamsRequest represents a message that queries the params
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
+| `sender_str` | [string](#string) |  | **Deprecated.** Deprecated: This is the original "sender" field, but was originally declared as a string, rather than a byte array. |
 | `chain` | [string](#string) |  |  |
 | `key_id` | [string](#string) |  |  |
+| `sender` | [bytes](#bytes) |  | New "sender" field, using the appropriate type |
 
 
 
@@ -5988,8 +5989,9 @@ ParamsRequest represents a message that queries the params
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  |  |
+| `sender_str` | [string](#string) |  | **Deprecated.** Deprecated: This is the original "sender" field, but was originally declared as a string, rather than a byte array. |
 | `key_id` | [string](#string) |  |  |
+| `sender` | [bytes](#bytes) |  | New "sender" field, using the appropriate type |
 
 
 
@@ -6014,10 +6016,11 @@ ParamsRequest represents a message that queries the params
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  |  |
+| `sender_str` | [string](#string) |  | **Deprecated.** Deprecated: This is the original "sender" field, but was originally declared as a string, rather than a byte array. |
 | `key_id` | [string](#string) |  |  |
 | `pub_key` | [bytes](#bytes) |  |  |
 | `signature` | [bytes](#bytes) |  |  |
+| `sender` | [bytes](#bytes) |  | New "sender" field, using the appropriate type |
 
 
 
@@ -6042,9 +6045,10 @@ ParamsRequest represents a message that queries the params
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  |  |
+| `sender_str` | [string](#string) |  | **Deprecated.** Deprecated: This is the original "sender" field, but was originally declared as a string, rather than a byte array. |
 | `sig_id` | [uint64](#uint64) |  |  |
 | `signature` | [bytes](#bytes) |  |  |
+| `sender` | [bytes](#bytes) |  | New "sender" field, using the appropriate type |
 
 
 
