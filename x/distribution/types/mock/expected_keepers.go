@@ -33,6 +33,9 @@ var _ types.BankKeeper = &BankKeeperMock{}
 //			LockedCoinsFunc: func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
 //				panic("mock out the LockedCoins method")
 //			},
+//			MintCoinsFunc: func(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
+//				panic("mock out the MintCoins method")
+//			},
 //			SendCoinsFromAccountToModuleFunc: func(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
 //				panic("mock out the SendCoinsFromAccountToModule method")
 //			},
@@ -63,6 +66,9 @@ type BankKeeperMock struct {
 
 	// LockedCoinsFunc mocks the LockedCoins method.
 	LockedCoinsFunc func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
+
+	// MintCoinsFunc mocks the MintCoins method.
+	MintCoinsFunc func(ctx sdk.Context, moduleName string, amt sdk.Coins) error
 
 	// SendCoinsFromAccountToModuleFunc mocks the SendCoinsFromAccountToModule method.
 	SendCoinsFromAccountToModuleFunc func(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
@@ -110,6 +116,15 @@ type BankKeeperMock struct {
 			// Addr is the addr argument value.
 			Addr sdk.AccAddress
 		}
+		// MintCoins holds details about calls to the MintCoins method.
+		MintCoins []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// ModuleName is the moduleName argument value.
+			ModuleName string
+			// Amt is the amt argument value.
+			Amt sdk.Coins
+		}
 		// SendCoinsFromAccountToModule holds details about calls to the SendCoinsFromAccountToModule method.
 		SendCoinsFromAccountToModule []struct {
 			// Ctx is the ctx argument value.
@@ -155,6 +170,7 @@ type BankKeeperMock struct {
 	lockGetAllBalances               sync.RWMutex
 	lockGetBalance                   sync.RWMutex
 	lockLockedCoins                  sync.RWMutex
+	lockMintCoins                    sync.RWMutex
 	lockSendCoinsFromAccountToModule sync.RWMutex
 	lockSendCoinsFromModuleToAccount sync.RWMutex
 	lockSendCoinsFromModuleToModule  sync.RWMutex
@@ -310,6 +326,46 @@ func (mock *BankKeeperMock) LockedCoinsCalls() []struct {
 	mock.lockLockedCoins.RLock()
 	calls = mock.calls.LockedCoins
 	mock.lockLockedCoins.RUnlock()
+	return calls
+}
+
+// MintCoins calls MintCoinsFunc.
+func (mock *BankKeeperMock) MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
+	if mock.MintCoinsFunc == nil {
+		panic("BankKeeperMock.MintCoinsFunc: method is nil but BankKeeper.MintCoins was just called")
+	}
+	callInfo := struct {
+		Ctx        sdk.Context
+		ModuleName string
+		Amt        sdk.Coins
+	}{
+		Ctx:        ctx,
+		ModuleName: moduleName,
+		Amt:        amt,
+	}
+	mock.lockMintCoins.Lock()
+	mock.calls.MintCoins = append(mock.calls.MintCoins, callInfo)
+	mock.lockMintCoins.Unlock()
+	return mock.MintCoinsFunc(ctx, moduleName, amt)
+}
+
+// MintCoinsCalls gets all the calls that were made to MintCoins.
+// Check the length with:
+//
+//	len(mockedBankKeeper.MintCoinsCalls())
+func (mock *BankKeeperMock) MintCoinsCalls() []struct {
+	Ctx        sdk.Context
+	ModuleName string
+	Amt        sdk.Coins
+} {
+	var calls []struct {
+		Ctx        sdk.Context
+		ModuleName string
+		Amt        sdk.Coins
+	}
+	mock.lockMintCoins.RLock()
+	calls = mock.calls.MintCoins
+	mock.lockMintCoins.RUnlock()
 	return calls
 }
 

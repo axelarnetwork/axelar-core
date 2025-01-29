@@ -13,6 +13,7 @@ import (
 type BankKeeper interface {
 	types.BankKeeper
 	BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
+	MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
 }
 
 type AccountKeeper interface {

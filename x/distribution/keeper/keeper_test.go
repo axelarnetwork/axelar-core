@@ -33,12 +33,14 @@ func TestAllocateTokens(t *testing.T) {
 		k           keeper.Keeper
 		accBalances map[string]sdk.Coins
 		bk          *mock.BankKeeperMock
+		fee         sdk.Coins
 	)
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 
+	fee = sdk.NewCoins(sdk.NewCoin(axelarnettypes.NativeAsset, sdk.NewInt(rand.PosI64())))
 	accBalances = map[string]sdk.Coins{
-		authtypes.NewModuleAddress(authtypes.FeeCollectorName).String(): sdk.NewCoins(sdk.NewCoin(axelarnettypes.NativeAsset, sdk.NewInt(rand.PosI64()))),
+		authtypes.NewModuleAddress(authtypes.FeeCollectorName).String(): fee,
 	}
 
 	Given("an axelar distribution keeper", func() {
@@ -65,9 +67,23 @@ func TestAllocateTokens(t *testing.T) {
 
 				return nil
 			},
+			SendCoinsFromModuleToAccountFunc: func(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
+				senderModule = authtypes.NewModuleAddress(senderModule).String()
+
+				accBalances[senderModule] = accBalances[senderModule].Sub(amt)
+				accBalances[recipientAddr.String()] = accBalances[recipientAddr.String()].Add(amt...)
+
+				return nil
+			},
 			BurnCoinsFunc: func(ctx sdk.Context, name string, amt sdk.Coins) error {
 				acc := authtypes.NewModuleAddress(name).String()
 				accBalances[acc] = accBalances[acc].Sub(amt)
+
+				return nil
+			},
+			MintCoinsFunc: func(ctx sdk.Context, name string, amt sdk.Coins) error {
+				acc := authtypes.NewModuleAddress(name).String()
+				accBalances[acc] = accBalances[acc].Add(amt...)
 
 				return nil
 			},
@@ -98,6 +114,16 @@ func TestAllocateTokens(t *testing.T) {
 				return e.Type == feeBurnedType
 			}), 1)
 
+			expectedBurnedFee := sdk.NewCoins(slices.Map(expectedBurnedFee(ctx, k, fee), types.WithBurnedPrefix)...)
+			assert.Equal(t, expectedBurnedFee, accBalances[types.ZeroAddress.String()])
 		}).
 		Run(t)
+}
+
+func expectedBurnedFee(ctx sdk.Context, k keeper.Keeper, fee sdk.Coins) sdk.Coins {
+	feesDec := sdk.NewDecCoinsFromCoins(fee...)
+	tax := feesDec.MulDecTruncate(k.GetCommunityTax(ctx))
+	burnAmt, _ := feesDec.Sub(tax).TruncateDecimal()
+
+	return burnAmt
 }
