@@ -73,9 +73,7 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, _, _ int64, _ sdk.ConsAddress, _
 	})
 
 	// track cumulative burned fee
-	feeBurned := slices.Map(feeToBurn, func(coin sdk.Coin) sdk.Coin {
-		return types.WithBurnedPrefix(coin)
-	})
+	feeBurned := slices.Map(feeToBurn, types.WithBurnedPrefix)
 	funcs.MustNoErr(k.bankKeeper.MintCoins(ctx, distributionTypes.ModuleName, feeBurned))
 	funcs.MustNoErr(k.bankKeeper.SendCoinsFromModuleToAccount(ctx, distributionTypes.ModuleName, types.ZeroAddress, feeBurned))
 }
