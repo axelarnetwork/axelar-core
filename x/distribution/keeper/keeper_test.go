@@ -114,16 +114,19 @@ func TestAllocateTokens(t *testing.T) {
 				return e.Type == feeBurnedType
 			}), 1)
 
-			expectedBurnedFee := sdk.NewCoins(slices.Map(expectedBurnedFee(ctx, k, fee), types.WithBurnedPrefix)...)
+			burned, tax := expectedBurnAndTax(ctx, k, fee)
+			expectedBurnedFee := sdk.NewCoins(slices.Map(burned, types.WithBurnedPrefix)...)
+
 			assert.Equal(t, expectedBurnedFee, accBalances[types.ZeroAddress.String()])
+			assert.Equal(t, k.GetFeePool(ctx).CommunityPool, tax)
 		}).
 		Run(t)
 }
 
-func expectedBurnedFee(ctx sdk.Context, k keeper.Keeper, fee sdk.Coins) sdk.Coins {
+func expectedBurnAndTax(ctx sdk.Context, k keeper.Keeper, fee sdk.Coins) (sdk.Coins, sdk.DecCoins) {
 	feesDec := sdk.NewDecCoinsFromCoins(fee...)
 	tax := feesDec.MulDecTruncate(k.GetCommunityTax(ctx))
-	burnAmt, _ := feesDec.Sub(tax).TruncateDecimal()
+	burnAmt, remainder := feesDec.Sub(tax).TruncateDecimal()
 
-	return burnAmt
+	return burnAmt, tax.Add(remainder...)
 }
