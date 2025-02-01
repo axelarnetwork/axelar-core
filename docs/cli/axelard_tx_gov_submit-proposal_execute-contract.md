@@ -1,6 +1,6 @@
 ## axelard tx gov submit-proposal execute-contract
 
-Submit a execute wasm contract proposal (run by any address)
+Submit an execute wasm contract proposal (run by any address)
 
 ```
 axelard tx gov submit-proposal execute-contract [contract_addr_bech32] [json_encoded_migration_args] [flags]

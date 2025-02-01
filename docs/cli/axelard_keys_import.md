@@ -4,7 +4,7 @@ Import private keys into the local keybase
 
 ### Synopsis
 
-Import a ASCII armored private key into the local keybase.
+Import an ASCII armored private key into the local keybase.
 
 ```
 axelard keys import <name> <keyfile> [flags]

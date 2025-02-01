@@ -55,7 +55,7 @@ func (r *router) AddHandler(module string, handler exported.VoteHandler) VoteRou
 	return r
 }
 
-// HasHandler returns true if the router has an handler registered for the given module
+// HasHandler returns true if the router has a handler registered for the given module
 func (r *router) HasHandler(module string) bool {
 	return r.routes[module] != nil
 }
