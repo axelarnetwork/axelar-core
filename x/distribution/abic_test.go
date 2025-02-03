@@ -2,8 +2,6 @@ package distribution_test
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/utils/funcs"
-	"github.com/stretchr/testify/assert"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -12,8 +10,11 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/axelarnetwork/axelar-core/x/distribution"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/axelarnetwork/axelar-core/x/distribution"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 // TestEnsureIdentical ensure that our BeginBlocker implementation exactly matches the cosmos-sdk version.
