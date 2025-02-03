@@ -1,8 +1,10 @@
 package distribution
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/distribution/keeper"
 )
@@ -21,4 +23,8 @@ func NewAppModule(distrAppModule distr.AppModule, keeper keeper.Keeper) AppModul
 		AppModule: distrAppModule,
 		keeper:    keeper,
 	}
+}
+
+func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
+	BeginBlocker(ctx, req, am.keeper)
 }
