@@ -59,7 +59,7 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, _, _ int64, _ sdk.ConsAddress, _
 	remaining := feesCollected.Sub(communityPoolAmount)
 
 	// truncate the remaining coins, return remainder to community pool
-	feeToBurn, truncationRemainder := remaining.TruncateDecimal()
+	feesToBurn, truncationRemainder := remaining.TruncateDecimal()
 	communityPoolAmount = communityPoolAmount.Add(truncationRemainder...)
 
 	// allocate community funding
@@ -67,13 +67,13 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, _, _ int64, _ sdk.ConsAddress, _
 	k.SetFeePool(ctx, feePool)
 
 	// burn the rest
-	funcs.MustNoErr(k.bankKeeper.BurnCoins(ctx, distributionTypes.ModuleName, feeToBurn))
-	events.Emit(ctx, &types.FeeBurned{
-		Coins: feeToBurn,
+	funcs.MustNoErr(k.bankKeeper.BurnCoins(ctx, distributionTypes.ModuleName, feesToBurn))
+	events.Emit(ctx, &types.FeesBurned{
+		Coins: feesToBurn,
 	})
 
-	// track cumulative burned fee
-	feeBurned := slices.Map(feeToBurn, types.WithBurnedPrefix)
-	funcs.MustNoErr(k.bankKeeper.MintCoins(ctx, distributionTypes.ModuleName, feeBurned))
-	funcs.MustNoErr(k.bankKeeper.SendCoinsFromModuleToAccount(ctx, distributionTypes.ModuleName, types.ZeroAddress, feeBurned))
+	// track cumulative burned fees
+	feesBurned := slices.Map(feesToBurn, types.WithBurnedPrefix)
+	funcs.MustNoErr(k.bankKeeper.MintCoins(ctx, distributionTypes.ModuleName, feesBurned))
+	funcs.MustNoErr(k.bankKeeper.SendCoinsFromModuleToAccount(ctx, distributionTypes.ModuleName, types.ZeroAddress, feesBurned))
 }

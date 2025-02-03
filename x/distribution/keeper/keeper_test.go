@@ -33,14 +33,14 @@ func TestAllocateTokens(t *testing.T) {
 		k           keeper.Keeper
 		accBalances map[string]sdk.Coins
 		bk          *mock.BankKeeperMock
-		fee         sdk.Coins
+		fees        sdk.Coins
 	)
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
 
-	fee = sdk.NewCoins(sdk.NewCoin(axelarnettypes.NativeAsset, sdk.NewInt(rand.PosI64())))
+	fees = sdk.NewCoins(sdk.NewCoin(axelarnettypes.NativeAsset, sdk.NewInt(rand.PosI64())))
 	accBalances = map[string]sdk.Coins{
-		authtypes.NewModuleAddress(authtypes.FeeCollectorName).String(): fee,
+		authtypes.NewModuleAddress(authtypes.FeeCollectorName).String(): fees,
 	}
 
 	Given("an axelar distribution keeper", func() {
@@ -103,21 +103,21 @@ func TestAllocateTokens(t *testing.T) {
 		k.SetFeePool(ctx, distributiontypes.FeePool{CommunityPool: sdk.DecCoins{}})
 		k.SetParams(ctx, distributiontypes.DefaultParams())
 	}).
-		When("allocate token", func() {
+		When("allocate tokens", func() {
 			k.AllocateTokens(ctx, 0, 1, sdk.ConsAddress{}, nil)
 		}).
 		Then("allocate to community pool and burn the rest", func(t *testing.T) {
 			assert.Len(t, bk.BurnCoinsCalls(), 1)
 
-			feeBurnedType := proto.MessageName(&types.FeeBurned{})
+			feesBurnedType := proto.MessageName(&types.FeesBurned{})
 			assert.Len(t, slices.Filter(ctx.EventManager().Events(), func(e sdk.Event) bool {
-				return e.Type == feeBurnedType
+				return e.Type == feesBurnedType
 			}), 1)
 
-			burned, tax := expectedBurnAndTax(ctx, k, fee)
-			expectedBurnedFee := sdk.NewCoins(slices.Map(burned, types.WithBurnedPrefix)...)
+			burned, tax := expectedBurnAndTax(ctx, k, fees)
+			expectedBurnedFees := sdk.NewCoins(slices.Map(burned, types.WithBurnedPrefix)...)
 
-			assert.Equal(t, expectedBurnedFee, accBalances[types.ZeroAddress.String()])
+			assert.Equal(t, expectedBurnedFees, accBalances[types.ZeroAddress.String()])
 			assert.Equal(t, k.GetFeePool(ctx).CommunityPool, tax)
 		}).
 		Run(t)

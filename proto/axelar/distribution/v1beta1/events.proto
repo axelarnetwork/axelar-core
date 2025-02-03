@@ -6,7 +6,7 @@ import "gogoproto/gogo.proto";
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/distribution/types";
 
-message FeeBurned {
+message FeesBurned {
   repeated cosmos.base.v1beta1.Coin coins = 2
   [(gogoproto.nullable) = false, (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"];
 }
