@@ -68,7 +68,7 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, _, _ int64, _ sdk.ConsAddress, _
 
 	// burn the rest
 	funcs.MustNoErr(k.bankKeeper.BurnCoins(ctx, distributionTypes.ModuleName, feeToBurn))
-	events.Emit(ctx, &types.FeeBurnedEvent{
+	events.Emit(ctx, &types.FeeBurned{
 		Coins: feeToBurn,
 	})
 

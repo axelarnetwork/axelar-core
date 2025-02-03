@@ -109,7 +109,7 @@ func TestAllocateTokens(t *testing.T) {
 		Then("allocate to community pool and burn the rest", func(t *testing.T) {
 			assert.Len(t, bk.BurnCoinsCalls(), 1)
 
-			feeBurnedType := proto.MessageName(&types.FeeBurnedEvent{})
+			feeBurnedType := proto.MessageName(&types.FeeBurned{})
 			assert.Len(t, slices.Filter(ctx.EventManager().Events(), func(e sdk.Event) bool {
 				return e.Type == feeBurnedType
 			}), 1)
