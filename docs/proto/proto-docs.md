@@ -170,7 +170,7 @@
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
   
 - [axelar/distribution/v1beta1/events.proto](#axelar/distribution/v1beta1/events.proto)
-    - [FeeBurnedEvent](#axelar.distribution.v1beta1.FeeBurnedEvent)
+    - [FeesBurned](#axelar.distribution.v1beta1.FeesBurned)
   
 - [axelar/snapshot/exported/v1beta1/types.proto](#axelar/snapshot/exported/v1beta1/types.proto)
     - [Participant](#axelar.snapshot.exported.v1beta1.Participant)
@@ -2834,9 +2834,9 @@ QueryService defines the gRPC querier service.
 
 
 
-<a name="axelar.distribution.v1beta1.FeeBurnedEvent"></a>
+<a name="axelar.distribution.v1beta1.FeesBurned"></a>
 
-### FeeBurnedEvent
+### FeesBurned
 
 
 
