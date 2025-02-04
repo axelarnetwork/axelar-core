@@ -34,9 +34,9 @@ COPY ./go.sum .
 RUN go mod download
 
 # Use a compatible libwasmvm
-# Alpine Linux requires static linking against muslc: https://github.com/CosmWasm/wasmd/blob/v0.33.0/INTEGRATION.md#prerequisites
+# Alpine Linux requires static linking against muslc: https://github.com/CosmWasm/wasmd/blob/v0.34.1/INTEGRATION.md#prerequisites
 RUN if [[ "${WASM}" == "true" ]]; then \
-    WASMVM_VERSION=v1.3.1 && \
+    WASMVM_VERSION=v1.5.8 && \
     wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/libwasmvm_muslc.${ARCH}.a \
         -O /lib/libwasmvm_muslc.a && \
     wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/checksums.txt -O /tmp/checksums.txt && \

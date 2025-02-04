@@ -4,6 +4,7 @@ go 1.23
 
 require (
 	github.com/CosmWasm/wasmd v0.34.1
+	// Ensure WASMVM_VERSION in the Dockerfile is updated when changing wasmvm version.
 	github.com/CosmWasm/wasmvm v1.5.8
 	github.com/armon/go-metrics v0.4.1
 	github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b
