@@ -29,7 +29,7 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-func TestMgr_ProccessTokenConfirmation(t *testing.T) {
+func TestMgr_ProcessTokenConfirmation(t *testing.T) {
 	var (
 		mgr              *evm.Mgr
 		event            *types.ConfirmTokenStarted
