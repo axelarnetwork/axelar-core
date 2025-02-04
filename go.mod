@@ -3,8 +3,8 @@ module github.com/axelarnetwork/axelar-core
 go 1.23
 
 require (
-	github.com/CosmWasm/wasmd v0.33.0
-	github.com/CosmWasm/wasmvm v1.3.1
+	github.com/CosmWasm/wasmd v0.34.1
+	github.com/CosmWasm/wasmvm v1.5.8
 	github.com/armon/go-metrics v0.4.1
 	github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b
 	github.com/axelarnetwork/utils v0.0.0-20230706045331-b7aacc1f4a2f
@@ -211,5 +211,3 @@ replace github.com/tendermint/tendermint => github.com/cometbft/cometbft v0.34.3
 
 // Temporary replacement for rosetta support
 replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20241216210753-523fb865146c
-
-replace github.com/CosmWasm/wasmd => github.com/axelarnetwork/wasmd v0.33.1-0.20241022183459-add3571298b2
