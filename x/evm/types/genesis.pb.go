@@ -4,6 +4,7 @@
 package types
 
 import (
+	"errors"
 	fmt "fmt"
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	_ "github.com/gogo/protobuf/gogoproto"
@@ -569,7 +570,7 @@ func (m *GenesisState_Chain) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Chain: wiretype end group for non-group")
+			return errors.New("proto: Chain: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: Chain: illegal tag %d (wire type %d)", fieldNum, wire)
@@ -1080,7 +1081,7 @@ func skipGenesis(dAtA []byte) (n int, err error) {
 }
 
 var (
-	ErrInvalidLengthGenesis        = fmt.Errorf("proto: negative length found during unmarshaling")
-	ErrIntOverflowGenesis          = fmt.Errorf("proto: integer overflow")
-	ErrUnexpectedEndOfGroupGenesis = fmt.Errorf("proto: unexpected end of group")
+	ErrInvalidLengthGenesis        = errors.New("proto: negative length found during unmarshaling")
+	ErrIntOverflowGenesis          = errors.New("proto: integer overflow")
+	ErrUnexpectedEndOfGroupGenesis = errors.New("proto: unexpected end of group")
 )
