@@ -694,6 +694,8 @@ github.com/aws/aws-sdk-go-v2/service/route53 v1.1.1/go.mod h1:rLiOUrPLW/Er5kRcQ7
 github.com/aws/aws-sdk-go-v2/service/sso v1.1.1/go.mod h1:SuZJxklHxLAXgLTc1iFXbEWkXs7QRTQpCLGaKIprQW0=
 github.com/aws/aws-sdk-go-v2/service/sts v1.1.1/go.mod h1:Wi0EBZwiz/K44YliU0EKxqTCJGUfYTWXrrBwkq736bM=
 github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB9LgIw=
+github.com/axelarnetwork/cometbft v0.34.32-0.20250205201135-f2813762d7f7 h1:otGPjMsmuAIvJ++VqycbJKyVWEGEVFhil/pBetskqA8=
+github.com/axelarnetwork/cometbft v0.34.32-0.20250205201135-f2813762d7f7/go.mod h1:myvkihZD8eg9jKE3WFaugkNoL5nvEqlP7Jbjg98pCek=
 github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20241216210753-523fb865146c h1:VD4Iz9AT2dihqqktW6Y4aRe1bRHPR+A4wqcOw+zxW1Q=
 github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20241216210753-523fb865146c/go.mod h1:bScuNwWAP0TZJpUf+SHXRU3xGoUPp+X9nAzfeIXts40=
 github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b h1:qTbA+WlbMRiPtK5zn5evVfU2XhmIOrOZNIE8VNU1O3Q=
@@ -792,8 +794,6 @@ github.com/codegangsta/inject v0.0.0-20150114235600-33e0aa1cb7c0/go.mod h1:4Zcju
 github.com/coinbase/kryptology v1.8.0/go.mod h1:RYXOAPdzOGUe3qlSFkMGn58i3xUA8hmxYHksuq+8ciI=
 github.com/coinbase/rosetta-sdk-go v0.7.9 h1:lqllBjMnazTjIqYrOGv8h8jxjg9+hJazIGZr9ZvoCcA=
 github.com/coinbase/rosetta-sdk-go v0.7.9/go.mod h1:0/knutI7XGVqXmmH4OQD8OckFrbQ8yMsUZTG7FXCR2M=
-github.com/cometbft/cometbft v0.34.31 h1:DyjxPU8Gua6vhu7NY6zSxSXi/3QtiPoiKWnYfyqo3PA=
-github.com/cometbft/cometbft v0.34.31/go.mod h1:myvkihZD8eg9jKE3WFaugkNoL5nvEqlP7Jbjg98pCek=
 github.com/cometbft/cometbft-db v0.7.0 h1:uBjbrBx4QzU0zOEnU8KxoDl18dMNgDh+zZRUE0ucsbo=
 github.com/cometbft/cometbft-db v0.7.0/go.mod h1:yiKJIm2WKrt6x8Cyxtq9YTEcIMPcEe4XPxhgX59Fzf0=
 github.com/confio/ics23/go v0.9.1 h1:3MV46eeWwO3xCauKyAtuAdJYMyPnnchW4iLr2bTw6/U=
