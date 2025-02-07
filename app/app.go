@@ -481,10 +481,7 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keep
 	upgradeKeeper.SetUpgradeHandler(
 		upgradeName(app.Version()),
 		func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-			err := MigratePreInitializedModuleAccounts(ctx, *GetKeeper[authkeeper.AccountKeeper](keepers), []string{nexusTypes.ModuleName})
-			if err != nil {
-				return nil, err
-			}
+			MigrateDistributionAccountPermission(ctx, *GetKeeper[authkeeper.AccountKeeper](keepers))
 
 			updatedVM, err := app.mm.RunMigrations(ctx, configurator, fromVM)
 			if err != nil {
