@@ -216,7 +216,7 @@ func TestAfterProposalSubmission(t *testing.T) {
 						}).(proto.Message)))
 					}).
 						Then("should panic", func(t *testing.T) {
-							assert.PanicsWithError(t, "not an hex address", func() {
+							assert.PanicsWithError(t, "not a hex address", func() {
 								keeper.Hooks(nexusK, govK).AfterProposalSubmission(ctx, proposal.ProposalId)
 							})
 						}),
