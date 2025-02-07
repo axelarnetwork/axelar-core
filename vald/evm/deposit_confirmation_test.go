@@ -29,7 +29,7 @@ import (
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func TestMgr_ProccessDepositConfirmation(t *testing.T) {
+func TestMgr_ProcessDepositConfirmation(t *testing.T) {
 	var (
 		mgr         *evm.Mgr
 		receipt     *geth.Receipt
@@ -316,7 +316,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		Run(t, 20)
 }
 
-func TestMgr_ProccessDepositConfirmationNoTopicsNotPanics(t *testing.T) {
+func TestMgr_ProcessDepositConfirmationNoTopicsNotPanics(t *testing.T) {
 	chain := nexus.ChainName(strings.ToLower(rand.NormalizedStr(5)))
 	receipt := geth.Receipt{
 		Logs:        []*geth.Log{{Topics: make([]common.Hash, 0)}},
