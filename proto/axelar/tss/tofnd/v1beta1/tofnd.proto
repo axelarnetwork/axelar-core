@@ -3,20 +3,8 @@ syntax = "proto3";
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/tss/tofnd";
 import "gogoproto/gogo.proto";
-import "axelar/tss/tofnd/v1beta1/common.proto"; // import key presence request/response
 
 package axelar.tss.tofnd.v1beta1;
-
-// TODO: figure out why gogoproto produces unusable services
-// GG20 is the protocol https://eprint.iacr.org/2020/540
-// rpc definitions intended to wrap the API for this library:
-// https://github.com/axelarnetwork/tofn
-// service GG20 {
-//  rpc Recover(RecoverRequest) returns (RecoverResponse);
-//  rpc Keygen(stream MessageIn) returns (stream MessageOut);
-//  rpc Sign(stream MessageIn) returns (stream MessageOut);
-//  rpc KeyPresence(KeyPresenceRequest) returns (KeyPresenceResponse);
-//}
 
 message RecoverRequest {
   KeygenInit keygen_init = 1;

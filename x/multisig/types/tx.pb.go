@@ -9,8 +9,8 @@ import (
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	_ "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -28,8 +28,8 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type StartKeygenRequest struct {
-	// Deprecated: This is the original "sender" field, but was originally declared as a string,
-	// rather than a byte array.
+	// Deprecated: This is the original "sender" field, but was originally
+	// declared as a string, rather than a byte array.
 	SenderStr github_com_cosmos_cosmos_sdk_types.AccAddress                  `protobuf:"bytes,1,opt,name=sender_str,json=senderStr,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_str,omitempty"` // Deprecated: Do not use.
 	KeyID     github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
 	// New "sender" field, using the appropriate type
@@ -106,8 +106,8 @@ func (m *StartKeygenResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_StartKeygenResponse proto.InternalMessageInfo
 
 type SubmitPubKeyRequest struct {
-	// Deprecated: This is the original "sender" field, but was originally declared as a string,
-	// rather than a byte array.
+	// Deprecated: This is the original "sender" field, but was originally
+	// declared as a string, rather than a byte array.
 	SenderStr github_com_cosmos_cosmos_sdk_types.AccAddress                      `protobuf:"bytes,1,opt,name=sender_str,json=senderStr,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_str,omitempty"` // Deprecated: Do not use.
 	KeyID     github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID     `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
 	PubKey    github_com_axelarnetwork_axelar_core_x_multisig_exported.PublicKey `protobuf:"bytes,3,opt,name=pub_key,json=pubKey,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.PublicKey" json:"pub_key,omitempty"`
@@ -186,8 +186,8 @@ func (m *SubmitPubKeyResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_SubmitPubKeyResponse proto.InternalMessageInfo
 
 type SubmitSignatureRequest struct {
-	// Deprecated: This is the original "sender" field, but was originally declared as a string,
-	// rather than a byte array.
+	// Deprecated: This is the original "sender" field, but was originally
+	// declared as a string, rather than a byte array.
 	SenderStr github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender_str,json=senderStr,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_str,omitempty"` // Deprecated: Do not use.
 	SigID     uint64                                        `protobuf:"varint,2,opt,name=sig_id,json=sigId,proto3" json:"sig_id,omitempty"`
 	Signature Signature                                     `protobuf:"bytes,3,opt,name=signature,proto3,casttype=Signature" json:"signature,omitempty"`
@@ -265,8 +265,8 @@ func (m *SubmitSignatureResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_SubmitSignatureResponse proto.InternalMessageInfo
 
 type RotateKeyRequest struct {
-	// Deprecated: This is the original "sender" field, but was originally declared as a string,
-	// rather than a byte array.
+	// Deprecated: This is the original "sender" field, but was originally
+	// declared as a string, rather than a byte array.
 	SenderStr github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_str,json=senderStr,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_str,omitempty"` // Deprecated: Do not use.
 	Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	KeyID     github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID  `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
