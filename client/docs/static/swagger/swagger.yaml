@@ -7300,9 +7300,9 @@ paths:
                 type: string
                 description: >-
                   Deprecated: This is the original "sender" field, but was
-                  originally declared as a string,
+                  originally
 
-                  rather than a byte array.
+                  declared as a string, rather than a byte array.
               chain:
                 type: string
               key_id:
@@ -7354,9 +7354,9 @@ paths:
                 type: string
                 description: >-
                   Deprecated: This is the original "sender" field, but was
-                  originally declared as a string,
+                  originally
 
-                  rather than a byte array.
+                  declared as a string, rather than a byte array.
               key_id:
                 type: string
               sender:
@@ -7406,9 +7406,9 @@ paths:
                 type: string
                 description: >-
                   Deprecated: This is the original "sender" field, but was
-                  originally declared as a string,
+                  originally
 
-                  rather than a byte array.
+                  declared as a string, rather than a byte array.
               key_id:
                 type: string
               pub_key:
@@ -7464,9 +7464,9 @@ paths:
                 type: string
                 description: >-
                   Deprecated: This is the original "sender" field, but was
-                  originally declared as a string,
+                  originally
 
-                  rather than a byte array.
+                  declared as a string, rather than a byte array.
               sig_id:
                 type: string
                 format: uint64
@@ -53870,11 +53870,9 @@ definitions:
     properties:
       sender_str:
         type: string
-        description: >-
+        description: |-
           Deprecated: This is the original "sender" field, but was originally
-          declared as a string,
-
-          rather than a byte array.
+          declared as a string, rather than a byte array.
       chain:
         type: string
       key_id:
@@ -53890,11 +53888,9 @@ definitions:
     properties:
       sender_str:
         type: string
-        description: >-
+        description: |-
           Deprecated: This is the original "sender" field, but was originally
-          declared as a string,
-
-          rather than a byte array.
+          declared as a string, rather than a byte array.
       key_id:
         type: string
       sender:
@@ -53908,11 +53904,9 @@ definitions:
     properties:
       sender_str:
         type: string
-        description: >-
+        description: |-
           Deprecated: This is the original "sender" field, but was originally
-          declared as a string,
-
-          rather than a byte array.
+          declared as a string, rather than a byte array.
       key_id:
         type: string
       pub_key:
@@ -53932,11 +53926,9 @@ definitions:
     properties:
       sender_str:
         type: string
-        description: >-
+        description: |-
           Deprecated: This is the original "sender" field, but was originally
-          declared as a string,
-
-          rather than a byte array.
+          declared as a string, rather than a byte array.
       sig_id:
         type: string
         format: uint64
