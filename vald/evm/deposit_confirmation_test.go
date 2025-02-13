@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -301,7 +302,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 					assert.Len(t, votes, 1)
 					assert.Len(t, votes[0].Events, 2)
 
-					actualAmount := sdk.ZeroUint()
+					actualAmount := math.ZeroUint()
 					for _, event := range votes[0].Events {
 						transferEvent, ok := event.Event.(*types.Event_Transfer)
 						assert.True(t, ok)

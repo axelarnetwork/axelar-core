@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
@@ -102,7 +103,7 @@ func TestCreateExecuteDataMultisig(t *testing.T) {
 		common.HexToAddress("0x976EA74026E726554dB657fA54763abd0C3a0aa9"),
 		common.HexToAddress("0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"),
 	}
-	weights := slices.Expand(func(idx int) sdk.Uint { return sdk.OneUint() }, len(addresses))
+	weights := slices.Expand(func(idx int) sdk.Uint { return math.OneUint() }, len(addresses))
 	signatures := [][]byte{
 		common.FromHex("0009f7136165f0fc9044f9de3a88920aad0c5844797bd67924ca7bd59865901a38bd628cc2935ca2e83f8d5a97279a1a743cd3ab529e8aeb245bcf676b6491bf1c"),
 		common.FromHex("a9704efbd02b99f7c46dfc02437b7143bc61dd6766011d87f7084b43c27d66843105529481d9851713b0a6091305ef84a57017e5772d63a2c97a09d53a91909b1b"),

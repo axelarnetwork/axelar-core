@@ -3,10 +3,10 @@ package grpc
 import (
 	"context"
 
+	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/gogo/protobuf/grpc"
-	"github.com/tendermint/tendermint/libs/log"
+	"github.com/cosmos/gogoproto/grpc"
 	grpc2 "google.golang.org/grpc"
 
 	"github.com/axelarnetwork/axelar-core/utils/errors"

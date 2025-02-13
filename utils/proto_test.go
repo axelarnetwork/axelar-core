@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	gogoprototypes "github.com/gogo/protobuf/types"
+	gogoprototypes "github.com/cosmos/gogoproto/types"
 	"github.com/stretchr/testify/assert"
 )
 

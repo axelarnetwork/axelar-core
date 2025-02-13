@@ -1,8 +1,8 @@
 package exported
 
 import (
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
+	"github.com/cosmos/gogoproto/proto"
+	"github.com/cosmos/gogoproto/protoc-gen-gogo/descriptor"
 )
 
 // GetPermissionRole returns the role that is defined for the given message. Returns ROLE_UNSPECIFIED if none is set.

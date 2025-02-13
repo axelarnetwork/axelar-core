@@ -5,6 +5,7 @@ import (
 	"sort"
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -79,10 +80,10 @@ func TestOptimizeSignatureSet(t *testing.T) {
 		optimizedSigs := optimizeSignatureSet(operators, key.GetMinPassingWeight())
 
 		// Optimized sigs should pass threshold
-		if !slices.Reduce(optimizedSigs, sdk.ZeroUint(), f).GTE(key.GetMinPassingWeight()) {
+		if !slices.Reduce(optimizedSigs, math.ZeroUint(), f).GTE(key.GetMinPassingWeight()) {
 		}
 
-		assert.True(t, slices.Reduce(optimizedSigs, sdk.ZeroUint(), f).GTE(key.GetMinPassingWeight()))
+		assert.True(t, slices.Reduce(optimizedSigs, math.ZeroUint(), f).GTE(key.GetMinPassingWeight()))
 
 		// Optimized sig set follow it's evm addresses in ascending order
 		sortedAddresses := slices.Map(maps.Keys(addressWeights), common.HexToAddress)
@@ -104,7 +105,7 @@ func TestOptimizeSignatureSet(t *testing.T) {
 
 			return c
 		})
-		assert.False(t, slices.Reduce(optimizedSigs, sdk.ZeroUint(), f).Sub(addressWeights[sigAddresses[common.Bytes2Hex(minWeightedSig)]]).GTE(key.GetMinPassingWeight()))
+		assert.False(t, slices.Reduce(optimizedSigs, math.ZeroUint(), f).Sub(addressWeights[sigAddresses[common.Bytes2Hex(minWeightedSig)]]).GTE(key.GetMinPassingWeight()))
 
 	})
 	givenWeightsAndSigs.
@@ -114,7 +115,7 @@ func TestOptimizeSignatureSet(t *testing.T) {
 
 	givenWeightsAndSigs.
 		When("missing some signatures", func() {
-			currWeight := slices.Reduce(participants, sdk.ZeroUint(),
+			currWeight := slices.Reduce(participants, math.ZeroUint(),
 				func(c sdk.Uint, p sdk.ValAddress) sdk.Uint {
 					return c.Add(key.GetWeight(p))
 				},

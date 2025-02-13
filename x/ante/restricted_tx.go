@@ -3,7 +3,7 @@ package ante
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
+	"github.com/cosmos/gogoproto/protoc-gen-gogo/descriptor"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
 	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"

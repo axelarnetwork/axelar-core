@@ -5,10 +5,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
 
@@ -23,8 +21,8 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	}
 
 	evmQueryCmd.AddCommand(
-		GetCmdGetProxy(queryRoute),
-		GetCmdGetOperator(queryRoute),
+		GetProxyByOperator(),
+		GetOperatorByProxy(),
 		GetParams(),
 	)
 
@@ -32,50 +30,52 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 
 }
 
-// GetCmdGetProxy returns the proxy address associated to some operator address
-func GetCmdGetProxy(queryRoute string) *cobra.Command {
+// GetProxyByOperator returns the proxy address associated to some operator address
+func GetProxyByOperator() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "proxy [operator address]",
 		Short: "Fetch the proxy address associated with [operator address] and status (active/inactive)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QProxy, args[0]), nil)
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.ProxyByOperator(cmd.Context(), &types.ProxyByOperatorRequest{OperatorAddress: args[0]})
 			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFProxyAddress)
+				return err
 			}
 
-			fmt.Println(string(res))
-			return nil
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
 
-// GetCmdGetOperator returns the operator address associated to some proxy address
-func GetCmdGetOperator(queryRoute string) *cobra.Command {
+// GetOperatorByProxy returns the operator address associated to some proxy address
+func GetOperatorByProxy() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "operator [proxy address]",
 		Short: "Fetch the operator address associated with [proxy address]",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, keeper.QOperator, args[0]), nil)
+			queryClient := types.NewQueryServiceClient(clientCtx)
+
+			res, err := queryClient.OperatorByProxy(cmd.Context(), &types.OperatorByProxyRequest{ProxyAddress: args[0]})
 			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFOperatorAddress)
+				return err
 			}
 
-			fmt.Println(string(res))
-			return nil
+			return clientCtx.PrintProto(res)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)

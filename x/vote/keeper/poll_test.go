@@ -4,13 +4,14 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/math"
+	"github.com/cometbft/cometbft/libs/log"
+	abci "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	abci "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -40,7 +41,7 @@ func TestPoll(t *testing.T) {
 		voters[i] = rand.ValAddr()
 	}
 	participants := slices.Map(voters[:], func(v sdk.ValAddress) snapshot.Participant {
-		return snapshot.NewParticipant(v, sdk.OneUint())
+		return snapshot.NewParticipant(v, math.OneUint())
 	})
 
 	givenPollBuilder := Given("a poll builder", func() {
@@ -327,7 +328,7 @@ func TestPoll_GetMetaData(t *testing.T) {
 	snap := snapshot.NewSnapshot(
 		time.Now(),
 		rand.I64Between(1, 100),
-		slices.Expand(func(_ int) snapshot.Participant { return snapshot.NewParticipant(rand.ValAddr(), sdk.OneUint()) }, 5),
+		slices.Expand(func(_ int) snapshot.Participant { return snapshot.NewParticipant(rand.ValAddr(), math.OneUint()) }, 5),
 		sdk.NewUint(5),
 	)
 	expectedMetadata := &evmtypes.PollMetadata{

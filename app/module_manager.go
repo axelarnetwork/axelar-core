@@ -1,8 +1,6 @@
 package app
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/axelarnetwork/utils/slices"
@@ -22,36 +20,21 @@ func NewFilteredModuleManager(appModules []module.AppModule, filteredModules []s
 	}
 }
 
-// RegisterRoutes registers all module routes and module querier routes
-func (m *FilteredModuleManager) RegisterRoutes(router sdk.Router, queryRouter sdk.QueryRouter, legacyQuerierCdc *codec.LegacyAmino) {
-	for _, module := range m.Modules {
-		if m.isModuleFiltered(module.Name()) {
-			continue
-		}
-
-		if r := module.Route(); !r.Empty() {
-			router.AddRoute(r)
-		}
-		if r := module.QuerierRoute(); r != "" {
-			queryRouter.AddRoute(r, module.LegacyQuerierHandler(legacyQuerierCdc))
-		}
-
-	}
-}
-
 // RegisterServices registers all module services
-func (m *FilteredModuleManager) RegisterServices(cfg module.Configurator) {
-	for _, module := range m.Modules {
-		if m.isModuleFiltered(module.Name()) {
+func (f *FilteredModuleManager) RegisterServices(cfg module.Configurator) {
+	for _, m := range f.Modules {
+		if m, ok := m.(module.HasName); ok && f.isModuleFiltered(m.Name()) {
 			continue
 		}
 
-		module.RegisterServices(cfg)
+		if m, ok := m.(module.HasServices); ok {
+			m.RegisterServices(cfg)
+		}
 	}
 }
 
-func (m *FilteredModuleManager) isModuleFiltered(moduleName string) bool {
-	return slices.Any(m.filteredModules, func(s string) bool {
+func (f *FilteredModuleManager) isModuleFiltered(moduleName string) bool {
+	return slices.Any(f.filteredModules, func(s string) bool {
 		return s == moduleName
 	})
 }

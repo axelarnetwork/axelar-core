@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
@@ -58,7 +59,7 @@ func TestSnapshot(t *testing.T) {
 
 		givenSnapshot.
 			When("bonded weight is zero", func() {
-				snapshot.BondedWeight = sdk.ZeroUint()
+				snapshot.BondedWeight = math.ZeroUint()
 			}).
 			Then("should return error", func(t *testing.T) {
 				assert.ErrorContains(t, snapshot.ValidateBasic(), "bonded weight >0")
@@ -153,7 +154,7 @@ func TestSnapshot(t *testing.T) {
 					assert.Equal(t, participant.Weight, snapshot.GetParticipantWeight(addr))
 				}
 
-				assert.Equal(t, sdk.ZeroUint(), snapshot.GetParticipantWeight(rand.ValAddr()))
+				assert.Equal(t, math.ZeroUint(), snapshot.GetParticipantWeight(rand.ValAddr()))
 			}).
 			Run(t, repeat)
 	})

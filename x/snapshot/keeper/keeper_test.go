@@ -7,6 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/math"
+	"github.com/cometbft/cometbft/crypto/ed25519"
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,9 +18,6 @@ import (
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -280,7 +281,7 @@ func TestKeeper(t *testing.T) {
 				assert.Equal(t, ctx.BlockHeight(), actual.Height)
 				assert.Equal(t, ctx.BlockTime(), actual.Timestamp)
 
-				expectedBondedWeight := sdk.ZeroUint()
+				expectedBondedWeight := math.ZeroUint()
 				for addr, v := range validatorMap {
 					weight := sdk.NewUint(uint64(v.GetConsensusPower(sdk.OneInt())))
 					assert.Equal(t, exported.NewParticipant(v.GetOperator(), weight), actual.Participants[addr])
@@ -330,7 +331,7 @@ func TestKeeper(t *testing.T) {
 			When2(whenAllParamsAreGood).
 			When("weightFunc should translate consensus power to weight", func() {
 				weightFunc = func(sdk.Uint) sdk.Uint {
-					return sdk.OneUint()
+					return math.OneUint()
 				}
 			}).
 			Then("should create a snapshot with participants having the correct weights", func(t *testing.T) {
@@ -339,9 +340,9 @@ func TestKeeper(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NoError(t, actual.ValidateBasic())
 				assert.True(t, slices.All(maps.Values(actual.Participants), func(p exported.Participant) bool {
-					return p.Weight.Equal(sdk.OneUint())
+					return p.Weight.Equal(math.OneUint())
 				}))
-				assert.Equal(t, sdk.OneUint().MulUint64(uint64(len(actual.Participants))), actual.BondedWeight)
+				assert.Equal(t, math.OneUint().MulUint64(uint64(len(actual.Participants))), actual.BondedWeight)
 			}).
 			Run(t)
 
@@ -363,7 +364,7 @@ func TestKeeper(t *testing.T) {
 			When("weight func returns zero weights", func() {
 				once := &sync.Once{}
 				weightFunc = func(w sdk.Uint) sdk.Uint {
-					once.Do(func() { w = sdk.ZeroUint() })
+					once.Do(func() { w = math.ZeroUint() })
 					return w
 				}
 			}).

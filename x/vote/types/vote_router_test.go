@@ -4,11 +4,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
+	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -22,7 +23,7 @@ func TestVoteRouter(t *testing.T) {
 		router   VoteRouter
 		handler  *mock.VoteHandlerMock
 		ctx      sdk.Context
-		storeKey = sdk.StoreKey(sdk.NewKVStoreKey("test"))
+		storeKey = store.StoreKey(sdk.NewKVStoreKey("test"))
 	)
 
 	withRegisteredHandler := testutils.Given("a vote router", func() {

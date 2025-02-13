@@ -21,17 +21,14 @@ var _ types.BankKeeper = &BankKeeperMock{}
 //
 //		// make and configure a mocked types.BankKeeper
 //		mockedBankKeeper := &BankKeeperMock{
+//			BlockedAddrFunc: func(addr sdk.AccAddress) bool {
+//				panic("mock out the BlockedAddr method")
+//			},
 //			BurnCoinsFunc: func(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
 //				panic("mock out the BurnCoins method")
 //			},
 //			GetAllBalancesFunc: func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
 //				panic("mock out the GetAllBalances method")
-//			},
-//			GetBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
-//				panic("mock out the GetBalance method")
-//			},
-//			LockedCoinsFunc: func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
-//				panic("mock out the LockedCoins method")
 //			},
 //			MintCoinsFunc: func(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
 //				panic("mock out the MintCoins method")
@@ -55,17 +52,14 @@ var _ types.BankKeeper = &BankKeeperMock{}
 //
 //	}
 type BankKeeperMock struct {
+	// BlockedAddrFunc mocks the BlockedAddr method.
+	BlockedAddrFunc func(addr sdk.AccAddress) bool
+
 	// BurnCoinsFunc mocks the BurnCoins method.
 	BurnCoinsFunc func(ctx sdk.Context, moduleName string, amt sdk.Coins) error
 
 	// GetAllBalancesFunc mocks the GetAllBalances method.
 	GetAllBalancesFunc func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
-
-	// GetBalanceFunc mocks the GetBalance method.
-	GetBalanceFunc func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
-
-	// LockedCoinsFunc mocks the LockedCoins method.
-	LockedCoinsFunc func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
 
 	// MintCoinsFunc mocks the MintCoins method.
 	MintCoinsFunc func(ctx sdk.Context, moduleName string, amt sdk.Coins) error
@@ -84,6 +78,11 @@ type BankKeeperMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// BlockedAddr holds details about calls to the BlockedAddr method.
+		BlockedAddr []struct {
+			// Addr is the addr argument value.
+			Addr sdk.AccAddress
+		}
 		// BurnCoins holds details about calls to the BurnCoins method.
 		BurnCoins []struct {
 			// Ctx is the ctx argument value.
@@ -95,22 +94,6 @@ type BankKeeperMock struct {
 		}
 		// GetAllBalances holds details about calls to the GetAllBalances method.
 		GetAllBalances []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Addr is the addr argument value.
-			Addr sdk.AccAddress
-		}
-		// GetBalance holds details about calls to the GetBalance method.
-		GetBalance []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Addr is the addr argument value.
-			Addr sdk.AccAddress
-			// Denom is the denom argument value.
-			Denom string
-		}
-		// LockedCoins holds details about calls to the LockedCoins method.
-		LockedCoins []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Addr is the addr argument value.
@@ -166,15 +149,46 @@ type BankKeeperMock struct {
 			Addr sdk.AccAddress
 		}
 	}
+	lockBlockedAddr                  sync.RWMutex
 	lockBurnCoins                    sync.RWMutex
 	lockGetAllBalances               sync.RWMutex
-	lockGetBalance                   sync.RWMutex
-	lockLockedCoins                  sync.RWMutex
 	lockMintCoins                    sync.RWMutex
 	lockSendCoinsFromAccountToModule sync.RWMutex
 	lockSendCoinsFromModuleToAccount sync.RWMutex
 	lockSendCoinsFromModuleToModule  sync.RWMutex
 	lockSpendableCoins               sync.RWMutex
+}
+
+// BlockedAddr calls BlockedAddrFunc.
+func (mock *BankKeeperMock) BlockedAddr(addr sdk.AccAddress) bool {
+	if mock.BlockedAddrFunc == nil {
+		panic("BankKeeperMock.BlockedAddrFunc: method is nil but BankKeeper.BlockedAddr was just called")
+	}
+	callInfo := struct {
+		Addr sdk.AccAddress
+	}{
+		Addr: addr,
+	}
+	mock.lockBlockedAddr.Lock()
+	mock.calls.BlockedAddr = append(mock.calls.BlockedAddr, callInfo)
+	mock.lockBlockedAddr.Unlock()
+	return mock.BlockedAddrFunc(addr)
+}
+
+// BlockedAddrCalls gets all the calls that were made to BlockedAddr.
+// Check the length with:
+//
+//	len(mockedBankKeeper.BlockedAddrCalls())
+func (mock *BankKeeperMock) BlockedAddrCalls() []struct {
+	Addr sdk.AccAddress
+} {
+	var calls []struct {
+		Addr sdk.AccAddress
+	}
+	mock.lockBlockedAddr.RLock()
+	calls = mock.calls.BlockedAddr
+	mock.lockBlockedAddr.RUnlock()
+	return calls
 }
 
 // BurnCoins calls BurnCoinsFunc.
@@ -250,82 +264,6 @@ func (mock *BankKeeperMock) GetAllBalancesCalls() []struct {
 	mock.lockGetAllBalances.RLock()
 	calls = mock.calls.GetAllBalances
 	mock.lockGetAllBalances.RUnlock()
-	return calls
-}
-
-// GetBalance calls GetBalanceFunc.
-func (mock *BankKeeperMock) GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
-	if mock.GetBalanceFunc == nil {
-		panic("BankKeeperMock.GetBalanceFunc: method is nil but BankKeeper.GetBalance was just called")
-	}
-	callInfo := struct {
-		Ctx   sdk.Context
-		Addr  sdk.AccAddress
-		Denom string
-	}{
-		Ctx:   ctx,
-		Addr:  addr,
-		Denom: denom,
-	}
-	mock.lockGetBalance.Lock()
-	mock.calls.GetBalance = append(mock.calls.GetBalance, callInfo)
-	mock.lockGetBalance.Unlock()
-	return mock.GetBalanceFunc(ctx, addr, denom)
-}
-
-// GetBalanceCalls gets all the calls that were made to GetBalance.
-// Check the length with:
-//
-//	len(mockedBankKeeper.GetBalanceCalls())
-func (mock *BankKeeperMock) GetBalanceCalls() []struct {
-	Ctx   sdk.Context
-	Addr  sdk.AccAddress
-	Denom string
-} {
-	var calls []struct {
-		Ctx   sdk.Context
-		Addr  sdk.AccAddress
-		Denom string
-	}
-	mock.lockGetBalance.RLock()
-	calls = mock.calls.GetBalance
-	mock.lockGetBalance.RUnlock()
-	return calls
-}
-
-// LockedCoins calls LockedCoinsFunc.
-func (mock *BankKeeperMock) LockedCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
-	if mock.LockedCoinsFunc == nil {
-		panic("BankKeeperMock.LockedCoinsFunc: method is nil but BankKeeper.LockedCoins was just called")
-	}
-	callInfo := struct {
-		Ctx  sdk.Context
-		Addr sdk.AccAddress
-	}{
-		Ctx:  ctx,
-		Addr: addr,
-	}
-	mock.lockLockedCoins.Lock()
-	mock.calls.LockedCoins = append(mock.calls.LockedCoins, callInfo)
-	mock.lockLockedCoins.Unlock()
-	return mock.LockedCoinsFunc(ctx, addr)
-}
-
-// LockedCoinsCalls gets all the calls that were made to LockedCoins.
-// Check the length with:
-//
-//	len(mockedBankKeeper.LockedCoinsCalls())
-func (mock *BankKeeperMock) LockedCoinsCalls() []struct {
-	Ctx  sdk.Context
-	Addr sdk.AccAddress
-} {
-	var calls []struct {
-		Ctx  sdk.Context
-		Addr sdk.AccAddress
-	}
-	mock.lockLockedCoins.RLock()
-	calls = mock.calls.LockedCoins
-	mock.lockLockedCoins.RUnlock()
 	return calls
 }
 
@@ -766,38 +704,20 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 //			DelegationFunc: func(context sdk.Context, accAddress sdk.AccAddress, valAddress sdk.ValAddress) stakingtypes.DelegationI {
 //				panic("mock out the Delegation method")
 //			},
+//			GetAllDelegatorDelegationsFunc: func(ctx sdk.Context, delegator sdk.AccAddress) []stakingtypes.Delegation {
+//				panic("mock out the GetAllDelegatorDelegations method")
+//			},
 //			GetAllSDKDelegationsFunc: func(ctx sdk.Context) []stakingtypes.Delegation {
 //				panic("mock out the GetAllSDKDelegations method")
 //			},
-//			GetLastTotalPowerFunc: func(ctx sdk.Context) sdk.Int {
-//				panic("mock out the GetLastTotalPower method")
-//			},
-//			GetLastValidatorPowerFunc: func(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
-//				panic("mock out the GetLastValidatorPower method")
-//			},
-//			IterateBondedValidatorsByPowerFunc: func(context sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
-//				panic("mock out the IterateBondedValidatorsByPower method")
+//			GetAllValidatorsFunc: func(ctx sdk.Context) []stakingtypes.Validator {
+//				panic("mock out the GetAllValidators method")
 //			},
 //			IterateDelegationsFunc: func(ctx sdk.Context, delegator sdk.AccAddress, fn func(index int64, delegation stakingtypes.DelegationI) (stop bool))  {
 //				panic("mock out the IterateDelegations method")
 //			},
-//			IterateLastValidatorsFunc: func(context sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
-//				panic("mock out the IterateLastValidators method")
-//			},
 //			IterateValidatorsFunc: func(context sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
 //				panic("mock out the IterateValidators method")
-//			},
-//			JailFunc: func(context sdk.Context, consAddress sdk.ConsAddress)  {
-//				panic("mock out the Jail method")
-//			},
-//			MaxValidatorsFunc: func(context sdk.Context) uint32 {
-//				panic("mock out the MaxValidators method")
-//			},
-//			SlashFunc: func(context sdk.Context, consAddress sdk.ConsAddress, n1 int64, n2 int64, dec sdk.Dec)  {
-//				panic("mock out the Slash method")
-//			},
-//			UnjailFunc: func(context sdk.Context, consAddress sdk.ConsAddress)  {
-//				panic("mock out the Unjail method")
 //			},
 //			ValidatorFunc: func(context sdk.Context, valAddress sdk.ValAddress) stakingtypes.ValidatorI {
 //				panic("mock out the Validator method")
@@ -815,38 +735,20 @@ type StakingKeeperMock struct {
 	// DelegationFunc mocks the Delegation method.
 	DelegationFunc func(context sdk.Context, accAddress sdk.AccAddress, valAddress sdk.ValAddress) stakingtypes.DelegationI
 
+	// GetAllDelegatorDelegationsFunc mocks the GetAllDelegatorDelegations method.
+	GetAllDelegatorDelegationsFunc func(ctx sdk.Context, delegator sdk.AccAddress) []stakingtypes.Delegation
+
 	// GetAllSDKDelegationsFunc mocks the GetAllSDKDelegations method.
 	GetAllSDKDelegationsFunc func(ctx sdk.Context) []stakingtypes.Delegation
 
-	// GetLastTotalPowerFunc mocks the GetLastTotalPower method.
-	GetLastTotalPowerFunc func(ctx sdk.Context) sdk.Int
-
-	// GetLastValidatorPowerFunc mocks the GetLastValidatorPower method.
-	GetLastValidatorPowerFunc func(ctx sdk.Context, valAddr sdk.ValAddress) int64
-
-	// IterateBondedValidatorsByPowerFunc mocks the IterateBondedValidatorsByPower method.
-	IterateBondedValidatorsByPowerFunc func(context sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
+	// GetAllValidatorsFunc mocks the GetAllValidators method.
+	GetAllValidatorsFunc func(ctx sdk.Context) []stakingtypes.Validator
 
 	// IterateDelegationsFunc mocks the IterateDelegations method.
 	IterateDelegationsFunc func(ctx sdk.Context, delegator sdk.AccAddress, fn func(index int64, delegation stakingtypes.DelegationI) (stop bool))
 
-	// IterateLastValidatorsFunc mocks the IterateLastValidators method.
-	IterateLastValidatorsFunc func(context sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
-
 	// IterateValidatorsFunc mocks the IterateValidators method.
 	IterateValidatorsFunc func(context sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
-
-	// JailFunc mocks the Jail method.
-	JailFunc func(context sdk.Context, consAddress sdk.ConsAddress)
-
-	// MaxValidatorsFunc mocks the MaxValidators method.
-	MaxValidatorsFunc func(context sdk.Context) uint32
-
-	// SlashFunc mocks the Slash method.
-	SlashFunc func(context sdk.Context, consAddress sdk.ConsAddress, n1 int64, n2 int64, dec sdk.Dec)
-
-	// UnjailFunc mocks the Unjail method.
-	UnjailFunc func(context sdk.Context, consAddress sdk.ConsAddress)
 
 	// ValidatorFunc mocks the Validator method.
 	ValidatorFunc func(context sdk.Context, valAddress sdk.ValAddress) stakingtypes.ValidatorI
@@ -865,29 +767,22 @@ type StakingKeeperMock struct {
 			// ValAddress is the valAddress argument value.
 			ValAddress sdk.ValAddress
 		}
+		// GetAllDelegatorDelegations holds details about calls to the GetAllDelegatorDelegations method.
+		GetAllDelegatorDelegations []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Delegator is the delegator argument value.
+			Delegator sdk.AccAddress
+		}
 		// GetAllSDKDelegations holds details about calls to the GetAllSDKDelegations method.
 		GetAllSDKDelegations []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
-		// GetLastTotalPower holds details about calls to the GetLastTotalPower method.
-		GetLastTotalPower []struct {
+		// GetAllValidators holds details about calls to the GetAllValidators method.
+		GetAllValidators []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-		}
-		// GetLastValidatorPower holds details about calls to the GetLastValidatorPower method.
-		GetLastValidatorPower []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// ValAddr is the valAddr argument value.
-			ValAddr sdk.ValAddress
-		}
-		// IterateBondedValidatorsByPower holds details about calls to the IterateBondedValidatorsByPower method.
-		IterateBondedValidatorsByPower []struct {
-			// Context is the context argument value.
-			Context sdk.Context
-			// Fn is the fn argument value.
-			Fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 		}
 		// IterateDelegations holds details about calls to the IterateDelegations method.
 		IterateDelegations []struct {
@@ -898,51 +793,12 @@ type StakingKeeperMock struct {
 			// Fn is the fn argument value.
 			Fn func(index int64, delegation stakingtypes.DelegationI) (stop bool)
 		}
-		// IterateLastValidators holds details about calls to the IterateLastValidators method.
-		IterateLastValidators []struct {
-			// Context is the context argument value.
-			Context sdk.Context
-			// Fn is the fn argument value.
-			Fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)
-		}
 		// IterateValidators holds details about calls to the IterateValidators method.
 		IterateValidators []struct {
 			// Context is the context argument value.
 			Context sdk.Context
 			// Fn is the fn argument value.
 			Fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)
-		}
-		// Jail holds details about calls to the Jail method.
-		Jail []struct {
-			// Context is the context argument value.
-			Context sdk.Context
-			// ConsAddress is the consAddress argument value.
-			ConsAddress sdk.ConsAddress
-		}
-		// MaxValidators holds details about calls to the MaxValidators method.
-		MaxValidators []struct {
-			// Context is the context argument value.
-			Context sdk.Context
-		}
-		// Slash holds details about calls to the Slash method.
-		Slash []struct {
-			// Context is the context argument value.
-			Context sdk.Context
-			// ConsAddress is the consAddress argument value.
-			ConsAddress sdk.ConsAddress
-			// N1 is the n1 argument value.
-			N1 int64
-			// N2 is the n2 argument value.
-			N2 int64
-			// Dec is the dec argument value.
-			Dec sdk.Dec
-		}
-		// Unjail holds details about calls to the Unjail method.
-		Unjail []struct {
-			// Context is the context argument value.
-			Context sdk.Context
-			// ConsAddress is the consAddress argument value.
-			ConsAddress sdk.ConsAddress
 		}
 		// Validator holds details about calls to the Validator method.
 		Validator []struct {
@@ -959,20 +815,14 @@ type StakingKeeperMock struct {
 			ConsAddress sdk.ConsAddress
 		}
 	}
-	lockDelegation                     sync.RWMutex
-	lockGetAllSDKDelegations           sync.RWMutex
-	lockGetLastTotalPower              sync.RWMutex
-	lockGetLastValidatorPower          sync.RWMutex
-	lockIterateBondedValidatorsByPower sync.RWMutex
-	lockIterateDelegations             sync.RWMutex
-	lockIterateLastValidators          sync.RWMutex
-	lockIterateValidators              sync.RWMutex
-	lockJail                           sync.RWMutex
-	lockMaxValidators                  sync.RWMutex
-	lockSlash                          sync.RWMutex
-	lockUnjail                         sync.RWMutex
-	lockValidator                      sync.RWMutex
-	lockValidatorByConsAddr            sync.RWMutex
+	lockDelegation                 sync.RWMutex
+	lockGetAllDelegatorDelegations sync.RWMutex
+	lockGetAllSDKDelegations       sync.RWMutex
+	lockGetAllValidators           sync.RWMutex
+	lockIterateDelegations         sync.RWMutex
+	lockIterateValidators          sync.RWMutex
+	lockValidator                  sync.RWMutex
+	lockValidatorByConsAddr        sync.RWMutex
 }
 
 // Delegation calls DelegationFunc.
@@ -1015,6 +865,42 @@ func (mock *StakingKeeperMock) DelegationCalls() []struct {
 	return calls
 }
 
+// GetAllDelegatorDelegations calls GetAllDelegatorDelegationsFunc.
+func (mock *StakingKeeperMock) GetAllDelegatorDelegations(ctx sdk.Context, delegator sdk.AccAddress) []stakingtypes.Delegation {
+	if mock.GetAllDelegatorDelegationsFunc == nil {
+		panic("StakingKeeperMock.GetAllDelegatorDelegationsFunc: method is nil but StakingKeeper.GetAllDelegatorDelegations was just called")
+	}
+	callInfo := struct {
+		Ctx       sdk.Context
+		Delegator sdk.AccAddress
+	}{
+		Ctx:       ctx,
+		Delegator: delegator,
+	}
+	mock.lockGetAllDelegatorDelegations.Lock()
+	mock.calls.GetAllDelegatorDelegations = append(mock.calls.GetAllDelegatorDelegations, callInfo)
+	mock.lockGetAllDelegatorDelegations.Unlock()
+	return mock.GetAllDelegatorDelegationsFunc(ctx, delegator)
+}
+
+// GetAllDelegatorDelegationsCalls gets all the calls that were made to GetAllDelegatorDelegations.
+// Check the length with:
+//
+//	len(mockedStakingKeeper.GetAllDelegatorDelegationsCalls())
+func (mock *StakingKeeperMock) GetAllDelegatorDelegationsCalls() []struct {
+	Ctx       sdk.Context
+	Delegator sdk.AccAddress
+} {
+	var calls []struct {
+		Ctx       sdk.Context
+		Delegator sdk.AccAddress
+	}
+	mock.lockGetAllDelegatorDelegations.RLock()
+	calls = mock.calls.GetAllDelegatorDelegations
+	mock.lockGetAllDelegatorDelegations.RUnlock()
+	return calls
+}
+
 // GetAllSDKDelegations calls GetAllSDKDelegationsFunc.
 func (mock *StakingKeeperMock) GetAllSDKDelegations(ctx sdk.Context) []stakingtypes.Delegation {
 	if mock.GetAllSDKDelegationsFunc == nil {
@@ -1047,107 +933,35 @@ func (mock *StakingKeeperMock) GetAllSDKDelegationsCalls() []struct {
 	return calls
 }
 
-// GetLastTotalPower calls GetLastTotalPowerFunc.
-func (mock *StakingKeeperMock) GetLastTotalPower(ctx sdk.Context) sdk.Int {
-	if mock.GetLastTotalPowerFunc == nil {
-		panic("StakingKeeperMock.GetLastTotalPowerFunc: method is nil but StakingKeeper.GetLastTotalPower was just called")
+// GetAllValidators calls GetAllValidatorsFunc.
+func (mock *StakingKeeperMock) GetAllValidators(ctx sdk.Context) []stakingtypes.Validator {
+	if mock.GetAllValidatorsFunc == nil {
+		panic("StakingKeeperMock.GetAllValidatorsFunc: method is nil but StakingKeeper.GetAllValidators was just called")
 	}
 	callInfo := struct {
 		Ctx sdk.Context
 	}{
 		Ctx: ctx,
 	}
-	mock.lockGetLastTotalPower.Lock()
-	mock.calls.GetLastTotalPower = append(mock.calls.GetLastTotalPower, callInfo)
-	mock.lockGetLastTotalPower.Unlock()
-	return mock.GetLastTotalPowerFunc(ctx)
+	mock.lockGetAllValidators.Lock()
+	mock.calls.GetAllValidators = append(mock.calls.GetAllValidators, callInfo)
+	mock.lockGetAllValidators.Unlock()
+	return mock.GetAllValidatorsFunc(ctx)
 }
 
-// GetLastTotalPowerCalls gets all the calls that were made to GetLastTotalPower.
+// GetAllValidatorsCalls gets all the calls that were made to GetAllValidators.
 // Check the length with:
 //
-//	len(mockedStakingKeeper.GetLastTotalPowerCalls())
-func (mock *StakingKeeperMock) GetLastTotalPowerCalls() []struct {
+//	len(mockedStakingKeeper.GetAllValidatorsCalls())
+func (mock *StakingKeeperMock) GetAllValidatorsCalls() []struct {
 	Ctx sdk.Context
 } {
 	var calls []struct {
 		Ctx sdk.Context
 	}
-	mock.lockGetLastTotalPower.RLock()
-	calls = mock.calls.GetLastTotalPower
-	mock.lockGetLastTotalPower.RUnlock()
-	return calls
-}
-
-// GetLastValidatorPower calls GetLastValidatorPowerFunc.
-func (mock *StakingKeeperMock) GetLastValidatorPower(ctx sdk.Context, valAddr sdk.ValAddress) int64 {
-	if mock.GetLastValidatorPowerFunc == nil {
-		panic("StakingKeeperMock.GetLastValidatorPowerFunc: method is nil but StakingKeeper.GetLastValidatorPower was just called")
-	}
-	callInfo := struct {
-		Ctx     sdk.Context
-		ValAddr sdk.ValAddress
-	}{
-		Ctx:     ctx,
-		ValAddr: valAddr,
-	}
-	mock.lockGetLastValidatorPower.Lock()
-	mock.calls.GetLastValidatorPower = append(mock.calls.GetLastValidatorPower, callInfo)
-	mock.lockGetLastValidatorPower.Unlock()
-	return mock.GetLastValidatorPowerFunc(ctx, valAddr)
-}
-
-// GetLastValidatorPowerCalls gets all the calls that were made to GetLastValidatorPower.
-// Check the length with:
-//
-//	len(mockedStakingKeeper.GetLastValidatorPowerCalls())
-func (mock *StakingKeeperMock) GetLastValidatorPowerCalls() []struct {
-	Ctx     sdk.Context
-	ValAddr sdk.ValAddress
-} {
-	var calls []struct {
-		Ctx     sdk.Context
-		ValAddr sdk.ValAddress
-	}
-	mock.lockGetLastValidatorPower.RLock()
-	calls = mock.calls.GetLastValidatorPower
-	mock.lockGetLastValidatorPower.RUnlock()
-	return calls
-}
-
-// IterateBondedValidatorsByPower calls IterateBondedValidatorsByPowerFunc.
-func (mock *StakingKeeperMock) IterateBondedValidatorsByPower(context sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
-	if mock.IterateBondedValidatorsByPowerFunc == nil {
-		panic("StakingKeeperMock.IterateBondedValidatorsByPowerFunc: method is nil but StakingKeeper.IterateBondedValidatorsByPower was just called")
-	}
-	callInfo := struct {
-		Context sdk.Context
-		Fn      func(index int64, validator stakingtypes.ValidatorI) (stop bool)
-	}{
-		Context: context,
-		Fn:      fn,
-	}
-	mock.lockIterateBondedValidatorsByPower.Lock()
-	mock.calls.IterateBondedValidatorsByPower = append(mock.calls.IterateBondedValidatorsByPower, callInfo)
-	mock.lockIterateBondedValidatorsByPower.Unlock()
-	mock.IterateBondedValidatorsByPowerFunc(context, fn)
-}
-
-// IterateBondedValidatorsByPowerCalls gets all the calls that were made to IterateBondedValidatorsByPower.
-// Check the length with:
-//
-//	len(mockedStakingKeeper.IterateBondedValidatorsByPowerCalls())
-func (mock *StakingKeeperMock) IterateBondedValidatorsByPowerCalls() []struct {
-	Context sdk.Context
-	Fn      func(index int64, validator stakingtypes.ValidatorI) (stop bool)
-} {
-	var calls []struct {
-		Context sdk.Context
-		Fn      func(index int64, validator stakingtypes.ValidatorI) (stop bool)
-	}
-	mock.lockIterateBondedValidatorsByPower.RLock()
-	calls = mock.calls.IterateBondedValidatorsByPower
-	mock.lockIterateBondedValidatorsByPower.RUnlock()
+	mock.lockGetAllValidators.RLock()
+	calls = mock.calls.GetAllValidators
+	mock.lockGetAllValidators.RUnlock()
 	return calls
 }
 
@@ -1191,42 +1005,6 @@ func (mock *StakingKeeperMock) IterateDelegationsCalls() []struct {
 	return calls
 }
 
-// IterateLastValidators calls IterateLastValidatorsFunc.
-func (mock *StakingKeeperMock) IterateLastValidators(context sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
-	if mock.IterateLastValidatorsFunc == nil {
-		panic("StakingKeeperMock.IterateLastValidatorsFunc: method is nil but StakingKeeper.IterateLastValidators was just called")
-	}
-	callInfo := struct {
-		Context sdk.Context
-		Fn      func(index int64, validator stakingtypes.ValidatorI) (stop bool)
-	}{
-		Context: context,
-		Fn:      fn,
-	}
-	mock.lockIterateLastValidators.Lock()
-	mock.calls.IterateLastValidators = append(mock.calls.IterateLastValidators, callInfo)
-	mock.lockIterateLastValidators.Unlock()
-	mock.IterateLastValidatorsFunc(context, fn)
-}
-
-// IterateLastValidatorsCalls gets all the calls that were made to IterateLastValidators.
-// Check the length with:
-//
-//	len(mockedStakingKeeper.IterateLastValidatorsCalls())
-func (mock *StakingKeeperMock) IterateLastValidatorsCalls() []struct {
-	Context sdk.Context
-	Fn      func(index int64, validator stakingtypes.ValidatorI) (stop bool)
-} {
-	var calls []struct {
-		Context sdk.Context
-		Fn      func(index int64, validator stakingtypes.ValidatorI) (stop bool)
-	}
-	mock.lockIterateLastValidators.RLock()
-	calls = mock.calls.IterateLastValidators
-	mock.lockIterateLastValidators.RUnlock()
-	return calls
-}
-
 // IterateValidators calls IterateValidatorsFunc.
 func (mock *StakingKeeperMock) IterateValidators(context sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
 	if mock.IterateValidatorsFunc == nil {
@@ -1260,158 +1038,6 @@ func (mock *StakingKeeperMock) IterateValidatorsCalls() []struct {
 	mock.lockIterateValidators.RLock()
 	calls = mock.calls.IterateValidators
 	mock.lockIterateValidators.RUnlock()
-	return calls
-}
-
-// Jail calls JailFunc.
-func (mock *StakingKeeperMock) Jail(context sdk.Context, consAddress sdk.ConsAddress) {
-	if mock.JailFunc == nil {
-		panic("StakingKeeperMock.JailFunc: method is nil but StakingKeeper.Jail was just called")
-	}
-	callInfo := struct {
-		Context     sdk.Context
-		ConsAddress sdk.ConsAddress
-	}{
-		Context:     context,
-		ConsAddress: consAddress,
-	}
-	mock.lockJail.Lock()
-	mock.calls.Jail = append(mock.calls.Jail, callInfo)
-	mock.lockJail.Unlock()
-	mock.JailFunc(context, consAddress)
-}
-
-// JailCalls gets all the calls that were made to Jail.
-// Check the length with:
-//
-//	len(mockedStakingKeeper.JailCalls())
-func (mock *StakingKeeperMock) JailCalls() []struct {
-	Context     sdk.Context
-	ConsAddress sdk.ConsAddress
-} {
-	var calls []struct {
-		Context     sdk.Context
-		ConsAddress sdk.ConsAddress
-	}
-	mock.lockJail.RLock()
-	calls = mock.calls.Jail
-	mock.lockJail.RUnlock()
-	return calls
-}
-
-// MaxValidators calls MaxValidatorsFunc.
-func (mock *StakingKeeperMock) MaxValidators(context sdk.Context) uint32 {
-	if mock.MaxValidatorsFunc == nil {
-		panic("StakingKeeperMock.MaxValidatorsFunc: method is nil but StakingKeeper.MaxValidators was just called")
-	}
-	callInfo := struct {
-		Context sdk.Context
-	}{
-		Context: context,
-	}
-	mock.lockMaxValidators.Lock()
-	mock.calls.MaxValidators = append(mock.calls.MaxValidators, callInfo)
-	mock.lockMaxValidators.Unlock()
-	return mock.MaxValidatorsFunc(context)
-}
-
-// MaxValidatorsCalls gets all the calls that were made to MaxValidators.
-// Check the length with:
-//
-//	len(mockedStakingKeeper.MaxValidatorsCalls())
-func (mock *StakingKeeperMock) MaxValidatorsCalls() []struct {
-	Context sdk.Context
-} {
-	var calls []struct {
-		Context sdk.Context
-	}
-	mock.lockMaxValidators.RLock()
-	calls = mock.calls.MaxValidators
-	mock.lockMaxValidators.RUnlock()
-	return calls
-}
-
-// Slash calls SlashFunc.
-func (mock *StakingKeeperMock) Slash(context sdk.Context, consAddress sdk.ConsAddress, n1 int64, n2 int64, dec sdk.Dec) {
-	if mock.SlashFunc == nil {
-		panic("StakingKeeperMock.SlashFunc: method is nil but StakingKeeper.Slash was just called")
-	}
-	callInfo := struct {
-		Context     sdk.Context
-		ConsAddress sdk.ConsAddress
-		N1          int64
-		N2          int64
-		Dec         sdk.Dec
-	}{
-		Context:     context,
-		ConsAddress: consAddress,
-		N1:          n1,
-		N2:          n2,
-		Dec:         dec,
-	}
-	mock.lockSlash.Lock()
-	mock.calls.Slash = append(mock.calls.Slash, callInfo)
-	mock.lockSlash.Unlock()
-	mock.SlashFunc(context, consAddress, n1, n2, dec)
-}
-
-// SlashCalls gets all the calls that were made to Slash.
-// Check the length with:
-//
-//	len(mockedStakingKeeper.SlashCalls())
-func (mock *StakingKeeperMock) SlashCalls() []struct {
-	Context     sdk.Context
-	ConsAddress sdk.ConsAddress
-	N1          int64
-	N2          int64
-	Dec         sdk.Dec
-} {
-	var calls []struct {
-		Context     sdk.Context
-		ConsAddress sdk.ConsAddress
-		N1          int64
-		N2          int64
-		Dec         sdk.Dec
-	}
-	mock.lockSlash.RLock()
-	calls = mock.calls.Slash
-	mock.lockSlash.RUnlock()
-	return calls
-}
-
-// Unjail calls UnjailFunc.
-func (mock *StakingKeeperMock) Unjail(context sdk.Context, consAddress sdk.ConsAddress) {
-	if mock.UnjailFunc == nil {
-		panic("StakingKeeperMock.UnjailFunc: method is nil but StakingKeeper.Unjail was just called")
-	}
-	callInfo := struct {
-		Context     sdk.Context
-		ConsAddress sdk.ConsAddress
-	}{
-		Context:     context,
-		ConsAddress: consAddress,
-	}
-	mock.lockUnjail.Lock()
-	mock.calls.Unjail = append(mock.calls.Unjail, callInfo)
-	mock.lockUnjail.Unlock()
-	mock.UnjailFunc(context, consAddress)
-}
-
-// UnjailCalls gets all the calls that were made to Unjail.
-// Check the length with:
-//
-//	len(mockedStakingKeeper.UnjailCalls())
-func (mock *StakingKeeperMock) UnjailCalls() []struct {
-	Context     sdk.Context
-	ConsAddress sdk.ConsAddress
-} {
-	var calls []struct {
-		Context     sdk.Context
-		ConsAddress sdk.ConsAddress
-	}
-	mock.lockUnjail.RLock()
-	calls = mock.calls.Unjail
-	mock.lockUnjail.RUnlock()
 	return calls
 }
 

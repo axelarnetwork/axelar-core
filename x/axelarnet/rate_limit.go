@@ -6,9 +6,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	porttypes "github.com/cosmos/ibc-go/v4/modules/core/05-port/types"
-	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	porttypes "github.com/cosmos/ibc-go/v7/modules/core/05-port/types"
+	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
@@ -75,17 +77,37 @@ func NewRateLimitedICS4Wrapper(channel porttypes.ICS4Wrapper, rateLimiter RateLi
 }
 
 // SendPacket implements the ICS4 Wrapper interface
-func (r RateLimitedICS4Wrapper) SendPacket(ctx sdk.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI) error {
-	if err := r.channel.SendPacket(ctx, chanCap, packet); err != nil {
-		return err
+// func (r RateLimitedICS4Wrapper) SendPacket(ctx sdk.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI) (uint64, error) {
+func (r RateLimitedICS4Wrapper) SendPacket(
+	ctx sdk.Context,
+	chanCap *capabilitytypes.Capability,
+	sourcePort string,
+	sourceChannel string,
+	timeoutHeight clienttypes.Height,
+	timeoutTimestamp uint64,
+	data []byte,
+) (sequence uint64, err error) {
+
+	seq, err := r.channel.SendPacket(ctx, chanCap, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data)
+	if err != nil {
+		return 0, err
 	}
 
 	// Cross-chain transfers using IBC have already been tracked by EnqueueTransfer, so skip those
-	if _, found := r.keeper.GetSeqIDMapping(ctx, packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence()); found {
-		return nil
+	if _, found := r.keeper.GetSeqIDMapping(ctx, sourcePort, sourceChannel, seq); found {
+		return seq, nil
 	}
 
-	return r.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionTo, types.NewIBCPath(packet.GetSourcePort(), packet.GetSourceChannel()))
+	channel, found := r.keeper.GetChannel(ctx, sourcePort, sourceChannel)
+	if !found {
+		return 0, sdkerrors.Wrapf(channeltypes.ErrChannelNotFound, "port ID (%s) channel ID (%s)", sourcePort, sourceChannel)
+	}
+
+	destinationPort := channel.GetCounterparty().GetPortID()
+	destinationChannel := channel.GetCounterparty().GetChannelID()
+	packet := channeltypes.NewPacket(data, seq, sourcePort, sourceChannel, destinationPort, destinationChannel, timeoutHeight, timeoutTimestamp)
+
+	return seq, r.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionTo, types.NewIBCPath(sourcePort, sourceChannel))
 }
 
 // WriteAcknowledgement implements the ICS4 Wrapper interface

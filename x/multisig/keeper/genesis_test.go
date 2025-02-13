@@ -3,12 +3,13 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -35,7 +36,7 @@ import (
 func TestInitExportGenesis(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
 	chain := evm.Ethereum
-	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand.ValAddr(), sdk.OneUint()) }, 10)
+	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand.ValAddr(), math.OneUint()) }, 10)
 
 	var (
 		msgServer   types.MsgServiceServer

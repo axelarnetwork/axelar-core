@@ -7,8 +7,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	tmbytes "github.com/cometbft/cometbft/libs/bytes"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"golang.org/x/text/unicode/norm"
 )
 

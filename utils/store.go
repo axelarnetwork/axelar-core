@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"strings"
 
+	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/tendermint/tendermint/libs/log"
 	"golang.org/x/exp/constraints"
 
 	"github.com/axelarnetwork/axelar-core/utils/key"

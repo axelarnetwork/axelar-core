@@ -10,9 +10,9 @@ import (
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	exported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/cometbft/cometbft/libs/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 )
 

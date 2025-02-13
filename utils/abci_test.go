@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	fakeMock "github.com/axelarnetwork/axelar-core/testutils/fake/interfaces/mock"
 	"github.com/axelarnetwork/axelar-core/utils"

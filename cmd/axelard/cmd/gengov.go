@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	"github.com/spf13/cobra"
 )
 
@@ -48,7 +49,7 @@ func SetGenesisGovCmd(defaultNodeHome string) *cobra.Command {
 				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
 			}
 
-			var genesisGov govTypes.GenesisState
+			var genesisGov govv1.GenesisState
 			if appState[govTypes.ModuleName] != nil {
 				cdc.MustUnmarshalJSON(appState[govTypes.ModuleName], &genesisGov)
 			}
@@ -66,7 +67,7 @@ func SetGenesisGovCmd(defaultNodeHome string) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				genesisGov.DepositParams.MaxDepositPeriod = duration
+				genesisGov.DepositParams.MaxDepositPeriod = &duration
 			}
 
 			if votingPeriod != "" {
@@ -74,7 +75,7 @@ func SetGenesisGovCmd(defaultNodeHome string) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				genesisGov.VotingParams.VotingPeriod = duration
+				genesisGov.VotingParams.VotingPeriod = &duration
 			}
 
 			genesisGovBz, err := cdc.MarshalJSON(&genesisGov)
