@@ -1,125 +1,130 @@
 package keeper_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
-	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cometbft/cometbft/libs/log"
+	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"google.golang.org/grpc"
 
+	appParams "github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	rand2 "github.com/axelarnetwork/axelar-core/testutils/rand"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/keeper"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types/mock"
-	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
-	testutils "github.com/axelarnetwork/utils/test"
+	. "github.com/axelarnetwork/utils/test"
 	"github.com/axelarnetwork/utils/test/rand"
 )
 
 func TestHandleMsgRefundRequest(t *testing.T) {
 	var (
-		server       types.MsgServiceServer
+		server           types.MsgServiceServer
+		msgServiceRouter *bam.MsgServiceRouter
+
 		refundKeeper *mock.RefunderMock
 		bankKeeper   *mock.BankerMock
 		ctx          sdk.Context
-		router       sdk.Router
 		msg          *types.RefundMsgRequest
 	)
-	setup := func() {
+
+	givenMsgServer := Given("an Auxiliary msg server", func() {
+		ctx = rand2.Context(fake.NewMultiStore())
+		msgServiceRouter = bam.NewMsgServiceRouter()
+
 		refundKeeper = &mock.RefunderMock{
-			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
-			GetPendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) {
-				return types.Refund{Payer: rand2.AccAddr(), Fees: sdk.NewCoins(sdk.Coin{Denom: "uaxl", Amount: sdk.NewInt(1000)})}, true
-			},
+			LoggerFunc:              func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
 			DeletePendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) {},
 		}
 		bankKeeper = &mock.BankerMock{
 			SendCoinsFromModuleToAccountFunc: func(sdk.Context, string, sdk.AccAddress, sdk.Coins) error { return nil },
 		}
-		var tssHandler = func(_ sdk.Context, _ sdk.Msg) (*sdk.Result, error) {
-			return &sdk.Result{}, nil
-		}
+		server = keeper.NewMsgServerImpl(refundKeeper, bankKeeper, msgServiceRouter)
+	})
 
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
-		router = baseapp.NewRouter()
-		router.AddRoute(sdk.NewRoute("tss", tssHandler))
-		msgServiceRtr := baseapp.NewMsgServiceRouter()
-
-		server = keeper.NewMsgServerImpl(refundKeeper, bankKeeper, msgServiceRtr, router)
+	failedHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return &sdk.Result{}, fmt.Errorf("failed to execute message")
 	}
 
-	repeatCount := 20
+	succeededHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
 
-	t.Run("should return error when unpack invalid inner message", testutils.Func(func(t *testing.T) {
-		setup()
+		return &sdk.Result{}, nil
+	}
 
-		any := cdctypes.Any{
-			TypeUrl: rand.StrBetween(5, 20),
-			Value:   rand.Bytes(int(rand.I64Between(100, 1000))),
-		}
-		msg = &types.RefundMsgRequest{
-			Sender:       rand2.AccAddr(),
-			InnerMessage: &any,
-		}
+	givenMsgServer.
+		Branch(
+			When("inner message is invalid", func() {
+				any := cdctypes.Any{
+					TypeUrl: rand.StrBetween(5, 20),
+					Value:   rand.Bytes(int(rand.I64Between(100, 1000))),
+				}
+				msg = &types.RefundMsgRequest{
+					Sender:       rand2.AccAddr(),
+					InnerMessage: &any,
+				}
+			}).Then("should return error", func(t *testing.T) {
+				_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
+				assert.ErrorContains(t, err, "invalid inner message")
+			}),
+			When("inner message is not routable", func() {
+				msg = types.NewRefundMsgRequest(rand2.AccAddr(), randomMsgLink())
 
-		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
-		assert.Error(t, err)
-	}).Repeat(repeatCount))
+			}).Then("should return error", func(t *testing.T) {
+				_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
+				assert.ErrorContains(t, err, "can't route message")
+			}),
+			When("failed to execute inner message", func() {
+				sender := rand2.AccAddr()
+				msg = types.NewRefundMsgRequest(sender, votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.Str(3)))))
 
-	t.Run("should return error when failed to route inner message", testutils.Func(func(t *testing.T) {
-		setup()
+				registerTestService(msgServiceRouter, failedHandler)
 
-		msg = types.NewRefundMsgRequest(rand2.AccAddr(), randomMsgLink())
+			}).Then("should return error", func(t *testing.T) {
+				_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
+				assert.ErrorContains(t, err, "failed to execute message")
+			}),
+			When("no pending refund", func() {
+				refundKeeper.GetPendingRefundFunc = func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) { return types.Refund{}, false }
+				sender := rand2.AccAddr()
+				msg = types.NewRefundMsgRequest(sender, votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.Str(3)))))
 
-		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
-		assert.Error(t, err)
-	}).Repeat(repeatCount))
+				registerTestService(msgServiceRouter, succeededHandler)
 
-	t.Run("should return error when failed to executed inner message", testutils.Func(func(t *testing.T) {
-		setup()
+			}).Then("should not refund transaction fee", func(t *testing.T) {
+				_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
+				assert.NoError(t, err)
+				assert.Len(t, refundKeeper.GetPendingRefundCalls(), 1)
+				assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 0)
+			}),
+			When("executed inner message successfully and there is a pending refund", func() {
+				refundKeeper.GetPendingRefundFunc = func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) { return types.Refund{}, false }
+				sender := rand2.AccAddr()
+				msg = types.NewRefundMsgRequest(sender, votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.Str(3)))))
 
-		var evmHandler = func(_ sdk.Context, _ sdk.Msg) (*sdk.Result, error) {
-			return &sdk.Result{}, fmt.Errorf("failed to execute message")
-		}
-		router.AddRoute(sdk.NewRoute("evm", evmHandler))
-		voteReq := &votetypes.VoteRequest{
-			Sender: rand2.AccAddr(),
-			PollID: vote.PollID(rand.I64Between(5, 100)),
-			Vote:   nil,
-		}
-		msg = types.NewRefundMsgRequest(rand2.AccAddr(), voteReq)
+				refundKeeper.GetPendingRefundFunc = func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) {
+					return types.Refund{Payer: rand2.AccAddr(), Fees: sdk.NewCoins(sdk.Coin{Denom: "uaxl", Amount: sdk.NewInt(1000)})}, true
+				}
+				registerTestService(msgServiceRouter, succeededHandler)
 
-		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
-		assert.Error(t, err)
-	}).Repeat(repeatCount))
+			}).Then("should refund transaction fee", func(t *testing.T) {
+				_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
+				assert.NoError(t, err)
+				assert.Len(t, refundKeeper.GetPendingRefundCalls(), 1)
+				assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 1)
+			}),
+		).
+		Run(t)
 
-	t.Run("should not refund transaction fee when no pending refund", testutils.Func(func(t *testing.T) {
-		setup()
-		refundKeeper.GetPendingRefundFunc = func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) { return types.Refund{}, false }
-
-		msg = types.NewRefundMsgRequest(rand2.AccAddr(), &tsstypes.HeartBeatRequest{})
-
-		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
-		assert.NoError(t, err)
-	}).Repeat(repeatCount))
-
-	t.Run("should refund transaction fee when executed inner message successfully", testutils.Func(func(t *testing.T) {
-		setup()
-
-		msg = types.NewRefundMsgRequest(rand2.AccAddr(), &tsstypes.HeartBeatRequest{})
-
-		_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
-		assert.NoError(t, err)
-		assert.Len(t, refundKeeper.GetPendingRefundCalls(), 1)
-		assert.Len(t, bankKeeper.SendCoinsFromModuleToAccountCalls(), 1)
-	}).Repeat(repeatCount))
 }
 
 func randomMsgLink() *axelarnet.LinkRequest {
@@ -129,4 +134,46 @@ func randomMsgLink() *axelarnet.LinkRequest {
 		rand.StrBetween(5, 100),
 		rand.StrBetween(5, 100))
 
+}
+
+func registerTestService(msgServiceRouter *bam.MsgServiceRouter, msgHandler func(ctx context.Context, req interface{}) (interface{}, error)) {
+	encCfg := appParams.MakeEncodingConfig()
+	encCfg.InterfaceRegistry.RegisterImplementations((*sdk.Msg)(nil), &votetypes.VoteRequest{})
+	msgServiceRouter.SetInterfaceRegistry(encCfg.InterfaceRegistry)
+
+	handler := func(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+		in := new(votetypes.VoteRequest)
+		if err := dec(in); err != nil {
+			return nil, err
+		}
+
+		info := &grpc.UnaryServerInfo{
+			Server:     srv,
+			FullMethod: "/axelar.vote.v1beta1.MsgService/Vote",
+		}
+
+		return interceptor(ctx, in, info, msgHandler)
+	}
+
+	var serviceDesc = grpc.ServiceDesc{
+		ServiceName: "axelar.vote.v1beta1.MsgService",
+		HandlerType: (*votetypes.MsgServiceServer)(nil),
+		Methods: []grpc.MethodDesc{
+			{
+				MethodName: "Vote",
+				Handler:    handler,
+			},
+		},
+		Streams:  []grpc.StreamDesc{},
+		Metadata: "axelar/vote/v1beta1/service.proto",
+	}
+	msgServiceRouter.RegisterService(&serviceDesc, TestMsgServer{})
+}
+
+type TestMsgServer struct{}
+
+var _ votetypes.MsgServiceClient = TestMsgServer{}
+
+func (m TestMsgServer) Vote(_ context.Context, _ *votetypes.VoteRequest, _ ...grpc.CallOption) (*votetypes.VoteResponse, error) {
+	return &votetypes.VoteResponse{}, nil
 }

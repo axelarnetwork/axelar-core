@@ -3,18 +3,17 @@ package keeper_test
 import (
 	"testing"
 
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	distribution "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/gogo/protobuf/proto"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -45,7 +44,6 @@ func TestAllocateTokens(t *testing.T) {
 
 	Given("an axelar distribution keeper", func() {
 		encCfg := params.MakeEncodingConfig()
-		subspace := paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey(distributiontypes.StoreKey), sdk.NewKVStoreKey("tKey"), distributiontypes.ModuleName)
 		ak := &mock.AccountKeeperMock{
 			GetModuleAccountFunc: func(ctx sdk.Context, name string) authtypes.ModuleAccountI {
 				return authtypes.NewEmptyModuleAccount(name)
@@ -62,7 +60,7 @@ func TestAllocateTokens(t *testing.T) {
 				senderModule = authtypes.NewModuleAddress(senderModule).String()
 				recipientModule = authtypes.NewModuleAddress(recipientModule).String()
 
-				accBalances[senderModule] = accBalances[senderModule].Sub(amt)
+				accBalances[senderModule] = accBalances[senderModule].Sub(amt...)
 				accBalances[recipientModule] = accBalances[recipientModule].Add(amt...)
 
 				return nil
@@ -70,14 +68,14 @@ func TestAllocateTokens(t *testing.T) {
 			SendCoinsFromModuleToAccountFunc: func(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
 				senderModule = authtypes.NewModuleAddress(senderModule).String()
 
-				accBalances[senderModule] = accBalances[senderModule].Sub(amt)
+				accBalances[senderModule] = accBalances[senderModule].Sub(amt...)
 				accBalances[recipientAddr.String()] = accBalances[recipientAddr.String()].Add(amt...)
 
 				return nil
 			},
 			BurnCoinsFunc: func(ctx sdk.Context, name string, amt sdk.Coins) error {
 				acc := authtypes.NewModuleAddress(name).String()
-				accBalances[acc] = accBalances[acc].Sub(amt)
+				accBalances[acc] = accBalances[acc].Sub(amt...)
 
 				return nil
 			},
@@ -98,13 +96,13 @@ func TestAllocateTokens(t *testing.T) {
 			},
 		}
 
-		distriK := distribution.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(distributiontypes.StoreKey), subspace, ak, bk, sk, authtypes.FeeCollectorName, map[string]bool{})
+		distriK := distribution.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(distributiontypes.StoreKey), ak, bk, sk, authtypes.FeeCollectorName, "")
 		k = keeper.NewKeeper(distriK, ak, bk, sk, authtypes.FeeCollectorName)
 		k.SetFeePool(ctx, distributiontypes.FeePool{CommunityPool: sdk.DecCoins{}})
-		k.SetParams(ctx, distributiontypes.DefaultParams())
+		funcs.MustNoErr(k.SetParams(ctx, distributiontypes.DefaultParams()))
 	}).
 		When("allocate tokens", func() {
-			k.AllocateTokens(ctx, 0, 1, sdk.ConsAddress{}, nil)
+			k.AllocateTokens(ctx, 0, nil)
 		}).
 		Then("allocate to community pool and burn the rest", func(t *testing.T) {
 			assert.Len(t, bk.BurnCoinsCalls(), 1)

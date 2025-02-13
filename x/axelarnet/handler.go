@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -102,8 +103,8 @@ func NewHandler(k keeper.Keeper, n types.Nexus, b types.BankKeeper, ibcK keeper.
 }
 
 // NewProposalHandler returns the handler for the proposals of the axelarnet module
-func NewProposalHandler(k keeper.Keeper, nexusK types.Nexus, accountK types.AccountKeeper) govtypes.Handler {
-	return func(ctx sdk.Context, content govtypes.Content) error {
+func NewProposalHandler(k keeper.Keeper, nexusK types.Nexus, accountK types.AccountKeeper) govv1beta1.Handler {
+	return func(ctx sdk.Context, content govv1beta1.Content) error {
 		switch c := content.(type) {
 		case *types.CallContractsProposal:
 			for _, contractCall := range c.ContractCalls {

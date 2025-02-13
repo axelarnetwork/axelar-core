@@ -1,6 +1,6 @@
 ## axelard query block
 
-Get verified data for a the block at given height
+Get verified data for the block at given height
 
 ```
 axelard query block [height] [flags]

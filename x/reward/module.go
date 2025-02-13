@@ -5,16 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/utils/grpc"
 	"github.com/axelarnetwork/axelar-core/x/reward/client/cli"
@@ -62,9 +61,6 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingCo
 	return genState.Validate()
 }
 
-// RegisterRESTRoutes registers the REST routes for this module
-func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {}
-
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
 	funcs.MustNoErr(types.RegisterQueryServiceHandlerClient(context.Background(), mux, types.NewQueryServiceClient(clientCtx)))
@@ -91,7 +87,6 @@ type AppModule struct {
 	multiSig     types.MultiSig
 	snapshotter  types.Snapshotter
 	msgSvcRouter *baseapp.MsgServiceRouter
-	router       sdk.Router
 	bank         types.Banker
 }
 
@@ -106,7 +101,6 @@ func NewAppModule(
 	snapshotter types.Snapshotter,
 	bank types.Banker,
 	msgSvcRouter *baseapp.MsgServiceRouter,
-	router sdk.Router,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -118,7 +112,6 @@ func NewAppModule(
 		multiSig:       multiSig,
 		snapshotter:    snapshotter,
 		msgSvcRouter:   msgSvcRouter,
-		router:         router,
 		bank:           bank,
 	}
 }
@@ -142,25 +135,15 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 	return cdc.MustMarshalJSON(am.keeper.ExportGenesis(ctx))
 }
 
-// Route returns the module's route
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.bank, am.msgSvcRouter, am.router))
-}
-
 // QuerierRoute returns this module's query route
 func (AppModule) QuerierRoute() string {
 	return types.QuerierRoute
 }
 
-// LegacyQuerierHandler returns a new query handler for this module
-func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
-	return nil
-}
-
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	msgServer := keeper.NewMsgServerImpl(am.keeper, am.bank, am.msgSvcRouter, am.router)
+	msgServer := keeper.NewMsgServerImpl(am.keeper, am.bank, am.msgSvcRouter)
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrReward, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.minter, am.nexus))
 

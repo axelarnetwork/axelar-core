@@ -9,20 +9,21 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/math"
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/ethereum/go-ethereum/common"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	evmCrypto "github.com/ethereum/go-ethereum/crypto"
 	evmParams "github.com/ethereum/go-ethereum/params"
-	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -1378,7 +1379,7 @@ func TestRetryFailedEvent(t *testing.T) {
 }
 
 func TestHandleMsgConfirmGatewayTxs(t *testing.T) {
-	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand2.ValAddr(), sdk.OneUint()) }, 10)
+	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand2.ValAddr(), math.OneUint()) }, 10)
 	txIDs := slices.Expand2(evmTestUtils.RandomHash, int(rand.I64Between(5, 50)))
 	req := types.NewConfirmGatewayTxsRequest(rand.AccAddr(), nexus.ChainName(rand.Str(5)), txIDs)
 

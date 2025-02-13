@@ -27,6 +27,8 @@ axelard tx gov [flags]
 
 - [axelard tx](axelard_tx.md) - Transactions subcommands
 - [axelard tx gov deposit](axelard_tx_gov_deposit.md) - Deposit tokens for an active proposal
-- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md) - Submit a proposal along with an initial deposit
+- [axelard tx gov draft-proposal](axelard_tx_gov_draft-proposal.md) - Generate a draft proposal json file. The generated proposal json contains only one message (skeleton).
+- [axelard tx gov submit-legacy-proposal](axelard_tx_gov_submit-legacy-proposal.md) - Submit a legacy proposal along with an initial deposit
+- [axelard tx gov submit-proposal](axelard_tx_gov_submit-proposal.md) - Submit a proposal along with some messages, metadata and deposit
 - [axelard tx gov vote](axelard_tx_gov_vote.md) - Vote for an active proposal, options: yes/no/no_with_veto/abstain
 - [axelard tx gov weighted-vote](axelard_tx_gov_weighted-vote.md) - Vote for an active proposal, options: yes/no/no_with_veto/abstain

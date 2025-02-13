@@ -21,7 +21,7 @@ axelard keys mnemonic [flags]
 
 ```
       --home string              The application home directory (default "$HOME/.axelar")
-      --keyring-backend string   Select keyring's backend (os|file|test) (default "file")
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --log_format string        The logging format (json|plain) (default "plain")
       --log_level string         The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")

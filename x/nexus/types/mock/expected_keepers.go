@@ -10,10 +10,10 @@ import (
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
+	"github.com/cometbft/cometbft/libs/log"
 	cosmossdktypes "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	"github.com/tendermint/tendermint/libs/log"
+	ibctypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	"sync"
 	time "time"
 )

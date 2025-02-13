@@ -1,34 +1,34 @@
 ## axelard keys migrate
 
-Migrate keys from the legacy (db-based) Keybase
+Migrate keys from amino to proto serialization format
 
 ### Synopsis
 
-Migrate key information from the legacy (db-based) Keybase to the new keyring-based Keyring.
-The legacy Keybase used to persist keys in a LevelDB database stored in a 'keys' sub-directory of
-the old client application's home directory, e.g. $HOME/.gaiacli/keys/.
-For each key material entry, the command will prompt if the key should be skipped or not. If the key
-is not to be skipped, the passphrase must be entered. The key will only be migrated if the passphrase
-is correct. Otherwise, the command will exit and migration must be repeated.
+Migrate keys from Amino to Protocol Buffers records.
+For each key material entry, the command will check if the key can be deserialized using proto.
+If this is the case, the key is already migrated. Therefore, we skip it and continue with a next one.
+Otherwise, we try to deserialize it using Amino into LegacyInfo. If this attempt is successful, we serialize
+LegacyInfo to Protobuf serialization format and overwrite the keyring entry. If any error occurred, it will be
+outputted in CLI and migration will be continued until all keys in the keyring DB are exhausted.
+See https://github.com/cosmos/cosmos-sdk/pull/9695 for more details.
 
 It is recommended to run in 'dry-run' mode first to verify all key migration material.
 
 ```
-axelard keys migrate <old_home_dir> [flags]
+axelard keys migrate [flags]
 ```
 
 ### Options
 
 ```
-      --dry-run   Run migration without actually persisting any changes to the new Keybase
-  -h, --help      help for migrate
+  -h, --help   help for migrate
 ```
 
 ### Options inherited from parent commands
 
 ```
       --home string              The application home directory (default "$HOME/.axelar")
-      --keyring-backend string   Select keyring's backend (os|file|test) (default "file")
+      --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --log_format string        The logging format (json|plain) (default "plain")
       --log_level string         The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")

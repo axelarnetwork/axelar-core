@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
+	"github.com/cosmos/gogoproto/protoc-gen-gogo/descriptor"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
 

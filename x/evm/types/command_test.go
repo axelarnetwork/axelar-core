@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -189,7 +190,7 @@ func TestNewMultisigTransferCommand(t *testing.T) {
 				}
 			}
 
-			return sdk.ZeroUint()
+			return math.ZeroUint()
 		},
 		GetMinPassingWeightFunc: func() sdk.Uint { return sdk.NewUint(30) },
 	}

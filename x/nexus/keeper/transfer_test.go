@@ -5,13 +5,14 @@ import (
 	"testing"
 	"time"
 
+	sdkmath "cosmossdk.io/math"
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
@@ -42,7 +43,7 @@ var (
 )
 
 func TestUintIntConversion(t *testing.T) {
-	maxUint := sdk.NewUintFromBigInt(math.MaxBig256)
+	maxUint := sdkmath.NewUintFromBigInt(math.MaxBig256)
 	maxInt := sdk.Int(maxUint)
 
 	// ensure max uint can be converted into int without overflow
