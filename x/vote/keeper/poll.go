@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"cosmossdk.io/math"
+	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -202,7 +203,7 @@ func (p poll) cannotWin(majority sdk.Uint) bool {
 }
 
 func (p poll) getTalliedVotingPower() sdk.Uint {
-	result := sdk.ZeroUint()
+	result := math.ZeroUint()
 
 	for _, talliedVote := range p.k.getTalliedVotes(p.ctx, p.ID) {
 		result = result.Add(talliedVote.Tally)

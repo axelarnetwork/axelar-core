@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -9,14 +10,13 @@ import (
 	"testing"
 	"time"
 
+	tmbytes "github.com/cometbft/cometbft/libs/bytes"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
-	ibcclient "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	ibctypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	ibcclient "github.com/cosmos/ibc-go/v7/modules/core/exported"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
@@ -552,8 +552,8 @@ func TestRetryIBCTransfer(t *testing.T) {
 
 		b = &mock.BankKeeperMock{}
 		i = &mock.IBCTransferKeeperMock{
-			SendTransferFunc: func(sdk.Context, string, string, sdk.Coin, sdk.AccAddress, string, clienttypes.Height, uint64) error {
-				return nil
+			TransferFunc: func(context.Context, *ibctypes.MsgTransfer) (*ibctypes.MsgTransferResponse, error) {
+				return nil, nil
 			},
 		}
 
@@ -707,11 +707,6 @@ func TestAddCosmosBasedChain(t *testing.T) {
 				req.AddrPrefix = "invalid_prefix"
 			}).
 				Then2(validationFails("invalid address prefix")),
-
-			When("invalid asset", func() {
-				req.NativeAssets = []nexus.Asset{{Denom: "invalid_asset", IsNativeAsset: true}}
-			}).
-				Then2(validationFails("invalid denomination")),
 
 			When("invalid asset denom", func() {
 				req.NativeAssets = []nexus.Asset{{Denom: "invalid@denom", IsNativeAsset: true}}

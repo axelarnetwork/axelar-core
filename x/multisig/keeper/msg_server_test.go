@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"cosmossdk.io/math"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -31,7 +32,7 @@ import (
 
 func TestMsgServer(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
-	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand2.ValAddr(), sdk.OneUint()) }, 10)
+	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand2.ValAddr(), math.OneUint()) }, 10)
 
 	var (
 		msgServer   types.MsgServiceServer
@@ -189,7 +190,7 @@ func TestMsgServer(t *testing.T) {
 		participantCount := 3
 		validators := slices.Expand(func(int) sdk.ValAddress { return rand2.ValAddr() }, participantCount)
 		proxies := slices.Expand(func(int) sdk.AccAddress { return rand2.AccAddr() }, participantCount)
-		participants := slices.Map(validators, func(v sdk.ValAddress) snapshot.Participant { return snapshot.NewParticipant(v, sdk.OneUint()) })
+		participants := slices.Map(validators, func(v sdk.ValAddress) snapshot.Participant { return snapshot.NewParticipant(v, math.OneUint()) })
 		keyID := exported.KeyID(rand.HexStr(5))
 		privateKeys := slices.Expand(func(int) *btcec.PrivateKey { return funcs.Must(btcec.NewPrivateKey()) }, participantCount)
 		publicKeys := slices.Map(privateKeys, func(sk *btcec.PrivateKey) exported.PublicKey { return sk.PubKey().SerializeCompressed() })
@@ -314,7 +315,7 @@ func TestMsgServer(t *testing.T) {
 								assert.NoError(t, err)
 								assert.NoError(t, sig.ValidateBasic())
 
-								participantsWeight := sdk.ZeroUint()
+								participantsWeight := math.ZeroUint()
 								for p := range sig.GetSigs() {
 									participantsWeight = participantsWeight.Add(key.GetSnapshot().GetParticipantWeight(funcs.Must(sdk.ValAddressFromBech32(p))))
 								}

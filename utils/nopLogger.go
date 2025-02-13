@@ -1,6 +1,6 @@
 package utils
 
-import "github.com/tendermint/tendermint/libs/log"
+import "github.com/cometbft/cometbft/libs/log"
 
 // NOPLogger is a logger that doesn't do anything
 type NOPLogger struct{}

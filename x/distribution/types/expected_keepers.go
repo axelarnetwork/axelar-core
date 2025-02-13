@@ -27,31 +27,21 @@ type AccountKeeper interface {
 
 // StakingKeeper expected staking keeper (noalias)
 type StakingKeeper interface {
+	// iterate through validators by operator address, execute func for each validator
 	IterateValidators(sdk.Context,
 		func(index int64, validator stakingtypes.ValidatorI) (stop bool))
 
-	IterateBondedValidatorsByPower(sdk.Context,
-		func(index int64, validator stakingtypes.ValidatorI) (stop bool))
+	Validator(sdk.Context, sdk.ValAddress) stakingtypes.ValidatorI            // get a particular validator by operator address
+	ValidatorByConsAddr(sdk.Context, sdk.ConsAddress) stakingtypes.ValidatorI // get a particular validator by consensus address
 
-	IterateLastValidators(sdk.Context,
-		func(index int64, validator stakingtypes.ValidatorI) (stop bool))
-
-	Validator(sdk.Context, sdk.ValAddress) stakingtypes.ValidatorI
-	ValidatorByConsAddr(sdk.Context, sdk.ConsAddress) stakingtypes.ValidatorI
-
-	Slash(sdk.Context, sdk.ConsAddress, int64, int64, sdk.Dec)
-	Jail(sdk.Context, sdk.ConsAddress)
-	Unjail(sdk.Context, sdk.ConsAddress)
-
+	// Delegation allows for getting a particular delegation for a given validator
+	// and delegator outside the scope of the staking module.
 	Delegation(sdk.Context, sdk.AccAddress, sdk.ValAddress) stakingtypes.DelegationI
-
-	MaxValidators(sdk.Context) uint32
 
 	IterateDelegations(ctx sdk.Context, delegator sdk.AccAddress,
 		fn func(index int64, delegation stakingtypes.DelegationI) (stop bool))
 
-	GetLastTotalPower(ctx sdk.Context) sdk.Int
-	GetLastValidatorPower(ctx sdk.Context, valAddr sdk.ValAddress) int64
-
 	GetAllSDKDelegations(ctx sdk.Context) []stakingtypes.Delegation
+	GetAllValidators(ctx sdk.Context) (validators []stakingtypes.Validator)
+	GetAllDelegatorDelegations(ctx sdk.Context, delegator sdk.AccAddress) []stakingtypes.Delegation
 }

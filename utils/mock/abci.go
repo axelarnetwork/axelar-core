@@ -5,8 +5,8 @@ package mock
 
 import (
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/cometbft/cometbft/libs/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 )
 

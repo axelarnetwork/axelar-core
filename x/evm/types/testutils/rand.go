@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"strings"
 
+	"cosmossdk.io/math"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -225,7 +226,7 @@ func RandomCommand() types.Command {
 func RandomEventTransfer() types.EventTransfer {
 	return types.EventTransfer{
 		To:     RandomAddress(),
-		Amount: rand.UintBetween(sdk.OneUint(), sdk.NewUint(100000)),
+		Amount: rand.UintBetween(math.OneUint(), sdk.NewUint(100000)),
 	}
 }
 

@@ -7,10 +7,11 @@ import (
 	"strconv"
 	"strings"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/gogo/protobuf/proto"
 	"github.com/stoewer/go-strcase"
 
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -416,7 +417,7 @@ func DecodeMintTokenParams(bz []byte) (string, common.Address, *big.Int) {
 func DecodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, common.Address, sdk.Uint) {
 	params := funcs.Must(StrictDecode(deployTokenArguments, bz))
 
-	return params[0].(string), params[1].(string), params[2].(uint8), params[3].(*big.Int), params[4].(common.Address), sdk.NewUintFromBigInt(params[5].(*big.Int))
+	return params[0].(string), params[1].(string), params[2].(uint8), params[3].(*big.Int), params[4].(common.Address), math.NewUintFromBigInt(params[5].(*big.Int))
 }
 
 // DecodeBurnTokenParams decodes the call arguments from the given contract call

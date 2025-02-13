@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
@@ -46,7 +46,7 @@ func DecodeERC20TransferEvent(log *geth.Log) (types.EventTransfer, error) {
 
 	return types.EventTransfer{
 		To:     types.Address(to),
-		Amount: sdk.NewUintFromBigInt(params[0].(*big.Int)),
+		Amount: math.NewUintFromBigInt(params[0].(*big.Int)),
 	}, nil
 }
 
@@ -93,8 +93,8 @@ func DecodeMultisigOperatorshipTransferredEvent(log *geth.Log) (types.EventMulti
 
 	event := types.EventMultisigOperatorshipTransferred{
 		NewOperators: slices.Map(params[0].([]common.Address), func(addr common.Address) types.Address { return types.Address(addr) }),
-		NewWeights:   slices.Map(params[1].([]*big.Int), sdk.NewUintFromBigInt),
-		NewThreshold: sdk.NewUintFromBigInt(params[2].(*big.Int)),
+		NewWeights:   slices.Map(params[1].([]*big.Int), math.NewUintFromBigInt),
+		NewThreshold: math.NewUintFromBigInt(params[2].(*big.Int)),
 	}
 
 	return event, nil
@@ -123,7 +123,7 @@ func DecodeEventContractCallWithToken(log *geth.Log) (types.EventContractCallWit
 		ContractAddress:  params[1].(string),
 		PayloadHash:      types.Hash(common.BytesToHash(log.Topics[2].Bytes())),
 		Symbol:           params[3].(string),
-		Amount:           sdk.NewUintFromBigInt(params[4].(*big.Int)),
+		Amount:           math.NewUintFromBigInt(params[4].(*big.Int)),
 	}, nil
 }
 
@@ -147,7 +147,7 @@ func DecodeEventTokenSent(log *geth.Log) (types.EventTokenSent, error) {
 		DestinationChain:   nexus.ChainName(params[0].(string)),
 		DestinationAddress: params[1].(string),
 		Symbol:             params[2].(string),
-		Amount:             sdk.NewUintFromBigInt(params[3].(*big.Int)),
+		Amount:             math.NewUintFromBigInt(params[3].(*big.Int)),
 	}, nil
 }
 

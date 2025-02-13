@@ -3,10 +3,11 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -280,7 +281,7 @@ func TestKeygenSession(t *testing.T) {
 			assert.Equal(t, int64(0), res.ExpiresAt)
 			assert.Equal(t, int64(0), res.CompletedAt)
 			assert.Equal(t, int64(0), res.GracePeriod)
-			assert.Equal(t, sdk.ZeroUint(), res.KeygenThresholdWeight)
+			assert.Equal(t, math.ZeroUint(), res.KeygenThresholdWeight)
 			assert.Equal(t, key.GetMinPassingWeight(), res.SigningThresholdWeight)
 			assert.Equal(t, key.GetBondedWeight(), res.BondedWeight)
 			assert.Len(t, res.Participants, len(key.GetSnapshot().GetParticipantAddresses()))

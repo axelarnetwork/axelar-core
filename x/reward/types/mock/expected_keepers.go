@@ -7,10 +7,10 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
+	"github.com/cometbft/cometbft/libs/log"
 	cosmossdktypes "github.com/cosmos/cosmos-sdk/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 )
 

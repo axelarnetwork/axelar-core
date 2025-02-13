@@ -10471,6 +10471,46 @@ paths:
                 format: byte
       tags:
         - MsgService
+  /axelar/snapshot/v1beta1/operator:
+    get:
+      operationId: OperatorByProxy
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              operator_address:
+                type: string
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: proxy_address
+          in: query
+          required: false
+          type: string
+      tags:
+        - QueryService
   /axelar/snapshot/v1beta1/params:
     get:
       operationId: SnapshotParams
@@ -10509,6 +10549,53 @@ paths:
                     value:
                       type: string
                       format: byte
+      tags:
+        - QueryService
+  /axelar/snapshot/v1beta1/proxy:
+    get:
+      operationId: ProxyByOperator
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              proxy_address:
+                type: string
+              status:
+                type: string
+                enum:
+                  - STATUS_UNSPECIFIED
+                  - STATUS_ACTIVE
+                  - STATUS_INACTIVE
+                default: STATUS_UNSPECIFIED
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: operator_address
+          in: query
+          required: false
+          type: string
       tags:
         - QueryService
   /axelar/tss/heartbeat:
@@ -55197,6 +55284,11 @@ definitions:
         format: byte
   axelar.snapshot.v1beta1.DeactivateProxyResponse:
     type: object
+  axelar.snapshot.v1beta1.OperatorByProxyResponse:
+    type: object
+    properties:
+      operator_address:
+        type: string
   axelar.snapshot.v1beta1.Params:
     type: object
     properties:
@@ -55214,6 +55306,25 @@ definitions:
             type: string
             format: int64
         title: Params represent the genesis parameters for the module
+  axelar.snapshot.v1beta1.ProxyByOperatorResponse:
+    type: object
+    properties:
+      proxy_address:
+        type: string
+      status:
+        type: string
+        enum:
+          - STATUS_UNSPECIFIED
+          - STATUS_ACTIVE
+          - STATUS_INACTIVE
+        default: STATUS_UNSPECIFIED
+  axelar.snapshot.v1beta1.ProxyByOperatorResponse.Status:
+    type: string
+    enum:
+      - STATUS_UNSPECIFIED
+      - STATUS_ACTIVE
+      - STATUS_INACTIVE
+    default: STATUS_UNSPECIFIED
   axelar.snapshot.v1beta1.RegisterProxyRequest:
     type: object
     properties:
