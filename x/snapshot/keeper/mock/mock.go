@@ -67,22 +67,22 @@ var _ ValidatorI = &ValidatorIMock{}
 //			IsUnbondingFunc: func() bool {
 //				panic("mock out the IsUnbonding method")
 //			},
-//			SharesFromTokensFunc: func(amt math.Int) (cosmossdktypes.Dec, error) {
+//			SharesFromTokensFunc: func(amt math.Int) (math.LegacyDec, error) {
 //				panic("mock out the SharesFromTokens method")
 //			},
-//			SharesFromTokensTruncatedFunc: func(amt math.Int) (cosmossdktypes.Dec, error) {
+//			SharesFromTokensTruncatedFunc: func(amt math.Int) (math.LegacyDec, error) {
 //				panic("mock out the SharesFromTokensTruncated method")
 //			},
 //			TmConsPublicKeyFunc: func() (crypto.PublicKey, error) {
 //				panic("mock out the TmConsPublicKey method")
 //			},
-//			TokensFromSharesFunc: func(v cosmossdktypes.Dec) math.LegacyDec {
+//			TokensFromSharesFunc: func(legacyDec math.LegacyDec) math.LegacyDec {
 //				panic("mock out the TokensFromShares method")
 //			},
-//			TokensFromSharesRoundUpFunc: func(v cosmossdktypes.Dec) math.LegacyDec {
+//			TokensFromSharesRoundUpFunc: func(legacyDec math.LegacyDec) math.LegacyDec {
 //				panic("mock out the TokensFromSharesRoundUp method")
 //			},
-//			TokensFromSharesTruncatedFunc: func(v cosmossdktypes.Dec) math.LegacyDec {
+//			TokensFromSharesTruncatedFunc: func(legacyDec math.LegacyDec) math.LegacyDec {
 //				panic("mock out the TokensFromSharesTruncated method")
 //			},
 //		}
@@ -138,22 +138,22 @@ type ValidatorIMock struct {
 	IsUnbondingFunc func() bool
 
 	// SharesFromTokensFunc mocks the SharesFromTokens method.
-	SharesFromTokensFunc func(amt math.Int) (cosmossdktypes.Dec, error)
+	SharesFromTokensFunc func(amt math.Int) (math.LegacyDec, error)
 
 	// SharesFromTokensTruncatedFunc mocks the SharesFromTokensTruncated method.
-	SharesFromTokensTruncatedFunc func(amt math.Int) (cosmossdktypes.Dec, error)
+	SharesFromTokensTruncatedFunc func(amt math.Int) (math.LegacyDec, error)
 
 	// TmConsPublicKeyFunc mocks the TmConsPublicKey method.
 	TmConsPublicKeyFunc func() (crypto.PublicKey, error)
 
 	// TokensFromSharesFunc mocks the TokensFromShares method.
-	TokensFromSharesFunc func(v cosmossdktypes.Dec) math.LegacyDec
+	TokensFromSharesFunc func(legacyDec math.LegacyDec) math.LegacyDec
 
 	// TokensFromSharesRoundUpFunc mocks the TokensFromSharesRoundUp method.
-	TokensFromSharesRoundUpFunc func(v cosmossdktypes.Dec) math.LegacyDec
+	TokensFromSharesRoundUpFunc func(legacyDec math.LegacyDec) math.LegacyDec
 
 	// TokensFromSharesTruncatedFunc mocks the TokensFromSharesTruncated method.
-	TokensFromSharesTruncatedFunc func(v cosmossdktypes.Dec) math.LegacyDec
+	TokensFromSharesTruncatedFunc func(legacyDec math.LegacyDec) math.LegacyDec
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -219,18 +219,18 @@ type ValidatorIMock struct {
 		}
 		// TokensFromShares holds details about calls to the TokensFromShares method.
 		TokensFromShares []struct {
-			// V is the v argument value.
-			V cosmossdktypes.Dec
+			// LegacyDec is the legacyDec argument value.
+			LegacyDec math.LegacyDec
 		}
 		// TokensFromSharesRoundUp holds details about calls to the TokensFromSharesRoundUp method.
 		TokensFromSharesRoundUp []struct {
-			// V is the v argument value.
-			V cosmossdktypes.Dec
+			// LegacyDec is the legacyDec argument value.
+			LegacyDec math.LegacyDec
 		}
 		// TokensFromSharesTruncated holds details about calls to the TokensFromSharesTruncated method.
 		TokensFromSharesTruncated []struct {
-			// V is the v argument value.
-			V cosmossdktypes.Dec
+			// LegacyDec is the legacyDec argument value.
+			LegacyDec math.LegacyDec
 		}
 	}
 	lockConsPubKey                sync.RWMutex
@@ -667,7 +667,7 @@ func (mock *ValidatorIMock) IsUnbondingCalls() []struct {
 }
 
 // SharesFromTokens calls SharesFromTokensFunc.
-func (mock *ValidatorIMock) SharesFromTokens(amt math.Int) (cosmossdktypes.Dec, error) {
+func (mock *ValidatorIMock) SharesFromTokens(amt math.Int) (math.LegacyDec, error) {
 	if mock.SharesFromTokensFunc == nil {
 		panic("ValidatorIMock.SharesFromTokensFunc: method is nil but ValidatorI.SharesFromTokens was just called")
 	}
@@ -699,7 +699,7 @@ func (mock *ValidatorIMock) SharesFromTokensCalls() []struct {
 }
 
 // SharesFromTokensTruncated calls SharesFromTokensTruncatedFunc.
-func (mock *ValidatorIMock) SharesFromTokensTruncated(amt math.Int) (cosmossdktypes.Dec, error) {
+func (mock *ValidatorIMock) SharesFromTokensTruncated(amt math.Int) (math.LegacyDec, error) {
 	if mock.SharesFromTokensTruncatedFunc == nil {
 		panic("ValidatorIMock.SharesFromTokensTruncatedFunc: method is nil but ValidatorI.SharesFromTokensTruncated was just called")
 	}
@@ -758,19 +758,19 @@ func (mock *ValidatorIMock) TmConsPublicKeyCalls() []struct {
 }
 
 // TokensFromShares calls TokensFromSharesFunc.
-func (mock *ValidatorIMock) TokensFromShares(v cosmossdktypes.Dec) math.LegacyDec {
+func (mock *ValidatorIMock) TokensFromShares(legacyDec math.LegacyDec) math.LegacyDec {
 	if mock.TokensFromSharesFunc == nil {
 		panic("ValidatorIMock.TokensFromSharesFunc: method is nil but ValidatorI.TokensFromShares was just called")
 	}
 	callInfo := struct {
-		V cosmossdktypes.Dec
+		LegacyDec math.LegacyDec
 	}{
-		V: v,
+		LegacyDec: legacyDec,
 	}
 	mock.lockTokensFromShares.Lock()
 	mock.calls.TokensFromShares = append(mock.calls.TokensFromShares, callInfo)
 	mock.lockTokensFromShares.Unlock()
-	return mock.TokensFromSharesFunc(v)
+	return mock.TokensFromSharesFunc(legacyDec)
 }
 
 // TokensFromSharesCalls gets all the calls that were made to TokensFromShares.
@@ -778,10 +778,10 @@ func (mock *ValidatorIMock) TokensFromShares(v cosmossdktypes.Dec) math.LegacyDe
 //
 //	len(mockedValidatorI.TokensFromSharesCalls())
 func (mock *ValidatorIMock) TokensFromSharesCalls() []struct {
-	V cosmossdktypes.Dec
+	LegacyDec math.LegacyDec
 } {
 	var calls []struct {
-		V cosmossdktypes.Dec
+		LegacyDec math.LegacyDec
 	}
 	mock.lockTokensFromShares.RLock()
 	calls = mock.calls.TokensFromShares
@@ -790,19 +790,19 @@ func (mock *ValidatorIMock) TokensFromSharesCalls() []struct {
 }
 
 // TokensFromSharesRoundUp calls TokensFromSharesRoundUpFunc.
-func (mock *ValidatorIMock) TokensFromSharesRoundUp(v cosmossdktypes.Dec) math.LegacyDec {
+func (mock *ValidatorIMock) TokensFromSharesRoundUp(legacyDec math.LegacyDec) math.LegacyDec {
 	if mock.TokensFromSharesRoundUpFunc == nil {
 		panic("ValidatorIMock.TokensFromSharesRoundUpFunc: method is nil but ValidatorI.TokensFromSharesRoundUp was just called")
 	}
 	callInfo := struct {
-		V cosmossdktypes.Dec
+		LegacyDec math.LegacyDec
 	}{
-		V: v,
+		LegacyDec: legacyDec,
 	}
 	mock.lockTokensFromSharesRoundUp.Lock()
 	mock.calls.TokensFromSharesRoundUp = append(mock.calls.TokensFromSharesRoundUp, callInfo)
 	mock.lockTokensFromSharesRoundUp.Unlock()
-	return mock.TokensFromSharesRoundUpFunc(v)
+	return mock.TokensFromSharesRoundUpFunc(legacyDec)
 }
 
 // TokensFromSharesRoundUpCalls gets all the calls that were made to TokensFromSharesRoundUp.
@@ -810,10 +810,10 @@ func (mock *ValidatorIMock) TokensFromSharesRoundUp(v cosmossdktypes.Dec) math.L
 //
 //	len(mockedValidatorI.TokensFromSharesRoundUpCalls())
 func (mock *ValidatorIMock) TokensFromSharesRoundUpCalls() []struct {
-	V cosmossdktypes.Dec
+	LegacyDec math.LegacyDec
 } {
 	var calls []struct {
-		V cosmossdktypes.Dec
+		LegacyDec math.LegacyDec
 	}
 	mock.lockTokensFromSharesRoundUp.RLock()
 	calls = mock.calls.TokensFromSharesRoundUp
@@ -822,19 +822,19 @@ func (mock *ValidatorIMock) TokensFromSharesRoundUpCalls() []struct {
 }
 
 // TokensFromSharesTruncated calls TokensFromSharesTruncatedFunc.
-func (mock *ValidatorIMock) TokensFromSharesTruncated(v cosmossdktypes.Dec) math.LegacyDec {
+func (mock *ValidatorIMock) TokensFromSharesTruncated(legacyDec math.LegacyDec) math.LegacyDec {
 	if mock.TokensFromSharesTruncatedFunc == nil {
 		panic("ValidatorIMock.TokensFromSharesTruncatedFunc: method is nil but ValidatorI.TokensFromSharesTruncated was just called")
 	}
 	callInfo := struct {
-		V cosmossdktypes.Dec
+		LegacyDec math.LegacyDec
 	}{
-		V: v,
+		LegacyDec: legacyDec,
 	}
 	mock.lockTokensFromSharesTruncated.Lock()
 	mock.calls.TokensFromSharesTruncated = append(mock.calls.TokensFromSharesTruncated, callInfo)
 	mock.lockTokensFromSharesTruncated.Unlock()
-	return mock.TokensFromSharesTruncatedFunc(v)
+	return mock.TokensFromSharesTruncatedFunc(legacyDec)
 }
 
 // TokensFromSharesTruncatedCalls gets all the calls that were made to TokensFromSharesTruncated.
@@ -842,10 +842,10 @@ func (mock *ValidatorIMock) TokensFromSharesTruncated(v cosmossdktypes.Dec) math
 //
 //	len(mockedValidatorI.TokensFromSharesTruncatedCalls())
 func (mock *ValidatorIMock) TokensFromSharesTruncatedCalls() []struct {
-	V cosmossdktypes.Dec
+	LegacyDec math.LegacyDec
 } {
 	var calls []struct {
-		V cosmossdktypes.Dec
+		LegacyDec math.LegacyDec
 	}
 	mock.lockTokensFromSharesTruncated.RLock()
 	calls = mock.calls.TokensFromSharesTruncated

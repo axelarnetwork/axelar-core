@@ -43,7 +43,10 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 		msgServiceRouter = bam.NewMsgServiceRouter()
 
 		refundKeeper = &mock.RefunderMock{
-			LoggerFunc:              func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+			//GetPendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) {
+			//	return types.Refund{Payer: rand2.AccAddr(), Fees: sdk.NewCoins(sdk.Coin{Denom: "uaxl", Amount: sdk.NewInt(1000)})}, true
+			//},
 			DeletePendingRefundFunc: func(sdk.Context, types.RefundMsgRequest) {},
 		}
 		bankKeeper = &mock.BankerMock{
