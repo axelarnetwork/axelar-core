@@ -19,7 +19,7 @@ require (
 	github.com/golang/protobuf v1.5.3
 	github.com/gorilla/mux v1.8.1
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/matryer/moq v0.5.0
+	github.com/matryer/moq v0.5.2
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/osmosis-labs/osmosis/x/ibc-hooks v0.0.5
