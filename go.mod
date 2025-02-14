@@ -215,4 +215,5 @@ replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.4
 
 replace github.com/CosmWasm/wasmd => github.com/axelarnetwork/wasmd v0.34.2-0.20250204232001-5afc4d484c69
 
+// moq v0.5.3 requires go 1.24
 replace github.com/matryer/moq => github.com/matryer/moq v0.5.2
