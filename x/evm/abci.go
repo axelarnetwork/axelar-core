@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"errors"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,7 +22,7 @@ import (
 func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
 	e := event.GetEvent().(*types.Event_TokenSent).TokenSent
 	if e == nil {
-		panic(fmt.Errorf("event is nil"))
+		panic(errors.New("event is nil"))
 	}
 
 	sourceChain := funcs.MustOk(n.GetChain(ctx, event.Chain))
@@ -69,7 +70,7 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
 	e := event.GetContractCall()
 	if e == nil {
-		panic(fmt.Errorf("event is nil"))
+		panic(errors.New("event is nil"))
 	}
 
 	destinationChain := funcs.MustOk(n.GetChain(ctx, e.DestinationChain))
@@ -86,7 +87,7 @@ func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper,
 func handleContractCallToEVM(ctx sdk.Context, bk types.BaseKeeper, multisig types.MultisigKeeper, n types.Nexus, destinationChain nexus.ChainName, event types.Event) {
 	e := event.GetContractCall()
 	if e == nil {
-		panic(fmt.Errorf("event is nil"))
+		panic(errors.New("event is nil"))
 	}
 
 	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain))
@@ -119,7 +120,7 @@ func handleContractCallToEVM(ctx sdk.Context, bk types.BaseKeeper, multisig type
 func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
 	e := event.GetContractCallWithToken()
 	if e == nil {
-		panic(fmt.Errorf("event is nil"))
+		panic(errors.New("event is nil"))
 	}
 
 	sourceChain := funcs.MustOk(n.GetChain(ctx, event.Chain))
@@ -149,7 +150,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper, sourceChain, destinationChain nexus.ChainName, asset string) error {
 	e := event.GetContractCallWithToken()
 	if e == nil {
-		panic(fmt.Errorf("event is nil"))
+		panic(errors.New("event is nil"))
 	}
 
 	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain))
@@ -228,7 +229,7 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 
 	case *types.Event_ContractCallWithToken:
 		if asset == nil {
-			return fmt.Errorf("expect asset for ContractCallWithToken")
+			return errors.New("expect asset for ContractCallWithToken")
 		}
 
 		sender := nexus.CrossChainAddress{
@@ -264,7 +265,7 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 func handleConfirmDeposit(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
 	e := event.GetEvent().(*types.Event_Transfer).Transfer
 	if e == nil {
-		panic(fmt.Errorf("event is nil"))
+		panic(errors.New("event is nil"))
 	}
 
 	chain := funcs.MustOk(n.GetChain(ctx, event.Chain))
@@ -336,7 +337,7 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, bk types.BaseKeepe
 func handleTokenDeployed(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
 	e := event.GetEvent().(*types.Event_TokenDeployed).TokenDeployed
 	if e == nil {
-		panic(fmt.Errorf("event is nil"))
+		panic(errors.New("event is nil"))
 	}
 
 	chain := funcs.MustOk(n.GetChain(ctx, event.Chain))
@@ -380,7 +381,7 @@ func handleTokenDeployed(ctx sdk.Context, event types.Event, bk types.BaseKeeper
 func handleMultisigTransferKey(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
 	e := event.GetEvent().(*types.Event_MultisigOperatorshipTransferred).MultisigOperatorshipTransferred
 	if e == nil {
-		panic(fmt.Errorf("event is nil"))
+		panic(errors.New("event is nil"))
 	}
 
 	chain := funcs.MustOk(n.GetChain(ctx, event.Chain))
@@ -409,17 +410,17 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, bk types.Base
 	for i, newAddress := range newAddresses {
 		newAddressHex := newAddress.Hex()
 		if addressSeen[newAddressHex] {
-			return fmt.Errorf("duplicate address in new addresses")
+			return errors.New("duplicate address in new addresses")
 		}
 		addressSeen[newAddressHex] = true
 
 		expectedWeight, ok := expectedAddressWeights[newAddressHex]
 		if !ok {
-			return fmt.Errorf("new addresses do not match")
+			return errors.New("new addresses do not match")
 		}
 
 		if !expectedWeight.Equal(newWeights[i]) {
-			return fmt.Errorf("new weights do not match")
+			return errors.New("new weights do not match")
 		}
 	}
 
@@ -473,12 +474,12 @@ func validateEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n ty
 	// skip if destination chain is not registered
 	destinationChain, ok := n.GetChain(ctx, destinationChainName)
 	if !ok {
-		return fmt.Errorf("destination chain not found")
+		return errors.New("destination chain not found")
 	}
 
 	// skip if destination chain is not activated
 	if !n.IsChainActivated(ctx, destinationChain) {
-		return fmt.Errorf("destination chain de-activated")
+		return errors.New("destination chain de-activated")
 	}
 
 	// skip further destination chain keeper checks if it is not an evm chain
@@ -487,17 +488,17 @@ func validateEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n ty
 	}
 
 	if len(contractAddress) != 0 && !common.IsHexAddress(contractAddress) {
-		return fmt.Errorf("invalid contract address")
+		return errors.New("invalid contract address")
 	}
 
 	destinationCk, err := bk.ForChain(ctx, destinationChainName)
 	if err != nil {
-		return fmt.Errorf("destination chain not EVM-compatible")
+		return errors.New("destination chain not EVM-compatible")
 	}
 
 	// skip if destination chain has not got gateway set yet
 	if _, ok := destinationCk.GetGatewayAddress(ctx); !ok {
-		return fmt.Errorf("destination chain gateway not deployed yet")
+		return errors.New("destination chain gateway not deployed yet")
 	}
 
 	return nil
@@ -575,19 +576,19 @@ func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m typ
 	// TODO refactor to do these checks earlier so we don't fail in the end blocker
 	_, ok := m.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
-		return fmt.Errorf("current key not set")
+		return errors.New("current key not set")
 	}
 
 	if !n.IsChainActivated(ctx, chain) {
-		return fmt.Errorf("destination chain de-activated")
+		return errors.New("destination chain de-activated")
 	}
 
 	if _, ok := ck.GetGatewayAddress(ctx); !ok {
-		return fmt.Errorf("destination chain gateway not deployed yet")
+		return errors.New("destination chain gateway not deployed yet")
 	}
 
 	if !common.IsHexAddress(msg.GetDestinationAddress()) {
-		return fmt.Errorf("invalid contract address")
+		return errors.New("invalid contract address")
 	}
 
 	switch msg.Type() {
