@@ -26,7 +26,7 @@ axelard tx sign [file] [flags]
 
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
-      --amino                    Generate Amino encoded JSON suitable for submiting to the txs REST endpoint
+      --amino                    Generate Amino encoded JSON suitable for submitting to the txs REST endpoint
   -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
       --chain-id string          The network chain ID (default "axelar")
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it (when enabled, the local Keybase is not accessible)
