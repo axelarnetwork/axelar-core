@@ -106,7 +106,7 @@ func (mgr Mgr) GetTxReceiptIfFinalized(chain nexus.ChainName, txID common.Hash, 
 		return results.Result[geth.Receipt]{}, err
 	}
 
-	return txReceipts[0], err
+	return txReceipts[0], nil
 }
 
 // GetTxReceiptsIfFinalized retrieves receipts for provided transaction IDs.
