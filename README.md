@@ -27,6 +27,10 @@ In order to run/build the project locally we need to import the bytecode from ga
 3. Unzip the json files under `contract-artifacts/`
 4. Run `make generate` to generate `x/evm/types/contracts.go`
 
+## Release Process
+
+See [RELEASE.md](RELEASE.md) for the release process for `axelard`.
+
 ## Download and Verify Binary
 
 Before interacting with the axelar network, ensure you have the correct `axelard` binary and that it's verified:
