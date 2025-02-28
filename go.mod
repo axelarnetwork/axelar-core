@@ -214,3 +214,5 @@ replace github.com/tendermint/tendermint => github.com/axelarnetwork/cometbft v0
 replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20241216210753-523fb865146c
 
 replace github.com/CosmWasm/wasmd => github.com/axelarnetwork/wasmd v0.34.2-0.20250204232001-5afc4d484c69
+
+replace github.com/cosmos/ibc-go/v4 => github.com/axelarnetwork/ibc-go/v4 v4.6.1-0.20250228011905-7d90c963b0ec

@@ -698,6 +698,8 @@ github.com/axelarnetwork/cometbft v0.34.32-0.20250205201135-f2813762d7f7 h1:otGP
 github.com/axelarnetwork/cometbft v0.34.32-0.20250205201135-f2813762d7f7/go.mod h1:myvkihZD8eg9jKE3WFaugkNoL5nvEqlP7Jbjg98pCek=
 github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20241216210753-523fb865146c h1:VD4Iz9AT2dihqqktW6Y4aRe1bRHPR+A4wqcOw+zxW1Q=
 github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20241216210753-523fb865146c/go.mod h1:bScuNwWAP0TZJpUf+SHXRU3xGoUPp+X9nAzfeIXts40=
+github.com/axelarnetwork/ibc-go/v4 v4.6.1-0.20250228011905-7d90c963b0ec h1:jf78SiH0+ZZMBmur1olaVMPaRYd0hzlnqH8DwzeE6+g=
+github.com/axelarnetwork/ibc-go/v4 v4.6.1-0.20250228011905-7d90c963b0ec/go.mod h1:ksiZHUypws0NVP50E3ea0ivVFO/bfS8q8yLg8yZ2ATQ=
 github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b h1:qTbA+WlbMRiPtK5zn5evVfU2XhmIOrOZNIE8VNU1O3Q=
 github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b/go.mod h1:vDpqqxWxMvMIKbF6DN3BkxXAI4UJjolCHvaMGhE/FCI=
 github.com/axelarnetwork/utils v0.0.0-20230706045331-b7aacc1f4a2f h1:Q0Qh79MuZ/PWKzytqU8/4dt+S2QemdYYPXkjwp/i4l0=
@@ -825,8 +827,6 @@ github.com/cosmos/gorocksdb v1.2.0 h1:d0l3jJG8M4hBouIZq0mDUHZ+zjOx044J3nGRskwTb4
 github.com/cosmos/gorocksdb v1.2.0/go.mod h1:aaKvKItm514hKfNJpUJXnnOWeBnk2GL4+Qw9NHizILw=
 github.com/cosmos/iavl v0.19.5 h1:rGA3hOrgNxgRM5wYcSCxgQBap7fW82WZgY78V9po/iY=
 github.com/cosmos/iavl v0.19.5/go.mod h1:X9PKD3J0iFxdmgNLa7b2LYWdsGd90ToV5cAONApkEPw=
-github.com/cosmos/ibc-go/v4 v4.6.0 h1:G7kiD4Zf8Wrxc8BXWIKuFnzI0W4wpvRPrl5HwdfTIsA=
-github.com/cosmos/ibc-go/v4 v4.6.0/go.mod h1:ksiZHUypws0NVP50E3ea0ivVFO/bfS8q8yLg8yZ2ATQ=
 github.com/cosmos/interchain-accounts v0.2.6 h1:TV2M2g1/Rb9MCNw1YePdBKE0rcEczNj1RGHT+2iRYas=
 github.com/cosmos/interchain-accounts v0.2.6/go.mod h1:lUzWNzCiCtIEYZefac5+YgEBz2aR39nMS374jIv1c7o=
 github.com/cosmos/keyring v1.2.0 h1:8C1lBP9xhImmIabyXW4c3vFjjLiBdGCmfLUfeZlV1Yo=
