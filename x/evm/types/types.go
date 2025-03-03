@@ -796,7 +796,7 @@ func (m TokenDetails) Validate() error {
 	}
 
 	if m.Capacity.IsNil() || m.Capacity.IsNegative() {
-		return fmt.Errorf("token capacity must be a non-negative number")
+		return errors.New("token capacity must be a non-negative number")
 	}
 
 	return nil
@@ -804,7 +804,7 @@ func (m TokenDetails) Validate() error {
 
 func packArguments(chainID sdk.Int, commandIDs []CommandID, commands []CommandType, commandParams [][]byte) ([]byte, error) {
 	if len(commandIDs) != len(commands) || len(commandIDs) != len(commandParams) {
-		return nil, fmt.Errorf("length mismatch for command arguments")
+		return nil, errors.New("length mismatch for command arguments")
 	}
 
 	uint256Type, err := abi.NewType("uint256", "uint256", nil)
@@ -861,7 +861,7 @@ func (m *BurnerInfo) ValidateBasic() error {
 // ValidateBasic does stateless validation of the object
 func (m *ERC20TokenMetadata) ValidateBasic() error {
 	if m.Status == NonExistent {
-		return fmt.Errorf("token status not set")
+		return errors.New("token status not set")
 	}
 
 	if err := sdk.ValidateDenom(m.Asset); err != nil {
@@ -869,7 +869,7 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 	}
 
 	if m.ChainID.IsNil() || !m.ChainID.IsPositive() {
-		return fmt.Errorf("chain ID not set")
+		return errors.New("chain ID not set")
 	}
 
 	if err := m.Details.Validate(); err != nil {
@@ -879,7 +879,7 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 	switch m.IsExternal {
 	case true:
 		if m.BurnerCode != nil {
-			return fmt.Errorf("burner code for external tokens must be nil")
+			return errors.New("burner code for external tokens must be nil")
 		}
 	case false:
 		if err := validateBurnerCode(m.BurnerCode); err != nil {
@@ -901,7 +901,7 @@ func (m *ERC20Deposit) ValidateBasic() error {
 	}
 
 	if m.Amount.IsZero() {
-		return fmt.Errorf("amount must be >0")
+		return errors.New("amount must be >0")
 	}
 
 	return nil
@@ -929,13 +929,13 @@ func (m Event) ValidateBasic() error {
 	}
 
 	if m.TxID.IsZero() {
-		return fmt.Errorf("invalid tx id")
+		return errors.New("invalid tx id")
 	}
 
 	switch event := m.GetEvent().(type) {
 	case *Event_ContractCall:
 		if event.ContractCall == nil {
-			return fmt.Errorf("missing event ContractCall")
+			return errors.New("missing event ContractCall")
 		}
 
 		if err := event.ContractCall.ValidateBasic(); err != nil {
@@ -943,7 +943,7 @@ func (m Event) ValidateBasic() error {
 		}
 	case *Event_ContractCallWithToken:
 		if event.ContractCallWithToken == nil {
-			return fmt.Errorf("missing event ContractCallWithToken")
+			return errors.New("missing event ContractCallWithToken")
 		}
 
 		if err := event.ContractCallWithToken.ValidateBasic(); err != nil {
@@ -951,7 +951,7 @@ func (m Event) ValidateBasic() error {
 		}
 	case *Event_TokenSent:
 		if event.TokenSent == nil {
-			return fmt.Errorf("missing event TokenSent")
+			return errors.New("missing event TokenSent")
 		}
 
 		if err := event.TokenSent.ValidateBasic(); err != nil {

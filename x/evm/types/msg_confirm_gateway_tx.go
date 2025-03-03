@@ -1,8 +1,7 @@
 package types
 
 import (
-	"fmt"
-
+	"errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -40,7 +39,7 @@ func (m ConfirmGatewayTxRequest) ValidateBasic() error {
 	}
 
 	if m.TxID.IsZero() {
-		return fmt.Errorf("invalid tx id")
+		return errors.New("invalid tx id")
 	}
 
 	return nil

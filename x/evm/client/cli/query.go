@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -113,7 +114,7 @@ func getCmdTokenAddress(queryRoute string) *cobra.Command {
 		case *symbol == "" && *asset != "":
 			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressByAsset, args[0], *asset))
 		default:
-			return fmt.Errorf("lookup must be either by asset name or symbol")
+			return errors.New("lookup must be either by asset name or symbol")
 		}
 
 		if err != nil {
@@ -560,7 +561,7 @@ func getCmdTokenInfo() *cobra.Command {
 		}
 
 		if !exactlyOneIsFilled(*symbol, *asset, *address) {
-			return fmt.Errorf("lookup must be either by asset name, symbol, or address")
+			return errors.New("lookup must be either by asset name, symbol, or address")
 		}
 
 		var req types.TokenInfoRequest

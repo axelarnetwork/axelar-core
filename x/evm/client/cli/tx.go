@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"strconv"
@@ -272,15 +273,15 @@ func GetCmdCreateDeployToken() *cobra.Command {
 		symbol := args[4]
 		decs, err := strconv.ParseUint(args[5], 10, 8)
 		if err != nil {
-			return fmt.Errorf("could not parse decimals")
+			return errors.New("could not parse decimals")
 		}
 		capacity, ok := sdk.NewIntFromString(args[6])
 		if !ok {
-			return fmt.Errorf("could not parse capacity")
+			return errors.New("could not parse capacity")
 		}
 
 		if !common.IsHexAddress(*address) {
-			return fmt.Errorf("could not parse address")
+			return errors.New("could not parse address")
 		}
 
 		mintLimit := args[7]

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -66,7 +67,7 @@ func DefaultChains() []GenesisState_Chain {
 // Validate validates the genesis state
 func (m GenesisState) Validate() error {
 	if !sort.SliceIsSorted(m.Chains, less(m.Chains)) {
-		return getValidateError(0, fmt.Errorf("chains must be sorted by name (in params)"))
+		return getValidateError(0, errors.New("chains must be sorted by name (in params)"))
 	}
 
 	// events should be globally unique across all the chains
@@ -81,19 +82,19 @@ func (m GenesisState) Validate() error {
 			errStr := "gateway is not set"
 
 			if len(chain.Tokens) > 0 {
-				return getValidateError(j, sdkerrors.Wrap(fmt.Errorf("cannot initialize tokens"), errStr))
+				return getValidateError(j, sdkerrors.Wrap(errors.New("cannot initialize tokens"), errStr))
 			}
 
 			if len(chain.ConfirmedDeposits) > 0 {
-				return getValidateError(j, sdkerrors.Wrap(fmt.Errorf("cannot have confirmed deposits"), errStr))
+				return getValidateError(j, sdkerrors.Wrap(errors.New("cannot have confirmed deposits"), errStr))
 			}
 
 			if len(chain.BurnedDeposits) > 0 {
-				return getValidateError(j, sdkerrors.Wrap(fmt.Errorf("cannot have burned deposits"), errStr))
+				return getValidateError(j, sdkerrors.Wrap(errors.New("cannot have burned deposits"), errStr))
 			}
 
 			if len(chain.BurnerInfos) > 0 {
-				return getValidateError(j, sdkerrors.Wrap(fmt.Errorf("cannot have burned deposits"), errStr))
+				return getValidateError(j, sdkerrors.Wrap(errors.New("cannot have burned deposits"), errStr))
 			}
 		}
 
