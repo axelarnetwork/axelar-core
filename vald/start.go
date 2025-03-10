@@ -2,6 +2,7 @@ package vald
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -20,7 +21,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/gogo/protobuf/proto"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
@@ -191,12 +191,12 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 	robustClient := tendermint.NewRobustClient(func() (rpcclient.Client, error) {
 		cl, err := sdkClient.NewClientFromNode(clientCtx.NodeURI)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to create a new client")
+			return nil, fmt.Errorf("unable to create a new client: %w", err)
 		}
 
 		err = cl.Start()
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to start client")
+			return nil, fmt.Errorf("unable to start client: %w", err)
 		}
 		return cl, nil
 	})

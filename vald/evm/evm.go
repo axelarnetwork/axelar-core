@@ -10,7 +10,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
-	errors2 "github.com/pkg/errors"
 
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
 	"github.com/axelarnetwork/axelar-core/utils/errors"
@@ -66,7 +65,7 @@ func (mgr Mgr) isFinalized(chain nexus.ChainName, txReceipt geth.Receipt, confHe
 	}
 
 	if txReceipt.BlockNumber == nil {
-		return false, errors2.New("block number of tx receipt is nil")
+		return false, goerrors.New("block number of tx receipt is nil")
 	}
 
 	if mgr.latestFinalizedBlockCache.Get(chain).Cmp(txReceipt.BlockNumber) >= 0 {

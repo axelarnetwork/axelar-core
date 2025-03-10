@@ -1,17 +1,18 @@
 package errors_test
 
 import (
+	goerrors "errors"
+	"fmt"
 	"testing"
 
-	errors2 "github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/utils/errors"
 )
 
 func TestKeyVals(t *testing.T) {
-	var err error = errors.With(errors2.New("test"), "key", "val")
-	err = errors2.Wrap(err, "wrapped")
+	var err error = errors.With(goerrors.New("test"), "key", "val")
+	err = fmt.Errorf("wrapped: %w", err)
 
 	assert.EqualValues(t, []interface{}{"key", "val"}, errors.KeyVals(err))
 }

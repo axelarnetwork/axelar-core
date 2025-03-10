@@ -11,8 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
-
-	"github.com/pkg/errors"
 )
 
 //go:generate go run generate.go -template ./contracts.go.tmpl -out ../contracts.go -contracts ../../../../contract-artifacts/contracts
@@ -37,23 +35,23 @@ func main() {
 
 	outFP, err := filepath.Abs(*out)
 	if err != nil {
-		log.Fatal(errors.Wrapf(err, "cannot build filepath for %s", *out))
+		log.Fatal(fmt.Errorf("cannot build filepath for %s: %w", *out, err))
 	}
 
 	var buf bytes.Buffer
 
 	if err := t.Execute(&buf, contracts); err != nil {
-		log.Fatal(errors.Wrap(err, "failed to apply the contracts template"))
+		log.Fatal(fmt.Errorf("failed to apply the contracts template: %w", err))
 	}
 
 	bz := buf.Bytes()
 	bz, err = format.Source(bz)
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "could not gofmt the output"))
+		log.Fatal(fmt.Errorf("could not gofmt the output: %w", err))
 	}
 
 	if err := os.WriteFile(outFP, bz, 0644); err != nil {
-		log.Fatal(errors.Wrapf(err, "cannot write to file %s", *out))
+		log.Fatal(fmt.Errorf("cannot write to file %s: %w", *out, err))
 	}
 }
 
@@ -67,17 +65,17 @@ func parseContracts(contractDir string) contracts {
 	for file, setter := range contractSetterMapping {
 		fp, err := filepath.Abs(filepath.Join(contractDir, fmt.Sprintf("%s.sol", file), fmt.Sprintf("%s.json", file)))
 		if err != nil {
-			log.Fatal(errors.Wrapf(err, "cannot build filepath for %s", file))
+			log.Fatal(fmt.Errorf("cannot build filepath for %s: %w", file, err))
 		}
 
 		content, err := os.ReadFile(fp)
 		if err != nil {
-			log.Fatal(errors.Wrapf(err, "failed to read contract %s", file))
+			log.Fatal(fmt.Errorf("failed to read contract %s: %w", file, err))
 		}
 
 		jsonMap := make(map[string]interface{})
 		if err := json.Unmarshal(content, &jsonMap); err != nil {
-			log.Fatal(errors.Wrapf(err, "failed to json parse contract %s", file))
+			log.Fatal(fmt.Errorf("failed to json parse contract %s: %w", file, err))
 		}
 		setter(jsonMap["bytecode"].(string))
 	}
