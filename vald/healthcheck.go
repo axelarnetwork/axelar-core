@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -166,7 +167,7 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 		return err
 	}
 
-	if res.Balance.Amount.LTE(sdk.NewInt(minBalance)) {
+	if res.Balance.Amount.LTE(math.NewInt(minBalance)) {
 		return fmt.Errorf("broadcaster does not have enough funds (minimum balance is %d%s)", minBalance, axelarnet.NativeAsset)
 	}
 

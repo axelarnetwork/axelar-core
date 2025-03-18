@@ -4,8 +4,8 @@
 package mock
 
 import (
+	cosmossdk_io_math "cosmossdk.io/math"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	"sync"
 )
 
@@ -19,13 +19,13 @@ var _ exported.ValidatorI = &ValidatorIMock{}
 //
 //		// make and configure a mocked exported.ValidatorI
 //		mockedValidatorI := &ValidatorIMock{
-//			GetConsAddrFunc: func() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error) {
+//			GetConsAddrFunc: func() ([]byte, error) {
 //				panic("mock out the GetConsAddr method")
 //			},
-//			GetConsensusPowerFunc: func(v github_com_cosmos_cosmos_sdk_types.Int) int64 {
+//			GetConsensusPowerFunc: func(intMoqParam cosmossdk_io_math.Int) int64 {
 //				panic("mock out the GetConsensusPower method")
 //			},
-//			GetOperatorFunc: func() github_com_cosmos_cosmos_sdk_types.ValAddress {
+//			GetOperatorFunc: func() string {
 //				panic("mock out the GetOperator method")
 //			},
 //			IsBondedFunc: func() bool {
@@ -42,13 +42,13 @@ var _ exported.ValidatorI = &ValidatorIMock{}
 //	}
 type ValidatorIMock struct {
 	// GetConsAddrFunc mocks the GetConsAddr method.
-	GetConsAddrFunc func() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error)
+	GetConsAddrFunc func() ([]byte, error)
 
 	// GetConsensusPowerFunc mocks the GetConsensusPower method.
-	GetConsensusPowerFunc func(v github_com_cosmos_cosmos_sdk_types.Int) int64
+	GetConsensusPowerFunc func(intMoqParam cosmossdk_io_math.Int) int64
 
 	// GetOperatorFunc mocks the GetOperator method.
-	GetOperatorFunc func() github_com_cosmos_cosmos_sdk_types.ValAddress
+	GetOperatorFunc func() string
 
 	// IsBondedFunc mocks the IsBonded method.
 	IsBondedFunc func() bool
@@ -63,8 +63,8 @@ type ValidatorIMock struct {
 		}
 		// GetConsensusPower holds details about calls to the GetConsensusPower method.
 		GetConsensusPower []struct {
-			// V is the v argument value.
-			V github_com_cosmos_cosmos_sdk_types.Int
+			// IntMoqParam is the intMoqParam argument value.
+			IntMoqParam cosmossdk_io_math.Int
 		}
 		// GetOperator holds details about calls to the GetOperator method.
 		GetOperator []struct {
@@ -84,7 +84,7 @@ type ValidatorIMock struct {
 }
 
 // GetConsAddr calls GetConsAddrFunc.
-func (mock *ValidatorIMock) GetConsAddr() (github_com_cosmos_cosmos_sdk_types.ConsAddress, error) {
+func (mock *ValidatorIMock) GetConsAddr() ([]byte, error) {
 	if mock.GetConsAddrFunc == nil {
 		panic("ValidatorIMock.GetConsAddrFunc: method is nil but ValidatorI.GetConsAddr was just called")
 	}
@@ -111,19 +111,19 @@ func (mock *ValidatorIMock) GetConsAddrCalls() []struct {
 }
 
 // GetConsensusPower calls GetConsensusPowerFunc.
-func (mock *ValidatorIMock) GetConsensusPower(v github_com_cosmos_cosmos_sdk_types.Int) int64 {
+func (mock *ValidatorIMock) GetConsensusPower(intMoqParam cosmossdk_io_math.Int) int64 {
 	if mock.GetConsensusPowerFunc == nil {
 		panic("ValidatorIMock.GetConsensusPowerFunc: method is nil but ValidatorI.GetConsensusPower was just called")
 	}
 	callInfo := struct {
-		V github_com_cosmos_cosmos_sdk_types.Int
+		IntMoqParam cosmossdk_io_math.Int
 	}{
-		V: v,
+		IntMoqParam: intMoqParam,
 	}
 	mock.lockGetConsensusPower.Lock()
 	mock.calls.GetConsensusPower = append(mock.calls.GetConsensusPower, callInfo)
 	mock.lockGetConsensusPower.Unlock()
-	return mock.GetConsensusPowerFunc(v)
+	return mock.GetConsensusPowerFunc(intMoqParam)
 }
 
 // GetConsensusPowerCalls gets all the calls that were made to GetConsensusPower.
@@ -131,10 +131,10 @@ func (mock *ValidatorIMock) GetConsensusPower(v github_com_cosmos_cosmos_sdk_typ
 //
 //	len(mockedValidatorI.GetConsensusPowerCalls())
 func (mock *ValidatorIMock) GetConsensusPowerCalls() []struct {
-	V github_com_cosmos_cosmos_sdk_types.Int
+	IntMoqParam cosmossdk_io_math.Int
 } {
 	var calls []struct {
-		V github_com_cosmos_cosmos_sdk_types.Int
+		IntMoqParam cosmossdk_io_math.Int
 	}
 	mock.lockGetConsensusPower.RLock()
 	calls = mock.calls.GetConsensusPower
@@ -143,7 +143,7 @@ func (mock *ValidatorIMock) GetConsensusPowerCalls() []struct {
 }
 
 // GetOperator calls GetOperatorFunc.
-func (mock *ValidatorIMock) GetOperator() github_com_cosmos_cosmos_sdk_types.ValAddress {
+func (mock *ValidatorIMock) GetOperator() string {
 	if mock.GetOperatorFunc == nil {
 		panic("ValidatorIMock.GetOperatorFunc: method is nil but ValidatorI.GetOperator was just called")
 	}

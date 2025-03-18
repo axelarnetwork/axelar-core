@@ -3,6 +3,8 @@ package ante
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
+	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -16,7 +18,7 @@ import (
 
 // CheckRefundFeeDecorator record potential refund for multiSig and vote txs
 type CheckRefundFeeDecorator struct {
-	registry    cdctypes.InterfaceRegistry
+	cdc         codec.Codec
 	ak          antetypes.AccountKeeper
 	staking     types.Staking
 	reward      types.Reward
@@ -24,9 +26,9 @@ type CheckRefundFeeDecorator struct {
 }
 
 // NewCheckRefundFeeDecorator constructor for CheckRefundFeeDecorator
-func NewCheckRefundFeeDecorator(registry cdctypes.InterfaceRegistry, ak antetypes.AccountKeeper, staking types.Staking, snapshotter types.Snapshotter, reward types.Reward) CheckRefundFeeDecorator {
+func NewCheckRefundFeeDecorator(cdc codec.Codec, ak antetypes.AccountKeeper, staking types.Staking, snapshotter types.Snapshotter, reward types.Reward) CheckRefundFeeDecorator {
 	return CheckRefundFeeDecorator{
-		registry,
+		cdc,
 		ak,
 		staking,
 		reward,
@@ -49,7 +51,7 @@ func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate
 
 	feeTx, ok := tx.(sdk.FeeTx)
 	if !ok {
-		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx must be a FeeTx")
+		return ctx, errorsmod.Wrap(sdkerrors.ErrTxDecode, "tx must be a FeeTx")
 	}
 
 	fees := feeTx.GetFee()
@@ -67,7 +69,7 @@ func (d CheckRefundFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate
 				req := *msg
 				err := d.reward.SetPendingRefund(ctx, req, rewardtypes.Refund{Payer: feePayer, Fees: splitFees[0]})
 				if err != nil {
-					return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+					return ctx, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 				}
 				// when messages are batched not all are refundable, so we cannot use the msg index directly
 				splitFees = splitFees[1:]
@@ -93,25 +95,31 @@ func (d CheckRefundFeeDecorator) validateRefundQualification(ctx sdk.Context, ms
 	for _, msg := range msgs {
 		switch msg := msg.(type) {
 		case *rewardtypes.RefundMsgRequest:
-			if !msgRegistered(d.registry, msg.InnerMessage.TypeUrl) {
-				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("message type %s is not refundable", msg.InnerMessage.TypeUrl))
+			if !msgRegistered(d.cdc.InterfaceRegistry(), msg.InnerMessage.TypeUrl) {
+				return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("message type %s is not refundable", msg.InnerMessage.TypeUrl))
 			}
 
-			sender := msg.GetSigners()[0]
-			operatorAddr := d.snapshotter.GetOperator(ctx, sender)
+			signers, _, err := d.cdc.GetMsgV1Signers(msg)
+			if err != nil || len(signers) == 0 {
+				return sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+			}
+			operatorAddr := d.snapshotter.GetOperator(ctx, signers[0])
 			if operatorAddr == nil {
-				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "signer is not a registered proxy")
+				return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "signer is not a registered proxy")
 			}
 
-			validator := d.staking.Validator(ctx, operatorAddr)
+			validator, err := d.staking.Validator(ctx, operatorAddr)
+			if err != nil {
+				return err
+			}
 			if validator == nil {
-				return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "signer is not associated with a validator")
+				return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "signer is not associated with a validator")
 			}
 		// ignore the batch request message, as long as all other messages are refundable
 		case *auxiliarytypes.BatchRequest:
 			continue
 		default:
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("all messages in a transaction must be refundable, message type %T is not refundable", msg))
+			return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprintf("all messages in a transaction must be refundable, message type %T is not refundable", msg))
 		}
 	}
 

@@ -1,6 +1,8 @@
 package ante
 
 import (
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -8,7 +10,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
 )
 
-var minCommissionRate = sdk.NewDecWithPrec(5, 2)
+var minCommissionRate = math.LegacyNewDecWithPrec(5, 2)
 
 // CheckCommissionRate checks if the validator commission rate is eligible
 type CheckCommissionRate struct {
@@ -28,7 +30,7 @@ func (d CheckCommissionRate) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulat
 		switch msg := msg.(type) {
 		case *stakingtypes.MsgCreateValidator:
 			if msg.Commission.Rate.LT(minCommissionRate) || msg.Commission.MaxRate.LT(minCommissionRate) {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator commission rate has to be >=%s", minCommissionRate.String())
+				return ctx, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "validator commission rate has to be >=%s", minCommissionRate.String())
 			}
 		case *stakingtypes.MsgEditValidator:
 			// if commission rate isn't being changed, then let it pass
@@ -41,16 +43,19 @@ func (d CheckCommissionRate) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulat
 				return ctx, err
 			}
 
-			val := d.staking.Validator(ctx, valAddr)
+			val, err := d.staking.Validator(ctx, valAddr)
+			if err != nil {
+				return ctx, err
+			}
 			if val == nil {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "not a validator")
+				return ctx, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "not a validator")
 			}
 
 			// if existing commission rate is lower than the min rate, then let it pass.
 			// if it's >= min rate, then don't allow decreasing it to < min rate.
 			commissionRate := val.GetCommission()
 			if commissionRate.GTE(minCommissionRate) && msg.CommissionRate.LT(minCommissionRate) {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator commission rate has to be >=%s", minCommissionRate.String())
+				return ctx, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "validator commission rate has to be >=%s", minCommissionRate.String())
 			}
 		default:
 		}

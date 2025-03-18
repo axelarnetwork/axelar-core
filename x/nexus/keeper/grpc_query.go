@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"google.golang.org/grpc/codes"
@@ -49,7 +50,7 @@ func (q Querier) TransfersForChain(c context.Context, req *types.TransfersForCha
 
 	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
+		return nil, errorsmod.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
 	}
 
 	if err := req.State.Validate(); err != nil {
@@ -66,18 +67,18 @@ func (q Querier) LatestDepositAddress(c context.Context, req *types.LatestDeposi
 
 	recipientChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.RecipientChain))
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.RecipientChain)
+		return nil, errorsmod.Wrapf(types.ErrNexus, "%s is not a registered chain", req.RecipientChain)
 	}
 
 	depositChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.DepositChain))
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DepositChain)
+		return nil, errorsmod.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DepositChain)
 	}
 
 	recipientAddress := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
 	depositAddress, ok := q.keeper.getLatestDepositAddress(ctx, depositChain.Name, recipientAddress)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "no deposit address found for recipient %s on chain %s", req.RecipientAddr, req.RecipientChain)
+		return nil, errorsmod.Wrapf(types.ErrNexus, "no deposit address found for recipient %s on chain %s", req.RecipientAddr, req.RecipientChain)
 	}
 
 	return &types.LatestDepositAddressResponse{DepositAddr: depositAddress.Address}, nil
@@ -89,11 +90,11 @@ func (q Querier) FeeInfo(c context.Context, req *types.FeeInfoRequest) (*types.F
 
 	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
+		return nil, errorsmod.Wrapf(types.ErrNexus, "%s is not a registered chain", req.Chain)
 	}
 
 	if !q.keeper.IsAssetRegistered(ctx, chain, req.Asset) {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, chain.Name)
+		return nil, errorsmod.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", req.Asset, chain.Name)
 	}
 
 	feeInfo := q.keeper.GetFeeInfo(ctx, chain, req.Asset)
@@ -107,12 +108,12 @@ func (q Querier) TransferFee(c context.Context, req *types.TransferFeeRequest) (
 
 	sourceChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.SourceChain))
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.SourceChain)
+		return nil, errorsmod.Wrapf(types.ErrNexus, "%s is not a registered chain", req.SourceChain)
 	}
 
 	destinationChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.DestinationChain))
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DestinationChain)
+		return nil, errorsmod.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DestinationChain)
 	}
 
 	amount, err := req.GetAmount()
@@ -121,11 +122,11 @@ func (q Querier) TransferFee(c context.Context, req *types.TransferFeeRequest) (
 	}
 
 	if !q.keeper.IsAssetRegistered(ctx, sourceChain, amount.Denom) {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", amount.Denom, sourceChain.Name)
+		return nil, errorsmod.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", amount.Denom, sourceChain.Name)
 	}
 
 	if !q.keeper.IsAssetRegistered(ctx, destinationChain, amount.Denom) {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", amount.Denom, destinationChain.Name)
+		return nil, errorsmod.Wrapf(types.ErrNexus, "%s is not a registered asset on chain %s", amount.Denom, destinationChain.Name)
 	}
 
 	if amount.IsNegative() {
@@ -208,7 +209,7 @@ func (q Querier) ChainsByAsset(c context.Context, req *types.ChainsByAssetReques
 	ctx := sdk.UnwrapSDKContext(c)
 
 	if err := sdk.ValidateDenom(req.Asset); err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid asset")
+		return nil, errorsmod.Wrap(err, "invalid asset")
 	}
 
 	chains := q.keeper.GetChains(ctx)
@@ -236,7 +237,7 @@ func (q Querier) RecipientAddress(c context.Context, req *types.RecipientAddress
 
 	linkedAddresses, ok := q.keeper.getLinkedAddresses(ctx, depositAddress)
 	if !ok {
-		return nil, sdkerrors.Wrapf(types.ErrNexus, "no recipient address found for deposit address %s on chain %s", req.DepositAddr, req.DepositChain)
+		return nil, errorsmod.Wrapf(types.ErrNexus, "no recipient address found for deposit address %s on chain %s", req.DepositAddr, req.DepositChain)
 	}
 
 	return &types.RecipientAddressResponse{
@@ -265,7 +266,7 @@ func (q Querier) TransferRateLimit(c context.Context, req *types.TransferRateLim
 
 	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
 	if !ok {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrNotFound, fmt.Errorf("chain %s not found", req.Chain).Error())
+		return nil, errorsmod.Wrap(sdkerrors.ErrNotFound, fmt.Errorf("chain %s not found", req.Chain).Error())
 	}
 
 	rateLimit, found := q.keeper.getRateLimit(ctx, chain.Name, req.Asset)

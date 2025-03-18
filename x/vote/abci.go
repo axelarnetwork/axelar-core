@@ -8,13 +8,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
-	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	"github.com/axelarnetwork/axelar-core/x/vote/types"
 )
-
-// BeginBlocker check for infraction evidence or downtime of validators
-// on every begin block
-func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
 
 func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 	pollQueue := k.GetPollQueue(ctx)
@@ -70,10 +65,6 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 }
 
 // EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.Voter) ([]abci.ValidatorUpdate, error) {
-	if err := handlePollsAtExpiry(ctx, k); err != nil {
-		return nil, err
-	}
-
-	return nil, nil
+func EndBlocker(ctx sdk.Context, k types.Voter) ([]abci.ValidatorUpdate, error) {
+	return nil, handlePollsAtExpiry(ctx, k)
 }

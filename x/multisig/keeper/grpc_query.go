@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sort"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -40,7 +40,7 @@ func (q Querier) KeyID(c context.Context, req *types.KeyIDRequest) (*types.KeyID
 
 	keyID, ok := q.keeper.GetCurrentKeyID(ctx, nexus.ChainName(req.Chain))
 	if !ok {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrMultisig, fmt.Sprintf("key id not found for chain [%s]", req.Chain)).Error())
+		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrMultisig, fmt.Sprintf("key id not found for chain [%s]", req.Chain)).Error())
 	}
 
 	return &types.KeyIDResponse{KeyID: keyID}, nil
@@ -52,7 +52,7 @@ func (q Querier) NextKeyID(c context.Context, req *types.NextKeyIDRequest) (*typ
 
 	keyID, ok := q.keeper.GetNextKeyID(ctx, nexus.ChainName(req.Chain))
 	if !ok {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrMultisig, fmt.Sprintf("next key id not found for chain [%s]", req.Chain)).Error())
+		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrMultisig, fmt.Sprintf("next key id not found for chain [%s]", req.Chain)).Error())
 	}
 
 	return &types.NextKeyIDResponse{KeyID: keyID}, nil
@@ -63,12 +63,12 @@ func (q Querier) Key(c context.Context, req *types.KeyRequest) (*types.KeyRespon
 	ctx := sdk.UnwrapSDKContext(c)
 
 	if _, ok := q.keeper.GetKeygenSession(ctx, req.KeyID); ok {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrMultisig, fmt.Sprintf("keygen in progress for key id [%s]", req.KeyID)).Error())
+		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrMultisig, fmt.Sprintf("keygen in progress for key id [%s]", req.KeyID)).Error())
 	}
 
 	key, ok := q.keeper.GetKey(ctx, req.KeyID)
 	if !ok {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrMultisig, fmt.Sprintf("key not found for key id [%s]", req.KeyID)).Error())
+		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrMultisig, fmt.Sprintf("key not found for key id [%s]", req.KeyID)).Error())
 	}
 
 	participants := slices.Map(key.GetParticipants(), func(p sdk.ValAddress) types.KeygenParticipant {
@@ -125,7 +125,7 @@ func (q Querier) KeygenSession(c context.Context, req *types.KeygenSessionReques
 	if !ok {
 		key, ok = q.keeper.GetKey(ctx, req.KeyID)
 		if !ok {
-			return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrMultisig, fmt.Sprintf("key not found for key id [%s]", req.KeyID)).Error())
+			return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrMultisig, fmt.Sprintf("key not found for key id [%s]", req.KeyID)).Error())
 		}
 
 		session = types.KeygenSession{KeygenThreshold: utils.ZeroThreshold}

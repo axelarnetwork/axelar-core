@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,7 +23,7 @@ func (m VoteRequest) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 // NewVoteRequest creates a message of type VoteMsgRequest
 func NewVoteRequest(sender sdk.AccAddress, id vote.PollID, vote codec.ProtoMarshaler) *VoteRequest {
 	return &VoteRequest{
-		Sender: sender,
+		Sender: sender.String(),
 		PollID: id,
 		Vote:   funcs.Must(codectypes.NewAnyWithValue(vote)),
 	}
@@ -40,26 +41,26 @@ func (m VoteRequest) Type() string {
 
 // ValidateBasic implements sdk.Msg
 func (m VoteRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if m.Vote == nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "vote must not be nil")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "vote must not be nil")
 	}
 
 	vote := m.Vote.GetCachedValue()
 	if vote == nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "vote request contains no vote")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "vote request contains no vote")
 	}
 
 	v, ok := vote.(utils.ValidatedProtoMarshaler)
 	if !ok {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "vote request contains invalid vote")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "vote request contains invalid vote")
 	}
 
 	if err := v.ValidateBasic(); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 	}
 
 	return nil
@@ -69,9 +70,4 @@ func (m VoteRequest) ValidateBasic() error {
 func (m VoteRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners implements sdk.Msg
-func (m VoteRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

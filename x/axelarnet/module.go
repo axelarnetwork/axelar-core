@@ -5,22 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"cosmossdk.io/core/appmodule"
+	errorsmod "cosmossdk.io/errors"
+	sdklogger "cosmossdk.io/log"
+	"cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
-	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
-	porttypes "github.com/cosmos/ibc-go/v7/modules/core/05-port/types"
-	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	porttypes "github.com/cosmos/ibc-go/v8/modules/core/05-port/types"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/utils/grpc"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/cli"
@@ -31,7 +33,7 @@ import (
 )
 
 var (
-	_ module.AppModule      = AppModule{}
+	_ appmodule.AppModule   = AppModule{}
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
@@ -89,7 +91,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	logger  log.Logger
+	logger  sdklogger.Logger
 	ibcK    keeper.IBCKeeper
 	keeper  keeper.Keeper
 	nexus   types.Nexus
@@ -98,7 +100,7 @@ type AppModule struct {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(ibcK keeper.IBCKeeper, nexus types.Nexus, bank types.BankKeeper, account types.AccountKeeper, logger log.Logger) AppModule {
+func NewAppModule(ibcK keeper.IBCKeeper, nexus types.Nexus, bank types.BankKeeper, account types.AccountKeeper, logger sdklogger.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		logger:         logger,
@@ -151,16 +153,9 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	}
 }
 
-// BeginBlock executes all state transitions this module requires at the beginning of each new block
-func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	BeginBlocker(ctx, req)
-}
-
 // EndBlock executes all state transitions this module requires at the end of each new block
-func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return utils.RunCached(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
-		return EndBlocker(ctx, req, am.keeper, am.ibcK)
-	})
+func (am AppModule) EndBlock(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
+	return EndBlocker(ctx, am.keeper, am.ibcK)
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
@@ -226,7 +221,7 @@ func (m AxelarnetIBCModule) OnAcknowledgementPacket(
 
 	var ack channeltypes.Acknowledgement
 	if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement, &ack); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet acknowledgement: %v", err)
+		return errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet acknowledgement: %v", err)
 	}
 
 	if err := ack.ValidateBasic(); err != nil {
@@ -381,7 +376,7 @@ func extractTokenFromAckOrTimeoutPacket(packet channeltypes.Packet) sdk.Coin {
 	data := funcs.Must(types.ToICS20Packet(packet))
 
 	trace := ibctransfertypes.ParseDenomTrace(data.Denom)
-	amount := funcs.MustOk(sdk.NewIntFromString(data.Amount))
+	amount := funcs.MustOk(math.NewIntFromString(data.Amount))
 
 	return sdk.NewCoin(trace.IBCDenom(), amount)
 }
@@ -401,8 +396,15 @@ func refundFromAssetEscrowAddressToIBCAccount(ctx sdk.Context, packet channeltyp
 	}
 
 	denom := ibctransfertypes.ParseDenomTrace(data.Denom).IBCDenom()
-	transferAmount := funcs.MustOk(sdk.NewIntFromString(data.Amount))
+	transferAmount := funcs.MustOk(math.NewIntFromString(data.Amount))
 
 	token := sdk.NewCoin(denom, transferAmount)
 	return bank.SendCoins(ctx, originalSender, types.AxelarIBCAccount, sdk.NewCoins(token))
 }
+
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() { // marker
+}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}

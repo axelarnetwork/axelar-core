@@ -41,7 +41,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
@@ -77,6 +77,8 @@ paths:
                 type: string
                 title: 'TODO: Rename this to `chain` after v1beta1 -> v1 version bump'
               ibc_path:
+                type: string
+              sender:
                 type: string
             title: >-
               MsgAddCosmosBasedChain represents a message to register a cosmos
@@ -122,7 +124,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
@@ -156,6 +158,8 @@ paths:
                   refund_recipient:
                     type: string
                     format: byte
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/axelarnet/confirm_deposit:
@@ -195,13 +199,15 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               deposit_address:
                 type: string
                 format: byte
               denom:
+                type: string
+              sender:
                 type: string
             title: MsgConfirmDeposit represents a deposit confirmation message
       tags:
@@ -243,9 +249,11 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
+              sender:
+                type: string
             title: >-
               MsgExecutePendingTransfers represents a message to trigger
               transfer all
@@ -293,7 +301,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               recipient_addr:
@@ -301,6 +309,8 @@ paths:
               recipient_chain:
                 type: string
               asset:
+                type: string
+              sender:
                 type: string
             title: >-
               MsgLink represents a message to link a cross-chain address to an
@@ -346,7 +356,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
@@ -362,6 +372,8 @@ paths:
                 type: string
                 format: byte
               window:
+                type: string
+              sender:
                 type: string
             title: >-
               RegisterAssetRequest represents a message to register an asset to
@@ -407,12 +419,14 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               fee_collector:
                 type: string
                 format: byte
+              sender:
+                type: string
             title: >-
               RegisterFeeCollectorRequest represents a message to register
               axelarnet fee
@@ -457,7 +471,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
@@ -465,6 +479,8 @@ paths:
               id:
                 type: string
                 format: uint64
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/axelarnet/route_ibc_transfers:
@@ -504,9 +520,11 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
+              sender:
+                type: string
             title: >-
               RouteIBCTransfersRequest represents a message to route pending
               transfers to
@@ -551,7 +569,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               id:
@@ -562,6 +580,8 @@ paths:
               feegranter:
                 type: string
                 format: byte
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/axelarnet/v1beta1/chain_by_ibc_path/{ibc_path}:
@@ -966,7 +986,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               name:
@@ -982,6 +1002,8 @@ paths:
               params:
                 type: string
                 format: byte
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/evm/confirm_deposit:
@@ -1193,7 +1215,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
@@ -1207,6 +1229,8 @@ paths:
               burner_address:
                 type: string
                 format: byte
+              sender:
+                type: string
             title: MsgConfirmDeposit represents an erc20 deposit confirmation message
       tags:
         - MsgService
@@ -1420,7 +1444,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
@@ -1428,6 +1452,8 @@ paths:
               tx_id:
                 type: string
                 format: byte
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/evm/confirm_gateway_txs:
@@ -1639,7 +1665,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
@@ -1649,6 +1675,8 @@ paths:
                 items:
                   type: string
                   format: byte
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/evm/confirm_token:
@@ -1860,7 +1888,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
@@ -1875,6 +1903,8 @@ paths:
                     type: string
                   name:
                     type: string
+              sender:
+                type: string
             title: MsgConfirmToken represents a token deploy confirmation message
       tags:
         - MsgService
@@ -2087,7 +2117,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
@@ -2095,6 +2125,8 @@ paths:
               tx_id:
                 type: string
                 format: byte
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/evm/create_burn_tokens:
@@ -2306,10 +2338,12 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
+                type: string
+              sender:
                 type: string
             title: >-
               CreateBurnTokensRequest represents the message to create commands
@@ -2527,7 +2561,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
@@ -2556,6 +2590,8 @@ paths:
                 type: string
                 format: byte
               daily_mint_limit:
+                type: string
+              sender:
                 type: string
             title: >-
               CreateDeployTokenRequest represents the message to create a deploy
@@ -2773,10 +2809,12 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
+                type: string
+              sender:
                 type: string
             title: >-
               CreatePendingTransfersRequest represents a message to trigger the
@@ -2994,12 +3032,14 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
                 type: string
               key_id:
+                type: string
+              sender:
                 type: string
       tags:
         - MsgService
@@ -3215,7 +3255,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
@@ -3225,6 +3265,8 @@ paths:
               asset:
                 type: string
               recipient_chain:
+                type: string
+              sender:
                 type: string
             title: >-
               MsgLink represents the message that links a cross chain address to
@@ -3442,12 +3484,14 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
                 type: string
               event_id:
+                type: string
+              sender:
                 type: string
       tags:
         - MsgService
@@ -3660,7 +3704,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
@@ -3668,6 +3712,8 @@ paths:
               address:
                 type: string
                 format: byte
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/evm/sign_commands:
@@ -3886,10 +3932,12 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
+                type: string
+              sender:
                 type: string
       tags:
         - MsgService
@@ -7296,21 +7344,15 @@ paths:
           schema:
             type: object
             properties:
-              sender_str:
+              sender:
                 type: string
-                description: >-
-                  Deprecated: This is the original "sender" field, but was
-                  originally
-
-                  declared as a string, rather than a byte array.
               chain:
                 type: string
               key_id:
                 type: string
-              sender:
+              sender_bz:
                 type: string
                 format: byte
-                title: New "sender" field, using the appropriate type
       tags:
         - MsgService
   /axelar/multisig/start_keygen:
@@ -7350,19 +7392,13 @@ paths:
           schema:
             type: object
             properties:
-              sender_str:
-                type: string
-                description: >-
-                  Deprecated: This is the original "sender" field, but was
-                  originally
-
-                  declared as a string, rather than a byte array.
-              key_id:
-                type: string
               sender:
                 type: string
+              key_id:
+                type: string
+              sender_bz:
+                type: string
                 format: byte
-                title: New "sender" field, using the appropriate type
       tags:
         - MsgService
   /axelar/multisig/submit_pub_key:
@@ -7402,13 +7438,8 @@ paths:
           schema:
             type: object
             properties:
-              sender_str:
+              sender:
                 type: string
-                description: >-
-                  Deprecated: This is the original "sender" field, but was
-                  originally
-
-                  declared as a string, rather than a byte array.
               key_id:
                 type: string
               pub_key:
@@ -7417,10 +7448,9 @@ paths:
               signature:
                 type: string
                 format: byte
-              sender:
+              sender_bz:
                 type: string
                 format: byte
-                title: New "sender" field, using the appropriate type
       tags:
         - MsgService
   /axelar/multisig/submit_signature:
@@ -7460,23 +7490,17 @@ paths:
           schema:
             type: object
             properties:
-              sender_str:
+              sender:
                 type: string
-                description: >-
-                  Deprecated: This is the original "sender" field, but was
-                  originally
-
-                  declared as a string, rather than a byte array.
               sig_id:
                 type: string
                 format: uint64
               signature:
                 type: string
                 format: byte
-              sender:
+              sender_bz:
                 type: string
                 format: byte
-                title: New "sender" field, using the appropriate type
       tags:
         - MsgService
   /axelar/multisig/v1beta1/key:
@@ -7638,9 +7662,11 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/multisig/v1beta1/keygen_opt_out:
@@ -7680,9 +7706,11 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/multisig/v1beta1/keygen_session:
@@ -7939,13 +7967,15 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chains:
                 type: array
                 items:
                   type: string
+              sender:
+                type: string
             title: ActivateChainRequest represents a message to activate chains
       tags:
         - MsgService
@@ -7986,13 +8016,15 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chains:
                 type: array
                 items:
                   type: string
+              sender:
+                type: string
             title: DeactivateChainRequest represents a message to deactivate chains
       tags:
         - MsgService
@@ -8033,13 +8065,15 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chains:
                 type: array
                 items:
                   type: string
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/nexus/register_asset_fee:
@@ -8079,7 +8113,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               fee_info:
@@ -8098,6 +8132,8 @@ paths:
                   max_fee:
                     type: string
                     format: byte
+              sender:
+                type: string
             title: >-
               RegisterAssetFeeRequest represents a message to register the
               transfer fee
@@ -8142,13 +8178,15 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chains:
                 type: array
                 items:
                   type: string
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/nexus/set_transfer_rate_limit:
@@ -8188,7 +8226,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               chain:
@@ -8209,6 +8247,8 @@ paths:
 
                   signatures required by gogoproto.
               window:
+                type: string
+              sender:
                 type: string
             title: >-
               SetTransferRateLimitRequest represents a message to set rate
@@ -9556,7 +9596,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               inner_message:
@@ -9735,6 +9775,8 @@ paths:
                         "@type": "type.googleapis.com/google.protobuf.Duration",
                         "value": "1.212s"
                       }
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/reward/v1beta1/inflation_rate:
@@ -10416,9 +10458,11 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/snapshot/register_proxy:
@@ -10463,12 +10507,14 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               proxy_addr:
                 type: string
                 format: byte
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/snapshot/v1beta1/operator:
@@ -10807,7 +10853,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               key_ids:
@@ -10815,6 +10861,8 @@ paths:
                 items:
                   type: string
                 title: 'Deprecated: this field will be removed in the next release'
+              sender:
+                type: string
       tags:
         - MsgService
   /axelar/tss/v1beta1/params:
@@ -11391,12 +11439,14 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               controller:
                 type: string
                 format: byte
+              sender:
+                type: string
             title: >-
               DeregisterController represents a message to deregister a
               controller account
@@ -11611,12 +11661,14 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               controller:
                 type: string
                 format: byte
+              sender:
+                type: string
             title: >-
               MsgRegisterController represents a message to register a
               controller account
@@ -11831,7 +11883,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               governance_key:
@@ -12028,6 +12080,8 @@ paths:
                   LegacyAminoPubKey specifies a public key type
                   which nests multiple public keys and a threshold,
                   it uses legacy amino address rules.
+              sender:
+                type: string
       tags:
         - Msg
   /axelar/permission/v1beta1/governance_key:
@@ -13079,7 +13133,7 @@ paths:
           schema:
             type: object
             properties:
-              sender:
+              sender_bz:
                 type: string
                 format: byte
               poll_id:
@@ -13261,6 +13315,8 @@ paths:
                         "@type": "type.googleapis.com/google.protobuf.Duration",
                         "value": "1.212s"
                       }
+              sender:
+                type: string
       tags:
         - MsgService
   /cosmos/auth/v1beta1/account_info/{address}:
@@ -52257,7 +52313,7 @@ definitions:
   axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
@@ -52294,6 +52350,8 @@ definitions:
         title: 'TODO: Rename this to `chain` after v1beta1 -> v1 version bump'
       ibc_path:
         type: string
+      sender:
+        type: string
     title: >-
       MsgAddCosmosBasedChain represents a message to register a cosmos based
       chain
@@ -52325,7 +52383,7 @@ definitions:
   axelar.axelarnet.v1beta1.CallContractRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
@@ -52359,6 +52417,8 @@ definitions:
           refund_recipient:
             type: string
             format: byte
+      sender:
+        type: string
   axelar.axelarnet.v1beta1.CallContractResponse:
     type: object
   axelar.axelarnet.v1beta1.ChainByIBCPathResponse:
@@ -52369,7 +52429,7 @@ definitions:
   axelar.axelarnet.v1beta1.ConfirmDepositRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       deposit_address:
@@ -52377,15 +52437,19 @@ definitions:
         format: byte
       denom:
         type: string
+      sender:
+        type: string
     title: MsgConfirmDeposit represents a deposit confirmation message
   axelar.axelarnet.v1beta1.ConfirmDepositResponse:
     type: object
   axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
+      sender:
+        type: string
     title: |-
       MsgExecutePendingTransfers represents a message to trigger transfer all
       pending transfers
@@ -52420,7 +52484,7 @@ definitions:
   axelar.axelarnet.v1beta1.LinkRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       recipient_addr:
@@ -52428,6 +52492,8 @@ definitions:
       recipient_chain:
         type: string
       asset:
+        type: string
+      sender:
         type: string
     title: |-
       MsgLink represents a message to link a cross-chain address to an Axelar
@@ -52531,7 +52597,7 @@ definitions:
   axelar.axelarnet.v1beta1.RegisterAssetRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
@@ -52548,6 +52614,8 @@ definitions:
         format: byte
       window:
         type: string
+      sender:
+        type: string
     title: |-
       RegisterAssetRequest represents a message to register an asset to a cosmos
       based chain
@@ -52556,12 +52624,14 @@ definitions:
   axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       fee_collector:
         type: string
         format: byte
+      sender:
+        type: string
     title: |-
       RegisterFeeCollectorRequest represents a message to register axelarnet fee
       collector account
@@ -52570,7 +52640,7 @@ definitions:
   axelar.axelarnet.v1beta1.RetryIBCTransferRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
@@ -52578,14 +52648,18 @@ definitions:
       id:
         type: string
         format: uint64
+      sender:
+        type: string
   axelar.axelarnet.v1beta1.RetryIBCTransferResponse:
     type: object
   axelar.axelarnet.v1beta1.RouteIBCTransfersRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
+      sender:
+        type: string
     title: >-
       RouteIBCTransfersRequest represents a message to route pending transfers
       to
@@ -52596,7 +52670,7 @@ definitions:
   axelar.axelarnet.v1beta1.RouteMessageRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       id:
@@ -52607,6 +52681,8 @@ definitions:
       feegranter:
         type: string
         format: byte
+      sender:
+        type: string
   axelar.axelarnet.v1beta1.RouteMessageResponse:
     type: object
   axelar.nexus.exported.v1beta1.Asset:
@@ -52657,7 +52733,7 @@ definitions:
   axelar.evm.v1beta1.AddChainRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       name:
@@ -52673,6 +52749,8 @@ definitions:
       params:
         type: string
         format: byte
+      sender:
+        type: string
   axelar.evm.v1beta1.AddChainResponse:
     type: object
   axelar.evm.v1beta1.Asset:
@@ -52821,7 +52899,7 @@ definitions:
   axelar.evm.v1beta1.ConfirmDepositRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
@@ -52835,13 +52913,15 @@ definitions:
       burner_address:
         type: string
         format: byte
+      sender:
+        type: string
     title: MsgConfirmDeposit represents an erc20 deposit confirmation message
   axelar.evm.v1beta1.ConfirmDepositResponse:
     type: object
   axelar.evm.v1beta1.ConfirmGatewayTxRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
@@ -52849,12 +52929,14 @@ definitions:
       tx_id:
         type: string
         format: byte
+      sender:
+        type: string
   axelar.evm.v1beta1.ConfirmGatewayTxResponse:
     type: object
   axelar.evm.v1beta1.ConfirmGatewayTxsRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
@@ -52864,12 +52946,14 @@ definitions:
         items:
           type: string
           format: byte
+      sender:
+        type: string
   axelar.evm.v1beta1.ConfirmGatewayTxsResponse:
     type: object
   axelar.evm.v1beta1.ConfirmTokenRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
@@ -52884,13 +52968,15 @@ definitions:
             type: string
           name:
             type: string
+      sender:
+        type: string
     title: MsgConfirmToken represents a token deploy confirmation message
   axelar.evm.v1beta1.ConfirmTokenResponse:
     type: object
   axelar.evm.v1beta1.ConfirmTransferKeyRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
@@ -52898,6 +52984,8 @@ definitions:
       tx_id:
         type: string
         format: byte
+      sender:
+        type: string
   axelar.evm.v1beta1.ConfirmTransferKeyResponse:
     type: object
   axelar.evm.v1beta1.ConfirmationHeightResponse:
@@ -52909,10 +52997,12 @@ definitions:
   axelar.evm.v1beta1.CreateBurnTokensRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
+        type: string
+      sender:
         type: string
     title: |-
       CreateBurnTokensRequest represents the message to create commands to burn
@@ -52922,7 +53012,7 @@ definitions:
   axelar.evm.v1beta1.CreateDeployTokenRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
@@ -52952,6 +53042,8 @@ definitions:
         format: byte
       daily_mint_limit:
         type: string
+      sender:
+        type: string
     title: |-
       CreateDeployTokenRequest represents the message to create a deploy token
       command for AxelarGateway
@@ -52960,10 +53052,12 @@ definitions:
   axelar.evm.v1beta1.CreatePendingTransfersRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
+        type: string
+      sender:
         type: string
     title: >-
       CreatePendingTransfersRequest represents a message to trigger the creation
@@ -52975,12 +53069,14 @@ definitions:
   axelar.evm.v1beta1.CreateTransferOperatorshipRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
         type: string
       key_id:
+        type: string
+      sender:
         type: string
   axelar.evm.v1beta1.CreateTransferOperatorshipResponse:
     type: object
@@ -53399,7 +53495,7 @@ definitions:
   axelar.evm.v1beta1.LinkRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
@@ -53409,6 +53505,8 @@ definitions:
       asset:
         type: string
       recipient_chain:
+        type: string
+      sender:
         type: string
     title: >-
       MsgLink represents the message that links a cross chain address to a
@@ -53618,19 +53716,21 @@ definitions:
   axelar.evm.v1beta1.RetryFailedEventRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
         type: string
       event_id:
         type: string
+      sender:
+        type: string
   axelar.evm.v1beta1.RetryFailedEventResponse:
     type: object
   axelar.evm.v1beta1.SetGatewayRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
@@ -53638,15 +53738,19 @@ definitions:
       address:
         type: string
         format: byte
+      sender:
+        type: string
   axelar.evm.v1beta1.SetGatewayResponse:
     type: object
   axelar.evm.v1beta1.SignCommandsRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
+        type: string
+      sender:
         type: string
   axelar.evm.v1beta1.SignCommandsResponse:
     type: object
@@ -53776,17 +53880,21 @@ definitions:
   axelar.multisig.v1beta1.KeygenOptInRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
+      sender:
+        type: string
   axelar.multisig.v1beta1.KeygenOptInResponse:
     type: object
   axelar.multisig.v1beta1.KeygenOptOutRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
+      sender:
+        type: string
   axelar.multisig.v1beta1.KeygenOptOutResponse:
     type: object
   axelar.multisig.v1beta1.KeygenParticipant:
@@ -53955,45 +54063,34 @@ definitions:
   axelar.multisig.v1beta1.RotateKeyRequest:
     type: object
     properties:
-      sender_str:
+      sender:
         type: string
-        description: |-
-          Deprecated: This is the original "sender" field, but was originally
-          declared as a string, rather than a byte array.
       chain:
         type: string
       key_id:
         type: string
-      sender:
+      sender_bz:
         type: string
         format: byte
-        title: New "sender" field, using the appropriate type
   axelar.multisig.v1beta1.RotateKeyResponse:
     type: object
   axelar.multisig.v1beta1.StartKeygenRequest:
     type: object
     properties:
-      sender_str:
-        type: string
-        description: |-
-          Deprecated: This is the original "sender" field, but was originally
-          declared as a string, rather than a byte array.
-      key_id:
-        type: string
       sender:
         type: string
+      key_id:
+        type: string
+      sender_bz:
+        type: string
         format: byte
-        title: New "sender" field, using the appropriate type
   axelar.multisig.v1beta1.StartKeygenResponse:
     type: object
   axelar.multisig.v1beta1.SubmitPubKeyRequest:
     type: object
     properties:
-      sender_str:
+      sender:
         type: string
-        description: |-
-          Deprecated: This is the original "sender" field, but was originally
-          declared as a string, rather than a byte array.
       key_id:
         type: string
       pub_key:
@@ -54002,30 +54099,25 @@ definitions:
       signature:
         type: string
         format: byte
-      sender:
+      sender_bz:
         type: string
         format: byte
-        title: New "sender" field, using the appropriate type
   axelar.multisig.v1beta1.SubmitPubKeyResponse:
     type: object
   axelar.multisig.v1beta1.SubmitSignatureRequest:
     type: object
     properties:
-      sender_str:
+      sender:
         type: string
-        description: |-
-          Deprecated: This is the original "sender" field, but was originally
-          declared as a string, rather than a byte array.
       sig_id:
         type: string
         format: uint64
       signature:
         type: string
         format: byte
-      sender:
+      sender_bz:
         type: string
         format: byte
-        title: New "sender" field, using the appropriate type
   axelar.multisig.v1beta1.SubmitSignatureResponse:
     type: object
   axelar.nexus.exported.v1beta1.CrossChainAddress:
@@ -54232,13 +54324,15 @@ definitions:
   axelar.nexus.v1beta1.ActivateChainRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chains:
         type: array
         items:
           type: string
+      sender:
+        type: string
     title: ActivateChainRequest represents a message to activate chains
   axelar.nexus.v1beta1.ActivateChainResponse:
     type: object
@@ -54438,26 +54532,30 @@ definitions:
   axelar.nexus.v1beta1.DeactivateChainRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chains:
         type: array
         items:
           type: string
+      sender:
+        type: string
     title: DeactivateChainRequest represents a message to deactivate chains
   axelar.nexus.v1beta1.DeactivateChainResponse:
     type: object
   axelar.nexus.v1beta1.DeregisterChainMaintainerRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chains:
         type: array
         items:
           type: string
+      sender:
+        type: string
   axelar.nexus.v1beta1.DeregisterChainMaintainerResponse:
     type: object
   axelar.nexus.v1beta1.FeeInfoResponse:
@@ -54742,7 +54840,7 @@ definitions:
   axelar.nexus.v1beta1.RegisterAssetFeeRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       fee_info:
@@ -54761,6 +54859,8 @@ definitions:
           max_fee:
             type: string
             format: byte
+      sender:
+        type: string
     title: |-
       RegisterAssetFeeRequest represents a message to register the transfer fee
       info associated to an asset on a chain
@@ -54769,19 +54869,21 @@ definitions:
   axelar.nexus.v1beta1.RegisterChainMaintainerRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chains:
         type: array
         items:
           type: string
+      sender:
+        type: string
   axelar.nexus.v1beta1.RegisterChainMaintainerResponse:
     type: object
   axelar.nexus.v1beta1.SetTransferRateLimitRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       chain:
@@ -54799,6 +54901,8 @@ definitions:
           NOTE: The amount field is an Int which implements the custom method
           signatures required by gogoproto.
       window:
+        type: string
+      sender:
         type: string
     title: |-
       SetTransferRateLimitRequest represents a message to set rate limits on
@@ -55101,7 +55205,7 @@ definitions:
   axelar.reward.v1beta1.RefundMsgRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       inner_message:
@@ -55268,6 +55372,8 @@ definitions:
                 "@type": "type.googleapis.com/google.protobuf.Duration",
                 "value": "1.212s"
               }
+      sender:
+        type: string
   axelar.reward.v1beta1.RefundMsgResponse:
     type: object
     properties:
@@ -55279,9 +55385,11 @@ definitions:
   axelar.snapshot.v1beta1.DeactivateProxyRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
+      sender:
+        type: string
   axelar.snapshot.v1beta1.DeactivateProxyResponse:
     type: object
   axelar.snapshot.v1beta1.OperatorByProxyResponse:
@@ -55328,12 +55436,14 @@ definitions:
   axelar.snapshot.v1beta1.RegisterProxyRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       proxy_addr:
         type: string
         format: byte
+      sender:
+        type: string
   axelar.snapshot.v1beta1.RegisterProxyResponse:
     type: object
   axelar.tss.exported.v1beta1.KeyRequirement:
@@ -55449,7 +55559,7 @@ definitions:
   axelar.tss.v1beta1.HeartBeatRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       key_ids:
@@ -55457,6 +55567,8 @@ definitions:
         items:
           type: string
         title: 'Deprecated: this field will be removed in the next release'
+      sender:
+        type: string
   axelar.tss.v1beta1.HeartBeatResponse:
     type: object
   axelar.tss.v1beta1.Params:
@@ -55777,12 +55889,14 @@ definitions:
   axelar.permission.v1beta1.DeregisterControllerRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       controller:
         type: string
         format: byte
+      sender:
+        type: string
     title: >-
       DeregisterController represents a message to deregister a controller
       account
@@ -55992,12 +56106,14 @@ definitions:
   axelar.permission.v1beta1.RegisterControllerRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       controller:
         type: string
         format: byte
+      sender:
+        type: string
     title: >-
       MsgRegisterController represents a message to register a controller
       account
@@ -56006,7 +56122,7 @@ definitions:
   axelar.permission.v1beta1.UpdateGovernanceKeyRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       governance_key:
@@ -56195,6 +56311,8 @@ definitions:
           LegacyAminoPubKey specifies a public key type
           which nests multiple public keys and a threshold,
           it uses legacy amino address rules.
+      sender:
+        type: string
   axelar.permission.v1beta1.UpdateGovernanceKeyResponse:
     type: object
   cosmos.crypto.multisig.LegacyAminoPubKey:
@@ -56424,7 +56542,7 @@ definitions:
   axelar.vote.v1beta1.VoteRequest:
     type: object
     properties:
-      sender:
+      sender_bz:
         type: string
         format: byte
       poll_id:
@@ -56594,6 +56712,8 @@ definitions:
                 "@type": "type.googleapis.com/google.protobuf.Duration",
                 "value": "1.212s"
               }
+      sender:
+        type: string
   axelar.vote.v1beta1.VoteResponse:
     type: object
     properties:

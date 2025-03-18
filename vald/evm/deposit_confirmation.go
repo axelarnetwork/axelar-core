@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
 
@@ -59,7 +59,7 @@ func (mgr Mgr) processDepositConfirmationLogs(event *types.ConfirmDepositStarted
 
 		erc20Event, err := DecodeERC20TransferEvent(log)
 		if err != nil {
-			mgr.logger().Debug(sdkerrors.Wrap(err, "decode event Transfer failed").Error())
+			mgr.logger().Debug(errorsmod.Wrap(err, "decode event Transfer failed").Error())
 			continue
 		}
 
@@ -68,7 +68,7 @@ func (mgr Mgr) processDepositConfirmationLogs(event *types.ConfirmDepositStarted
 		}
 
 		if err := erc20Event.ValidateBasic(); err != nil {
-			mgr.logger().Debug(sdkerrors.Wrap(err, "invalid event Transfer").Error())
+			mgr.logger().Debug(errorsmod.Wrap(err, "invalid event Transfer").Error())
 			continue
 		}
 

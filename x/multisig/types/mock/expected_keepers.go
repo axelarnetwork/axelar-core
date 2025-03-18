@@ -4,13 +4,15 @@
 package mock
 
 import (
+	context "context"
+	"cosmossdk.io/log"
+	cosmossdk_io_math "cosmossdk.io/math"
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	github_com_axelarnetwork_axelar_core_x_multisig_exported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	exported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
-	"github.com/cometbft/cometbft/libs/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"sync"
@@ -623,7 +625,7 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //
 //		// make and configure a mocked types.Snapshotter
 //		mockedSnapshotter := &SnapshotterMock{
-//			CreateSnapshotFunc: func(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(exported.ValidatorI) bool, weightFunc func(consensusPower sdk.Uint) sdk.Uint, threshold utils.Threshold) (exported.Snapshot, error) {
+//			CreateSnapshotFunc: func(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(exported.ValidatorI) bool, weightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint, threshold utils.Threshold) (exported.Snapshot, error) {
 //				panic("mock out the CreateSnapshot method")
 //			},
 //			GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
@@ -640,7 +642,7 @@ var _ types.Snapshotter = &SnapshotterMock{}
 //	}
 type SnapshotterMock struct {
 	// CreateSnapshotFunc mocks the CreateSnapshot method.
-	CreateSnapshotFunc func(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(exported.ValidatorI) bool, weightFunc func(consensusPower sdk.Uint) sdk.Uint, threshold utils.Threshold) (exported.Snapshot, error)
+	CreateSnapshotFunc func(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(exported.ValidatorI) bool, weightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint, threshold utils.Threshold) (exported.Snapshot, error)
 
 	// GetOperatorFunc mocks the GetOperator method.
 	GetOperatorFunc func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
@@ -659,7 +661,7 @@ type SnapshotterMock struct {
 			// FilterFunc is the filterFunc argument value.
 			FilterFunc func(exported.ValidatorI) bool
 			// WeightFunc is the weightFunc argument value.
-			WeightFunc func(consensusPower sdk.Uint) sdk.Uint
+			WeightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint
 			// Threshold is the threshold argument value.
 			Threshold utils.Threshold
 		}
@@ -684,7 +686,7 @@ type SnapshotterMock struct {
 }
 
 // CreateSnapshot calls CreateSnapshotFunc.
-func (mock *SnapshotterMock) CreateSnapshot(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(exported.ValidatorI) bool, weightFunc func(consensusPower sdk.Uint) sdk.Uint, threshold utils.Threshold) (exported.Snapshot, error) {
+func (mock *SnapshotterMock) CreateSnapshot(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(exported.ValidatorI) bool, weightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint, threshold utils.Threshold) (exported.Snapshot, error) {
 	if mock.CreateSnapshotFunc == nil {
 		panic("SnapshotterMock.CreateSnapshotFunc: method is nil but Snapshotter.CreateSnapshot was just called")
 	}
@@ -692,7 +694,7 @@ func (mock *SnapshotterMock) CreateSnapshot(ctx sdk.Context, candidates []sdk.Va
 		Ctx        sdk.Context
 		Candidates []sdk.ValAddress
 		FilterFunc func(exported.ValidatorI) bool
-		WeightFunc func(consensusPower sdk.Uint) sdk.Uint
+		WeightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint
 		Threshold  utils.Threshold
 	}{
 		Ctx:        ctx,
@@ -715,14 +717,14 @@ func (mock *SnapshotterMock) CreateSnapshotCalls() []struct {
 	Ctx        sdk.Context
 	Candidates []sdk.ValAddress
 	FilterFunc func(exported.ValidatorI) bool
-	WeightFunc func(consensusPower sdk.Uint) sdk.Uint
+	WeightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint
 	Threshold  utils.Threshold
 } {
 	var calls []struct {
 		Ctx        sdk.Context
 		Candidates []sdk.ValAddress
 		FilterFunc func(exported.ValidatorI) bool
-		WeightFunc func(consensusPower sdk.Uint) sdk.Uint
+		WeightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint
 		Threshold  utils.Threshold
 	}
 	mock.lockCreateSnapshot.RLock()
@@ -813,7 +815,7 @@ var _ types.Staker = &StakerMock{}
 //
 //		// make and configure a mocked types.Staker
 //		mockedStaker := &StakerMock{
-//			GetBondedValidatorsByPowerFunc: func(ctx sdk.Context) []stakingTypes.Validator {
+//			GetBondedValidatorsByPowerFunc: func(ctx context.Context) ([]stakingTypes.Validator, error) {
 //				panic("mock out the GetBondedValidatorsByPower method")
 //			},
 //		}
@@ -824,26 +826,26 @@ var _ types.Staker = &StakerMock{}
 //	}
 type StakerMock struct {
 	// GetBondedValidatorsByPowerFunc mocks the GetBondedValidatorsByPower method.
-	GetBondedValidatorsByPowerFunc func(ctx sdk.Context) []stakingTypes.Validator
+	GetBondedValidatorsByPowerFunc func(ctx context.Context) ([]stakingTypes.Validator, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetBondedValidatorsByPower holds details about calls to the GetBondedValidatorsByPower method.
 		GetBondedValidatorsByPower []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 		}
 	}
 	lockGetBondedValidatorsByPower sync.RWMutex
 }
 
 // GetBondedValidatorsByPower calls GetBondedValidatorsByPowerFunc.
-func (mock *StakerMock) GetBondedValidatorsByPower(ctx sdk.Context) []stakingTypes.Validator {
+func (mock *StakerMock) GetBondedValidatorsByPower(ctx context.Context) ([]stakingTypes.Validator, error) {
 	if mock.GetBondedValidatorsByPowerFunc == nil {
 		panic("StakerMock.GetBondedValidatorsByPowerFunc: method is nil but Staker.GetBondedValidatorsByPower was just called")
 	}
 	callInfo := struct {
-		Ctx sdk.Context
+		Ctx context.Context
 	}{
 		Ctx: ctx,
 	}
@@ -858,10 +860,10 @@ func (mock *StakerMock) GetBondedValidatorsByPower(ctx sdk.Context) []stakingTyp
 //
 //	len(mockedStaker.GetBondedValidatorsByPowerCalls())
 func (mock *StakerMock) GetBondedValidatorsByPowerCalls() []struct {
-	Ctx sdk.Context
+	Ctx context.Context
 } {
 	var calls []struct {
-		Ctx sdk.Context
+		Ctx context.Context
 	}
 	mock.lockGetBondedValidatorsByPower.RLock()
 	calls = mock.calls.GetBondedValidatorsByPower
@@ -879,7 +881,7 @@ var _ types.Slasher = &SlasherMock{}
 //
 //		// make and configure a mocked types.Slasher
 //		mockedSlasher := &SlasherMock{
-//			IsTombstonedFunc: func(ctx sdk.Context, consAddr sdk.ConsAddress) bool {
+//			IsTombstonedFunc: func(ctx context.Context, consAddr sdk.ConsAddress) bool {
 //				panic("mock out the IsTombstoned method")
 //			},
 //		}
@@ -890,14 +892,14 @@ var _ types.Slasher = &SlasherMock{}
 //	}
 type SlasherMock struct {
 	// IsTombstonedFunc mocks the IsTombstoned method.
-	IsTombstonedFunc func(ctx sdk.Context, consAddr sdk.ConsAddress) bool
+	IsTombstonedFunc func(ctx context.Context, consAddr sdk.ConsAddress) bool
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// IsTombstoned holds details about calls to the IsTombstoned method.
 		IsTombstoned []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 			// ConsAddr is the consAddr argument value.
 			ConsAddr sdk.ConsAddress
 		}
@@ -906,12 +908,12 @@ type SlasherMock struct {
 }
 
 // IsTombstoned calls IsTombstonedFunc.
-func (mock *SlasherMock) IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool {
+func (mock *SlasherMock) IsTombstoned(ctx context.Context, consAddr sdk.ConsAddress) bool {
 	if mock.IsTombstonedFunc == nil {
 		panic("SlasherMock.IsTombstonedFunc: method is nil but Slasher.IsTombstoned was just called")
 	}
 	callInfo := struct {
-		Ctx      sdk.Context
+		Ctx      context.Context
 		ConsAddr sdk.ConsAddress
 	}{
 		Ctx:      ctx,
@@ -928,11 +930,11 @@ func (mock *SlasherMock) IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress)
 //
 //	len(mockedSlasher.IsTombstonedCalls())
 func (mock *SlasherMock) IsTombstonedCalls() []struct {
-	Ctx      sdk.Context
+	Ctx      context.Context
 	ConsAddr sdk.ConsAddress
 } {
 	var calls []struct {
-		Ctx      sdk.Context
+		Ctx      context.Context
 		ConsAddr sdk.ConsAddress
 	}
 	mock.lockIsTombstoned.RLock()

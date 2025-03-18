@@ -8,10 +8,11 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/x/ante"
@@ -31,22 +32,22 @@ type AnteHandlerMessenger struct {
 	messenger  wasmkeeper.Messenger
 }
 
-func (m AnteHandlerMessenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, contractIBCPortID string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error) {
+func (m AnteHandlerMessenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccAddress, contractIBCPortID string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, msgResponses [][]*codectypes.Any, err error) {
 	if err := assertSingleMessageIsSet(msg); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// burn and ibc send packet cannot be converted into sdk.Msg and are irrelevant for ante handler checks
 	if !isBankBurnMsg(msg) && !isIBCSendPacketMsg(msg) {
 		sdkMsgs, err := m.encoders.Encode(ctx, contractAddr, contractIBCPortID, msg)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		// we can't know if this is a simulation or not at this stage, so we treat it as a regular execution
 		ctx, err = m.anteHandle(ctx, sdkMsgs, false)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 
@@ -100,22 +101,18 @@ func NewMsgTypeBlacklistMessenger() MsgTypeBlacklistMessenger {
 	return MsgTypeBlacklistMessenger{}
 }
 
-func (m MsgTypeBlacklistMessenger) DispatchMsg(_ sdk.Context, _ sdk.AccAddress, _ string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, err error) {
-	if isIBCSendPacketMsg(msg) || isStargateMsg(msg) {
-		return nil, nil, fmt.Errorf("ibc send packet and stargate messages are not supported")
+func (m MsgTypeBlacklistMessenger) DispatchMsg(_ sdk.Context, _ sdk.AccAddress, _ string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, msgResponses [][]*codectypes.Any, err error) {
+	if isIBCSendPacketMsg(msg) {
+		return nil, nil, nil, fmt.Errorf("ibc send packet is not supported")
 	}
 
 	// this means that this message handler doesn't know how to deal with these messages (i.e. they can pass through),
 	// other handlers might be able to deal with them
-	return nil, nil, wasmtypes.ErrUnknownMsg
+	return nil, nil, nil, wasmtypes.ErrUnknownMsg
 }
 
 func isBankBurnMsg(msg wasmvmtypes.CosmosMsg) bool {
 	return msg.Bank != nil && msg.Bank.Burn != nil
-}
-
-func isStargateMsg(msg wasmvmtypes.CosmosMsg) bool {
-	return msg.Stargate != nil
 }
 
 func isIBCSendPacketMsg(msg wasmvmtypes.CosmosMsg) bool {

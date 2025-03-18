@@ -7,8 +7,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	storetypes "cosmossdk.io/store/types"
 	tmbytes "github.com/cometbft/cometbft/libs/bytes"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -83,7 +83,7 @@ func validateString(str string, canBeEmpty bool, forbidden string) error {
 type Nonce [sha256.Size]byte
 
 // GetNonce deterministically calculates a nonce using a hash and gas meter
-func GetNonce(hash tmbytes.HexBytes, gasMeter sdk.GasMeter) Nonce {
+func GetNonce(hash tmbytes.HexBytes, gasMeter storetypes.GasMeter) Nonce {
 	bz := make([]byte, 16)
 	if gasMeter != nil {
 		binary.LittleEndian.PutUint64(bz, uint64(gasMeter.GasConsumed()))

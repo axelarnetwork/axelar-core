@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -31,7 +31,7 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 		voteHandler *exportedMock.VoteHandlerMock
 	)
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger()).WithBlockHeight(rand.I64Between(10, 100))
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t)).WithBlockHeight(rand.I64Between(10, 100))
 	repeats := 20
 
 	givenPollQueue := Given("poll queue", func() {

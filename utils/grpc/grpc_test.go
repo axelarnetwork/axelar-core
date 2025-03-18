@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/log"
 	abci "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/assert"
 	grpc2 "google.golang.org/grpc"
 
@@ -40,7 +40,7 @@ func TestServerWithSDKErrors(t *testing.T) {
 		}
 	}).
 		When("the service is registered with a ServerWithSDKErrors", func() {
-			registeredError := sdkerrors.Register("test", 0, "test error")
+			registeredError := errorsmod.Register("test", 0, "test error")
 
 			// capture the handler from the passed in service description
 			serviceWrapper := grpc.ServerWithSDKErrors{
@@ -55,10 +55,10 @@ func TestServerWithSDKErrors(t *testing.T) {
 		}).
 		Then("the unwrapped handler returns the unregistered error", func(t *testing.T) {
 			_, err := unwrappedHandler(nil, ctx, nil, nil)
-			assert.False(t, errors.Is[*sdkerrors.Error](err))
+			assert.False(t, errors.Is[*errorsmod.Error](err))
 		}).
 		Then("the wrapped handler returns the registered error", func(t *testing.T) {
 			_, err := wrappedHandler(nil, ctx, nil, nil)
-			assert.True(t, errors.Is[*sdkerrors.Error](err))
+			assert.True(t, errors.Is[*errorsmod.Error](err))
 		}).Run(t)
 }

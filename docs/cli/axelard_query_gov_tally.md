@@ -1,34 +1,32 @@
 ## axelard query gov tally
 
-Get the tally of a proposal vote
-
-### Synopsis
-
-Query tally of votes on a proposal. You can find
-the proposal-id by running "axelard query gov proposals".
-
-Example:
-$ axelard query gov tally 1
+Query the tally of a proposal vote
 
 ```
 axelard query gov tally [proposal-id] [flags]
+```
+
+### Examples
+
+```
+axelard query gov tally 1
 ```
 
 ### Options
 
 ```
       --grpc-addr string   the gRPC endpoint to use for this chain
-      --grpc-insecure      allow gRPC over insecure channels, if not TLS the server must use TLS
+      --grpc-insecure      allow gRPC over insecure channels, if not the server must use TLS
       --height int         Use a specific height to query state at (this can error if the node is pruning state)
   -h, --help               help for tally
-      --node string        <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --no-indent          Do not indent JSON output
+      --node string        <host>:<port> to CometBFT RPC interface for this chain (default "tcp://localhost:26657")
   -o, --output string      Output format (text|json) (default "text")
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --chain-id string     The network chain ID (default "axelar")
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
@@ -37,4 +35,4 @@ axelard query gov tally [proposal-id] [flags]
 
 ### SEE ALSO
 
-- [axelard query gov](axelard_query_gov.md) - Querying commands for the governance module
+- [axelard query gov](axelard_query_gov.md) - Querying commands for the gov module

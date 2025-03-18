@@ -1,7 +1,6 @@
 package distribution
 
 import (
-	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
@@ -25,6 +24,6 @@ func NewAppModule(distrAppModule distr.AppModule, keeper keeper.Keeper) AppModul
 	}
 }
 
-func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	BeginBlocker(ctx, req, am.keeper)
+func (am AppModule) BeginBlock(ctx sdk.Context) error {
+	return BeginBlocker(ctx, am.keeper)
 }

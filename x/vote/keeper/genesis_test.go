@@ -4,7 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,21 +23,21 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/vote/types/mock"
 )
 
-func setup() (sdk.Context, Keeper, *mock.SnapshotterMock, *mock.StakingKeeperMock, *mock.RewarderMock) {
+func setup(t log.TestingT) (sdk.Context, Keeper, *mock.SnapshotterMock, *mock.StakingKeeperMock, *mock.RewarderMock) {
 	snapshotter := mock.SnapshotterMock{}
 	staking := mock.StakingKeeperMock{}
 	rewarder := mock.RewarderMock{}
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	encodingConfig := params.MakeEncodingConfig()
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	evmtypes.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "vote")
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "vote")
 
 	keeper := NewKeeper(
 		encodingConfig.Codec,
-		sdk.NewKVStoreKey(types.StoreKey),
+		store.NewKVStoreKey(types.StoreKey),
 		subspace,
 		&snapshotter,
 		&staking,
@@ -77,7 +78,7 @@ func initializeRandomPoll(ctx sdk.Context, keeper Keeper) exported.PollMetadata 
 }
 
 func TestExportGenesisInitGenesis(t *testing.T) {
-	ctx, keeper, _, _, _ := setup()
+	ctx, keeper, _, _, _ := setup(t)
 	keeper.InitGenesis(ctx, types.NewGenesisState(types.DefaultParams(), []exported.PollMetadata{}))
 
 	pollCount := rand.I64Between(10, 100)
@@ -96,7 +97,7 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	assert.ElementsMatch(t, expected.PollMetadatas, actual.PollMetadatas)
 	assert.NoError(t, actual.Validate())
 
-	ctx, keeper, _, _, _ = setup()
+	ctx, keeper, _, _, _ = setup(t)
 	keeper.InitGenesis(ctx, expected)
 	actual = keeper.ExportGenesis(ctx)
 

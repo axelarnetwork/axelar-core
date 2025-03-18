@@ -17,7 +17,7 @@ message TalliedVote {
   option (gogoproto.stable_marshaler) = true;
 
   bytes tally = 1 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
   google.protobuf.Any data = 3 [ (cosmos_proto.accepts_interface) =

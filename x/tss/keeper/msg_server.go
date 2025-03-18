@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -33,13 +34,18 @@ func NewMsgServerImpl(keeper Keeper, s types.Snapshotter, staker types.StakingKe
 func (s msgServer) HeartBeat(c context.Context, req *types.HeartBeatRequest) (*types.HeartBeatResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	participant := s.snapshotter.GetOperator(ctx, req.Sender)
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender: %s", err)
+	}
+
+	participant := s.snapshotter.GetOperator(ctx, sender)
 	if participant.Empty() {
-		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender.String())
+		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender)
 	}
 
 	// this could happen after register proxy but before create validator
-	if s.staker.Validator(ctx, participant) == nil {
+	if _, err := s.staker.Validator(ctx, participant); err != nil {
 		return nil, fmt.Errorf("%s is not a validator", participant)
 	}
 

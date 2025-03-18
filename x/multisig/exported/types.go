@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	"github.com/btcsuite/btcd/btcec/v2"
 	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -24,12 +25,12 @@ import (
 type Key interface {
 	GetParticipants() []sdk.ValAddress
 	GetPubKey(sdk.ValAddress) (PublicKey, bool)
-	GetWeight(sdk.ValAddress) sdk.Uint
-	GetMinPassingWeight() sdk.Uint
+	GetWeight(sdk.ValAddress) math.Uint
+	GetMinPassingWeight() math.Uint
 	GetState() KeyState
 	GetHeight() int64
 	GetTimestamp() time.Time
-	GetBondedWeight() sdk.Uint
+	GetBondedWeight() math.Uint
 	GetSnapshot() exported.Snapshot
 }
 
@@ -60,7 +61,7 @@ type KeyID string
 // ValidateBasic returns an error if the given key ID is invalid; nil otherwise
 func (id KeyID) ValidateBasic() error {
 	if err := utils.ValidateString(string(id)); err != nil {
-		return sdkerrors.Wrap(err, "invalid key id")
+		return errorsmod.Wrap(err, "invalid key id")
 	}
 
 	if len(id) < KeyIDLengthMin || len(id) > KeyIDLengthMax {

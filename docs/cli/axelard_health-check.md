@@ -8,10 +8,10 @@ axelard health-check [flags]
 
 ```
       --grpc-addr string       the gRPC endpoint to use for this chain
-      --grpc-insecure          allow gRPC over insecure channels, if not TLS the server must use TLS
+      --grpc-insecure          allow gRPC over insecure channels, if not the server must use TLS
       --height int             Use a specific height to query state at (this can error if the node is pruning state)
   -h, --help                   help for health-check
-      --node string            <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --node string            <host>:<port> to CometBFT RPC interface for this chain (default "tcp://localhost:26657")
       --operator-addr string   operator address
   -o, --output string          Output format (text|json) (default "text")
       --skip-broadcaster       skip broadcaster check

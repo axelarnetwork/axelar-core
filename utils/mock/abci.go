@@ -4,8 +4,8 @@
 package mock
 
 import (
+	"cosmossdk.io/log"
 	"github.com/axelarnetwork/axelar-core/utils"
-	"github.com/cometbft/cometbft/libs/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"sync"
 )

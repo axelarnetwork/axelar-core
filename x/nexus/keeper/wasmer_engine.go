@@ -3,8 +3,8 @@ package keeper
 import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	wasmvm "github.com/CosmWasm/wasmvm"
-	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
+	wasmvm "github.com/CosmWasm/wasmvm/v2"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -32,6 +32,20 @@ func getCtx(querier wasmvm.Querier) sdk.Context {
 }
 
 // Instantiate calls the inner engine and increments the transaction ID
+// func (w *WasmerEngine) Instantiate(
+//
+//	checksum wasmvm.Checksum,
+//	env wasmvmtypes.Env,
+//	info wasmvmtypes.MessageInfo,
+//	initMsg []byte,
+//	store wasmvm.KVStore,
+//	goapi wasmvm.GoAPI,
+//	querier wasmvm.Querier,
+//	gasMeter wasmvm.GasMeter,
+//	gasLimit uint64,
+//	deserCost wasmvmtypes.UFraction,
+//
+// ) (*wasmvmtypes.Response, uint64, error) {
 func (w *WasmerEngine) Instantiate(
 	checksum wasmvm.Checksum,
 	env wasmvmtypes.Env,
@@ -43,7 +57,7 @@ func (w *WasmerEngine) Instantiate(
 	gasMeter wasmvm.GasMeter,
 	gasLimit uint64,
 	deserCost wasmvmtypes.UFraction,
-) (*wasmvmtypes.Response, uint64, error) {
+) (*wasmvmtypes.ContractResult, uint64, error) {
 	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
 	return w.WasmEngine.Instantiate(checksum, env, info, initMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
@@ -61,7 +75,7 @@ func (w *WasmerEngine) Execute(
 	gasMeter wasmvm.GasMeter,
 	gasLimit uint64,
 	deserCost wasmvmtypes.UFraction,
-) (*wasmvmtypes.Response, uint64, error) {
+) (*wasmvmtypes.ContractResult, uint64, error) {
 	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
 	return w.WasmEngine.Execute(code, env, info, executeMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
@@ -78,7 +92,7 @@ func (w *WasmerEngine) Migrate(
 	gasMeter wasmvm.GasMeter,
 	gasLimit uint64,
 	deserCost wasmvmtypes.UFraction,
-) (*wasmvmtypes.Response, uint64, error) {
+) (*wasmvmtypes.ContractResult, uint64, error) {
 	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
 	return w.WasmEngine.Migrate(checksum, env, migrateMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
@@ -95,7 +109,7 @@ func (w *WasmerEngine) Sudo(
 	gasMeter wasmvm.GasMeter,
 	gasLimit uint64,
 	deserCost wasmvmtypes.UFraction,
-) (*wasmvmtypes.Response, uint64, error) {
+) (*wasmvmtypes.ContractResult, uint64, error) {
 	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
 	return w.WasmEngine.Sudo(checksum, env, sudoMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
@@ -112,7 +126,7 @@ func (w *WasmerEngine) Reply(
 	gasMeter wasmvm.GasMeter,
 	gasLimit uint64,
 	deserCost wasmvmtypes.UFraction,
-) (*wasmvmtypes.Response, uint64, error) {
+) (*wasmvmtypes.ContractResult, uint64, error) {
 	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
 	return w.WasmEngine.Reply(checksum, env, reply, store, goapi, querier, gasMeter, gasLimit, deserCost)

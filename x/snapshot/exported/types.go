@@ -17,7 +17,7 @@ import (
 //go:generate moq -out ./mock/types.go -pkg mock . ValidatorI
 
 // QuadraticWeightFunc returns floor(sqrt(consensusPower)) as the weight
-func QuadraticWeightFunc(consensusPower sdk.Uint) sdk.Uint {
+func QuadraticWeightFunc(consensusPower math.Uint) math.Uint {
 	bigInt := consensusPower.BigInt()
 
 	return math.NewUintFromBigInt(bigInt.Sqrt(bigInt))
@@ -25,15 +25,15 @@ func QuadraticWeightFunc(consensusPower sdk.Uint) sdk.Uint {
 
 // ValidatorI provides necessary functions to the validator information
 type ValidatorI interface {
-	GetConsensusPower(sdk.Int) int64       // validation power in tendermint
-	GetOperator() sdk.ValAddress           // operator address to receive/return validators coins
-	GetConsAddr() (sdk.ConsAddress, error) // validation consensus address
-	IsJailed() bool                        // whether the validator is jailed
-	IsBonded() bool                        // whether the validator is bonded
+	GetConsensusPower(math.Int) int64 // validation power in tendermint
+	GetOperator() string              // operator address to receive/return validators coins
+	GetConsAddr() ([]byte, error)     // validation consensus address
+	IsJailed() bool                   // whether the validator is jailed
+	IsBonded() bool                   // whether the validator is bonded
 }
 
 // NewSnapshot is the constructor of Snapshot
-func NewSnapshot(timestamp time.Time, height int64, participants []Participant, bondedWeight sdk.Uint) Snapshot {
+func NewSnapshot(timestamp time.Time, height int64, participants []Participant, bondedWeight math.Uint) Snapshot {
 	return Snapshot{
 		Timestamp:    timestamp,
 		Height:       height,
@@ -78,7 +78,7 @@ func (m Snapshot) ValidateBasic() error {
 }
 
 // NewParticipant is the constructor of Participant
-func NewParticipant(address sdk.ValAddress, weight sdk.Uint) Participant {
+func NewParticipant(address sdk.ValAddress, weight math.Uint) Participant {
 	return Participant{
 		Address: address,
 		Weight:  weight,
@@ -108,7 +108,7 @@ func (m Snapshot) GetParticipantAddresses() []sdk.ValAddress {
 }
 
 // GetParticipantsWeight returns the sum of all participants' weights
-func (m Snapshot) GetParticipantsWeight() sdk.Uint {
+func (m Snapshot) GetParticipantsWeight() math.Uint {
 	weight := math.ZeroUint()
 	for _, p := range m.Participants {
 		weight = weight.Add(p.Weight)
@@ -118,7 +118,7 @@ func (m Snapshot) GetParticipantsWeight() sdk.Uint {
 }
 
 // GetParticipantWeight returns the weight of the given participant
-func (m Snapshot) GetParticipantWeight(participant sdk.ValAddress) sdk.Uint {
+func (m Snapshot) GetParticipantWeight(participant sdk.ValAddress) math.Uint {
 	if participant, ok := m.Participants[participant.String()]; ok {
 		return participant.Weight
 	}
@@ -127,7 +127,7 @@ func (m Snapshot) GetParticipantWeight(participant sdk.ValAddress) sdk.Uint {
 }
 
 // CalculateMinPassingWeight returns the minimum amount of weights to pass the given threshold
-func (m Snapshot) CalculateMinPassingWeight(threshold utils.Threshold) sdk.Uint {
+func (m Snapshot) CalculateMinPassingWeight(threshold utils.Threshold) math.Uint {
 	minPassingWeight := m.BondedWeight.
 		MulUint64(uint64(threshold.Numerator)).
 		QuoUint64(uint64(threshold.Denominator))

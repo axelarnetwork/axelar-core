@@ -3,11 +3,11 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/cometbft/cometbft/libs/log"
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/log"
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -65,7 +65,7 @@ func (k *BaseKeeper) InitChains(ctx sdk.Context) {
 // CreateChain creates the subspace for a new EVM chain. Returns an error if the chain already exists
 func (k BaseKeeper) CreateChain(ctx sdk.Context, params types.Params) (err error) {
 	defer func() {
-		err = sdkerrors.Wrap(err, "cannot create new EVM chain")
+		err = errorsmod.Wrap(err, "cannot create new EVM chain")
 	}()
 
 	if !k.initialized {

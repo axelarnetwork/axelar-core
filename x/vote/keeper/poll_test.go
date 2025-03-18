@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/log"
 	"cosmossdk.io/math"
-	"github.com/cometbft/cometbft/libs/log"
+	store "cosmossdk.io/store/types"
 	abci "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -49,16 +50,16 @@ func TestPoll(t *testing.T) {
 		staking := mock.StakingKeeperMock{}
 		rewarder := mock.RewarderMock{}
 
-		ctx = sdk.NewContext(fake.NewMultiStore(), abci.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(fake.NewMultiStore(), abci.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 		encodingConfig := params.MakeEncodingConfig()
 		types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 		types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 		encodingConfig.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &evmtypes.VoteEvents{})
-		subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "vote")
+		subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "vote")
 
 		k = keeper.NewKeeper(
 			encodingConfig.Codec,
-			sdk.NewKVStoreKey(types.StoreKey),
+			store.NewKVStoreKey(types.StoreKey),
 			subspace,
 			&snapshotter,
 			&staking,
@@ -67,7 +68,7 @@ func TestPoll(t *testing.T) {
 		k.SetParams(ctx, types.DefaultParams())
 		module := rand.NormalizedStr(5)
 
-		snapshot := snapshot.NewSnapshot(time.Now(), rand.I64Between(1, 100), participants, sdk.NewUint(5))
+		snapshot := snapshot.NewSnapshot(time.Now(), rand.I64Between(1, 100), participants, math.NewUint(5))
 		pollBuilder = exported.NewPollBuilder(
 			module,
 			utils.NewThreshold(51, 100),
@@ -190,7 +191,7 @@ func TestPoll(t *testing.T) {
 				assert.EqualValues(t, exported.Completed, poll.GetState())
 
 				module := rand.NormalizedStr(5)
-				snapshot := snapshot.NewSnapshot(time.Now(), rand.I64Between(1, 100), participants, sdk.NewUint(5))
+				snapshot := snapshot.NewSnapshot(time.Now(), rand.I64Between(1, 100), participants, math.NewUint(5))
 				pollBuilder = exported.NewPollBuilder(
 					module,
 					utils.NewThreshold(51, 100),
@@ -322,14 +323,14 @@ func TestPoll_GetMetaData(t *testing.T) {
 	encCfg := params.MakeEncodingConfig()
 	evmtypes.RegisterInterfaces(encCfg.InterfaceRegistry)
 
-	subspace := paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "vote")
-	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.RewarderMock{})
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	subspace := paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "vote")
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(types.StoreKey), subspace, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.RewarderMock{})
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t))
 	snap := snapshot.NewSnapshot(
 		time.Now(),
 		rand.I64Between(1, 100),
 		slices.Expand(func(_ int) snapshot.Participant { return snapshot.NewParticipant(rand.ValAddr(), math.OneUint()) }, 5),
-		sdk.NewUint(5),
+		math.NewUint(5),
 	)
 	expectedMetadata := &evmtypes.PollMetadata{
 		Chain: "chain",

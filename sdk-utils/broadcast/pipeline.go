@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	"github.com/axelarnetwork/utils"
 	"github.com/axelarnetwork/utils/log"
@@ -64,7 +64,7 @@ func (p retryPipeline) retry(ctx context.Context, f func(context.Context) error,
 			time.Sleep(timeout)
 		}
 	}
-	return sdkerrors.Wrap(err, fmt.Sprintf("aborting after %d retries", p.maxRetries))
+	return errorsmod.Wrap(err, fmt.Sprintf("aborting after %d retries", p.maxRetries))
 }
 
 // Close closes the retryPipeline

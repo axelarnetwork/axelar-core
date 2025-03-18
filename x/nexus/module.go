@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"cosmossdk.io/core/appmodule"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -14,7 +15,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/grpc"
 	"github.com/axelarnetwork/axelar-core/x/nexus/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	_ module.AppModule      = AppModule{}
+	_ appmodule.AppModule   = AppModule{}
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
@@ -135,16 +135,9 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 	return cdc.MustMarshalJSON(am.keeper.ExportGenesis(ctx))
 }
 
-// BeginBlock executes all state transitions this module requires at the beginning of each new block
-func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	BeginBlocker(ctx, req, am.keeper)
-}
-
 // EndBlock executes all state transitions this module requires at the end of each new block
-func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return utils.RunCached(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
-		return EndBlocker(ctx, req, am.keeper, am.reward, am.snapshotter)
-	})
+func (am AppModule) EndBlock(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
+	return EndBlocker(ctx, am.keeper, am.reward, am.snapshotter)
 }
 
 // QuerierRoute returns this module's query route
@@ -155,3 +148,10 @@ func (AppModule) QuerierRoute() string {
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
 func (AppModule) ConsensusVersion() uint64 { return 7 }
+
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() { // marker
+}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
@@ -63,7 +63,7 @@ type message struct {
 func TranslateMessage(msg nexus.GeneralMessage, versionedPayload []byte) ([]byte, error) {
 	version, payload, err := unpackVersionedPayload(versionedPayload)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "invalid versioned payload")
+		return nil, errorsmod.Wrap(err, "invalid versioned payload")
 	}
 
 	var bz []byte
@@ -71,17 +71,17 @@ func TranslateMessage(msg nexus.GeneralMessage, versionedPayload []byte) ([]byte
 	case NativeV1:
 		bz, err = ConstructNativeMessage(msg, payload)
 		if err != nil {
-			return nil, sdkerrors.Wrap(err, "failed to construct native payload")
+			return nil, errorsmod.Wrap(err, "failed to construct native payload")
 		}
 	case CosmWasmV1:
 		bz, err = ConstructWasmMessageV1(msg, payload)
 		if err != nil {
-			return nil, sdkerrors.Wrap(err, "failed to construct wasm payload")
+			return nil, errorsmod.Wrap(err, "failed to construct wasm payload")
 		}
 	case CosmWasmV2:
 		bz, err = ConstructWasmMessageV2(msg, payload)
 		if err != nil {
-			return nil, sdkerrors.Wrap(err, "failed to construct wasm payload")
+			return nil, errorsmod.Wrap(err, "failed to construct wasm payload")
 		}
 	default:
 		return nil, fmt.Errorf("unknown payload version")

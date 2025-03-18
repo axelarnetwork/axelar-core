@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -18,41 +19,36 @@ var (
 // NewBatchRequest is the constructor for BatchRequest
 func NewBatchRequest(sender sdk.AccAddress, messages []sdk.Msg) *BatchRequest {
 	return &BatchRequest{
-		Sender:   sender,
+		Sender:   sender.String(),
 		Messages: slices.Map(messages, func(msg sdk.Msg) cdctypes.Any { return *funcs.Must(cdctypes.NewAnyWithValue(msg)) }),
 	}
 }
 
 // ValidateBasic executes a stateless message validation
 func (m BatchRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if len(m.Messages) == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "empty batch")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "empty batch")
 	}
 
 	if anyBatch(m.UnwrapMessages()) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "nested batch requests are not allowed")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "nested batch requests are not allowed")
 	}
 
 	for _, msg := range m.UnwrapMessages() {
-		if !equalAccAddresses(msg.GetSigners(), m.GetSigners()) {
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "message signer mismatch")
+		m, ok := msg.(sdk.HasValidateBasic)
+		if ok {
+			if err := m.ValidateBasic(); err != nil {
+				return err
+			}
 		}
 
-		if err := msg.ValidateBasic(); err != nil {
-			return err
-		}
 	}
 
 	return nil
-}
-
-// GetSigners returns the set of signers for this message
-func (m BatchRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }
 
 // UnpackInterfaces implements UnpackInterfacesMessage
@@ -72,21 +68,6 @@ func (m BatchRequest) UnwrapMessages() []sdk.Msg {
 	return slices.Map(m.Messages, func(msg cdctypes.Any) sdk.Msg {
 		return msg.GetCachedValue().(sdk.Msg)
 	})
-}
-
-// equalAccAddresses checks the equality of two slices of sdk.AccAddress
-func equalAccAddresses(first, second []sdk.AccAddress) bool {
-	if len(first) != len(second) {
-		return false
-	}
-
-	for i := range first {
-		if !first[i].Equals(second[i]) {
-			return false
-		}
-	}
-
-	return true
 }
 
 // anyBatch checks if any of the messages are a BatchRequest

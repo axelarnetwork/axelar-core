@@ -7,8 +7,7 @@ import (
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/proto/tendermint/crypto"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	cosmossdktypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/staking/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"sync"
 )
 
@@ -31,7 +30,7 @@ var _ ValidatorI = &ValidatorIMock{}
 //			GetCommissionFunc: func() math.LegacyDec {
 //				panic("mock out the GetCommission method")
 //			},
-//			GetConsAddrFunc: func() (cosmossdktypes.ConsAddress, error) {
+//			GetConsAddrFunc: func() ([]byte, error) {
 //				panic("mock out the GetConsAddr method")
 //			},
 //			GetConsensusPowerFunc: func(intMoqParam math.Int) int64 {
@@ -46,10 +45,10 @@ var _ ValidatorI = &ValidatorIMock{}
 //			GetMonikerFunc: func() string {
 //				panic("mock out the GetMoniker method")
 //			},
-//			GetOperatorFunc: func() cosmossdktypes.ValAddress {
+//			GetOperatorFunc: func() string {
 //				panic("mock out the GetOperator method")
 //			},
-//			GetStatusFunc: func() types.BondStatus {
+//			GetStatusFunc: func() stakingtypes.BondStatus {
 //				panic("mock out the GetStatus method")
 //			},
 //			GetTokensFunc: func() math.Int {
@@ -102,7 +101,7 @@ type ValidatorIMock struct {
 	GetCommissionFunc func() math.LegacyDec
 
 	// GetConsAddrFunc mocks the GetConsAddr method.
-	GetConsAddrFunc func() (cosmossdktypes.ConsAddress, error)
+	GetConsAddrFunc func() ([]byte, error)
 
 	// GetConsensusPowerFunc mocks the GetConsensusPower method.
 	GetConsensusPowerFunc func(intMoqParam math.Int) int64
@@ -117,10 +116,10 @@ type ValidatorIMock struct {
 	GetMonikerFunc func() string
 
 	// GetOperatorFunc mocks the GetOperator method.
-	GetOperatorFunc func() cosmossdktypes.ValAddress
+	GetOperatorFunc func() string
 
 	// GetStatusFunc mocks the GetStatus method.
-	GetStatusFunc func() types.BondStatus
+	GetStatusFunc func() stakingtypes.BondStatus
 
 	// GetTokensFunc mocks the GetTokens method.
 	GetTokensFunc func() math.Int
@@ -338,7 +337,7 @@ func (mock *ValidatorIMock) GetCommissionCalls() []struct {
 }
 
 // GetConsAddr calls GetConsAddrFunc.
-func (mock *ValidatorIMock) GetConsAddr() (cosmossdktypes.ConsAddress, error) {
+func (mock *ValidatorIMock) GetConsAddr() ([]byte, error) {
 	if mock.GetConsAddrFunc == nil {
 		panic("ValidatorIMock.GetConsAddrFunc: method is nil but ValidatorI.GetConsAddr was just called")
 	}
@@ -478,7 +477,7 @@ func (mock *ValidatorIMock) GetMonikerCalls() []struct {
 }
 
 // GetOperator calls GetOperatorFunc.
-func (mock *ValidatorIMock) GetOperator() cosmossdktypes.ValAddress {
+func (mock *ValidatorIMock) GetOperator() string {
 	if mock.GetOperatorFunc == nil {
 		panic("ValidatorIMock.GetOperatorFunc: method is nil but ValidatorI.GetOperator was just called")
 	}
@@ -505,7 +504,7 @@ func (mock *ValidatorIMock) GetOperatorCalls() []struct {
 }
 
 // GetStatus calls GetStatusFunc.
-func (mock *ValidatorIMock) GetStatus() types.BondStatus {
+func (mock *ValidatorIMock) GetStatus() stakingtypes.BondStatus {
 	if mock.GetStatusFunc == nil {
 		panic("ValidatorIMock.GetStatusFunc: method is nil but ValidatorI.GetStatus was just called")
 	}

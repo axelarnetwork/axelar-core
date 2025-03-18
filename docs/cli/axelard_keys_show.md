@@ -15,18 +15,18 @@ axelard keys show [name_or_address [name_or_address...]] [flags]
 ### Options
 
 ```
-  -a, --address                  Output the address only (overrides --output)
+  -a, --address                  Output the address only (cannot be used with --output)
       --bech string              The Bech32 prefix encoding for a key (acc|val|cons) (default "acc")
-  -d, --device                   Output the address in a ledger device
+  -d, --device                   Output the address in a ledger device (cannot be used with --pubkey)
   -h, --help                     help for show
       --multisig-threshold int   K out of N required signatures (default 1)
-  -p, --pubkey                   Output the public key only (overrides --output)
+  -p, --pubkey                   Output the public key only (cannot be used with --output)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --home string              The application home directory (default "$HOME/.axelar")
+      --home string              directory for config and data (default "$HOME/.axelar")
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --log_format string        The logging format (json|plain) (default "plain")

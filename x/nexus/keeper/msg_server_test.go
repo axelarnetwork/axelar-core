@@ -3,7 +3,8 @@ package keeper_test
 import (
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
 	abci "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -21,11 +22,11 @@ func TestMsgServerActivateDeactivateWasm(t *testing.T) {
 	encodingConfig := params.MakeEncodingConfig()
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "nexus")
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "nexus")
 
 	k := keeper.NewKeeper(
 		encodingConfig.Codec,
-		sdk.NewKVStoreKey(types.StoreKey),
+		store.NewKVStoreKey(types.StoreKey),
 		subspace,
 	)
 
@@ -36,7 +37,7 @@ func TestMsgServerActivateDeactivateWasm(t *testing.T) {
 
 	msgServer := keeper.NewMsgServerImpl(k, &snap, &slashing, &staking, &ax)
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t))
 
 	assert.True(t, k.IsWasmConnectionActivated(ctx))
 

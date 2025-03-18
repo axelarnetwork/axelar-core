@@ -1,8 +1,10 @@
 package types
 
 import (
+	"context"
+
+	"cosmossdk.io/core/address"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
@@ -12,36 +14,37 @@ import (
 // BankKeeper provides functionality to the bank module
 type BankKeeper interface {
 	types.BankKeeper
-	BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
-	MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
+	BurnCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
+	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
 }
 
 type AccountKeeper interface {
-	GetAccount(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
-
+	AddressCodec() address.Codec
+	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
 	GetModuleAddress(name string) sdk.AccAddress
-	GetModuleAccount(ctx sdk.Context, name string) authtypes.ModuleAccountI
-
-	SetModuleAccount(sdk.Context, authtypes.ModuleAccountI)
+	GetModuleAccount(ctx context.Context, name string) sdk.ModuleAccountI
+	SetModuleAccount(context.Context, sdk.ModuleAccountI)
 }
 
 // StakingKeeper expected staking keeper (noalias)
 type StakingKeeper interface {
+	ValidatorAddressCodec() address.Codec
+	ConsensusAddressCodec() address.Codec
 	// iterate through validators by operator address, execute func for each validator
-	IterateValidators(sdk.Context,
-		func(index int64, validator stakingtypes.ValidatorI) (stop bool))
+	IterateValidators(context.Context,
+		func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error
 
-	Validator(sdk.Context, sdk.ValAddress) stakingtypes.ValidatorI            // get a particular validator by operator address
-	ValidatorByConsAddr(sdk.Context, sdk.ConsAddress) stakingtypes.ValidatorI // get a particular validator by consensus address
+	Validator(context.Context, sdk.ValAddress) (stakingtypes.ValidatorI, error)            // get a particular validator by operator address
+	ValidatorByConsAddr(context.Context, sdk.ConsAddress) (stakingtypes.ValidatorI, error) // get a particular validator by consensus address
 
 	// Delegation allows for getting a particular delegation for a given validator
 	// and delegator outside the scope of the staking module.
-	Delegation(sdk.Context, sdk.AccAddress, sdk.ValAddress) stakingtypes.DelegationI
+	Delegation(context.Context, sdk.AccAddress, sdk.ValAddress) (stakingtypes.DelegationI, error)
 
-	IterateDelegations(ctx sdk.Context, delegator sdk.AccAddress,
-		fn func(index int64, delegation stakingtypes.DelegationI) (stop bool))
+	IterateDelegations(ctx context.Context, delegator sdk.AccAddress,
+		fn func(index int64, delegation stakingtypes.DelegationI) (stop bool)) error
 
-	GetAllSDKDelegations(ctx sdk.Context) []stakingtypes.Delegation
-	GetAllValidators(ctx sdk.Context) (validators []stakingtypes.Validator)
-	GetAllDelegatorDelegations(ctx sdk.Context, delegator sdk.AccAddress) []stakingtypes.Delegation
+	GetAllSDKDelegations(ctx context.Context) ([]stakingtypes.Delegation, error)
+	GetAllValidators(ctx context.Context) ([]stakingtypes.Validator, error)
+	GetAllDelegatorDelegations(ctx context.Context, delegator sdk.AccAddress) ([]stakingtypes.Delegation, error)
 }

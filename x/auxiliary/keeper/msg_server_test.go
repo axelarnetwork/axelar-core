@@ -37,7 +37,8 @@ func TestBatching(t *testing.T) {
 	)
 
 	givenMsgServer := Given("an Auxiliary msg server", func() {
-		ctx = rand2.Context(fake.NewMultiStore())
+		encCfg := appParams.MakeEncodingConfig()
+		ctx = rand2.Context(fake.NewMultiStore(), t)
 		msgServiceRouter = bam.NewMsgServiceRouter()
 
 		messagehandlerCalled = false
@@ -46,7 +47,7 @@ func TestBatching(t *testing.T) {
 			return votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3))))
 		}, int(rand2.I64Between(2, 10)))
 
-		msgServer = keeper.NewMsgServer(msgServiceRouter)
+		msgServer = keeper.NewMsgServer(msgServiceRouter, encCfg.Codec)
 	})
 
 	withBatchRequest := func() GivenStatement {
@@ -71,6 +72,21 @@ func TestBatching(t *testing.T) {
 
 	givenMsgServer.
 		Branch(
+			When("batch is with different signers", func() {
+				innerMessages = slices.Expand2(func() sdk.Msg {
+					return votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3))))
+				}, int(rand2.I64Between(2, 10)))
+				innerMessages = append(innerMessages, votetypes.NewVoteRequest(
+					rand.AccAddr(),
+					vote.PollID(rand.PosI64()),
+					evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3))),
+				))
+				batchRequest = types.NewBatchRequest(sender, innerMessages)
+			}).Then("should revert", func(t *testing.T) {
+				_, err := msgServer.Batch(sdk.WrapSDKContext(ctx), batchRequest)
+				assert.ErrorContains(t, err, "message signer mismatch")
+			}),
+
 			withBatchRequest().
 				When("handler is not registered", func() {}).
 				Then("should not revert batch message", func(t *testing.T) {

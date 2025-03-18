@@ -12,7 +12,7 @@ message Participant {
   bytes address = 1 [ (gogoproto.casttype) =
                           "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
   bytes weight = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
 }
@@ -28,7 +28,7 @@ message Snapshot {
   int64 height = 3;
   map<string, Participant> participants = 8 [ (gogoproto.nullable) = false ];
   bytes bonded_weight = 9 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
 }

@@ -4,8 +4,8 @@
 package mock
 
 import (
+	"cosmossdk.io/store/types"
 	"github.com/axelarnetwork/axelar-core/testutils/fake/interfaces"
-	"github.com/cosmos/cosmos-sdk/store/types"
 	"io"
 	"sync"
 )

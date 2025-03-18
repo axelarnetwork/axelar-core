@@ -3,7 +3,8 @@ package keeper_test
 import (
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -18,9 +19,9 @@ import (
 
 func TestMigrate6to7(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
-	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace)
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("nexusKey"), store.NewKVStoreKey("tNexusKey"), "nexus")
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("nexus"), subspace)
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 
 	Given("subspace is setup with params before migration", func() {
 		subspace.Set(ctx, types.KeyChainActivationThreshold, types.DefaultParams().ChainActivationThreshold)

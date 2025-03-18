@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -12,7 +13,7 @@ import (
 // NewCreateTransferOperatorshipRequest creates a message of type CreateTransferOperatorshipRequest
 func NewCreateTransferOperatorshipRequest(sender sdk.AccAddress, chain string, keyID string) *CreateTransferOperatorshipRequest {
 	return &CreateTransferOperatorshipRequest{
-		Sender: sender,
+		Sender: sender.String(),
 		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
 		KeyID:  multisig.KeyID(keyID),
 	}
@@ -30,12 +31,12 @@ func (m CreateTransferOperatorshipRequest) Type() string {
 
 // ValidateBasic implements sdk.Msg
 func (m CreateTransferOperatorshipRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
+		return errorsmod.Wrap(err, "invalid chain")
 	}
 
 	if err := m.KeyID.ValidateBasic(); err != nil {
@@ -49,9 +50,4 @@ func (m CreateTransferOperatorshipRequest) ValidateBasic() error {
 func (m CreateTransferOperatorshipRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners implements sdk.Msg
-func (m CreateTransferOperatorshipRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

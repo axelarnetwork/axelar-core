@@ -5,42 +5,23 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"time"
 
-	sdklogger "cosmossdk.io/log"
-	rosettaCmd "cosmossdk.io/tools/rosetta/cmd"
-	"github.com/CosmWasm/wasmd/x/wasm"
+	"cosmossdk.io/log"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	dbm "github.com/cometbft/cometbft-db"
-	tmcfg "github.com/cometbft/cometbft/config"
-	tmcli "github.com/cometbft/cometbft/libs/cli"
-	"github.com/cometbft/cometbft/libs/log"
-	"github.com/cosmos/cosmos-sdk/baseapp"
+	cmtcfg "github.com/cometbft/cometbft/config"
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/debug"
+	clientconfig "github.com/cosmos/cosmos-sdk/client/config"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/keys"
-	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/server"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
-	serverlog "github.com/cosmos/cosmos-sdk/server/log"
-	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-	"github.com/cosmos/cosmos-sdk/snapshots"
-	snapshottypes "github.com/cosmos/cosmos-sdk/snapshots/types"
-	"github.com/cosmos/cosmos-sdk/store"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtxconfig "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	vestingcli "github.com/cosmos/cosmos-sdk/x/auth/vesting/client/cli"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
-	"github.com/cosmos/cosmos-sdk/x/genutil"
-	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
-	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
-	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -48,8 +29,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd/utils"
 	"github.com/axelarnetwork/axelar-core/config"
-	"github.com/axelarnetwork/axelar-core/vald"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	"github.com/axelarnetwork/utils/funcs"
 )
 
 var (
@@ -72,26 +53,73 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithInput(os.Stdin).
 		WithAccountRetriever(authtypes.AccountRetriever{}).
 		WithBroadcastMode(flags.BroadcastSync).
-		WithHomeDir(app.DefaultNodeHome)
+		WithHomeDir(app.DefaultNodeHome).
+		WithViper("")
 
 	rootCmd := &cobra.Command{
 		Use:   app.Name + "d",
 		Short: "Axelar App",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			// set the default command outputs
+			cmd.SetOut(cmd.OutOrStdout())
+			cmd.SetErr(cmd.ErrOrStderr())
+
+			initClientCtx = initClientCtx.WithCmdContext(cmd.Context())
+			initClientCtx, err := client.ReadPersistentCommandFlags(initClientCtx, cmd.Flags())
+			if err != nil {
+				return err
+			}
+
+			initClientCtx, err = clientconfig.ReadFromClientConfig(initClientCtx)
+			if err != nil {
+				return err
+			}
+
+			// This needs to go after ReadFromClientConfig, as that function
+			// sets the RPC client needed for SIGN_MODE_TEXTUAL. This sign mode
+			// is only available if the client is online.
+			if !initClientCtx.Offline {
+				enabledSignModes := append(tx.DefaultSignModes, signing.SignMode_SIGN_MODE_TEXTUAL)
+				txConfigOpts := tx.ConfigOptions{
+					EnabledSignModes:           enabledSignModes,
+					TextualCoinMetadataQueryFn: authtxconfig.NewGRPCCoinMetadataQueryFn(initClientCtx),
+				}
+				txConfig, err := tx.NewTxConfigWithOptions(
+					initClientCtx.Codec,
+					txConfigOpts,
+				)
+				if err != nil {
+					return err
+				}
+
+				initClientCtx = initClientCtx.WithTxConfig(txConfig)
+			}
+
 			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
 				return err
 			}
 
 			axelarAppTemplate, axelarAppConfig := initAppConfig()
-			customTMConfig := initTendermintConfig()
-			err := server.InterceptConfigsPreRunHandler(cmd, axelarAppTemplate, axelarAppConfig, customTMConfig)
+			customTMConfig := initCometBFTConfig()
+			err = server.InterceptConfigsPreRunHandler(cmd, axelarAppTemplate, axelarAppConfig, customTMConfig)
+			if err != nil {
+				return err
+			}
+
+			serverCtx, err := server.InterceptConfigsAndCreateContext(cmd, axelarAppTemplate, axelarAppConfig, customTMConfig)
 			if err != nil {
 				return err
 			}
 
 			// InterceptConfigsPreRunHandler initializes a console logger with an improper time format with no way of changing the config,
 			// so we need to overwrite the logger
-			err = overwriteLogger(cmd)
+			logger, err := sdkLoggerWithTimeFormat(serverCtx, cmd.OutOrStdout())
+			if err != nil {
+				return err
+			}
+			serverCtx.Logger = logger.With(log.ModuleKey, "server")
+
+			err = server.SetCmdServerContext(cmd, serverCtx)
 			if err != nil {
 				return err
 			}
@@ -108,6 +136,40 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	}
 
 	initRootCmd(rootCmd, encodingConfig)
+
+	// we "pre"-instantiate the application for getting the injected/configured encoding configuration
+	// note, this is not necessary when using app wiring, as depinject can be directly used (see root_v2.go)
+	temp := tempDir()
+	// cleanup temp dir after we are done with the tempApp, so we don't leave behind a
+	// new temporary directory for every invocation. See https://github.com/CosmWasm/wasmd/issues/2017
+	defer funcs.MustNoErr(os.RemoveAll(temp))
+
+	tempApp := app.NewAxelarApp(
+		log.NewNopLogger(),
+		dbm.NewMemDB(),
+		nil,
+		true,
+		encodingConfig,
+		simtestutil.NewAppOptionsWithFlagHome(temp),
+		[]wasmkeeper.Option{},
+	)
+	defer func() {
+		funcs.MustNoErr(tempApp.Close())
+	}()
+
+	// add keyring to autocli opts
+	autoCliOpts := tempApp.AutoCliOpts()
+	autoCliOpts.ClientCtx = initClientCtx
+	funcs.MustNoErr(autoCliOpts.EnhanceRootCommand(rootCmd))
+
+	utils.OverwriteFlagDefaults(rootCmd, map[string]string{
+		flags.FlagBroadcastMode:    flags.BroadcastSync,
+		flags.FlagChainID:          app.Name,
+		flags.FlagGasPrices:        minGasPrice,
+		flags.FlagKeyringBackend:   "file",
+		flags.FlagSkipConfirmation: "true",
+	}, false)
+
 	return rootCmd, encodingConfig
 }
 
@@ -132,42 +194,41 @@ func extendSeeds(cmd *cobra.Command) error {
 	return nil
 }
 
-func overwriteLogger(cmd *cobra.Command) error {
-	serverCtx := server.GetServerContextFromCmd(cmd)
-
-	var opts []sdklogger.Option
-	if serverCtx.Viper.GetString(flags.FlagLogFormat) == tmcfg.LogFormatJSON {
-		opts = append(opts, sdklogger.OutputJSONOption())
+// sdkLoggerWithTimeFormat creates an SDK logger with RFC3339 time format
+// It reads the log level and format from the server context.
+func sdkLoggerWithTimeFormat(ctx *server.Context, out io.Writer) (log.Logger, error) {
+	var opts []log.Option
+	if ctx.Viper.GetString(flags.FlagLogFormat) == flags.OutputFormatJSON {
+		opts = append(opts, log.OutputJSONOption())
 	}
-
 	opts = append(opts,
-		sdklogger.ColorOption(!serverCtx.Viper.GetBool(flags.FlagLogNoColor)),
+		log.ColorOption(!ctx.Viper.GetBool(flags.FlagLogNoColor)),
 		// We use CometBFT flag (cmtcli.TraceFlag) for trace logging.
-		sdklogger.TraceOption(serverCtx.Viper.GetBool(server.FlagTrace)),
-		sdklogger.TimeFormatOption(time.RFC3339),
+		log.TraceOption(ctx.Viper.GetBool(server.FlagTrace)),
+		log.TimeFormatOption(time.RFC3339),
 	)
 
 	// check and set filter level or keys for the logger if any
-	logLvlStr := serverCtx.Viper.GetString(flags.FlagLogLevel)
-	if logLvlStr != "" {
-		logLvl, err := zerolog.ParseLevel(logLvlStr)
-		switch {
-		case err != nil:
-			// If the log level is not a valid zerolog level, then we try to parse it as a key filter.
-			filterFunc, err := sdklogger.ParseLogLevel(logLvlStr)
-			if err != nil {
-				return err
-			}
-
-			opts = append(opts, sdklogger.FilterOption(filterFunc))
-		default:
-			opts = append(opts, sdklogger.LevelOption(logLvl))
-		}
+	logLvlStr := ctx.Viper.GetString(flags.FlagLogLevel)
+	if logLvlStr == "" {
+		return log.NewLogger(out, opts...), nil
 	}
 
-	logger := sdklogger.NewLogger(log.NewSyncWriter(os.Stdout), opts...).With(sdklogger.ModuleKey, "server")
-	serverCtx.Logger = serverlog.CometLoggerWrapper{Logger: logger}
-	return nil
+	logLvl, err := zerolog.ParseLevel(logLvlStr)
+	switch {
+	case err != nil:
+		// If the log level is not a valid zerolog level, then we try to parse it as a key filter.
+		filterFunc, err := log.ParseLogLevel(logLvlStr)
+		if err != nil {
+			return nil, err
+		}
+
+		opts = append(opts, log.FilterOption(filterFunc))
+	default:
+		opts = append(opts, log.LevelOption(logLvl))
+	}
+
+	return log.NewLogger(out, opts...), nil
 }
 
 // initAppConfig helps to override default appConfig template and configs.
@@ -204,10 +265,10 @@ func initAppConfig() (string, interface{}) {
 	return customAppTemplate, axelarAppConfig
 }
 
-// initTendermintConfig helps to override default Tendermint Config values.
-// return tmcfg.DefaultConfig if no custom configuration is required for the application.
-func initTendermintConfig() *tmcfg.Config {
-	cfg := tmcfg.DefaultConfig()
+// initCometBFTConfig helps to override default CometBFT Config values.
+// return cmtcfg.DefaultConfig if no custom configuration is required for the application.
+func initCometBFTConfig() *cmtcfg.Config {
+	cfg := cmtcfg.DefaultConfig()
 
 	// these values put a higher strain on node memory
 	// cfg.P2P.MaxNumInboundPeers = 100
@@ -216,192 +277,11 @@ func initTendermintConfig() *tmcfg.Config {
 	return cfg
 }
 
-func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
-	gentxModule := app.GetModuleBasics()[genutiltypes.ModuleName].(genutil.AppModuleBasic)
-
-	rootCmd.AddCommand(
-		genutilcli.InitCmd(app.GetModuleBasics(), app.DefaultNodeHome),
-		genutilcli.CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome, gentxModule.GenTxValidator),
-		genutilcli.MigrateGenesisCmd(),
-		genutilcli.GenTxCmd(app.GetModuleBasics(), encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.DefaultNodeHome),
-		genutilcli.ValidateGenesisCmd(app.GetModuleBasics()),
-		AddGenesisAccountCmd(app.DefaultNodeHome),
-		tmcli.NewCompletionCmd(rootCmd, true),
-		debug.Cmd(),
-		SetGenesisRewardCmd(app.DefaultNodeHome),
-		SetGenesisStakingCmd(app.DefaultNodeHome),
-		SetGenesisSlashingCmd(app.DefaultNodeHome),
-		SetGenesisVoteCmd(app.DefaultNodeHome),
-		SetGenesisSnapshotCmd(app.DefaultNodeHome),
-		SetGenesisEVMContractsCmd(app.DefaultNodeHome),
-		SetGenesisChainParamsCmd(app.DefaultNodeHome),
-		SetGenesisGovCmd(app.DefaultNodeHome),
-		AddGenesisEVMChainCmd(app.DefaultNodeHome),
-		SetGenesisMintCmd(app.DefaultNodeHome),
-		SetMultisigGovernanceCmd(app.DefaultNodeHome),
-		SetGenesisCrisisCmd(app.DefaultNodeHome),
-		SetGenesisAuthCmd(app.DefaultNodeHome),
-	)
-
-	starterFlags := func(startCmd *cobra.Command) {
-		crisis.AddModuleInitFlags(startCmd)
-		startCmd.Flags().String(wasmDirFlag, "", "path to the wasm directory, by default set to 'wasm' directory inside the '--db_dir' directory")
-	}
-
-	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, export(encodingConfig), starterFlags)
-
-	// add keybase, auxiliary RPC, query, and tx child commands
-	rootCmd.AddCommand(
-		rpc.StatusCommand(),
-		queryCommand(),
-		txCommand(),
-		keys.Commands(app.DefaultNodeHome),
-	)
-
-	// Add rosetta command
-	rootCmd.AddCommand(rosettaCmd.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Codec))
-
-	// Only set default, not actual value, so it can be overwritten by env variable
-	utils.OverwriteFlagDefaults(rootCmd, map[string]string{
-		flags.FlagBroadcastMode:    flags.BroadcastSync,
-		flags.FlagChainID:          app.Name,
-		flags.FlagGasPrices:        minGasPrice,
-		flags.FlagKeyringBackend:   "file",
-		flags.FlagSkipConfirmation: "true",
-	}, false)
-
-	rootCmd.PersistentFlags().String(tmcli.OutputFlag, "text", "Output format (text|json)")
-
-	// add vald after the overwrite so it can set its own defaults
-	rootCmd.AddCommand(vald.GetValdCommand(), vald.GetHealthCheckCommand(), vald.GetSignCommand())
-}
-
-func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
-	var cache sdk.MultiStorePersistentCache
-
-	if viper.GetBool(server.FlagInterBlockCache) {
-		cache = store.NewCommitKVStoreCacheManager()
-	}
-
-	skipUpgradeHeights := make(map[int64]bool)
-	for _, h := range cast.ToIntSlice(appOpts.Get(server.FlagUnsafeSkipUpgrades)) {
-		skipUpgradeHeights[int64(h)] = true
-	}
-
-	pruningOpts, err := server.GetPruningOptionsFromFlags(appOpts)
+func tempDir() string {
+	dir, err := os.MkdirTemp("", "axelard")
 	if err != nil {
-		panic(err)
+		panic("failed to create temp dir: " + err.Error())
 	}
 
-	var wasmOpts []wasm.Option
-	if app.IsWasmEnabled() && cast.ToBool(appOpts.Get("telemetry.enabled")) {
-		wasmOpts = append(wasmOpts, wasmkeeper.WithVMCacheMetrics(prometheus.DefaultRegisterer))
-	}
-
-	snapshotDir := filepath.Join(cast.ToString(appOpts.Get(flags.FlagHome)), "data", "snapshots")
-	snapshotDB, err := dbm.NewDB("metadata", server.GetAppDBBackend(appOpts), snapshotDir)
-	if err != nil {
-		panic(err)
-	}
-	snapshotStore, err := snapshots.NewStore(snapshotDB, snapshotDir)
-	if err != nil {
-		panic(err)
-	}
-	snapshotOptions := snapshottypes.NewSnapshotOptions(
-		cast.ToUint64(appOpts.Get(server.FlagStateSyncSnapshotInterval)),
-		cast.ToUint32(appOpts.Get(server.FlagStateSyncSnapshotKeepRecent)),
-	)
-
-	return app.NewAxelarApp(
-		logger, db, traceStore, true, skipUpgradeHeights,
-		cast.ToString(appOpts.Get(flags.FlagHome)),
-		cast.ToString(appOpts.Get(wasmDirFlag)),
-		cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)),
-		app.MakeEncodingConfig(),
-		appOpts,
-		wasmOpts,
-		baseapp.SetPruning(pruningOpts),
-		baseapp.SetMinGasPrices(cast.ToString(appOpts.Get(server.FlagMinGasPrices))),
-		baseapp.SetHaltHeight(cast.ToUint64(appOpts.Get(server.FlagHaltHeight))),
-		baseapp.SetHaltTime(cast.ToUint64(appOpts.Get(server.FlagHaltTime))),
-		baseapp.SetMinRetainBlocks(cast.ToUint64(appOpts.Get(server.FlagMinRetainBlocks))),
-		baseapp.SetInterBlockCache(cache),
-		baseapp.SetTrace(cast.ToBool(appOpts.Get(server.FlagTrace))),
-		baseapp.SetIndexEvents(cast.ToStringSlice(appOpts.Get(server.FlagIndexEvents))),
-		baseapp.SetSnapshot(snapshotStore, snapshotOptions),
-	)
-}
-
-func export(encCfg params.EncodingConfig) servertypes.AppExporter {
-	return func(logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailAllowedAddrs []string,
-		appOpts servertypes.AppOptions, modulesToExport []string) (servertypes.ExportedApp, error) {
-
-		homePath := cast.ToString(appOpts.Get(flags.FlagHome))
-		if homePath == "" {
-			return servertypes.ExportedApp{}, errors.New("application home not set")
-		}
-
-		wasmdir := cast.ToString(appOpts.Get(wasmDirFlag))
-		aApp := app.NewAxelarApp(logger, db, traceStore, height == -1, map[int64]bool{}, homePath, wasmdir,
-			cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)), encCfg, appOpts, []wasm.Option{})
-		if height != -1 {
-			if err := aApp.LoadHeight(height); err != nil {
-				return servertypes.ExportedApp{}, err
-			}
-		}
-
-		return aApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
-	}
-}
-
-func queryCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:                        "query",
-		Aliases:                    []string{"q"},
-		Short:                      "Querying subcommands",
-		DisableFlagParsing:         true,
-		SuggestionsMinimumDistance: 2,
-		RunE:                       client.ValidateCmd,
-	}
-
-	cmd.AddCommand(
-		authcmd.GetAccountCmd(),
-		rpc.ValidatorCommand(),
-		rpc.BlockCommand(),
-		authcmd.QueryTxsByEventsCmd(),
-		authcmd.QueryTxCmd(),
-	)
-
-	app.GetModuleBasics().AddQueryCommands(cmd)
-	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
-
-	return cmd
-}
-
-func txCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:                        "tx",
-		Short:                      "Transactions subcommands",
-		DisableFlagParsing:         true,
-		SuggestionsMinimumDistance: 2,
-		RunE:                       client.ValidateCmd,
-	}
-
-	cmd.AddCommand(
-		authcmd.GetSignCommand(),
-		authcmd.GetSignBatchCommand(),
-		authcmd.GetMultiSignCommand(),
-		authcmd.GetMultiSignBatchCmd(),
-		authcmd.GetValidateSignaturesCommand(),
-		authcmd.GetBroadcastCommand(),
-		authcmd.GetEncodeCommand(),
-		authcmd.GetDecodeCommand(),
-		flags.LineBreak,
-		vestingcli.GetTxCmd(),
-	)
-
-	app.GetModuleBasics().AddTxCommands(cmd)
-	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
-
-	return cmd
+	return dir
 }

@@ -28,7 +28,7 @@ import (
 )
 
 func TestNewApproveContractCallCommandFromGeneralMessage(t *testing.T) {
-	chainID := sdk.NewInt(1)
+	chainID := math.NewInt(1)
 	keyID := multisigTestutils.KeyID()
 	payload := rand.BytesBetween(64, 1000)
 	txID := common.BytesToHash(rand.Bytes(32))
@@ -64,7 +64,7 @@ func TestNewApproveContractCallCommandFromGeneralMessage(t *testing.T) {
 }
 
 func TestNewApproveContractCallWithMintCommand(t *testing.T) {
-	chainID := sdk.NewInt(1)
+	chainID := math.NewInt(1)
 	keyID := multisigTestutils.KeyID()
 	sourceChain := nexus.ChainName("polygon")
 	txID := types.Hash(common.HexToHash("0x5bb45dc24ddd6b90fa37f26eecfcf203328427c3226db29d1c01051b965ca93b"))
@@ -73,7 +73,7 @@ func TestNewApproveContractCallWithMintCommand(t *testing.T) {
 	contractAddress := common.HexToAddress("0x956dA338C1518a7FB213042b70c60c021aeBd554")
 	payloadHash := common.HexToHash("0x7c6498469c4e2d466b6fc9af3c910587f6c0bdade714a16ab279a08a759a5c14")
 	symbol := "testA"
-	amount := sdk.NewUint(20000)
+	amount := math.NewUint(20000)
 	event := types.EventContractCallWithToken{
 		Sender:          types.Address(common.HexToAddress(sourceAddress)),
 		ContractAddress: contractAddress.Hex(),
@@ -133,7 +133,7 @@ func TestNewMintTokenCommand(t *testing.T) {
 }
 
 func TestNewBurnTokenCommand(t *testing.T) {
-	chainID := sdk.NewInt(1)
+	chainID := math.NewInt(1)
 	keyID := multisigTestutils.KeyID()
 	symbol := rand.Str(3)
 	salt := common.BytesToHash(rand.Bytes(common.HashLength))
@@ -169,7 +169,7 @@ func TestNewMultisigTransferCommand(t *testing.T) {
 		"02e659958a5e3c5ac33765342ab28e0ce0ed8a9f8833e837feb1c3ce29639f0b23",
 		"034b2d8119648d8678220594750779618ee704228858f7238a8d0965cf70df1001",
 	}, func(pk string) multisig.PublicKey { return funcs.Must(hex.DecodeString(pk)) })
-	weights := slices.Map([]uint64{1, 2, 3, 4, 5, 6, 7, 8}, sdk.NewUint)
+	weights := slices.Map([]uint64{1, 2, 3, 4, 5, 6, 7, 8}, math.NewUint)
 	participants := slices.Expand(func(_ int) sdk.ValAddress { return rand.ValAddr() }, len(pubKeys))
 
 	key := &multisigMock.KeyMock{
@@ -183,7 +183,7 @@ func TestNewMultisigTransferCommand(t *testing.T) {
 
 			return nil, false
 		},
-		GetWeightFunc: func(v sdk.ValAddress) sdk.Uint {
+		GetWeightFunc: func(v sdk.ValAddress) math.Uint {
 			for i, p := range participants {
 				if v.Equals(p) {
 					return weights[i]
@@ -192,10 +192,10 @@ func TestNewMultisigTransferCommand(t *testing.T) {
 
 			return math.ZeroUint()
 		},
-		GetMinPassingWeightFunc: func() sdk.Uint { return sdk.NewUint(30) },
+		GetMinPassingWeightFunc: func() math.Uint { return math.NewUint(30) },
 	}
 
-	chainID := sdk.NewInt(1)
+	chainID := math.NewInt(1)
 	keyID := multisigTestutils.KeyID()
 	actual := types.NewMultisigTransferCommand(chainID, keyID, key)
 	expectedParams := "00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000180000000000000000000000000000000000000000000000000000000000000001e000000000000000000000000000000000000000000000000000000000000000800000000000000000000000019cc2044857d23129a29f763d0338da837ce35f60000000000000000000000002ab6fa7de5e9e9423125a4246e4de1b9c755607400000000000000000000000037cc4b7e8f9f505ca8126db8a9d070566ed5dae70000000000000000000000003e56f0d4497ac44993d9ea272d4707f8be6b42a6000000000000000000000000462b96f617d5d92f63f9949c6f4626623ea73fa400000000000000000000000068b93045fe7d8794a7caf327e7f855cd6cd03bb80000000000000000000000009e77c30badbbc412a0c20c6ce43b671c6f103434000000000000000000000000c1c0c8d2131cc866834c6382096eadfef1af2f52000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000070000000000000000000000000000000000000000000000000000000000000005"

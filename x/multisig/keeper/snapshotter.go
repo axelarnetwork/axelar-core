@@ -56,7 +56,11 @@ func (sc SnapshotCreator) CreateSnapshot(ctx sdk.Context, threshold utils.Thresh
 	}
 
 	isProxyActive := func(v snapshot.ValidatorI) bool {
-		proxy, isActive := sc.snapshotter.GetProxy(ctx, v.GetOperator())
+		valAddress, err := sdk.ValAddressFromBech32(v.GetOperator())
+		if err != nil {
+			return false
+		}
+		proxy, isActive := sc.snapshotter.GetProxy(ctx, valAddress)
 
 		return isActive && !sc.keygen.HasOptedOut(ctx, proxy)
 	}
@@ -66,7 +70,18 @@ func (sc SnapshotCreator) CreateSnapshot(ctx sdk.Context, threshold utils.Thresh
 		funcs.Not(isTombstoned),
 		isProxyActive,
 	)
+	validators, err := sc.staker.GetBondedValidatorsByPower(ctx)
+	if err != nil {
+		return snapshot.Snapshot{}, err
+	}
 
-	candidates := slices.Map(sc.staker.GetBondedValidatorsByPower(ctx), stakingTypes.Validator.GetOperator)
+	var candidates []sdk.ValAddress
+	slices.ForEach(validators, func(v stakingTypes.Validator) {
+		valAddress, err := sdk.ValAddressFromBech32(v.GetOperator())
+		if err != nil {
+			return
+		}
+		candidates = append(candidates, valAddress)
+	})
 	return sc.snapshotter.CreateSnapshot(ctx, candidates, filter, snapshot.QuadraticWeightFunc, threshold)
 }

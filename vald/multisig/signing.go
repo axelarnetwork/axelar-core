@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/utils/log"
@@ -29,7 +29,7 @@ func (mgr *Mgr) ProcessSigningStarted(event *types.SigningStarted) error {
 
 	msg := types.NewSubmitSignatureRequest(mgr.ctx.FromAddress, event.GetSigID(), sig)
 	if _, err := mgr.broadcaster.Broadcast(context.Background(), msg); err != nil {
-		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing submit signature message")
+		return errorsmod.Wrap(err, "handler goroutine: failure to broadcast outgoing submit signature message")
 	}
 
 	return nil

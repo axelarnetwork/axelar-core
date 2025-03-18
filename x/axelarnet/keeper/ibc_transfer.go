@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	ibctypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	ibctypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -56,7 +56,7 @@ func (i IBCKeeper) ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.Den
 	if !found {
 		return ibctypes.DenomTrace{}, status.Error(
 			codes.NotFound,
-			sdkerrors.Wrap(ibctypes.ErrTraceNotFound, denomSplit[1]).Error(),
+			errorsmod.Wrap(ibctypes.ErrTraceNotFound, denomSplit[1]).Error(),
 		)
 	}
 	return denomTrace, nil

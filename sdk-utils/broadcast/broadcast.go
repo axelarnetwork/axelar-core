@@ -8,10 +8,12 @@ import (
 	"strings"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/config"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -21,6 +23,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/utils"
 	"github.com/axelarnetwork/utils/log"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 //go:generate moq -pkg mock -out mock/broadcast.go . Broadcaster
@@ -28,11 +31,15 @@ import (
 // PrepareTx returns a marshalled tx that can be broadcast to the blockchain
 func PrepareTx(ctx sdkClient.Context, txf tx.Factory, msgs ...sdk.Msg) ([]byte, error) {
 	if len(msgs) == 0 {
-		return nil, fmt.Errorf("call broadcast with at least one message")
+		return nil, errors.New("call broadcast with at least one message")
 	}
 
 	// By convention the first signer of a tx pays the fees
-	if len(msgs[0].GetSigners()) == 0 {
+	signers, _, err := ctx.Codec.GetMsgV1Signers(msgs[0])
+	if err != nil {
+		return nil, errorsmod.Wrapf(err, "failed to get signers from message %T", msgs[0])
+	}
+	if len(signers) == 0 {
 		return nil, fmt.Errorf("messages must have at least one signer")
 	}
 
@@ -55,7 +62,7 @@ func PrepareTx(ctx sdkClient.Context, txf tx.Factory, msgs ...sdk.Msg) ([]byte, 
 	}
 
 	txBuilder.SetFeeGranter(ctx.GetFeeGranterAddress())
-	err = tx.Sign(txf, ctx.GetFromName(), txBuilder, true)
+	err = tx.Sign(ctx.CmdContext, txf, ctx.GetFromName(), txBuilder, true)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +89,7 @@ func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcasterOpti
 	case err != nil:
 		return nil, err
 	case res.Code != abci.CodeTypeOK:
-		return nil, sdkerrors.ABCIError(res.Codespace, res.Code, res.RawLog)
+		return nil, errorsmod.ABCIError(res.Codespace, res.Code, res.RawLog)
 	}
 
 	params := broadcastParams{
@@ -99,7 +106,7 @@ func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcasterOpti
 	case err != nil:
 		return nil, err
 	case res.Code != abci.CodeTypeOK:
-		return nil, sdkerrors.ABCIError(res.Codespace, res.Code, res.RawLog)
+		return nil, errorsmod.ABCIError(res.Codespace, res.Code, res.RawLog)
 	}
 
 	return res, nil
@@ -174,11 +181,11 @@ func (b *statefulBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*
 			WithSequence(0)
 	}
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "tx preparation failed")
+		return nil, errorsmod.Wrap(err, "tx preparation failed")
 	}
 	response, err := Broadcast(b.clientCtx, bz, b.options...)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "broadcast failed")
+		return nil, errorsmod.Wrap(err, "broadcast failed")
 	}
 
 	ctx = log.Append(ctx, "hash", response.TxHash).
@@ -283,7 +290,7 @@ func (b *pipelinedBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (
 				return true
 			}
 
-			if !errors2.Is[*sdkerrors.Error](err) {
+			if !errors2.Is[*errorsmod.Error](err) {
 				return true
 			}
 
@@ -313,6 +320,7 @@ func tryParseErrorMsgIndex(err error) (int, bool) {
 }
 
 type batchedBroadcaster struct {
+	cdc            codec.Codec
 	broadcaster    Broadcaster
 	backlog        backlog
 	batchThreshold int
@@ -320,12 +328,13 @@ type batchedBroadcaster struct {
 }
 
 // Batched returns a broadcaster that batches msgs together if there is high traffic to increase throughput
-func Batched(broadcaster Broadcaster, batchThreshold, batchSizeLimit int) Broadcaster {
+func Batched(broadcaster Broadcaster, batchThreshold, batchSizeLimit int, cdc codec.Codec) Broadcaster {
 	b := &batchedBroadcaster{
 		broadcaster:    broadcaster,
 		backlog:        backlog{tail: make(chan broadcastTask, 10000)},
 		batchThreshold: batchThreshold,
 		batchSizeLimit: batchSizeLimit,
+		cdc:            cdc,
 	}
 
 	go b.processBacklog()
@@ -405,7 +414,12 @@ func (b *batchedBroadcaster) processBacklog() {
 		ctx = log.Append(ctx, "batch_size", len(msgs))
 		log.FromCtx(ctx).Debug("high traffic; merging batches")
 
-		response, err := b.broadcaster.Broadcast(ctx, auxiliarytypes.NewBatchRequest(msgs[0].GetSigners()[0], msgs))
+		signers, _, err := b.cdc.GetMsgV1Signers(msgs[0])
+		if err != nil {
+			panic(err)
+		}
+
+		response, err := b.broadcaster.Broadcast(ctx, auxiliarytypes.NewBatchRequest(signers[0], msgs))
 
 		for _, callback := range callbacks {
 			callback <- broadcastResult{
@@ -418,6 +432,7 @@ func (b *batchedBroadcaster) processBacklog() {
 }
 
 type refundableBroadcaster struct {
+	cdc         codec.Codec
 	broadcaster Broadcaster
 }
 
@@ -425,16 +440,23 @@ type refundableBroadcaster struct {
 func (b *refundableBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	var refundables []sdk.Msg
 	for _, msg := range msgs {
-		if len(msg.GetSigners()) > 0 {
-			refundables = append(refundables, types.NewRefundMsgRequest(msg.GetSigners()[0], msg))
+
+		msgV1Signers, _, err := b.cdc.GetMsgV1Signers(msgs[0])
+		if err != nil {
+			return nil, err
+		}
+		signers := slices.Map(msgV1Signers, func(s []byte) sdk.AccAddress { return s })
+
+		if len(signers) > 0 {
+			refundables = append(refundables, types.NewRefundMsgRequest(signers[0], msg))
 		}
 	}
 	return b.broadcaster.Broadcast(ctx, refundables...)
 }
 
 // WithRefund wraps a broadcaster into a refundableBroadcaster
-func WithRefund(b Broadcaster) Broadcaster {
-	return &refundableBroadcaster{broadcaster: b}
+func WithRefund(b Broadcaster, cdc codec.Codec) Broadcaster {
+	return &refundableBroadcaster{broadcaster: b, cdc: cdc}
 }
 
 type suppressorBroadcaster struct {
@@ -451,7 +473,7 @@ func SuppressExecutionErrs(broadcaster Broadcaster) Broadcaster {
 // Broadcast implements the Broadcaster interface
 func (s suppressorBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	res, err := s.b.Broadcast(ctx, msgs...)
-	if errors2.Is[*sdkerrors.Error](err) {
+	if errors2.Is[*errorsmod.Error](err) {
 		log.FromCtx(ctx).Info(fmt.Sprintf("tx response with error: %s", err))
 		return nil, nil
 	}

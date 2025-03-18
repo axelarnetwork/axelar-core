@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -51,7 +52,7 @@ func NewMsgServerImpl(keeper types.BaseKeeper, n types.Nexus, v types.Voter, sna
 
 func validateChainActivated(ctx sdk.Context, n types.Nexus, chain nexus.Chain) error {
 	if !n.IsChainActivated(ctx, chain) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest,
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest,
 			fmt.Sprintf("chain %s is not activated yet", chain.Name))
 	}
 
@@ -69,7 +70,12 @@ func excludeJailedOrTombstoned(ctx sdk.Context, slashing types.SlashingKeeper, s
 	}
 
 	isProxyActive := func(v snapshot.ValidatorI) bool {
-		_, isActive := snapshotter.GetProxy(ctx, v.GetOperator())
+		valAddress, err := sdk.ValAddressFromBech32(v.GetOperator())
+		if err != nil {
+			return false
+		}
+
+		_, isActive := snapshotter.GetProxy(ctx, valAddress)
 
 		return isActive
 	}
@@ -478,7 +484,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 
 	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails, req.Address)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
+		return nil, errorsmod.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
 
 	cmd, err := token.CreateDeployCommand(keyID, mintLimit)
@@ -565,7 +571,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 
 		cmd := types.NewBurnTokenCommand(chainID, multisig.KeyID(keyID), ctx.BlockHeight(), *burnerInfo, token.IsExternal())
 		if err != nil {
-			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
+			return nil, errorsmod.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
 		}
 
 		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
@@ -634,7 +640,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 		cmd, err := token.CreateMintCommand(multisig.KeyID(keyID), transfer)
 		if err != nil {
-			return nil, sdkerrors.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
+			return nil, errorsmod.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
 		}
 
 		s.Logger(ctx).Info(fmt.Sprintf("minting %s to recipient %s on %s with transfer ID %s and command ID %s", transfer.Asset.String(), transfer.Recipient.Address, transfer.Recipient.Chain.Name, transfer.ID.String(), cmd.ID.Hex()),
@@ -704,7 +710,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 	}
 
 	if _, ok := s.multisigKeeper.GetNextKeyID(ctx, chain.Name); ok {
-		return types.Command{}, sdkerrors.Wrapf(types.ErrRotationInProgress, "finish rotating to next key for chain %s first", chain.Name)
+		return types.Command{}, errorsmod.Wrapf(types.ErrRotationInProgress, "finish rotating to next key for chain %s first", chain.Name)
 	}
 
 	if err := s.multisigKeeper.AssignKey(ctx, chain.Name, nextKeyID); err != nil {
@@ -729,7 +735,7 @@ func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.Com
 
 	switch latest.GetStatus() {
 	case types.BatchSigning:
-		return types.CommandBatch{}, sdkerrors.Wrapf(types.ErrSignCommandsInProgress, "command batch '%s'", hex.EncodeToString(latest.GetID()))
+		return types.CommandBatch{}, errorsmod.Wrapf(types.ErrSignCommandsInProgress, "command batch '%s'", hex.EncodeToString(latest.GetID()))
 	case types.BatchAborted:
 		return latest, nil
 	default:
@@ -797,7 +803,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
+			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender),
 			sdk.NewAttribute(types.AttributeKeyBatchedCommandsID, batchedCommandsIDHex),
 			sdk.NewAttribute(types.AttributeKeyCommandsIDs, strings.Join(commandList, ",")),
 		),

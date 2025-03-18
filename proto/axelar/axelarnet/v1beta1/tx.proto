@@ -8,6 +8,8 @@ import "gogoproto/gogo.proto";
 import "axelar/nexus/exported/v1beta1/types.proto";
 import "axelar/axelarnet/v1beta1/types.proto";
 import "axelar/permission/exported/v1beta1/types.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -15,13 +17,18 @@ option (gogoproto.goproto_getters_all) = false;
 // address
 message LinkRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string recipient_addr = 2;
   string recipient_chain = 3
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   string asset = 4;
+  string sender = 5 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message LinkResponse { string deposit_addr = 1; };
@@ -29,8 +36,12 @@ message LinkResponse { string deposit_addr = 1; };
 // MsgConfirmDeposit represents a deposit confirmation message
 message ConfirmDepositRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
 
   reserved 2; // tx_id was removed in v0.14
 
@@ -41,6 +52,7 @@ message ConfirmDepositRequest {
             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
 
   string denom = 5;
+  string sender = 6 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message ConfirmDepositResponse {}
@@ -49,8 +61,13 @@ message ConfirmDepositResponse {}
 // pending transfers
 message ExecutePendingTransfersRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
+  string sender = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message ExecutePendingTransfersResponse {}
@@ -61,12 +78,17 @@ message RegisterIBCPathRequest {
   option deprecated = true;
 
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   string path = 3;
+  string sender = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message RegisterIBCPathResponse {}
@@ -75,8 +97,12 @@ message RegisterIBCPathResponse {}
 // to nexus
 message AddCosmosBasedChainRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   nexus.exported.v1beta1.Chain chain = 2 [
     deprecated = true,
     (gogoproto.nullable) = false
@@ -92,6 +118,7 @@ message AddCosmosBasedChainRequest {
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   string ibc_path = 7 [ (gogoproto.customname) = "IBCPath" ];
+  string sender = 8 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message AddCosmosBasedChainResponse {}
@@ -100,18 +127,23 @@ message AddCosmosBasedChainResponse {}
 // based chain
 message RegisterAssetRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   nexus.exported.v1beta1.Asset asset = 3 [ (gogoproto.nullable) = false ];
   bytes limit = 4 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
   google.protobuf.Duration window = 5
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
+  string sender = 6 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message RegisterAssetResponse {}
@@ -120,8 +152,13 @@ message RegisterAssetResponse {}
 // cosmos based chains
 message RouteIBCTransfersRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
+  string sender = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message RouteIBCTransfersResponse {}
@@ -130,19 +167,28 @@ message RouteIBCTransfersResponse {}
 // collector account
 message RegisterFeeCollectorRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   bytes fee_collector = 2
       [ (gogoproto.casttype) =
             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message RegisterFeeCollectorResponse {}
 
 message RetryIBCTransferRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2 [
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName",
@@ -153,33 +199,43 @@ message RetryIBCTransferRequest {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
   ];
+  string sender = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message RetryIBCTransferResponse {}
 
 message RouteMessageRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string id = 2 [ (gogoproto.customname) = "ID" ];
   bytes payload = 3;
   bytes feegranter = 4 [ (gogoproto.casttype) =
                              "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  string sender = 5 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message RouteMessageResponse {}
 
 message CallContractRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   string contract_address = 3;
   bytes payload = 4;
   Fee fee = 5;
+  string sender = 6 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message CallContractResponse {}

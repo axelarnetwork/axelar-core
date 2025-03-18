@@ -5,8 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"cosmossdk.io/math"
+	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -65,7 +66,7 @@ func (k chainKeeper) getCommandsGasLimit(ctx sdk.Context) uint32 {
 	return getParam[uint32](k, ctx, types.KeyCommandsGasLimit)
 }
 
-func (k chainKeeper) GetChainID(ctx sdk.Context) (sdk.Int, bool) {
+func (k chainKeeper) GetChainID(ctx sdk.Context) (math.Int, bool) {
 	network := k.GetNetwork(ctx)
 	return k.GetChainIDByNetwork(ctx, network)
 }
@@ -491,7 +492,7 @@ func (k chainKeeper) DeleteDeposit(ctx sdk.Context, deposit types.ERC20Deposit) 
 }
 
 // GetNetworkByID returns the network name for a given chain and network ID
-func (k chainKeeper) GetNetworkByID(ctx sdk.Context, id sdk.Int) (string, bool) {
+func (k chainKeeper) GetNetworkByID(ctx sdk.Context, id math.Int) (string, bool) {
 	p := k.GetParams(ctx)
 	for _, n := range p.Networks {
 		if n.Id == id {
@@ -503,9 +504,9 @@ func (k chainKeeper) GetNetworkByID(ctx sdk.Context, id sdk.Int) (string, bool) 
 }
 
 // GetChainIDByNetwork returns the network name for a given chain and network name
-func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.Int, bool) {
+func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) (math.Int, bool) {
 	if network == "" {
-		return sdk.Int{}, false
+		return math.Int{}, false
 	}
 	p := k.GetParams(ctx)
 	for _, n := range p.Networks {
@@ -514,7 +515,7 @@ func (k chainKeeper) GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.I
 		}
 	}
 
-	return sdk.Int{}, false
+	return math.Int{}, false
 }
 
 func (k chainKeeper) setCommandBatchMetadata(ctx sdk.Context, meta types.CommandBatchMetadata) {
@@ -606,7 +607,7 @@ func (k chainKeeper) CreateNewBatchToSign(ctx sdk.Context) (types.CommandBatch, 
 		return types.CommandBatch{}, nil
 	}
 
-	chainID := sdk.NewIntFromBigInt(k.getSigner(ctx).ChainID())
+	chainID := math.NewIntFromBigInt(k.getSigner(ctx).ChainID())
 	gasLimit := k.getCommandsGasLimit(ctx)
 	gasCost := firstCmd.MaxGasCost
 	keyID := firstCmd.KeyID
@@ -761,7 +762,7 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 			Asset:        asset,
 			Details:      details,
 			TokenAddress: address,
-			ChainID:      sdk.NewIntFromBigInt(chainID),
+			ChainID:      math.NewIntFromBigInt(chainID),
 			Status:       types.Initialized,
 			IsExternal:   true,
 			BurnerCode:   nil,
@@ -786,7 +787,7 @@ func (k chainKeeper) initTokenMetadata(ctx sdk.Context, asset string, details ty
 		Asset:        asset,
 		Details:      details,
 		TokenAddress: tokenAddr,
-		ChainID:      sdk.NewIntFromBigInt(chainID),
+		ChainID:      math.NewIntFromBigInt(chainID),
 		Status:       types.Initialized,
 		IsExternal:   false,
 		BurnerCode:   burnerCode,

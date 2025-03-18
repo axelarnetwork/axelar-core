@@ -65,7 +65,7 @@ message EventTokenSent {
   string destination_address = 3;
   string symbol = 4;
   bytes amount = 5 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
 }
@@ -92,7 +92,7 @@ message EventContractCallWithToken {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
   string symbol = 5;
   bytes amount = 6 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
 }
@@ -101,7 +101,7 @@ message EventTransfer {
   bytes to = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   bytes amount = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
 }
@@ -118,13 +118,13 @@ message EventMultisigOwnershipTransferred {
   repeated bytes pre_owners = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   bytes prev_threshold = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
   repeated bytes new_owners = 3
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   bytes new_threshold = 4 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
 }
@@ -135,11 +135,11 @@ message EventMultisigOperatorshipTransferred {
   repeated bytes new_operators = 3
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   bytes new_threshold = 4 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
   repeated bytes new_weights = 5 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
 }
@@ -148,7 +148,7 @@ message EventMultisigOperatorshipTransferred {
 message NetworkInfo {
   string name = 1;
   bytes id = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];
 }
@@ -177,7 +177,7 @@ message ERC20Deposit {
     (gogoproto.customname) = "TxID"
   ];
   bytes amount = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
   string asset = 3;
@@ -193,7 +193,7 @@ message ERC20Deposit {
 message ERC20TokenMetadata {
   string asset = 1;
   bytes chain_id = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.customname) = "ChainID",
     (gogoproto.nullable) = false
   ];
@@ -349,7 +349,7 @@ message TokenDetails {
   string symbol = 2;
   uint32 decimals = 3 [ (gogoproto.casttype) = "uint8" ];
   bytes capacity = 4 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];
 }

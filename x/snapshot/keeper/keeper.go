@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"cosmossdk.io/log"
 	"cosmossdk.io/math"
-	"github.com/cometbft/cometbft/libs/log"
+	store "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -62,10 +62,10 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 }
 
 // GetMinProxyBalance returns the minimum balance proxies must hold
-func (k Keeper) GetMinProxyBalance(ctx sdk.Context) sdk.Int {
+func (k Keeper) GetMinProxyBalance(ctx sdk.Context) math.Int {
 	var minBalance int64
 	k.params.Get(ctx, types.KeyMinProxyBalance, &minBalance)
-	return sdk.NewInt(minBalance)
+	return math.NewInt(minBalance)
 }
 
 // ActivateProxy registers a proxy address for a given operator, which can broadcast messages in the principal's name
@@ -92,7 +92,10 @@ func (k Keeper) ActivateProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sd
 	}
 
 	minBalance := k.GetMinProxyBalance(ctx)
-	denom := k.staking.BondDenom(ctx)
+	denom, err := k.staking.BondDenom(ctx)
+	if err != nil {
+		return err
+	}
 	if balance := k.bank.SpendableBalance(ctx, proxy, denom); balance.Amount.LT(minBalance) {
 		return fmt.Errorf("account %s does not have sufficient funds to become a proxy (minimum %s%s, actual %s)",
 			proxy.String(), minBalance.String(), denom, balance.String())
@@ -105,7 +108,10 @@ func (k Keeper) ActivateProxy(ctx sdk.Context, operator sdk.ValAddress, proxy sd
 
 // DeactivateProxy deactivates the proxy address for a given operator
 func (k Keeper) DeactivateProxy(ctx sdk.Context, operator sdk.ValAddress) error {
-	val := k.staking.Validator(ctx, operator)
+	val, err := k.staking.Validator(ctx, operator)
+	if err != nil {
+		return err
+	}
 	if val == nil {
 		return fmt.Errorf("validator %s is unknown", operator.String())
 	}
@@ -138,7 +144,7 @@ func (k Keeper) getProxiedValidator(ctx sdk.Context, addr sdk.Address) (types.Pr
 func (k Keeper) getProxiedValidators(ctx sdk.Context) []types.ProxiedValidator {
 	var proxiedValidators []types.ProxiedValidator
 
-	iter := sdk.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(proxyPrefix))
+	iter := store.KVStorePrefixIterator(ctx.KVStore(k.storeKey), []byte(proxyPrefix))
 	defer utils.CloseLogError(iter, k.Logger(ctx))
 
 	for ; iter.Valid(); iter.Next() {
@@ -185,34 +191,43 @@ func (k Keeper) CreateSnapshot(
 	ctx sdk.Context,
 	candidates []sdk.ValAddress,
 	filterFunc func(exported.ValidatorI) bool,
-	weightFunc func(consensusPower sdk.Uint) sdk.Uint,
+	weightFunc func(consensusPower math.Uint) math.Uint,
 	threshold utils.Threshold,
 ) (exported.Snapshot, error) {
 	powerReduction := k.staking.PowerReduction(ctx)
 	participants := make([]exported.Participant, 0, len(candidates))
 
 	for _, candidate := range candidates {
-		validator := k.staking.Validator(ctx, candidate)
+		validator, err := k.staking.Validator(ctx, candidate)
+		if err != nil {
+			continue
+		}
+
 		if validator == nil || !filterFunc(validator) {
 			continue
 		}
 
-		weight := weightFunc(sdk.NewUint(uint64(validator.GetConsensusPower(powerReduction))))
+		weight := weightFunc(math.NewUint(uint64(validator.GetConsensusPower(powerReduction))))
 		// Participants with zero weight are useless for all intents and purposes.
 		// We filter them out here so any process dealing with snapshots doesn't have to worry about them
 		if weight.IsZero() {
 			continue
 		}
-		participants = append(participants, exported.NewParticipant(validator.GetOperator(), weight))
+
+		val, err := sdk.ValAddressFromBech32(validator.GetOperator())
+		if err != nil {
+			continue
+		}
+		participants = append(participants, exported.NewParticipant(val, weight))
 	}
 
 	bondedWeight := math.ZeroUint()
-	k.staking.IterateBondedValidatorsByPower(ctx, func(_ int64, v stakingtypes.ValidatorI) (stop bool) {
+	err := k.staking.IterateBondedValidatorsByPower(ctx, func(_ int64, v stakingtypes.ValidatorI) (stop bool) {
 		if v == nil {
 			panic("nil bonded validator received")
 		}
 
-		weight := weightFunc(sdk.NewUint(uint64(v.GetConsensusPower(powerReduction))))
+		weight := weightFunc(math.NewUint(uint64(v.GetConsensusPower(powerReduction))))
 		bondedWeight = bondedWeight.Add(weight)
 
 		// we do not stop until we've iterated through all bonded validators.
@@ -220,6 +235,9 @@ func (k Keeper) CreateSnapshot(
 		// some weight
 		return false
 	})
+	if err != nil {
+		return exported.Snapshot{}, err
+	}
 
 	snapshot := exported.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), participants, bondedWeight)
 

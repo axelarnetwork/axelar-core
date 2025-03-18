@@ -5,7 +5,7 @@ Manage your application's keys
 ### Synopsis
 
 Keyring management commands. These keys may be in any format supported by the
-Tendermint crypto library and can be used by light-clients, full nodes, or any other application
+CometBFT crypto library and can be used by light-clients, full nodes, or any other application
 that needs to sign with a private key.
 
 The keyring supports the following backends:
@@ -32,7 +32,6 @@ The pass backend requires GnuPG: https://gnupg.org/
 
 ```
   -h, --help                     help for keys
-      --home string              The application home directory (default "$HOME/.axelar")
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --output string            Output format (text|json) (default "text")
@@ -41,6 +40,7 @@ The pass backend requires GnuPG: https://gnupg.org/
 ### Options inherited from parent commands
 
 ```
+      --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
       --trace               print out full stack trace on errors

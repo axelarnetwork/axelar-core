@@ -123,7 +123,7 @@ func getCmdOptOut() *cobra.Command {
 				return err
 			}
 
-			msg := &types.KeygenOptOutRequest{Sender: clientCtx.FromAddress}
+			msg := &types.KeygenOptOutRequest{Sender: clientCtx.FromAddress.String()}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -145,7 +145,7 @@ func getCmdOptIn() *cobra.Command {
 				return err
 			}
 
-			msg := &types.KeygenOptInRequest{Sender: clientCtx.FromAddress}
+			msg := &types.KeygenOptInRequest{Sender: clientCtx.FromAddress.String()}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},

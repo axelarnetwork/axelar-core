@@ -9,14 +9,17 @@ import "axelar/tss/v1beta1/types.proto";
 import "axelar/tss/tofnd/v1beta1/tofnd.proto";
 import "axelar/vote/exported/v1beta1/types.proto";
 import "axelar/permission/exported/v1beta1/types.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/msg/v1/msg.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
 // StartKeygenRequest indicate the start of keygen
 message StartKeygenRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
-  string sender = 1 [ (gogoproto.casttype) =
-                          "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  string sender = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   tss.v1beta1.KeyInfo key_info = 2 [ (gogoproto.nullable) = false ];
 }
 
@@ -24,8 +27,12 @@ message StartKeygenResponse {}
 
 message RotateKeyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -35,6 +42,7 @@ message RotateKeyRequest {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID"
   ];
+  string sender = 5 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message RotateKeyResponse {}
@@ -42,10 +50,15 @@ message RotateKeyResponse {}
 // ProcessKeygenTrafficRequest protocol message
 message ProcessKeygenTrafficRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
   tss.tofnd.v1beta1.TrafficOut payload = 3 [ (gogoproto.nullable) = false ];
+  string sender = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message ProcessKeygenTrafficResponse {}
@@ -53,10 +66,15 @@ message ProcessKeygenTrafficResponse {}
 // ProcessSignTrafficRequest protocol message
 message ProcessSignTrafficRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
   tss.tofnd.v1beta1.TrafficOut payload = 3 [ (gogoproto.nullable) = false ];
+  string sender = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message ProcessSignTrafficResponse {}
@@ -64,30 +82,44 @@ message ProcessSignTrafficResponse {}
 // VotePubKeyRequest represents the message to vote on a public key
 message VotePubKeyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
   tss.tofnd.v1beta1.MessageOut.KeygenResult result = 3
       [ (gogoproto.nullable) = false ];
+  string sender = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 message VotePubKeyResponse { string log = 1; }
 
 // VoteSigRequest represents a message to vote for a signature
 message VoteSigRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
   tss.tofnd.v1beta1.MessageOut.SignResult result = 3
       [ (gogoproto.nullable) = false ];
+  string sender = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message VoteSigResponse { string log = 1; }
 
 message HeartBeatRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
 
   // Deprecated: this field will be removed in the next release
   repeated string key_ids = 2 [
@@ -96,12 +128,15 @@ message HeartBeatRequest {
         "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID",
     deprecated = true
   ]; // key_ids was deprecated in v1.0
+  string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message HeartBeatResponse {}
 
 message RegisterExternalKeysRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  option (cosmos.msg.v1.signer) = "sender";
+
   message ExternalKey {
     string id = 1 [
       (gogoproto.customname) = "ID",
@@ -111,20 +146,27 @@ message RegisterExternalKeysRequest {
     bytes pub_key = 2;
   }
 
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   repeated ExternalKey external_keys = 3 [ (gogoproto.nullable) = false ];
+  string sender = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message RegisterExternalKeysResponse {};
 
 message SubmitMultisigPubKeysRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string key_id = 2 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
@@ -132,17 +174,23 @@ message SubmitMultisigPubKeysRequest {
   ];
   repeated exported.v1beta1.SigKeyPair sig_key_pairs = 3
       [ (gogoproto.nullable) = false ];
+  string sender = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message SubmitMultisigPubKeysResponse {}
 
 message SubmitMultisigSignaturesRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  option (cosmos.msg.v1.signer) = "sender";
+
+  bytes sender_bz = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string sig_id = 2 [ (gogoproto.customname) = "SigID" ];
 
   repeated bytes signatures = 3;
+  string sender = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message SubmitMultisigSignaturesResponse {}

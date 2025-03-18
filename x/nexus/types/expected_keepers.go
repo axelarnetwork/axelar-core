@@ -1,13 +1,15 @@
 package types
 
 import (
+	"context"
 	"time"
 
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	"github.com/cometbft/cometbft/libs/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	ibctypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	ibctypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -64,16 +66,16 @@ type MsgIDGenerator interface {
 
 // Snapshotter provides functionality to the snapshot module
 type Snapshotter interface {
-	CreateSnapshot(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower sdk.Uint) sdk.Uint, threshold utils.Threshold) (snapshot.Snapshot, error)
+	CreateSnapshot(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower math.Uint) math.Uint, threshold utils.Threshold) (snapshot.Snapshot, error)
 	GetOperator(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress
 	GetProxy(ctx sdk.Context, operator sdk.ValAddress) (addr sdk.AccAddress, active bool)
 }
 
 // StakingKeeper provides functionality to the staking module
 type StakingKeeper interface {
-	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
-	PowerReduction(sdk.Context) sdk.Int
-	GetLastTotalPower(sdk.Context) sdk.Int
+	Validator(ctx context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error)
+	PowerReduction(context.Context) math.Int
+	GetLastTotalPower(context.Context) (math.Int, error)
 }
 
 // AxelarnetKeeper provides functionality to the axelarnet module
@@ -88,7 +90,7 @@ type RewardKeeper interface {
 
 // SlashingKeeper provides functionality to manage slashing info for a validator
 type SlashingKeeper interface {
-	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
+	IsTombstoned(ctx context.Context, consAddr sdk.ConsAddress) bool
 }
 
 // WasmKeeper provides functionality to manage wasm contracts
@@ -109,11 +111,11 @@ type IBCKeeper interface {
 
 // BankKeeper provides functionality to manage bank
 type BankKeeper interface {
-	SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error
-	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
-	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
-	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error
-	GetAllBalances(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
-	BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
-	MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
+	SendCoins(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error
+	SendCoinsFromAccountToModule(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
+	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
+	GetAllBalances(ctx context.Context, addr sdk.AccAddress) sdk.Coins
+	BurnCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
+	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
 }

@@ -1,11 +1,11 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/pkg/errors"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
@@ -38,7 +38,7 @@ func NewTalliedVote(pollID exported.PollID, data codec.ProtoMarshaler) TalliedVo
 }
 
 // TallyVote adds the given voting power to the tallied vote
-func (m *TalliedVote) TallyVote(voter sdk.ValAddress, votingPower sdk.Uint, isLate bool) {
+func (m *TalliedVote) TallyVote(voter sdk.ValAddress, votingPower math.Uint, isLate bool) {
 	if voter == nil {
 		panic("voter cannot be nil")
 	}
@@ -65,7 +65,7 @@ func (m TalliedVote) ValidateBasic() error {
 	slices.Sort(addrs)
 	for _, addr := range addrs {
 		if _, err := sdk.ValAddressFromBech32(addr); err != nil {
-			return sdkerrors.Wrapf(err, "voter %s is not a valid address", addr)
+			return errorsmod.Wrapf(err, "voter %s is not a valid address", addr)
 		}
 	}
 	return nil

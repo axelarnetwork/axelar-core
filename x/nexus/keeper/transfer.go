@@ -3,7 +3,8 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/store/prefix"
+	"cosmossdk.io/math"
+	"cosmossdk.io/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
@@ -64,13 +65,13 @@ func (k Keeper) getTransferFee(ctx sdk.Context) (fee exported.TransferFee) {
 }
 
 // getCrossChainFees computes the fee info for a cross-chain transfer.
-func (k Keeper) getCrossChainFees(ctx sdk.Context, sourceChain exported.Chain, destinationChain exported.Chain, asset string) (feeRate sdk.Dec, minFee sdk.Int, maxFee sdk.Int, err error) {
+func (k Keeper) getCrossChainFees(ctx sdk.Context, sourceChain exported.Chain, destinationChain exported.Chain, asset string) (feeRate math.LegacyDec, minFee math.Int, maxFee math.Int, err error) {
 	sourceChainFeeInfo := k.GetFeeInfo(ctx, sourceChain, asset)
 	destinationChainFeeInfo := k.GetFeeInfo(ctx, destinationChain, asset)
 
 	feeRate = sourceChainFeeInfo.FeeRate.Add(destinationChainFeeInfo.FeeRate)
-	if feeRate.GT(sdk.OneDec()) {
-		return sdk.Dec{}, sdk.Int{}, sdk.Int{}, fmt.Errorf("total fee rate should not be greater than 1")
+	if feeRate.GT(math.LegacyOneDec()) {
+		return math.LegacyDec{}, math.Int{}, math.Int{}, fmt.Errorf("total fee rate should not be greater than 1")
 	}
 
 	minFee = sourceChainFeeInfo.MinFee.Add(destinationChainFeeInfo.MinFee)
@@ -91,9 +92,9 @@ func (k Keeper) ComputeTransferFee(ctx sdk.Context, sourceChain exported.Chain, 
 		return sdk.Coin{}, err
 	}
 
-	fee := sdk.NewDecFromInt(asset.Amount).Mul(feeRate).TruncateInt()
-	fee = sdk.MaxInt(minFee, fee)
-	fee = sdk.MinInt(maxFee, fee)
+	fee := math.LegacyNewDecFromInt(asset.Amount).Mul(feeRate).TruncateInt()
+	fee = math.MaxInt(minFee, fee)
+	fee = math.MinInt(maxFee, fee)
 
 	return sdk.NewCoin(asset.Denom, fee), nil
 }

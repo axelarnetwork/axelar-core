@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
@@ -48,7 +48,7 @@ func SetGenesisRewardCmd(defaultNodeHome string) *cobra.Command {
 			genesisReward := rewardTypes.GetGenesisStateFromAppState(cdc, appState)
 
 			if externalChainVotingInflationRate != "" {
-				rate, err := sdk.NewDecFromStr(externalChainVotingInflationRate)
+				rate, err := math.LegacyNewDecFromStr(externalChainVotingInflationRate)
 				if err != nil {
 					return err
 				}
@@ -57,7 +57,7 @@ func SetGenesisRewardCmd(defaultNodeHome string) *cobra.Command {
 			}
 
 			if keyMgmtRelativeInflationRate != "" {
-				rate, err := sdk.NewDecFromStr(keyMgmtRelativeInflationRate)
+				rate, err := math.LegacyNewDecFromStr(keyMgmtRelativeInflationRate)
 				if err != nil {
 					return err
 				}

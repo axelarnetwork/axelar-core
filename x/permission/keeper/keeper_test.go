@@ -3,7 +3,8 @@ package keeper_test
 import (
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
@@ -16,10 +17,10 @@ import (
 
 func TestKeeper_GetRole_nil_Address_Return_Unrestricted(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
-	key := sdk.NewKVStoreKey("permission")
-	subspace := paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, key, sdk.NewKVStoreKey("trewardKey"), "reward")
+	key := store.NewKVStoreKey("permission")
+	subspace := paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, key, store.NewKVStoreKey("trewardKey"), "reward")
 	k := keeper.NewKeeper(encCfg.Codec, key, subspace)
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), sdk.Context{}.BlockHeader(), false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), sdk.Context{}.BlockHeader(), false, log.NewTestLogger(t))
 	assert.Equal(t, k.GetRole(ctx, nil), exported.ROLE_UNRESTRICTED)
 }

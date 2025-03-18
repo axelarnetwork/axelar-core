@@ -4,9 +4,10 @@
 package mock
 
 import (
+	"context"
+	"cosmossdk.io/core/address"
 	"github.com/axelarnetwork/axelar-core/x/distribution/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"sync"
 )
@@ -24,25 +25,25 @@ var _ types.BankKeeper = &BankKeeperMock{}
 //			BlockedAddrFunc: func(addr sdk.AccAddress) bool {
 //				panic("mock out the BlockedAddr method")
 //			},
-//			BurnCoinsFunc: func(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
+//			BurnCoinsFunc: func(ctx context.Context, moduleName string, amt sdk.Coins) error {
 //				panic("mock out the BurnCoins method")
 //			},
-//			GetAllBalancesFunc: func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+//			GetAllBalancesFunc: func(ctx context.Context, addr sdk.AccAddress) sdk.Coins {
 //				panic("mock out the GetAllBalances method")
 //			},
-//			MintCoinsFunc: func(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
+//			MintCoinsFunc: func(ctx context.Context, moduleName string, amt sdk.Coins) error {
 //				panic("mock out the MintCoins method")
 //			},
-//			SendCoinsFromAccountToModuleFunc: func(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
+//			SendCoinsFromAccountToModuleFunc: func(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
 //				panic("mock out the SendCoinsFromAccountToModule method")
 //			},
-//			SendCoinsFromModuleToAccountFunc: func(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
+//			SendCoinsFromModuleToAccountFunc: func(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
 //				panic("mock out the SendCoinsFromModuleToAccount method")
 //			},
-//			SendCoinsFromModuleToModuleFunc: func(ctx sdk.Context, senderModule string, recipientModule string, amt sdk.Coins) error {
+//			SendCoinsFromModuleToModuleFunc: func(ctx context.Context, senderModule string, recipientModule string, amt sdk.Coins) error {
 //				panic("mock out the SendCoinsFromModuleToModule method")
 //			},
-//			SpendableCoinsFunc: func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+//			SpendableCoinsFunc: func(ctx context.Context, addr sdk.AccAddress) sdk.Coins {
 //				panic("mock out the SpendableCoins method")
 //			},
 //		}
@@ -56,25 +57,25 @@ type BankKeeperMock struct {
 	BlockedAddrFunc func(addr sdk.AccAddress) bool
 
 	// BurnCoinsFunc mocks the BurnCoins method.
-	BurnCoinsFunc func(ctx sdk.Context, moduleName string, amt sdk.Coins) error
+	BurnCoinsFunc func(ctx context.Context, moduleName string, amt sdk.Coins) error
 
 	// GetAllBalancesFunc mocks the GetAllBalances method.
-	GetAllBalancesFunc func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
+	GetAllBalancesFunc func(ctx context.Context, addr sdk.AccAddress) sdk.Coins
 
 	// MintCoinsFunc mocks the MintCoins method.
-	MintCoinsFunc func(ctx sdk.Context, moduleName string, amt sdk.Coins) error
+	MintCoinsFunc func(ctx context.Context, moduleName string, amt sdk.Coins) error
 
 	// SendCoinsFromAccountToModuleFunc mocks the SendCoinsFromAccountToModule method.
-	SendCoinsFromAccountToModuleFunc func(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
+	SendCoinsFromAccountToModuleFunc func(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 
 	// SendCoinsFromModuleToAccountFunc mocks the SendCoinsFromModuleToAccount method.
-	SendCoinsFromModuleToAccountFunc func(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+	SendCoinsFromModuleToAccountFunc func(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 
 	// SendCoinsFromModuleToModuleFunc mocks the SendCoinsFromModuleToModule method.
-	SendCoinsFromModuleToModuleFunc func(ctx sdk.Context, senderModule string, recipientModule string, amt sdk.Coins) error
+	SendCoinsFromModuleToModuleFunc func(ctx context.Context, senderModule string, recipientModule string, amt sdk.Coins) error
 
 	// SpendableCoinsFunc mocks the SpendableCoins method.
-	SpendableCoinsFunc func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
+	SpendableCoinsFunc func(ctx context.Context, addr sdk.AccAddress) sdk.Coins
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -86,7 +87,7 @@ type BankKeeperMock struct {
 		// BurnCoins holds details about calls to the BurnCoins method.
 		BurnCoins []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 			// ModuleName is the moduleName argument value.
 			ModuleName string
 			// Amt is the amt argument value.
@@ -95,14 +96,14 @@ type BankKeeperMock struct {
 		// GetAllBalances holds details about calls to the GetAllBalances method.
 		GetAllBalances []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 			// Addr is the addr argument value.
 			Addr sdk.AccAddress
 		}
 		// MintCoins holds details about calls to the MintCoins method.
 		MintCoins []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 			// ModuleName is the moduleName argument value.
 			ModuleName string
 			// Amt is the amt argument value.
@@ -111,7 +112,7 @@ type BankKeeperMock struct {
 		// SendCoinsFromAccountToModule holds details about calls to the SendCoinsFromAccountToModule method.
 		SendCoinsFromAccountToModule []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 			// SenderAddr is the senderAddr argument value.
 			SenderAddr sdk.AccAddress
 			// RecipientModule is the recipientModule argument value.
@@ -122,7 +123,7 @@ type BankKeeperMock struct {
 		// SendCoinsFromModuleToAccount holds details about calls to the SendCoinsFromModuleToAccount method.
 		SendCoinsFromModuleToAccount []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 			// SenderModule is the senderModule argument value.
 			SenderModule string
 			// RecipientAddr is the recipientAddr argument value.
@@ -133,7 +134,7 @@ type BankKeeperMock struct {
 		// SendCoinsFromModuleToModule holds details about calls to the SendCoinsFromModuleToModule method.
 		SendCoinsFromModuleToModule []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 			// SenderModule is the senderModule argument value.
 			SenderModule string
 			// RecipientModule is the recipientModule argument value.
@@ -144,7 +145,7 @@ type BankKeeperMock struct {
 		// SpendableCoins holds details about calls to the SpendableCoins method.
 		SpendableCoins []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 			// Addr is the addr argument value.
 			Addr sdk.AccAddress
 		}
@@ -192,12 +193,12 @@ func (mock *BankKeeperMock) BlockedAddrCalls() []struct {
 }
 
 // BurnCoins calls BurnCoinsFunc.
-func (mock *BankKeeperMock) BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
+func (mock *BankKeeperMock) BurnCoins(ctx context.Context, moduleName string, amt sdk.Coins) error {
 	if mock.BurnCoinsFunc == nil {
 		panic("BankKeeperMock.BurnCoinsFunc: method is nil but BankKeeper.BurnCoins was just called")
 	}
 	callInfo := struct {
-		Ctx        sdk.Context
+		Ctx        context.Context
 		ModuleName string
 		Amt        sdk.Coins
 	}{
@@ -216,12 +217,12 @@ func (mock *BankKeeperMock) BurnCoins(ctx sdk.Context, moduleName string, amt sd
 //
 //	len(mockedBankKeeper.BurnCoinsCalls())
 func (mock *BankKeeperMock) BurnCoinsCalls() []struct {
-	Ctx        sdk.Context
+	Ctx        context.Context
 	ModuleName string
 	Amt        sdk.Coins
 } {
 	var calls []struct {
-		Ctx        sdk.Context
+		Ctx        context.Context
 		ModuleName string
 		Amt        sdk.Coins
 	}
@@ -232,12 +233,12 @@ func (mock *BankKeeperMock) BurnCoinsCalls() []struct {
 }
 
 // GetAllBalances calls GetAllBalancesFunc.
-func (mock *BankKeeperMock) GetAllBalances(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+func (mock *BankKeeperMock) GetAllBalances(ctx context.Context, addr sdk.AccAddress) sdk.Coins {
 	if mock.GetAllBalancesFunc == nil {
 		panic("BankKeeperMock.GetAllBalancesFunc: method is nil but BankKeeper.GetAllBalances was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
+		Ctx  context.Context
 		Addr sdk.AccAddress
 	}{
 		Ctx:  ctx,
@@ -254,11 +255,11 @@ func (mock *BankKeeperMock) GetAllBalances(ctx sdk.Context, addr sdk.AccAddress)
 //
 //	len(mockedBankKeeper.GetAllBalancesCalls())
 func (mock *BankKeeperMock) GetAllBalancesCalls() []struct {
-	Ctx  sdk.Context
+	Ctx  context.Context
 	Addr sdk.AccAddress
 } {
 	var calls []struct {
-		Ctx  sdk.Context
+		Ctx  context.Context
 		Addr sdk.AccAddress
 	}
 	mock.lockGetAllBalances.RLock()
@@ -268,12 +269,12 @@ func (mock *BankKeeperMock) GetAllBalancesCalls() []struct {
 }
 
 // MintCoins calls MintCoinsFunc.
-func (mock *BankKeeperMock) MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error {
+func (mock *BankKeeperMock) MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error {
 	if mock.MintCoinsFunc == nil {
 		panic("BankKeeperMock.MintCoinsFunc: method is nil but BankKeeper.MintCoins was just called")
 	}
 	callInfo := struct {
-		Ctx        sdk.Context
+		Ctx        context.Context
 		ModuleName string
 		Amt        sdk.Coins
 	}{
@@ -292,12 +293,12 @@ func (mock *BankKeeperMock) MintCoins(ctx sdk.Context, moduleName string, amt sd
 //
 //	len(mockedBankKeeper.MintCoinsCalls())
 func (mock *BankKeeperMock) MintCoinsCalls() []struct {
-	Ctx        sdk.Context
+	Ctx        context.Context
 	ModuleName string
 	Amt        sdk.Coins
 } {
 	var calls []struct {
-		Ctx        sdk.Context
+		Ctx        context.Context
 		ModuleName string
 		Amt        sdk.Coins
 	}
@@ -308,12 +309,12 @@ func (mock *BankKeeperMock) MintCoinsCalls() []struct {
 }
 
 // SendCoinsFromAccountToModule calls SendCoinsFromAccountToModuleFunc.
-func (mock *BankKeeperMock) SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
+func (mock *BankKeeperMock) SendCoinsFromAccountToModule(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
 	if mock.SendCoinsFromAccountToModuleFunc == nil {
 		panic("BankKeeperMock.SendCoinsFromAccountToModuleFunc: method is nil but BankKeeper.SendCoinsFromAccountToModule was just called")
 	}
 	callInfo := struct {
-		Ctx             sdk.Context
+		Ctx             context.Context
 		SenderAddr      sdk.AccAddress
 		RecipientModule string
 		Amt             sdk.Coins
@@ -334,13 +335,13 @@ func (mock *BankKeeperMock) SendCoinsFromAccountToModule(ctx sdk.Context, sender
 //
 //	len(mockedBankKeeper.SendCoinsFromAccountToModuleCalls())
 func (mock *BankKeeperMock) SendCoinsFromAccountToModuleCalls() []struct {
-	Ctx             sdk.Context
+	Ctx             context.Context
 	SenderAddr      sdk.AccAddress
 	RecipientModule string
 	Amt             sdk.Coins
 } {
 	var calls []struct {
-		Ctx             sdk.Context
+		Ctx             context.Context
 		SenderAddr      sdk.AccAddress
 		RecipientModule string
 		Amt             sdk.Coins
@@ -352,12 +353,12 @@ func (mock *BankKeeperMock) SendCoinsFromAccountToModuleCalls() []struct {
 }
 
 // SendCoinsFromModuleToAccount calls SendCoinsFromModuleToAccountFunc.
-func (mock *BankKeeperMock) SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
+func (mock *BankKeeperMock) SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
 	if mock.SendCoinsFromModuleToAccountFunc == nil {
 		panic("BankKeeperMock.SendCoinsFromModuleToAccountFunc: method is nil but BankKeeper.SendCoinsFromModuleToAccount was just called")
 	}
 	callInfo := struct {
-		Ctx           sdk.Context
+		Ctx           context.Context
 		SenderModule  string
 		RecipientAddr sdk.AccAddress
 		Amt           sdk.Coins
@@ -378,13 +379,13 @@ func (mock *BankKeeperMock) SendCoinsFromModuleToAccount(ctx sdk.Context, sender
 //
 //	len(mockedBankKeeper.SendCoinsFromModuleToAccountCalls())
 func (mock *BankKeeperMock) SendCoinsFromModuleToAccountCalls() []struct {
-	Ctx           sdk.Context
+	Ctx           context.Context
 	SenderModule  string
 	RecipientAddr sdk.AccAddress
 	Amt           sdk.Coins
 } {
 	var calls []struct {
-		Ctx           sdk.Context
+		Ctx           context.Context
 		SenderModule  string
 		RecipientAddr sdk.AccAddress
 		Amt           sdk.Coins
@@ -396,12 +397,12 @@ func (mock *BankKeeperMock) SendCoinsFromModuleToAccountCalls() []struct {
 }
 
 // SendCoinsFromModuleToModule calls SendCoinsFromModuleToModuleFunc.
-func (mock *BankKeeperMock) SendCoinsFromModuleToModule(ctx sdk.Context, senderModule string, recipientModule string, amt sdk.Coins) error {
+func (mock *BankKeeperMock) SendCoinsFromModuleToModule(ctx context.Context, senderModule string, recipientModule string, amt sdk.Coins) error {
 	if mock.SendCoinsFromModuleToModuleFunc == nil {
 		panic("BankKeeperMock.SendCoinsFromModuleToModuleFunc: method is nil but BankKeeper.SendCoinsFromModuleToModule was just called")
 	}
 	callInfo := struct {
-		Ctx             sdk.Context
+		Ctx             context.Context
 		SenderModule    string
 		RecipientModule string
 		Amt             sdk.Coins
@@ -422,13 +423,13 @@ func (mock *BankKeeperMock) SendCoinsFromModuleToModule(ctx sdk.Context, senderM
 //
 //	len(mockedBankKeeper.SendCoinsFromModuleToModuleCalls())
 func (mock *BankKeeperMock) SendCoinsFromModuleToModuleCalls() []struct {
-	Ctx             sdk.Context
+	Ctx             context.Context
 	SenderModule    string
 	RecipientModule string
 	Amt             sdk.Coins
 } {
 	var calls []struct {
-		Ctx             sdk.Context
+		Ctx             context.Context
 		SenderModule    string
 		RecipientModule string
 		Amt             sdk.Coins
@@ -440,12 +441,12 @@ func (mock *BankKeeperMock) SendCoinsFromModuleToModuleCalls() []struct {
 }
 
 // SpendableCoins calls SpendableCoinsFunc.
-func (mock *BankKeeperMock) SpendableCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+func (mock *BankKeeperMock) SpendableCoins(ctx context.Context, addr sdk.AccAddress) sdk.Coins {
 	if mock.SpendableCoinsFunc == nil {
 		panic("BankKeeperMock.SpendableCoinsFunc: method is nil but BankKeeper.SpendableCoins was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
+		Ctx  context.Context
 		Addr sdk.AccAddress
 	}{
 		Ctx:  ctx,
@@ -462,11 +463,11 @@ func (mock *BankKeeperMock) SpendableCoins(ctx sdk.Context, addr sdk.AccAddress)
 //
 //	len(mockedBankKeeper.SpendableCoinsCalls())
 func (mock *BankKeeperMock) SpendableCoinsCalls() []struct {
-	Ctx  sdk.Context
+	Ctx  context.Context
 	Addr sdk.AccAddress
 } {
 	var calls []struct {
-		Ctx  sdk.Context
+		Ctx  context.Context
 		Addr sdk.AccAddress
 	}
 	mock.lockSpendableCoins.RLock()
@@ -485,16 +486,19 @@ var _ types.AccountKeeper = &AccountKeeperMock{}
 //
 //		// make and configure a mocked types.AccountKeeper
 //		mockedAccountKeeper := &AccountKeeperMock{
-//			GetAccountFunc: func(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI {
+//			AddressCodecFunc: func() address.Codec {
+//				panic("mock out the AddressCodec method")
+//			},
+//			GetAccountFunc: func(ctx context.Context, addr sdk.AccAddress) sdk.AccountI {
 //				panic("mock out the GetAccount method")
 //			},
-//			GetModuleAccountFunc: func(ctx sdk.Context, name string) authtypes.ModuleAccountI {
+//			GetModuleAccountFunc: func(ctx context.Context, name string) sdk.ModuleAccountI {
 //				panic("mock out the GetModuleAccount method")
 //			},
 //			GetModuleAddressFunc: func(name string) sdk.AccAddress {
 //				panic("mock out the GetModuleAddress method")
 //			},
-//			SetModuleAccountFunc: func(context sdk.Context, moduleAccountI authtypes.ModuleAccountI)  {
+//			SetModuleAccountFunc: func(contextMoqParam context.Context, moduleAccountI sdk.ModuleAccountI)  {
 //				panic("mock out the SetModuleAccount method")
 //			},
 //		}
@@ -504,31 +508,37 @@ var _ types.AccountKeeper = &AccountKeeperMock{}
 //
 //	}
 type AccountKeeperMock struct {
+	// AddressCodecFunc mocks the AddressCodec method.
+	AddressCodecFunc func() address.Codec
+
 	// GetAccountFunc mocks the GetAccount method.
-	GetAccountFunc func(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI
+	GetAccountFunc func(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
 
 	// GetModuleAccountFunc mocks the GetModuleAccount method.
-	GetModuleAccountFunc func(ctx sdk.Context, name string) authtypes.ModuleAccountI
+	GetModuleAccountFunc func(ctx context.Context, name string) sdk.ModuleAccountI
 
 	// GetModuleAddressFunc mocks the GetModuleAddress method.
 	GetModuleAddressFunc func(name string) sdk.AccAddress
 
 	// SetModuleAccountFunc mocks the SetModuleAccount method.
-	SetModuleAccountFunc func(context sdk.Context, moduleAccountI authtypes.ModuleAccountI)
+	SetModuleAccountFunc func(contextMoqParam context.Context, moduleAccountI sdk.ModuleAccountI)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// AddressCodec holds details about calls to the AddressCodec method.
+		AddressCodec []struct {
+		}
 		// GetAccount holds details about calls to the GetAccount method.
 		GetAccount []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 			// Addr is the addr argument value.
 			Addr sdk.AccAddress
 		}
 		// GetModuleAccount holds details about calls to the GetModuleAccount method.
 		GetModuleAccount []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 			// Name is the name argument value.
 			Name string
 		}
@@ -539,25 +549,53 @@ type AccountKeeperMock struct {
 		}
 		// SetModuleAccount holds details about calls to the SetModuleAccount method.
 		SetModuleAccount []struct {
-			// Context is the context argument value.
-			Context sdk.Context
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
 			// ModuleAccountI is the moduleAccountI argument value.
-			ModuleAccountI authtypes.ModuleAccountI
+			ModuleAccountI sdk.ModuleAccountI
 		}
 	}
+	lockAddressCodec     sync.RWMutex
 	lockGetAccount       sync.RWMutex
 	lockGetModuleAccount sync.RWMutex
 	lockGetModuleAddress sync.RWMutex
 	lockSetModuleAccount sync.RWMutex
 }
 
+// AddressCodec calls AddressCodecFunc.
+func (mock *AccountKeeperMock) AddressCodec() address.Codec {
+	if mock.AddressCodecFunc == nil {
+		panic("AccountKeeperMock.AddressCodecFunc: method is nil but AccountKeeper.AddressCodec was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockAddressCodec.Lock()
+	mock.calls.AddressCodec = append(mock.calls.AddressCodec, callInfo)
+	mock.lockAddressCodec.Unlock()
+	return mock.AddressCodecFunc()
+}
+
+// AddressCodecCalls gets all the calls that were made to AddressCodec.
+// Check the length with:
+//
+//	len(mockedAccountKeeper.AddressCodecCalls())
+func (mock *AccountKeeperMock) AddressCodecCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockAddressCodec.RLock()
+	calls = mock.calls.AddressCodec
+	mock.lockAddressCodec.RUnlock()
+	return calls
+}
+
 // GetAccount calls GetAccountFunc.
-func (mock *AccountKeeperMock) GetAccount(ctx sdk.Context, addr sdk.AccAddress) authtypes.AccountI {
+func (mock *AccountKeeperMock) GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI {
 	if mock.GetAccountFunc == nil {
 		panic("AccountKeeperMock.GetAccountFunc: method is nil but AccountKeeper.GetAccount was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
+		Ctx  context.Context
 		Addr sdk.AccAddress
 	}{
 		Ctx:  ctx,
@@ -574,11 +612,11 @@ func (mock *AccountKeeperMock) GetAccount(ctx sdk.Context, addr sdk.AccAddress) 
 //
 //	len(mockedAccountKeeper.GetAccountCalls())
 func (mock *AccountKeeperMock) GetAccountCalls() []struct {
-	Ctx  sdk.Context
+	Ctx  context.Context
 	Addr sdk.AccAddress
 } {
 	var calls []struct {
-		Ctx  sdk.Context
+		Ctx  context.Context
 		Addr sdk.AccAddress
 	}
 	mock.lockGetAccount.RLock()
@@ -588,12 +626,12 @@ func (mock *AccountKeeperMock) GetAccountCalls() []struct {
 }
 
 // GetModuleAccount calls GetModuleAccountFunc.
-func (mock *AccountKeeperMock) GetModuleAccount(ctx sdk.Context, name string) authtypes.ModuleAccountI {
+func (mock *AccountKeeperMock) GetModuleAccount(ctx context.Context, name string) sdk.ModuleAccountI {
 	if mock.GetModuleAccountFunc == nil {
 		panic("AccountKeeperMock.GetModuleAccountFunc: method is nil but AccountKeeper.GetModuleAccount was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
+		Ctx  context.Context
 		Name string
 	}{
 		Ctx:  ctx,
@@ -610,11 +648,11 @@ func (mock *AccountKeeperMock) GetModuleAccount(ctx sdk.Context, name string) au
 //
 //	len(mockedAccountKeeper.GetModuleAccountCalls())
 func (mock *AccountKeeperMock) GetModuleAccountCalls() []struct {
-	Ctx  sdk.Context
+	Ctx  context.Context
 	Name string
 } {
 	var calls []struct {
-		Ctx  sdk.Context
+		Ctx  context.Context
 		Name string
 	}
 	mock.lockGetModuleAccount.RLock()
@@ -656,21 +694,21 @@ func (mock *AccountKeeperMock) GetModuleAddressCalls() []struct {
 }
 
 // SetModuleAccount calls SetModuleAccountFunc.
-func (mock *AccountKeeperMock) SetModuleAccount(context sdk.Context, moduleAccountI authtypes.ModuleAccountI) {
+func (mock *AccountKeeperMock) SetModuleAccount(contextMoqParam context.Context, moduleAccountI sdk.ModuleAccountI) {
 	if mock.SetModuleAccountFunc == nil {
 		panic("AccountKeeperMock.SetModuleAccountFunc: method is nil but AccountKeeper.SetModuleAccount was just called")
 	}
 	callInfo := struct {
-		Context        sdk.Context
-		ModuleAccountI authtypes.ModuleAccountI
+		ContextMoqParam context.Context
+		ModuleAccountI  sdk.ModuleAccountI
 	}{
-		Context:        context,
-		ModuleAccountI: moduleAccountI,
+		ContextMoqParam: contextMoqParam,
+		ModuleAccountI:  moduleAccountI,
 	}
 	mock.lockSetModuleAccount.Lock()
 	mock.calls.SetModuleAccount = append(mock.calls.SetModuleAccount, callInfo)
 	mock.lockSetModuleAccount.Unlock()
-	mock.SetModuleAccountFunc(context, moduleAccountI)
+	mock.SetModuleAccountFunc(contextMoqParam, moduleAccountI)
 }
 
 // SetModuleAccountCalls gets all the calls that were made to SetModuleAccount.
@@ -678,12 +716,12 @@ func (mock *AccountKeeperMock) SetModuleAccount(context sdk.Context, moduleAccou
 //
 //	len(mockedAccountKeeper.SetModuleAccountCalls())
 func (mock *AccountKeeperMock) SetModuleAccountCalls() []struct {
-	Context        sdk.Context
-	ModuleAccountI authtypes.ModuleAccountI
+	ContextMoqParam context.Context
+	ModuleAccountI  sdk.ModuleAccountI
 } {
 	var calls []struct {
-		Context        sdk.Context
-		ModuleAccountI authtypes.ModuleAccountI
+		ContextMoqParam context.Context
+		ModuleAccountI  sdk.ModuleAccountI
 	}
 	mock.lockSetModuleAccount.RLock()
 	calls = mock.calls.SetModuleAccount
@@ -701,28 +739,34 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 //
 //		// make and configure a mocked types.StakingKeeper
 //		mockedStakingKeeper := &StakingKeeperMock{
-//			DelegationFunc: func(context sdk.Context, accAddress sdk.AccAddress, valAddress sdk.ValAddress) stakingtypes.DelegationI {
+//			ConsensusAddressCodecFunc: func() address.Codec {
+//				panic("mock out the ConsensusAddressCodec method")
+//			},
+//			DelegationFunc: func(contextMoqParam context.Context, accAddress sdk.AccAddress, valAddress sdk.ValAddress) (stakingtypes.DelegationI, error) {
 //				panic("mock out the Delegation method")
 //			},
-//			GetAllDelegatorDelegationsFunc: func(ctx sdk.Context, delegator sdk.AccAddress) []stakingtypes.Delegation {
+//			GetAllDelegatorDelegationsFunc: func(ctx context.Context, delegator sdk.AccAddress) ([]stakingtypes.Delegation, error) {
 //				panic("mock out the GetAllDelegatorDelegations method")
 //			},
-//			GetAllSDKDelegationsFunc: func(ctx sdk.Context) []stakingtypes.Delegation {
+//			GetAllSDKDelegationsFunc: func(ctx context.Context) ([]stakingtypes.Delegation, error) {
 //				panic("mock out the GetAllSDKDelegations method")
 //			},
-//			GetAllValidatorsFunc: func(ctx sdk.Context) []stakingtypes.Validator {
+//			GetAllValidatorsFunc: func(ctx context.Context) ([]stakingtypes.Validator, error) {
 //				panic("mock out the GetAllValidators method")
 //			},
-//			IterateDelegationsFunc: func(ctx sdk.Context, delegator sdk.AccAddress, fn func(index int64, delegation stakingtypes.DelegationI) (stop bool))  {
+//			IterateDelegationsFunc: func(ctx context.Context, delegator sdk.AccAddress, fn func(index int64, delegation stakingtypes.DelegationI) (stop bool)) error {
 //				panic("mock out the IterateDelegations method")
 //			},
-//			IterateValidatorsFunc: func(context sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
+//			IterateValidatorsFunc: func(contextMoqParam context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error {
 //				panic("mock out the IterateValidators method")
 //			},
-//			ValidatorFunc: func(context sdk.Context, valAddress sdk.ValAddress) stakingtypes.ValidatorI {
+//			ValidatorFunc: func(contextMoqParam context.Context, valAddress sdk.ValAddress) (stakingtypes.ValidatorI, error) {
 //				panic("mock out the Validator method")
 //			},
-//			ValidatorByConsAddrFunc: func(context sdk.Context, consAddress sdk.ConsAddress) stakingtypes.ValidatorI {
+//			ValidatorAddressCodecFunc: func() address.Codec {
+//				panic("mock out the ValidatorAddressCodec method")
+//			},
+//			ValidatorByConsAddrFunc: func(contextMoqParam context.Context, consAddress sdk.ConsAddress) (stakingtypes.ValidatorI, error) {
 //				panic("mock out the ValidatorByConsAddr method")
 //			},
 //		}
@@ -732,36 +776,45 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 //
 //	}
 type StakingKeeperMock struct {
+	// ConsensusAddressCodecFunc mocks the ConsensusAddressCodec method.
+	ConsensusAddressCodecFunc func() address.Codec
+
 	// DelegationFunc mocks the Delegation method.
-	DelegationFunc func(context sdk.Context, accAddress sdk.AccAddress, valAddress sdk.ValAddress) stakingtypes.DelegationI
+	DelegationFunc func(contextMoqParam context.Context, accAddress sdk.AccAddress, valAddress sdk.ValAddress) (stakingtypes.DelegationI, error)
 
 	// GetAllDelegatorDelegationsFunc mocks the GetAllDelegatorDelegations method.
-	GetAllDelegatorDelegationsFunc func(ctx sdk.Context, delegator sdk.AccAddress) []stakingtypes.Delegation
+	GetAllDelegatorDelegationsFunc func(ctx context.Context, delegator sdk.AccAddress) ([]stakingtypes.Delegation, error)
 
 	// GetAllSDKDelegationsFunc mocks the GetAllSDKDelegations method.
-	GetAllSDKDelegationsFunc func(ctx sdk.Context) []stakingtypes.Delegation
+	GetAllSDKDelegationsFunc func(ctx context.Context) ([]stakingtypes.Delegation, error)
 
 	// GetAllValidatorsFunc mocks the GetAllValidators method.
-	GetAllValidatorsFunc func(ctx sdk.Context) []stakingtypes.Validator
+	GetAllValidatorsFunc func(ctx context.Context) ([]stakingtypes.Validator, error)
 
 	// IterateDelegationsFunc mocks the IterateDelegations method.
-	IterateDelegationsFunc func(ctx sdk.Context, delegator sdk.AccAddress, fn func(index int64, delegation stakingtypes.DelegationI) (stop bool))
+	IterateDelegationsFunc func(ctx context.Context, delegator sdk.AccAddress, fn func(index int64, delegation stakingtypes.DelegationI) (stop bool)) error
 
 	// IterateValidatorsFunc mocks the IterateValidators method.
-	IterateValidatorsFunc func(context sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
+	IterateValidatorsFunc func(contextMoqParam context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error
 
 	// ValidatorFunc mocks the Validator method.
-	ValidatorFunc func(context sdk.Context, valAddress sdk.ValAddress) stakingtypes.ValidatorI
+	ValidatorFunc func(contextMoqParam context.Context, valAddress sdk.ValAddress) (stakingtypes.ValidatorI, error)
+
+	// ValidatorAddressCodecFunc mocks the ValidatorAddressCodec method.
+	ValidatorAddressCodecFunc func() address.Codec
 
 	// ValidatorByConsAddrFunc mocks the ValidatorByConsAddr method.
-	ValidatorByConsAddrFunc func(context sdk.Context, consAddress sdk.ConsAddress) stakingtypes.ValidatorI
+	ValidatorByConsAddrFunc func(contextMoqParam context.Context, consAddress sdk.ConsAddress) (stakingtypes.ValidatorI, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// ConsensusAddressCodec holds details about calls to the ConsensusAddressCodec method.
+		ConsensusAddressCodec []struct {
+		}
 		// Delegation holds details about calls to the Delegation method.
 		Delegation []struct {
-			// Context is the context argument value.
-			Context sdk.Context
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
 			// AccAddress is the accAddress argument value.
 			AccAddress sdk.AccAddress
 			// ValAddress is the valAddress argument value.
@@ -770,24 +823,24 @@ type StakingKeeperMock struct {
 		// GetAllDelegatorDelegations holds details about calls to the GetAllDelegatorDelegations method.
 		GetAllDelegatorDelegations []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 			// Delegator is the delegator argument value.
 			Delegator sdk.AccAddress
 		}
 		// GetAllSDKDelegations holds details about calls to the GetAllSDKDelegations method.
 		GetAllSDKDelegations []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 		}
 		// GetAllValidators holds details about calls to the GetAllValidators method.
 		GetAllValidators []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 		}
 		// IterateDelegations holds details about calls to the IterateDelegations method.
 		IterateDelegations []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 			// Delegator is the delegator argument value.
 			Delegator sdk.AccAddress
 			// Fn is the fn argument value.
@@ -795,26 +848,30 @@ type StakingKeeperMock struct {
 		}
 		// IterateValidators holds details about calls to the IterateValidators method.
 		IterateValidators []struct {
-			// Context is the context argument value.
-			Context sdk.Context
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
 			// Fn is the fn argument value.
 			Fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 		}
 		// Validator holds details about calls to the Validator method.
 		Validator []struct {
-			// Context is the context argument value.
-			Context sdk.Context
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
 			// ValAddress is the valAddress argument value.
 			ValAddress sdk.ValAddress
 		}
+		// ValidatorAddressCodec holds details about calls to the ValidatorAddressCodec method.
+		ValidatorAddressCodec []struct {
+		}
 		// ValidatorByConsAddr holds details about calls to the ValidatorByConsAddr method.
 		ValidatorByConsAddr []struct {
-			// Context is the context argument value.
-			Context sdk.Context
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
 			// ConsAddress is the consAddress argument value.
 			ConsAddress sdk.ConsAddress
 		}
 	}
+	lockConsensusAddressCodec      sync.RWMutex
 	lockDelegation                 sync.RWMutex
 	lockGetAllDelegatorDelegations sync.RWMutex
 	lockGetAllSDKDelegations       sync.RWMutex
@@ -822,27 +879,55 @@ type StakingKeeperMock struct {
 	lockIterateDelegations         sync.RWMutex
 	lockIterateValidators          sync.RWMutex
 	lockValidator                  sync.RWMutex
+	lockValidatorAddressCodec      sync.RWMutex
 	lockValidatorByConsAddr        sync.RWMutex
 }
 
+// ConsensusAddressCodec calls ConsensusAddressCodecFunc.
+func (mock *StakingKeeperMock) ConsensusAddressCodec() address.Codec {
+	if mock.ConsensusAddressCodecFunc == nil {
+		panic("StakingKeeperMock.ConsensusAddressCodecFunc: method is nil but StakingKeeper.ConsensusAddressCodec was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockConsensusAddressCodec.Lock()
+	mock.calls.ConsensusAddressCodec = append(mock.calls.ConsensusAddressCodec, callInfo)
+	mock.lockConsensusAddressCodec.Unlock()
+	return mock.ConsensusAddressCodecFunc()
+}
+
+// ConsensusAddressCodecCalls gets all the calls that were made to ConsensusAddressCodec.
+// Check the length with:
+//
+//	len(mockedStakingKeeper.ConsensusAddressCodecCalls())
+func (mock *StakingKeeperMock) ConsensusAddressCodecCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockConsensusAddressCodec.RLock()
+	calls = mock.calls.ConsensusAddressCodec
+	mock.lockConsensusAddressCodec.RUnlock()
+	return calls
+}
+
 // Delegation calls DelegationFunc.
-func (mock *StakingKeeperMock) Delegation(context sdk.Context, accAddress sdk.AccAddress, valAddress sdk.ValAddress) stakingtypes.DelegationI {
+func (mock *StakingKeeperMock) Delegation(contextMoqParam context.Context, accAddress sdk.AccAddress, valAddress sdk.ValAddress) (stakingtypes.DelegationI, error) {
 	if mock.DelegationFunc == nil {
 		panic("StakingKeeperMock.DelegationFunc: method is nil but StakingKeeper.Delegation was just called")
 	}
 	callInfo := struct {
-		Context    sdk.Context
-		AccAddress sdk.AccAddress
-		ValAddress sdk.ValAddress
+		ContextMoqParam context.Context
+		AccAddress      sdk.AccAddress
+		ValAddress      sdk.ValAddress
 	}{
-		Context:    context,
-		AccAddress: accAddress,
-		ValAddress: valAddress,
+		ContextMoqParam: contextMoqParam,
+		AccAddress:      accAddress,
+		ValAddress:      valAddress,
 	}
 	mock.lockDelegation.Lock()
 	mock.calls.Delegation = append(mock.calls.Delegation, callInfo)
 	mock.lockDelegation.Unlock()
-	return mock.DelegationFunc(context, accAddress, valAddress)
+	return mock.DelegationFunc(contextMoqParam, accAddress, valAddress)
 }
 
 // DelegationCalls gets all the calls that were made to Delegation.
@@ -850,14 +935,14 @@ func (mock *StakingKeeperMock) Delegation(context sdk.Context, accAddress sdk.Ac
 //
 //	len(mockedStakingKeeper.DelegationCalls())
 func (mock *StakingKeeperMock) DelegationCalls() []struct {
-	Context    sdk.Context
-	AccAddress sdk.AccAddress
-	ValAddress sdk.ValAddress
+	ContextMoqParam context.Context
+	AccAddress      sdk.AccAddress
+	ValAddress      sdk.ValAddress
 } {
 	var calls []struct {
-		Context    sdk.Context
-		AccAddress sdk.AccAddress
-		ValAddress sdk.ValAddress
+		ContextMoqParam context.Context
+		AccAddress      sdk.AccAddress
+		ValAddress      sdk.ValAddress
 	}
 	mock.lockDelegation.RLock()
 	calls = mock.calls.Delegation
@@ -866,12 +951,12 @@ func (mock *StakingKeeperMock) DelegationCalls() []struct {
 }
 
 // GetAllDelegatorDelegations calls GetAllDelegatorDelegationsFunc.
-func (mock *StakingKeeperMock) GetAllDelegatorDelegations(ctx sdk.Context, delegator sdk.AccAddress) []stakingtypes.Delegation {
+func (mock *StakingKeeperMock) GetAllDelegatorDelegations(ctx context.Context, delegator sdk.AccAddress) ([]stakingtypes.Delegation, error) {
 	if mock.GetAllDelegatorDelegationsFunc == nil {
 		panic("StakingKeeperMock.GetAllDelegatorDelegationsFunc: method is nil but StakingKeeper.GetAllDelegatorDelegations was just called")
 	}
 	callInfo := struct {
-		Ctx       sdk.Context
+		Ctx       context.Context
 		Delegator sdk.AccAddress
 	}{
 		Ctx:       ctx,
@@ -888,11 +973,11 @@ func (mock *StakingKeeperMock) GetAllDelegatorDelegations(ctx sdk.Context, deleg
 //
 //	len(mockedStakingKeeper.GetAllDelegatorDelegationsCalls())
 func (mock *StakingKeeperMock) GetAllDelegatorDelegationsCalls() []struct {
-	Ctx       sdk.Context
+	Ctx       context.Context
 	Delegator sdk.AccAddress
 } {
 	var calls []struct {
-		Ctx       sdk.Context
+		Ctx       context.Context
 		Delegator sdk.AccAddress
 	}
 	mock.lockGetAllDelegatorDelegations.RLock()
@@ -902,12 +987,12 @@ func (mock *StakingKeeperMock) GetAllDelegatorDelegationsCalls() []struct {
 }
 
 // GetAllSDKDelegations calls GetAllSDKDelegationsFunc.
-func (mock *StakingKeeperMock) GetAllSDKDelegations(ctx sdk.Context) []stakingtypes.Delegation {
+func (mock *StakingKeeperMock) GetAllSDKDelegations(ctx context.Context) ([]stakingtypes.Delegation, error) {
 	if mock.GetAllSDKDelegationsFunc == nil {
 		panic("StakingKeeperMock.GetAllSDKDelegationsFunc: method is nil but StakingKeeper.GetAllSDKDelegations was just called")
 	}
 	callInfo := struct {
-		Ctx sdk.Context
+		Ctx context.Context
 	}{
 		Ctx: ctx,
 	}
@@ -922,10 +1007,10 @@ func (mock *StakingKeeperMock) GetAllSDKDelegations(ctx sdk.Context) []stakingty
 //
 //	len(mockedStakingKeeper.GetAllSDKDelegationsCalls())
 func (mock *StakingKeeperMock) GetAllSDKDelegationsCalls() []struct {
-	Ctx sdk.Context
+	Ctx context.Context
 } {
 	var calls []struct {
-		Ctx sdk.Context
+		Ctx context.Context
 	}
 	mock.lockGetAllSDKDelegations.RLock()
 	calls = mock.calls.GetAllSDKDelegations
@@ -934,12 +1019,12 @@ func (mock *StakingKeeperMock) GetAllSDKDelegationsCalls() []struct {
 }
 
 // GetAllValidators calls GetAllValidatorsFunc.
-func (mock *StakingKeeperMock) GetAllValidators(ctx sdk.Context) []stakingtypes.Validator {
+func (mock *StakingKeeperMock) GetAllValidators(ctx context.Context) ([]stakingtypes.Validator, error) {
 	if mock.GetAllValidatorsFunc == nil {
 		panic("StakingKeeperMock.GetAllValidatorsFunc: method is nil but StakingKeeper.GetAllValidators was just called")
 	}
 	callInfo := struct {
-		Ctx sdk.Context
+		Ctx context.Context
 	}{
 		Ctx: ctx,
 	}
@@ -954,10 +1039,10 @@ func (mock *StakingKeeperMock) GetAllValidators(ctx sdk.Context) []stakingtypes.
 //
 //	len(mockedStakingKeeper.GetAllValidatorsCalls())
 func (mock *StakingKeeperMock) GetAllValidatorsCalls() []struct {
-	Ctx sdk.Context
+	Ctx context.Context
 } {
 	var calls []struct {
-		Ctx sdk.Context
+		Ctx context.Context
 	}
 	mock.lockGetAllValidators.RLock()
 	calls = mock.calls.GetAllValidators
@@ -966,12 +1051,12 @@ func (mock *StakingKeeperMock) GetAllValidatorsCalls() []struct {
 }
 
 // IterateDelegations calls IterateDelegationsFunc.
-func (mock *StakingKeeperMock) IterateDelegations(ctx sdk.Context, delegator sdk.AccAddress, fn func(index int64, delegation stakingtypes.DelegationI) (stop bool)) {
+func (mock *StakingKeeperMock) IterateDelegations(ctx context.Context, delegator sdk.AccAddress, fn func(index int64, delegation stakingtypes.DelegationI) (stop bool)) error {
 	if mock.IterateDelegationsFunc == nil {
 		panic("StakingKeeperMock.IterateDelegationsFunc: method is nil but StakingKeeper.IterateDelegations was just called")
 	}
 	callInfo := struct {
-		Ctx       sdk.Context
+		Ctx       context.Context
 		Delegator sdk.AccAddress
 		Fn        func(index int64, delegation stakingtypes.DelegationI) (stop bool)
 	}{
@@ -982,7 +1067,7 @@ func (mock *StakingKeeperMock) IterateDelegations(ctx sdk.Context, delegator sdk
 	mock.lockIterateDelegations.Lock()
 	mock.calls.IterateDelegations = append(mock.calls.IterateDelegations, callInfo)
 	mock.lockIterateDelegations.Unlock()
-	mock.IterateDelegationsFunc(ctx, delegator, fn)
+	return mock.IterateDelegationsFunc(ctx, delegator, fn)
 }
 
 // IterateDelegationsCalls gets all the calls that were made to IterateDelegations.
@@ -990,12 +1075,12 @@ func (mock *StakingKeeperMock) IterateDelegations(ctx sdk.Context, delegator sdk
 //
 //	len(mockedStakingKeeper.IterateDelegationsCalls())
 func (mock *StakingKeeperMock) IterateDelegationsCalls() []struct {
-	Ctx       sdk.Context
+	Ctx       context.Context
 	Delegator sdk.AccAddress
 	Fn        func(index int64, delegation stakingtypes.DelegationI) (stop bool)
 } {
 	var calls []struct {
-		Ctx       sdk.Context
+		Ctx       context.Context
 		Delegator sdk.AccAddress
 		Fn        func(index int64, delegation stakingtypes.DelegationI) (stop bool)
 	}
@@ -1006,21 +1091,21 @@ func (mock *StakingKeeperMock) IterateDelegationsCalls() []struct {
 }
 
 // IterateValidators calls IterateValidatorsFunc.
-func (mock *StakingKeeperMock) IterateValidators(context sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
+func (mock *StakingKeeperMock) IterateValidators(contextMoqParam context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error {
 	if mock.IterateValidatorsFunc == nil {
 		panic("StakingKeeperMock.IterateValidatorsFunc: method is nil but StakingKeeper.IterateValidators was just called")
 	}
 	callInfo := struct {
-		Context sdk.Context
-		Fn      func(index int64, validator stakingtypes.ValidatorI) (stop bool)
+		ContextMoqParam context.Context
+		Fn              func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 	}{
-		Context: context,
-		Fn:      fn,
+		ContextMoqParam: contextMoqParam,
+		Fn:              fn,
 	}
 	mock.lockIterateValidators.Lock()
 	mock.calls.IterateValidators = append(mock.calls.IterateValidators, callInfo)
 	mock.lockIterateValidators.Unlock()
-	mock.IterateValidatorsFunc(context, fn)
+	return mock.IterateValidatorsFunc(contextMoqParam, fn)
 }
 
 // IterateValidatorsCalls gets all the calls that were made to IterateValidators.
@@ -1028,12 +1113,12 @@ func (mock *StakingKeeperMock) IterateValidators(context sdk.Context, fn func(in
 //
 //	len(mockedStakingKeeper.IterateValidatorsCalls())
 func (mock *StakingKeeperMock) IterateValidatorsCalls() []struct {
-	Context sdk.Context
-	Fn      func(index int64, validator stakingtypes.ValidatorI) (stop bool)
+	ContextMoqParam context.Context
+	Fn              func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 } {
 	var calls []struct {
-		Context sdk.Context
-		Fn      func(index int64, validator stakingtypes.ValidatorI) (stop bool)
+		ContextMoqParam context.Context
+		Fn              func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 	}
 	mock.lockIterateValidators.RLock()
 	calls = mock.calls.IterateValidators
@@ -1042,21 +1127,21 @@ func (mock *StakingKeeperMock) IterateValidatorsCalls() []struct {
 }
 
 // Validator calls ValidatorFunc.
-func (mock *StakingKeeperMock) Validator(context sdk.Context, valAddress sdk.ValAddress) stakingtypes.ValidatorI {
+func (mock *StakingKeeperMock) Validator(contextMoqParam context.Context, valAddress sdk.ValAddress) (stakingtypes.ValidatorI, error) {
 	if mock.ValidatorFunc == nil {
 		panic("StakingKeeperMock.ValidatorFunc: method is nil but StakingKeeper.Validator was just called")
 	}
 	callInfo := struct {
-		Context    sdk.Context
-		ValAddress sdk.ValAddress
+		ContextMoqParam context.Context
+		ValAddress      sdk.ValAddress
 	}{
-		Context:    context,
-		ValAddress: valAddress,
+		ContextMoqParam: contextMoqParam,
+		ValAddress:      valAddress,
 	}
 	mock.lockValidator.Lock()
 	mock.calls.Validator = append(mock.calls.Validator, callInfo)
 	mock.lockValidator.Unlock()
-	return mock.ValidatorFunc(context, valAddress)
+	return mock.ValidatorFunc(contextMoqParam, valAddress)
 }
 
 // ValidatorCalls gets all the calls that were made to Validator.
@@ -1064,12 +1149,12 @@ func (mock *StakingKeeperMock) Validator(context sdk.Context, valAddress sdk.Val
 //
 //	len(mockedStakingKeeper.ValidatorCalls())
 func (mock *StakingKeeperMock) ValidatorCalls() []struct {
-	Context    sdk.Context
-	ValAddress sdk.ValAddress
+	ContextMoqParam context.Context
+	ValAddress      sdk.ValAddress
 } {
 	var calls []struct {
-		Context    sdk.Context
-		ValAddress sdk.ValAddress
+		ContextMoqParam context.Context
+		ValAddress      sdk.ValAddress
 	}
 	mock.lockValidator.RLock()
 	calls = mock.calls.Validator
@@ -1077,22 +1162,49 @@ func (mock *StakingKeeperMock) ValidatorCalls() []struct {
 	return calls
 }
 
+// ValidatorAddressCodec calls ValidatorAddressCodecFunc.
+func (mock *StakingKeeperMock) ValidatorAddressCodec() address.Codec {
+	if mock.ValidatorAddressCodecFunc == nil {
+		panic("StakingKeeperMock.ValidatorAddressCodecFunc: method is nil but StakingKeeper.ValidatorAddressCodec was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockValidatorAddressCodec.Lock()
+	mock.calls.ValidatorAddressCodec = append(mock.calls.ValidatorAddressCodec, callInfo)
+	mock.lockValidatorAddressCodec.Unlock()
+	return mock.ValidatorAddressCodecFunc()
+}
+
+// ValidatorAddressCodecCalls gets all the calls that were made to ValidatorAddressCodec.
+// Check the length with:
+//
+//	len(mockedStakingKeeper.ValidatorAddressCodecCalls())
+func (mock *StakingKeeperMock) ValidatorAddressCodecCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockValidatorAddressCodec.RLock()
+	calls = mock.calls.ValidatorAddressCodec
+	mock.lockValidatorAddressCodec.RUnlock()
+	return calls
+}
+
 // ValidatorByConsAddr calls ValidatorByConsAddrFunc.
-func (mock *StakingKeeperMock) ValidatorByConsAddr(context sdk.Context, consAddress sdk.ConsAddress) stakingtypes.ValidatorI {
+func (mock *StakingKeeperMock) ValidatorByConsAddr(contextMoqParam context.Context, consAddress sdk.ConsAddress) (stakingtypes.ValidatorI, error) {
 	if mock.ValidatorByConsAddrFunc == nil {
 		panic("StakingKeeperMock.ValidatorByConsAddrFunc: method is nil but StakingKeeper.ValidatorByConsAddr was just called")
 	}
 	callInfo := struct {
-		Context     sdk.Context
-		ConsAddress sdk.ConsAddress
+		ContextMoqParam context.Context
+		ConsAddress     sdk.ConsAddress
 	}{
-		Context:     context,
-		ConsAddress: consAddress,
+		ContextMoqParam: contextMoqParam,
+		ConsAddress:     consAddress,
 	}
 	mock.lockValidatorByConsAddr.Lock()
 	mock.calls.ValidatorByConsAddr = append(mock.calls.ValidatorByConsAddr, callInfo)
 	mock.lockValidatorByConsAddr.Unlock()
-	return mock.ValidatorByConsAddrFunc(context, consAddress)
+	return mock.ValidatorByConsAddrFunc(contextMoqParam, consAddress)
 }
 
 // ValidatorByConsAddrCalls gets all the calls that were made to ValidatorByConsAddr.
@@ -1100,12 +1212,12 @@ func (mock *StakingKeeperMock) ValidatorByConsAddr(context sdk.Context, consAddr
 //
 //	len(mockedStakingKeeper.ValidatorByConsAddrCalls())
 func (mock *StakingKeeperMock) ValidatorByConsAddrCalls() []struct {
-	Context     sdk.Context
-	ConsAddress sdk.ConsAddress
+	ContextMoqParam context.Context
+	ConsAddress     sdk.ConsAddress
 } {
 	var calls []struct {
-		Context     sdk.Context
-		ConsAddress sdk.ConsAddress
+		ContextMoqParam context.Context
+		ConsAddress     sdk.ConsAddress
 	}
 	mock.lockValidatorByConsAddr.RLock()
 	calls = mock.calls.ValidatorByConsAddr

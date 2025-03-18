@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/cometbft/cometbft/libs/log"
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/log"
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"golang.org/x/exp/constraints"
 
 	"github.com/axelarnetwork/axelar-core/utils/key"
@@ -38,12 +38,12 @@ type StringKey interface {
 
 // KVStore is a wrapper around the cosmos-sdk KVStore to provide more safety regarding key management and better ease-of-use
 type KVStore struct {
-	sdk.KVStore
+	storetypes.KVStore
 	cdc codec.BinaryCodec
 }
 
 // NewNormalizedStore returns a new KVStore
-func NewNormalizedStore(store sdk.KVStore, cdc codec.BinaryCodec) KVStore {
+func NewNormalizedStore(store storetypes.KVStore, cdc codec.BinaryCodec) KVStore {
 	return KVStore{
 		KVStore: store,
 		cdc:     cdc,
@@ -142,32 +142,32 @@ func (store KVStore) DeleteRaw(key []byte) {
 
 // Iterator returns an Iterator that can handle a structured Key
 func (store KVStore) Iterator(prefix Key) Iterator {
-	iter := sdk.KVStorePrefixIterator(store.KVStore, append(prefix.AsKey(), []byte(DefaultDelimiter)...))
+	iter := storetypes.KVStorePrefixIterator(store.KVStore, append(prefix.AsKey(), []byte(DefaultDelimiter)...))
 	return iterator{Iterator: iter, cdc: store.cdc}
 }
 
 // IteratorNew returns an Iterator that can handle a structured Key
 func (store KVStore) IteratorNew(prefix key.Key) Iterator {
-	iter := sdk.KVStorePrefixIterator(store.KVStore, append(prefix.Bytes(), []byte(DefaultDelimiter)...))
+	iter := storetypes.KVStorePrefixIterator(store.KVStore, append(prefix.Bytes(), []byte(DefaultDelimiter)...))
 	return iterator{Iterator: iter, cdc: store.cdc}
 }
 
 // ReverseIterator returns an Iterator that can handle a structured Key and
 // interate reversely
 func (store KVStore) ReverseIterator(prefix Key) Iterator {
-	iter := sdk.KVStoreReversePrefixIterator(store.KVStore, append(prefix.AsKey(), []byte(DefaultDelimiter)...))
+	iter := storetypes.KVStoreReversePrefixIterator(store.KVStore, append(prefix.AsKey(), []byte(DefaultDelimiter)...))
 	return iterator{Iterator: iter, cdc: store.cdc}
 }
 
 // Iterator is an easier and safer to use sdk.Iterator extension
 type Iterator interface {
-	sdk.Iterator
+	storetypes.Iterator
 	UnmarshalValue(marshaler codec.ProtoMarshaler)
 	GetKey() Key
 }
 
 type iterator struct {
-	sdk.Iterator
+	storetypes.Iterator
 	cdc codec.BinaryCodec
 }
 
@@ -266,9 +266,9 @@ func (k basicKey) Equals(other Key) bool {
 }
 
 // CloseLogError closes the given iterator and logs if an error is returned
-func CloseLogError(iter sdk.Iterator, logger log.Logger) {
+func CloseLogError(iter storetypes.Iterator, logger log.Logger) {
 	err := iter.Close()
 	if err != nil {
-		logger.Error(sdkerrors.Wrap(err, "failed to close kv store iterator").Error())
+		logger.Error(errorsmod.Wrap(err, "failed to close kv store iterator").Error())
 	}
 }

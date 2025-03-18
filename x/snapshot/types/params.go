@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 )
@@ -45,7 +45,7 @@ func validateProxyBalance(balance interface{}) error {
 		return fmt.Errorf("invalid parameter type for minimum proxy balance: %T", value)
 	}
 	if value < 0 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "minimum proxy balance must be greater than 0")
+		return errorsmod.Wrap(types.ErrInvalidGenesis, "minimum proxy balance must be greater than 0")
 	}
 	return nil
 }

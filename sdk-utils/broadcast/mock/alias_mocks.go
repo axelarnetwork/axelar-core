@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"sync"
 )
 
@@ -2362,10 +2363,10 @@ var _ Keyring = &KeyringMock{}
 //			SaveOfflineKeyFunc: func(uid string, pubkey cryptotypes.PubKey) (*keyring.Record, error) {
 //				panic("mock out the SaveOfflineKey method")
 //			},
-//			SignFunc: func(uid string, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+//			SignFunc: func(uid string, msg []byte, signMode signing.SignMode) ([]byte, cryptotypes.PubKey, error) {
 //				panic("mock out the Sign method")
 //			},
-//			SignByAddressFunc: func(address sdk.Address, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+//			SignByAddressFunc: func(address sdk.Address, msg []byte, signMode signing.SignMode) ([]byte, cryptotypes.PubKey, error) {
 //				panic("mock out the SignByAddress method")
 //			},
 //			SupportedAlgorithmsFunc: func() (keyring.SigningAlgoList, keyring.SigningAlgoList) {
@@ -2439,10 +2440,10 @@ type KeyringMock struct {
 	SaveOfflineKeyFunc func(uid string, pubkey cryptotypes.PubKey) (*keyring.Record, error)
 
 	// SignFunc mocks the Sign method.
-	SignFunc func(uid string, msg []byte) ([]byte, cryptotypes.PubKey, error)
+	SignFunc func(uid string, msg []byte, signMode signing.SignMode) ([]byte, cryptotypes.PubKey, error)
 
 	// SignByAddressFunc mocks the SignByAddress method.
-	SignByAddressFunc func(address sdk.Address, msg []byte) ([]byte, cryptotypes.PubKey, error)
+	SignByAddressFunc func(address sdk.Address, msg []byte, signMode signing.SignMode) ([]byte, cryptotypes.PubKey, error)
 
 	// SupportedAlgorithmsFunc mocks the SupportedAlgorithms method.
 	SupportedAlgorithmsFunc func() (keyring.SigningAlgoList, keyring.SigningAlgoList)
@@ -2595,6 +2596,8 @@ type KeyringMock struct {
 			UID string
 			// Msg is the msg argument value.
 			Msg []byte
+			// SignMode is the signMode argument value.
+			SignMode signing.SignMode
 		}
 		// SignByAddress holds details about calls to the SignByAddress method.
 		SignByAddress []struct {
@@ -2602,6 +2605,8 @@ type KeyringMock struct {
 			Address sdk.Address
 			// Msg is the msg argument value.
 			Msg []byte
+			// SignMode is the signMode argument value.
+			SignMode signing.SignMode
 		}
 		// SupportedAlgorithms holds details about calls to the SupportedAlgorithms method.
 		SupportedAlgorithms []struct {
@@ -3350,21 +3355,23 @@ func (mock *KeyringMock) SaveOfflineKeyCalls() []struct {
 }
 
 // Sign calls SignFunc.
-func (mock *KeyringMock) Sign(uid string, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+func (mock *KeyringMock) Sign(uid string, msg []byte, signMode signing.SignMode) ([]byte, cryptotypes.PubKey, error) {
 	if mock.SignFunc == nil {
 		panic("KeyringMock.SignFunc: method is nil but Keyring.Sign was just called")
 	}
 	callInfo := struct {
-		UID string
-		Msg []byte
+		UID      string
+		Msg      []byte
+		SignMode signing.SignMode
 	}{
-		UID: uid,
-		Msg: msg,
+		UID:      uid,
+		Msg:      msg,
+		SignMode: signMode,
 	}
 	mock.lockSign.Lock()
 	mock.calls.Sign = append(mock.calls.Sign, callInfo)
 	mock.lockSign.Unlock()
-	return mock.SignFunc(uid, msg)
+	return mock.SignFunc(uid, msg, signMode)
 }
 
 // SignCalls gets all the calls that were made to Sign.
@@ -3372,12 +3379,14 @@ func (mock *KeyringMock) Sign(uid string, msg []byte) ([]byte, cryptotypes.PubKe
 //
 //	len(mockedKeyring.SignCalls())
 func (mock *KeyringMock) SignCalls() []struct {
-	UID string
-	Msg []byte
+	UID      string
+	Msg      []byte
+	SignMode signing.SignMode
 } {
 	var calls []struct {
-		UID string
-		Msg []byte
+		UID      string
+		Msg      []byte
+		SignMode signing.SignMode
 	}
 	mock.lockSign.RLock()
 	calls = mock.calls.Sign
@@ -3386,21 +3395,23 @@ func (mock *KeyringMock) SignCalls() []struct {
 }
 
 // SignByAddress calls SignByAddressFunc.
-func (mock *KeyringMock) SignByAddress(address sdk.Address, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+func (mock *KeyringMock) SignByAddress(address sdk.Address, msg []byte, signMode signing.SignMode) ([]byte, cryptotypes.PubKey, error) {
 	if mock.SignByAddressFunc == nil {
 		panic("KeyringMock.SignByAddressFunc: method is nil but Keyring.SignByAddress was just called")
 	}
 	callInfo := struct {
-		Address sdk.Address
-		Msg     []byte
+		Address  sdk.Address
+		Msg      []byte
+		SignMode signing.SignMode
 	}{
-		Address: address,
-		Msg:     msg,
+		Address:  address,
+		Msg:      msg,
+		SignMode: signMode,
 	}
 	mock.lockSignByAddress.Lock()
 	mock.calls.SignByAddress = append(mock.calls.SignByAddress, callInfo)
 	mock.lockSignByAddress.Unlock()
-	return mock.SignByAddressFunc(address, msg)
+	return mock.SignByAddressFunc(address, msg, signMode)
 }
 
 // SignByAddressCalls gets all the calls that were made to SignByAddress.
@@ -3408,12 +3419,14 @@ func (mock *KeyringMock) SignByAddress(address sdk.Address, msg []byte) ([]byte,
 //
 //	len(mockedKeyring.SignByAddressCalls())
 func (mock *KeyringMock) SignByAddressCalls() []struct {
-	Address sdk.Address
-	Msg     []byte
+	Address  sdk.Address
+	Msg      []byte
+	SignMode signing.SignMode
 } {
 	var calls []struct {
-		Address sdk.Address
-		Msg     []byte
+		Address  sdk.Address
+		Msg      []byte
+		SignMode signing.SignMode
 	}
 	mock.lockSignByAddress.RLock()
 	calls = mock.calls.SignByAddress

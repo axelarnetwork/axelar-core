@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"time"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
-	ibcclienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
-	ibcchanneltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
-	commitmenttypes "github.com/cosmos/ibc-go/v7/modules/core/23-commitment/types"
-	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
-	ibctesting "github.com/cosmos/ibc-go/v7/testing"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	commitmenttypes "github.com/cosmos/ibc-go/v8/modules/core/23-commitment/types"
+	ibctm "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
+	ibctesting "github.com/cosmos/ibc-go/v8/testing"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -27,7 +28,7 @@ func RandomIBCTransfer() types.IBCTransfer {
 	transfer := types.NewIBCTransfer(
 		rand.AccAddr(),
 		rand.AccAddr().String(),
-		sdk.NewCoin(rand.Denom(5, 20), sdk.NewInt(rand.PosI64())),
+		sdk.NewCoin(rand.Denom(5, 20), math.NewInt(rand.PosI64())),
 		ibctransfertypes.PortID,
 		channel,
 		nexus.TransferID(rand.PosI64()),

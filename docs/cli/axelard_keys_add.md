@@ -16,6 +16,13 @@ local keystore.
 Use the --pubkey flag to add arbitrary public keys to the keystore for constructing
 multisig transactions.
 
+Use the --source flag to import mnemonic from a file in recover or interactive mode.
+Example:
+
+```
+keys add testing --recover --source ./mnemonic.txt
+```
+
 You can create and store a multisig key by passing the list of key names stored in a keyring
 and the minimum number of signatures required through --multisig-threshold. The keys are
 sorted by address, unless the flag --nosort is set.
@@ -46,13 +53,15 @@ axelard keys add <name> [flags]
       --no-backup                Don't print out seed phrase (if others are watching the terminal)
       --nosort                   Keys passed to --multisig are taken in the order they're supplied
       --pubkey string            Parse a public key in JSON format and saves key info to <name> file.
+      --pubkey-base64 string     Parse a public key in base64 format and saves key info.
       --recover                  Provide seed phrase to recover existing key instead of creating
+      --source string            Import mnemonic from a file (only usable when recover or interactive is passed)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --home string              The application home directory (default "$HOME/.axelar")
+      --home string              directory for config and data (default "$HOME/.axelar")
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --log_format string        The logging format (json|plain) (default "plain")

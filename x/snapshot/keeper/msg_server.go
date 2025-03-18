@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/armon/go-metrics"
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/hashicorp/go-metrics"
 
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
@@ -30,8 +31,13 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServiceServer {
 func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequest) (*types.RegisterProxyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if err := s.Keeper.ActivateProxy(ctx, req.Sender, req.ProxyAddr); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrSnapshot, err.Error())
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender: %s", err)
+	}
+
+	if err := s.Keeper.ActivateProxy(ctx, sdk.ValAddress(sender), req.ProxyAddr); err != nil {
+		return nil, errorsmod.Wrap(types.ErrSnapshot, err.Error())
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -39,7 +45,7 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeRegisterProxy),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
+			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender),
 			sdk.NewAttribute(types.AttributeAddress, req.ProxyAddr.String()),
 		),
 	)
@@ -49,20 +55,26 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 		0,
 		[]metrics.Label{
 			telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
-			telemetry.NewLabel("principal_address", req.Sender.String()),
+			telemetry.NewLabel("principal_address", req.Sender),
 			telemetry.NewLabel("proxy_address", req.ProxyAddr.String()),
 		})
 
-	s.Keeper.Logger(ctx).Info(fmt.Sprintf("validator %s registered proxy %s", req.Sender.String(), req.ProxyAddr.String()))
+	s.Keeper.Logger(ctx).Info(fmt.Sprintf("validator %s registered proxy %s", req.Sender, req.ProxyAddr.String()))
 	return &types.RegisterProxyResponse{}, nil
 }
 
 func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxyRequest) (*types.DeactivateProxyResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
-	proxy, _ := s.Keeper.GetProxy(ctx, req.Sender)
 
-	if err := s.Keeper.DeactivateProxy(ctx, req.Sender); err != nil {
-		return nil, sdkerrors.Wrap(types.ErrSnapshot, err.Error())
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender: %s", err)
+	}
+
+	proxy, _ := s.Keeper.GetProxy(ctx, sdk.ValAddress(sender))
+
+	if err := s.Keeper.DeactivateProxy(ctx, sdk.ValAddress(sender)); err != nil {
+		return nil, errorsmod.Wrap(types.ErrSnapshot, err.Error())
 	}
 
 	ctx.EventManager().EmitEvent(
@@ -70,7 +82,7 @@ func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxy
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeModule),
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeDeactivateProxy),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
+			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender),
 			sdk.NewAttribute(types.AttributeAddress, proxy.String()),
 		),
 	)
@@ -80,11 +92,11 @@ func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxy
 		0,
 		[]metrics.Label{
 			telemetry.NewLabel("timestamp", strconv.FormatInt(ctx.BlockTime().Unix(), 10)),
-			telemetry.NewLabel("principal_address", req.Sender.String()),
+			telemetry.NewLabel("principal_address", req.Sender),
 			telemetry.NewLabel("proxy_address", proxy.String()),
 		})
 
-	s.Keeper.Logger(ctx).Info(fmt.Sprintf("validator %s has de-activated proxy %s", req.Sender.String(), proxy.String()))
+	s.Keeper.Logger(ctx).Info(fmt.Sprintf("validator %s has de-activated proxy %s", req.Sender, proxy.String()))
 
 	return &types.DeactivateProxyResponse{}, nil
 }

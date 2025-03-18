@@ -1,21 +1,25 @@
 package axelarnet_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/log"
 	"cosmossdk.io/math"
-	"github.com/cometbft/cometbft/libs/log"
+	store "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
-	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	ibcTransfer "github.com/cosmos/ibc-go/v7/modules/apps/transfer"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v7/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
+	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
+	ibcTransfer "github.com/cosmos/ibc-go/v8/modules/apps/transfer"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	"github.com/stretchr/testify/assert"
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
@@ -60,8 +64,8 @@ func TestIBCModule(t *testing.T) {
 
 	givenAnIBCModule := Given("given a module", func() {
 		encCfg := appParams.MakeEncodingConfig()
-		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey(types.StoreKey), sdk.NewKVStoreKey("tAxelarnetKey"), types.ModuleName)
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey(types.StoreKey), store.NewKVStoreKey("tAxelarnetKey"), types.ModuleName)
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 
 		channelK := &mock.ChannelKeeperMock{
 			GetNextSequenceSendFunc: func(sdk.Context, string, string) (uint64, bool) {
@@ -69,7 +73,7 @@ func TestIBCModule(t *testing.T) {
 			},
 		}
 
-		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.ModuleName), subspace, channelK, &mock.FeegrantKeeperMock{})
+		k = keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(types.ModuleName), subspace, channelK, &mock.FeegrantKeeperMock{})
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
 
 		accountK := &mock.AccountKeeperMock{
@@ -79,21 +83,21 @@ func TestIBCModule(t *testing.T) {
 		}
 
 		bankK = &mock.BankKeeperMock{
-			SendCoinsFunc: func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error {
+			SendCoinsFunc: func(context.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error {
 				return nil
 			},
-			SendCoinsFromAccountToModuleFunc: func(sdk.Context, sdk.AccAddress, string, sdk.Coins) error {
+			SendCoinsFromAccountToModuleFunc: func(context.Context, sdk.AccAddress, string, sdk.Coins) error {
 				return nil
 			},
-			BurnCoinsFunc:      func(sdk.Context, string, sdk.Coins) error { return nil },
-			GetAllBalancesFunc: func(sdk.Context, sdk.AccAddress) sdk.Coins { return sdk.NewCoins() },
+			BurnCoinsFunc:      func(context.Context, string, sdk.Coins) error { return nil },
+			GetAllBalancesFunc: func(context.Context, sdk.AccAddress) sdk.Coins { return sdk.NewCoins() },
 		}
 
-		scopeKeeper := capabilitykeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(capabilitytypes.StoreKey), sdk.NewKVStoreKey(capabilitytypes.MemStoreKey))
+		scopeKeeper := capabilitykeeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(capabilitytypes.StoreKey), store.NewKVStoreKey(capabilitytypes.MemStoreKey))
 		scopedTransferK := scopeKeeper.ScopeToModule(ibctransfertypes.ModuleName)
-		transferSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey(ibctransfertypes.StoreKey), sdk.NewKVStoreKey("tTrasferKey"), ibctransfertypes.ModuleName)
+		transferSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey(ibctransfertypes.StoreKey), store.NewKVStoreKey("tTrasferKey"), ibctransfertypes.ModuleName)
 
-		transferK = ibctransferkeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK)
+		transferK = ibctransferkeeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK, authtypes.NewModuleAddress(govtypes.ModuleName).String())
 
 		lockableAsset = &nexusmock.LockableAssetMock{}
 		n = &mock.NexusMock{
