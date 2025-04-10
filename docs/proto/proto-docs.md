@@ -169,6 +169,9 @@
     - [MsgService](#axelar.axelarnet.v1beta1.MsgService)
     - [QueryService](#axelar.axelarnet.v1beta1.QueryService)
   
+- [axelar/distribution/v1beta1/events.proto](#axelar/distribution/v1beta1/events.proto)
+    - [FeesBurned](#axelar.distribution.v1beta1.FeesBurned)
+  
 - [axelar/snapshot/exported/v1beta1/types.proto](#axelar/snapshot/exported/v1beta1/types.proto)
     - [Participant](#axelar.snapshot.exported.v1beta1.Participant)
     - [Snapshot](#axelar.snapshot.exported.v1beta1.Snapshot)
@@ -2819,6 +2822,37 @@ QueryService defines the gRPC querier service.
 | `Params` | [ParamsRequest](#axelar.axelarnet.v1beta1.ParamsRequest) | [ParamsResponse](#axelar.axelarnet.v1beta1.ParamsResponse) |  | GET|/axelar/axelarnet/v1beta1/params|
 | `IBCPath` | [IBCPathRequest](#axelar.axelarnet.v1beta1.IBCPathRequest) | [IBCPathResponse](#axelar.axelarnet.v1beta1.IBCPathResponse) |  | GET|/axelar/axelarnet/v1beta1/ibc_path/{chain}|
 | `ChainByIBCPath` | [ChainByIBCPathRequest](#axelar.axelarnet.v1beta1.ChainByIBCPathRequest) | [ChainByIBCPathResponse](#axelar.axelarnet.v1beta1.ChainByIBCPathResponse) |  | GET|/axelar/axelarnet/v1beta1/chain_by_ibc_path/{ibc_path}|
+
+ <!-- end services -->
+
+
+
+<a name="axelar/distribution/v1beta1/events.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## axelar/distribution/v1beta1/events.proto
+
+
+
+<a name="axelar.distribution.v1beta1.FeesBurned"></a>
+
+### FeesBurned
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `coins` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 
@@ -5961,9 +5995,10 @@ ParamsRequest represents a message that queries the params
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [bytes](#bytes) |  |  |
+| `sender_str` | [string](#string) |  | **Deprecated.** Deprecated: This is the original "sender" field, but was originally declared as a string, rather than a byte array. |
 | `chain` | [string](#string) |  |  |
 | `key_id` | [string](#string) |  |  |
+| `sender` | [bytes](#bytes) |  | New "sender" field, using the appropriate type |
 
 
 
@@ -5988,8 +6023,9 @@ ParamsRequest represents a message that queries the params
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  |  |
+| `sender_str` | [string](#string) |  | **Deprecated.** Deprecated: This is the original "sender" field, but was originally declared as a string, rather than a byte array. |
 | `key_id` | [string](#string) |  |  |
+| `sender` | [bytes](#bytes) |  | New "sender" field, using the appropriate type |
 
 
 
@@ -6014,10 +6050,11 @@ ParamsRequest represents a message that queries the params
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  |  |
+| `sender_str` | [string](#string) |  | **Deprecated.** Deprecated: This is the original "sender" field, but was originally declared as a string, rather than a byte array. |
 | `key_id` | [string](#string) |  |  |
 | `pub_key` | [bytes](#bytes) |  |  |
 | `signature` | [bytes](#bytes) |  |  |
+| `sender` | [bytes](#bytes) |  | New "sender" field, using the appropriate type |
 
 
 
@@ -6042,9 +6079,10 @@ ParamsRequest represents a message that queries the params
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `sender` | [string](#string) |  |  |
+| `sender_str` | [string](#string) |  | **Deprecated.** Deprecated: This is the original "sender" field, but was originally declared as a string, rather than a byte array. |
 | `sig_id` | [uint64](#uint64) |  |  |
 | `signature` | [bytes](#bytes) |  |  |
+| `sender` | [bytes](#bytes) |  | New "sender" field, using the appropriate type |
 
 
 

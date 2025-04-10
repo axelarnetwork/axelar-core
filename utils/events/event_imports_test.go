@@ -5,6 +5,7 @@ import (
 	_ "github.com/axelarnetwork/axelar-core/x/ante/types"
 	_ "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	_ "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
+	_ "github.com/axelarnetwork/axelar-core/x/distribution/types"
 	_ "github.com/axelarnetwork/axelar-core/x/evm/types"
 	_ "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	_ "github.com/axelarnetwork/axelar-core/x/nexus/types"
