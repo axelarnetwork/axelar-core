@@ -83,8 +83,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 			}
 
 			axelarAppTemplate, axelarAppConfig := initAppConfig()
-			customTMConfig := initTendermintConfig()
-			err := server.InterceptConfigsPreRunHandler(cmd, axelarAppTemplate, axelarAppConfig, customTMConfig)
+			err := server.InterceptConfigsPreRunHandler(cmd, axelarAppTemplate, axelarAppConfig, tmcfg.DefaultConfig())
 			if err != nil {
 				return err
 			}
@@ -202,18 +201,6 @@ func initAppConfig() (string, interface{}) {
 	customAppTemplate := serverconfig.DefaultConfigTemplate
 
 	return customAppTemplate, axelarAppConfig
-}
-
-// initTendermintConfig helps to override default Tendermint Config values.
-// return tmcfg.DefaultConfig if no custom configuration is required for the application.
-func initTendermintConfig() *tmcfg.Config {
-	cfg := tmcfg.DefaultConfig()
-
-	// these values put a higher strain on node memory
-	// cfg.P2P.MaxNumInboundPeers = 100
-	// cfg.P2P.MaxNumOutboundPeers = 40
-
-	return cfg
 }
 
 func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
