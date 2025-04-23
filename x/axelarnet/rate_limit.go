@@ -77,7 +77,6 @@ func NewRateLimitedICS4Wrapper(channel porttypes.ICS4Wrapper, rateLimiter RateLi
 }
 
 // SendPacket implements the ICS4 Wrapper interface
-// func (r RateLimitedICS4Wrapper) SendPacket(ctx sdk.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI) (uint64, error) {
 func (r RateLimitedICS4Wrapper) SendPacket(
 	ctx sdk.Context,
 	chanCap *capabilitytypes.Capability,

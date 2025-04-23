@@ -102,7 +102,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/auxiliary"
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
-	axelarnetclient "github.com/axelarnetwork/axelar-core/x/axelarnet/client"
+	axelarnetclient "github.com/axelarnetwork/axelar-core/x/axelarnet/client/cli"
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	axelarbankkeeper "github.com/axelarnetwork/axelar-core/x/bank/keeper"
@@ -1064,7 +1064,7 @@ func GetModuleBasics() module.BasicManager {
 				upgradeclient.LegacyCancelProposalHandler,
 				ibcclientclient.UpdateClientProposalHandler,
 				ibcclientclient.UpgradeProposalHandler,
-				axelarnetclient.ProposalHandler,
+				govclient.NewProposalHandler(axelarnetclient.NewSubmitCallContractsProposalTxCmd),
 			},
 		),
 		params.AppModuleBasic{},
