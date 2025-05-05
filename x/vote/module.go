@@ -23,8 +23,9 @@ import (
 )
 
 var (
-	_ appmodule.AppModule   = AppModule{}
-	_ module.AppModuleBasic = AppModuleBasic{}
+	_ appmodule.AppModule    = AppModule{}
+	_ module.AppModuleBasic  = AppModuleBasic{}
+	_ module.HasABCIEndBlock = AppModule{}
 )
 
 // AppModuleBasic implements module.AppModuleBasic
@@ -114,8 +115,8 @@ func (AppModule) QuerierRoute() string {
 }
 
 // EndBlock executes all state transitions this module requires at the end of each new block
-func (am AppModule) EndBlock(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
-	return EndBlocker(ctx, am.keeper)
+func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
+	return EndBlocker(sdk.UnwrapSDKContext(ctx), am.keeper)
 }
 
 // RegisterServices registers a GRPC query service to respond to the

@@ -22,8 +22,9 @@ import (
 )
 
 var (
-	_ appmodule.AppModule   = AppModule{}
-	_ module.AppModuleBasic = AppModuleBasic{}
+	_ appmodule.AppModule    = AppModule{}
+	_ module.AppModuleBasic  = AppModuleBasic{}
+	_ module.HasABCIEndBlock = AppModule{}
 )
 
 // AppModuleBasic implements module.AppModuleBasic
@@ -136,8 +137,8 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 }
 
 // EndBlock executes all state transitions this module requires at the end of each new block
-func (am AppModule) EndBlock(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
-	return EndBlocker(ctx, am.keeper, am.reward, am.snapshotter)
+func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
+	return EndBlocker(sdk.UnwrapSDKContext(ctx), am.keeper, am.reward, am.snapshotter)
 }
 
 // QuerierRoute returns this module's query route
