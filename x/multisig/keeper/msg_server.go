@@ -80,7 +80,6 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 		"bonded_weight", keygenSession.Key.Snapshot.BondedWeight.String(),
 		"keygen_threshold", keygenSession.KeygenThreshold.String(),
 		"expires_at", keygenSession.ExpiresAt,
-		"status", keygenSession.GetState().String(),
 	)
 
 	events.Emit(ctx, types.NewPubKeySubmitted(req.KeyID, participant, req.PubKey))

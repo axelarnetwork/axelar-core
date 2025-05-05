@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"github.com/axelarnetwork/utils/log"
 	"time"
 
 	"cosmossdk.io/math"
@@ -111,11 +110,6 @@ func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pu
 		m.CompletedAt = blockHeight
 		m.State = exported.Completed
 	}
-
-	// debug
-	minPassingWeight := m.Key.Snapshot.CalculateMinPassingWeight(m.KeygenThreshold)
-	participantsWeight := m.Key.GetParticipantsWeight()
-	log.Debugf("x/multisig: keygen session updated %s %s %t \n", minPassingWeight.String(), participantsWeight.String(), participantsWeight.GTE(minPassingWeight))
 
 	return nil
 }
