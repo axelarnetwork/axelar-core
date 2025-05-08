@@ -702,8 +702,8 @@ github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b h1:qTbA+Wl
 github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b/go.mod h1:vDpqqxWxMvMIKbF6DN3BkxXAI4UJjolCHvaMGhE/FCI=
 github.com/axelarnetwork/utils v0.0.0-20230706045331-b7aacc1f4a2f h1:Q0Qh79MuZ/PWKzytqU8/4dt+S2QemdYYPXkjwp/i4l0=
 github.com/axelarnetwork/utils v0.0.0-20230706045331-b7aacc1f4a2f/go.mod h1:7N7/Qo5WOm8HnwCtWvQs7T5QQLwVoLU/v+KkMLrvxiA=
-github.com/axelarnetwork/wasmd v0.34.2-0.20250204232001-5afc4d484c69 h1:KtIVuYfsqcdfza2M1C/doGdITg77LP0dC40ZSHqpruE=
-github.com/axelarnetwork/wasmd v0.34.2-0.20250204232001-5afc4d484c69/go.mod h1:MPhNbLmIHWxTVJZwdV/4QMslehW3Xpd1aPtLwEa2Lrk=
+github.com/axelarnetwork/wasmd v0.34.2-0.20250508171523-4c2f651cb74d h1:eA0GJiqXLB+Gtb5dr5KvRh/W/I5X8h2bPbq9KyR/Qdw=
+github.com/axelarnetwork/wasmd v0.34.2-0.20250508171523-4c2f651cb74d/go.mod h1:MPhNbLmIHWxTVJZwdV/4QMslehW3Xpd1aPtLwEa2Lrk=
 github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible/go.mod h1:osfaiScAUVup+UC9Nfq76eWqDhXlp+4UYaA8uhTBO6g=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=

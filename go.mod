@@ -213,4 +213,4 @@ replace github.com/tendermint/tendermint => github.com/axelarnetwork/cometbft v0
 // Temporary replacement for rosetta support
 replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20241216210753-523fb865146c
 
-replace github.com/CosmWasm/wasmd => github.com/axelarnetwork/wasmd v0.34.2-0.20250204232001-5afc4d484c69
+replace github.com/CosmWasm/wasmd => github.com/axelarnetwork/wasmd v0.34.2-0.20250508171523-4c2f651cb74d
