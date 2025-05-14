@@ -9373,9 +9373,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -13322,7 +13319,6 @@ paths:
   /cosmos/auth/v1beta1/account_info/{address}:
     get:
       summary: AccountInfo queries account info which is common to all account types.
-      description: 'Since: cosmos-sdk 0.47'
       operationId: AccountInfo
       responses:
         '200':
@@ -13522,10 +13518,7 @@ paths:
                   sequence:
                     type: string
                     format: uint64
-            description: |-
-              QueryAccountInfoResponse is the Query/AccountInfo response type.
-
-              Since: cosmos-sdk 0.47
+            description: QueryAccountInfoResponse is the Query/AccountInfo response type.
         default:
           description: An unexpected error response.
           schema:
@@ -13736,9 +13729,6 @@ paths:
         of
 
         gas if the pagination field is incorrectly set.
-
-
-        Since: cosmos-sdk 0.43
       operationId: Accounts
       responses:
         '200':
@@ -13951,9 +13941,6 @@ paths:
             description: >-
               QueryAccountsResponse is the response type for the Query/Accounts
               RPC method.
-
-
-              Since: cosmos-sdk 0.43
         default:
           description: An unexpected error response.
           schema:
@@ -14199,9 +14186,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -14601,7 +14585,6 @@ paths:
   /cosmos/auth/v1beta1/address_by_id/{id}:
     get:
       summary: AccountAddressByID returns account address based on account number.
-      description: 'Since: cosmos-sdk 0.46.2'
       operationId: AccountAddressByID
       responses:
         '200':
@@ -14611,7 +14594,6 @@ paths:
             properties:
               account_address:
                 type: string
-            description: 'Since: cosmos-sdk 0.46.2'
             title: >-
               QueryAccountAddressByIDResponse is the response type for
               AccountAddressByID rpc method
@@ -14822,10 +14804,7 @@ paths:
           type: string
           format: int64
         - name: account_id
-          description: |-
-            account_id is the account number of the address to be queried.
-
-            Since: cosmos-sdk 0.47
+          description: account_id is the account number of the address to be queried.
           in: query
           required: false
           type: string
@@ -14835,7 +14814,6 @@ paths:
   /cosmos/auth/v1beta1/bech32:
     get:
       summary: Bech32Prefix queries bech32Prefix
-      description: 'Since: cosmos-sdk 0.46'
       operationId: Bech32Prefix
       responses:
         '200':
@@ -14848,9 +14826,6 @@ paths:
             description: >-
               Bech32PrefixResponse is the response type for Bech32Prefix rpc
               method.
-
-
-              Since: cosmos-sdk 0.46
         default:
           description: An unexpected error response.
           schema:
@@ -15050,7 +15025,6 @@ paths:
   /cosmos/auth/v1beta1/bech32/{address_bytes}:
     get:
       summary: AddressBytesToString converts Account Address bytes to string
-      description: 'Since: cosmos-sdk 0.46'
       operationId: AddressBytesToString
       responses:
         '200':
@@ -15063,9 +15037,6 @@ paths:
             description: >-
               AddressBytesToStringResponse is the response type for
               AddressString rpc method.
-
-
-              Since: cosmos-sdk 0.46
         default:
           description: An unexpected error response.
           schema:
@@ -15271,7 +15242,6 @@ paths:
   /cosmos/auth/v1beta1/bech32/{address_string}:
     get:
       summary: AddressStringToBytes converts Address string to bytes
-      description: 'Since: cosmos-sdk 0.46'
       operationId: AddressStringToBytes
       responses:
         '200':
@@ -15285,9 +15255,6 @@ paths:
             description: >-
               AddressStringToBytesResponse is the response type for AddressBytes
               rpc method.
-
-
-              Since: cosmos-sdk 0.46
         default:
           description: An unexpected error response.
           schema:
@@ -15492,7 +15459,6 @@ paths:
   /cosmos/auth/v1beta1/module_accounts:
     get:
       summary: ModuleAccounts returns all the existing module accounts.
-      description: 'Since: cosmos-sdk 0.46'
       operationId: ModuleAccounts
       responses:
         '200':
@@ -15685,9 +15651,6 @@ paths:
             description: >-
               QueryModuleAccountsResponse is the response type for the
               Query/ModuleAccounts RPC method.
-
-
-              Since: cosmos-sdk 0.46
         default:
           description: An unexpected error response.
           schema:
@@ -16637,9 +16600,13 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
+          in: query
+          required: false
+          type: boolean
+        - name: resolve_denom
+          description: >-
+            resolve_denom is the flag to resolve the denom into a human-readable
+            form from the metadata.
           in: query
           required: false
           type: boolean
@@ -16720,9 +16687,6 @@ paths:
         of
 
         gas if the pagination field is incorrectly set.
-
-
-        Since: cosmos-sdk 0.46
       operationId: DenomOwners
       responses:
         '200':
@@ -16763,9 +16727,6 @@ paths:
                     address and account
 
                     balance of the denominated token.
-
-
-                    Since: cosmos-sdk 0.46
               pagination:
                 description: pagination defines the pagination in the response.
                 type: object
@@ -16788,9 +16749,6 @@ paths:
             description: >-
               QueryDenomOwnersResponse defines the RPC response of a DenomOwners
               RPC query.
-
-
-              Since: cosmos-sdk 0.46
         default:
           description: An unexpected error response.
           schema:
@@ -16871,9 +16829,160 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /cosmos/bank/v1beta1/denom_owners_by_query:
+    get:
+      summary: >-
+        DenomOwnersByQuery queries for all account addresses that own a
+        particular token
+
+        denomination.
+      operationId: DenomOwnersByQuery
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              denom_owners:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                      description: >-
+                        address defines the address that owns a particular
+                        denomination.
+                    balance:
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                        amount:
+                          type: string
+                      description: >-
+                        Coin defines a token with a denomination and an amount.
 
 
-            Since: cosmos-sdk 0.43
+                        NOTE: The amount field is an Int which implements the
+                        custom method
+
+                        signatures required by gogoproto.
+                  description: >-
+                    DenomOwner defines structure representing an account that
+                    owns or holds a
+
+                    particular denominated token. It contains the account
+                    address and account
+
+                    balance of the denominated token.
+              pagination:
+                description: pagination defines the pagination in the response.
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+            description: >-
+              QueryDenomOwnersByQueryResponse defines the RPC response of a
+              DenomOwnersByQuery RPC query.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: denom
+          description: >-
+            denom defines the coin denomination to query all account holders
+            for.
+          in: query
+          required: false
+          type: string
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
           in: query
           required: false
           type: boolean
@@ -16949,7 +17058,6 @@ paths:
                         displayed in clients.
                     name:
                       type: string
-                      description: 'Since: cosmos-sdk 0.43'
                       title: 'name defines the name of the token (eg: Cosmos Atom)'
                     symbol:
                       type: string
@@ -16958,17 +17066,11 @@ paths:
                         (eg: ATOM). This can
 
                         be the same as the display.
-
-
-                        Since: cosmos-sdk 0.43
                     uri:
                       type: string
                       description: >-
                         URI to a document (on or off-chain) that contains
                         additional information. Optional.
-
-
-                        Since: cosmos-sdk 0.46
                     uri_hash:
                       type: string
                       description: >-
@@ -16976,9 +17078,6 @@ paths:
                         It's used to verify that
 
                         the document didn't change. Optional.
-
-
-                        Since: cosmos-sdk 0.46
                   description: |-
                     Metadata represents a struct that describes
                     a basic token.
@@ -17082,9 +17181,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -17092,7 +17188,7 @@ paths:
         - Query
   /cosmos/bank/v1beta1/denoms_metadata/{denom}:
     get:
-      summary: DenomsMetadata queries the client metadata of a given coin denomination.
+      summary: DenomMetadata queries the client metadata of a given coin denomination.
       operationId: DenomMetadata
       responses:
         '200':
@@ -17156,7 +17252,6 @@ paths:
                       displayed in clients.
                   name:
                     type: string
-                    description: 'Since: cosmos-sdk 0.43'
                     title: 'name defines the name of the token (eg: Cosmos Atom)'
                   symbol:
                     type: string
@@ -17165,17 +17260,11 @@ paths:
                       ATOM). This can
 
                       be the same as the display.
-
-
-                      Since: cosmos-sdk 0.43
                   uri:
                     type: string
                     description: >-
                       URI to a document (on or off-chain) that contains
                       additional information. Optional.
-
-
-                      Since: cosmos-sdk 0.46
                   uri_hash:
                     type: string
                     description: >-
@@ -17183,9 +17272,6 @@ paths:
                       It's used to verify that
 
                       the document didn't change. Optional.
-
-
-                      Since: cosmos-sdk 0.46
                 description: |-
                   Metadata represents a struct that describes
                   a basic token.
@@ -17224,6 +17310,133 @@ paths:
           type: string
       tags:
         - Query
+  /cosmos/bank/v1beta1/denoms_metadata_by_query_string:
+    get:
+      summary: >-
+        DenomMetadataByQueryString queries the client metadata of a given coin
+        denomination.
+      operationId: DenomMetadataByQueryString
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              metadata:
+                type: object
+                properties:
+                  description:
+                    type: string
+                  denom_units:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                          description: >-
+                            denom represents the string name of the given denom
+                            unit (e.g uatom).
+                        exponent:
+                          type: integer
+                          format: int64
+                          description: >-
+                            exponent represents power of 10 exponent that one
+                            must
+
+                            raise the base_denom to in order to equal the given
+                            DenomUnit's denom
+
+                            1 denom = 10^exponent base_denom
+
+                            (e.g. with a base_denom of uatom, one can create a
+                            DenomUnit of 'atom' with
+
+                            exponent = 6, thus: 1 atom = 10^6 uatom).
+                        aliases:
+                          type: array
+                          items:
+                            type: string
+                          title: >-
+                            aliases is a list of string aliases for the given
+                            denom
+                      description: |-
+                        DenomUnit represents a struct that describes a given
+                        denomination unit of the basic token.
+                    title: >-
+                      denom_units represents the list of DenomUnit's for a given
+                      coin
+                  base:
+                    type: string
+                    description: >-
+                      base represents the base denom (should be the DenomUnit
+                      with exponent = 0).
+                  display:
+                    type: string
+                    description: |-
+                      display indicates the suggested denom that should be
+                      displayed in clients.
+                  name:
+                    type: string
+                    title: 'name defines the name of the token (eg: Cosmos Atom)'
+                  symbol:
+                    type: string
+                    description: >-
+                      symbol is the token symbol usually shown on exchanges (eg:
+                      ATOM). This can
+
+                      be the same as the display.
+                  uri:
+                    type: string
+                    description: >-
+                      URI to a document (on or off-chain) that contains
+                      additional information. Optional.
+                  uri_hash:
+                    type: string
+                    description: >-
+                      URIHash is a sha256 hash of a document pointed by URI.
+                      It's used to verify that
+
+                      the document didn't change. Optional.
+                description: |-
+                  Metadata represents a struct that describes
+                  a basic token.
+            description: >-
+              QueryDenomMetadataByQueryStringResponse is the response type for
+              the Query/DenomMetadata RPC
+
+              method. Identical with QueryDenomMetadataResponse but receives
+              denom as query string in request.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: denom
+          description: denom is the coin denom to query the metadata for.
+          in: query
+          required: false
+          type: string
+      tags:
+        - Query
   /cosmos/bank/v1beta1/params:
     get:
       summary: Params queries the parameters of x/bank module.
@@ -17235,6 +17448,7 @@ paths:
             type: object
             properties:
               params:
+                description: params provides the parameters of the bank module.
                 type: object
                 properties:
                   send_enabled:
@@ -17265,7 +17479,6 @@ paths:
                       compatibility of genesis files.
                   default_send_enabled:
                     type: boolean
-                description: Params defines the parameters for the bank module.
             description: >-
               QueryParamsResponse defines the response type for querying x/bank
               parameters.
@@ -17304,9 +17517,6 @@ paths:
         default
 
         params.default_send_enabled, and will not be returned by this query.
-
-
-        Since: cosmos-sdk 0.47
       operationId: SendEnabled
       responses:
         '200':
@@ -17354,9 +17564,6 @@ paths:
             description: >-
               QuerySendEnabledResponse defines the RPC response of a SendEnable
               query.
-
-
-              Since: cosmos-sdk 0.47
         default:
           description: An unexpected error response.
           schema:
@@ -17440,9 +17647,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -17460,9 +17664,6 @@ paths:
         of
 
         gas if the pagination field is incorrectly set.
-
-
-        Since: cosmos-sdk 0.46
       operationId: SpendableBalances
       responses:
         '200':
@@ -17512,9 +17713,6 @@ paths:
               for querying
 
               an account's spendable balances.
-
-
-              Since: cosmos-sdk 0.46
         default:
           description: An unexpected error response.
           schema:
@@ -17593,9 +17791,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -17613,9 +17808,6 @@ paths:
         of
 
         gas if the pagination field is incorrectly set.
-
-
-        Since: cosmos-sdk 0.47
       operationId: SpendableBalanceByDenom
       responses:
         '200':
@@ -17643,9 +17835,6 @@ paths:
               structure for
 
               querying an account's spendable balance for a specific denom.
-
-
-              Since: cosmos-sdk 0.47
         default:
           description: An unexpected error response.
           schema:
@@ -17715,10 +17904,7 @@ paths:
                     signatures required by gogoproto.
                 title: supply is the supply of the coins
               pagination:
-                description: |-
-                  pagination defines the pagination in the response.
-
-                  Since: cosmos-sdk 0.43
+                description: pagination defines the pagination in the response.
                 type: object
                 properties:
                   next_key:
@@ -17814,9 +18000,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -17895,7 +18078,6 @@ paths:
         contain
 
         a valid and supported path, including app, custom, p2p, and store.
-      description: 'Since: cosmos-sdk 0.46'
       operationId: ABCIQuery
       responses:
         '200':
@@ -18372,9 +18554,32 @@ paths:
                                     signature:
                                       type: string
                                       format: byte
+                                      description: >-
+                                        Vote signature by the validator if they
+                                        participated in consensus for the
+
+                                        associated block.
+                                    extension:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension provided by the
+                                        application. Only valid for precommit
+
+                                        messages.
+                                    extension_signature:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension signature by the
+                                        validator if they participated in
+
+                                        consensus for the associated block.
+
+                                        Only valid for precommit messages.
                                   description: >-
-                                    Vote represents a prevote, precommit, or
-                                    commit vote from validators for
+                                    Vote represents a prevote or precommit vote
+                                    from validators for
 
                                     consensus.
                                 vote_b:
@@ -18429,9 +18634,32 @@ paths:
                                     signature:
                                       type: string
                                       format: byte
+                                      description: >-
+                                        Vote signature by the validator if they
+                                        participated in consensus for the
+
+                                        associated block.
+                                    extension:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension provided by the
+                                        application. Only valid for precommit
+
+                                        messages.
+                                    extension_signature:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension signature by the
+                                        validator if they participated in
+
+                                        consensus for the associated block.
+
+                                        Only valid for precommit messages.
                                   description: >-
-                                    Vote represents a prevote, precommit, or
-                                    commit vote from validators for
+                                    Vote represents a prevote or precommit vote
+                                    from validators for
 
                                     consensus.
                                 total_voting_power:
@@ -18577,7 +18805,7 @@ paths:
                                                       - BLOCK_ID_FLAG_NIL
                                                     default: BLOCK_ID_FLAG_UNKNOWN
                                                     title: >-
-                                                      BlockIdFlag indicates which BlcokID the
+                                                      BlockIdFlag indicates which BlockID the
                                                       signature is for
                                                   validator_address:
                                                     type: string
@@ -18730,7 +18958,7 @@ paths:
                                 - BLOCK_ID_FLAG_NIL
                               default: BLOCK_ID_FLAG_UNKNOWN
                               title: >-
-                                BlockIdFlag indicates which BlcokID the
+                                BlockIdFlag indicates which BlockID the
                                 signature is for
                             validator_address:
                               type: string
@@ -18748,7 +18976,6 @@ paths:
                       Commit contains the evidence that a block was committed by
                       a set of validators.
               sdk_block:
-                title: 'Since: cosmos-sdk 0.47'
                 type: object
                 properties:
                   header:
@@ -18917,9 +19144,32 @@ paths:
                                     signature:
                                       type: string
                                       format: byte
+                                      description: >-
+                                        Vote signature by the validator if they
+                                        participated in consensus for the
+
+                                        associated block.
+                                    extension:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension provided by the
+                                        application. Only valid for precommit
+
+                                        messages.
+                                    extension_signature:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension signature by the
+                                        validator if they participated in
+
+                                        consensus for the associated block.
+
+                                        Only valid for precommit messages.
                                   description: >-
-                                    Vote represents a prevote, precommit, or
-                                    commit vote from validators for
+                                    Vote represents a prevote or precommit vote
+                                    from validators for
 
                                     consensus.
                                 vote_b:
@@ -18974,9 +19224,32 @@ paths:
                                     signature:
                                       type: string
                                       format: byte
+                                      description: >-
+                                        Vote signature by the validator if they
+                                        participated in consensus for the
+
+                                        associated block.
+                                    extension:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension provided by the
+                                        application. Only valid for precommit
+
+                                        messages.
+                                    extension_signature:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension signature by the
+                                        validator if they participated in
+
+                                        consensus for the associated block.
+
+                                        Only valid for precommit messages.
                                   description: >-
-                                    Vote represents a prevote, precommit, or
-                                    commit vote from validators for
+                                    Vote represents a prevote or precommit vote
+                                    from validators for
 
                                     consensus.
                                 total_voting_power:
@@ -19122,7 +19395,7 @@ paths:
                                                       - BLOCK_ID_FLAG_NIL
                                                     default: BLOCK_ID_FLAG_UNKNOWN
                                                     title: >-
-                                                      BlockIdFlag indicates which BlcokID the
+                                                      BlockIdFlag indicates which BlockID the
                                                       signature is for
                                                   validator_address:
                                                     type: string
@@ -19275,7 +19548,7 @@ paths:
                                 - BLOCK_ID_FLAG_NIL
                               default: BLOCK_ID_FLAG_UNKNOWN
                               title: >-
-                                BlockIdFlag indicates which BlcokID the
+                                BlockIdFlag indicates which BlockID the
                                 signature is for
                             validator_address:
                               type: string
@@ -19686,9 +19959,32 @@ paths:
                                     signature:
                                       type: string
                                       format: byte
+                                      description: >-
+                                        Vote signature by the validator if they
+                                        participated in consensus for the
+
+                                        associated block.
+                                    extension:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension provided by the
+                                        application. Only valid for precommit
+
+                                        messages.
+                                    extension_signature:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension signature by the
+                                        validator if they participated in
+
+                                        consensus for the associated block.
+
+                                        Only valid for precommit messages.
                                   description: >-
-                                    Vote represents a prevote, precommit, or
-                                    commit vote from validators for
+                                    Vote represents a prevote or precommit vote
+                                    from validators for
 
                                     consensus.
                                 vote_b:
@@ -19743,9 +20039,32 @@ paths:
                                     signature:
                                       type: string
                                       format: byte
+                                      description: >-
+                                        Vote signature by the validator if they
+                                        participated in consensus for the
+
+                                        associated block.
+                                    extension:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension provided by the
+                                        application. Only valid for precommit
+
+                                        messages.
+                                    extension_signature:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension signature by the
+                                        validator if they participated in
+
+                                        consensus for the associated block.
+
+                                        Only valid for precommit messages.
                                   description: >-
-                                    Vote represents a prevote, precommit, or
-                                    commit vote from validators for
+                                    Vote represents a prevote or precommit vote
+                                    from validators for
 
                                     consensus.
                                 total_voting_power:
@@ -19891,7 +20210,7 @@ paths:
                                                       - BLOCK_ID_FLAG_NIL
                                                     default: BLOCK_ID_FLAG_UNKNOWN
                                                     title: >-
-                                                      BlockIdFlag indicates which BlcokID the
+                                                      BlockIdFlag indicates which BlockID the
                                                       signature is for
                                                   validator_address:
                                                     type: string
@@ -20044,7 +20363,7 @@ paths:
                                 - BLOCK_ID_FLAG_NIL
                               default: BLOCK_ID_FLAG_UNKNOWN
                               title: >-
-                                BlockIdFlag indicates which BlcokID the
+                                BlockIdFlag indicates which BlockID the
                                 signature is for
                             validator_address:
                               type: string
@@ -20062,7 +20381,6 @@ paths:
                       Commit contains the evidence that a block was committed by
                       a set of validators.
               sdk_block:
-                title: 'Since: cosmos-sdk 0.47'
                 type: object
                 properties:
                   header:
@@ -20231,9 +20549,32 @@ paths:
                                     signature:
                                       type: string
                                       format: byte
+                                      description: >-
+                                        Vote signature by the validator if they
+                                        participated in consensus for the
+
+                                        associated block.
+                                    extension:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension provided by the
+                                        application. Only valid for precommit
+
+                                        messages.
+                                    extension_signature:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension signature by the
+                                        validator if they participated in
+
+                                        consensus for the associated block.
+
+                                        Only valid for precommit messages.
                                   description: >-
-                                    Vote represents a prevote, precommit, or
-                                    commit vote from validators for
+                                    Vote represents a prevote or precommit vote
+                                    from validators for
 
                                     consensus.
                                 vote_b:
@@ -20288,9 +20629,32 @@ paths:
                                     signature:
                                       type: string
                                       format: byte
+                                      description: >-
+                                        Vote signature by the validator if they
+                                        participated in consensus for the
+
+                                        associated block.
+                                    extension:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension provided by the
+                                        application. Only valid for precommit
+
+                                        messages.
+                                    extension_signature:
+                                      type: string
+                                      format: byte
+                                      description: >-
+                                        Vote extension signature by the
+                                        validator if they participated in
+
+                                        consensus for the associated block.
+
+                                        Only valid for precommit messages.
                                   description: >-
-                                    Vote represents a prevote, precommit, or
-                                    commit vote from validators for
+                                    Vote represents a prevote or precommit vote
+                                    from validators for
 
                                     consensus.
                                 total_voting_power:
@@ -20436,7 +20800,7 @@ paths:
                                                       - BLOCK_ID_FLAG_NIL
                                                     default: BLOCK_ID_FLAG_UNKNOWN
                                                     title: >-
-                                                      BlockIdFlag indicates which BlcokID the
+                                                      BlockIdFlag indicates which BlockID the
                                                       signature is for
                                                   validator_address:
                                                     type: string
@@ -20589,7 +20953,7 @@ paths:
                                 - BLOCK_ID_FLAG_NIL
                               default: BLOCK_ID_FLAG_UNKNOWN
                               title: >-
-                                BlockIdFlag indicates which BlcokID the
+                                BlockIdFlag indicates which BlockID the
                                 signature is for
                             validator_address:
                               type: string
@@ -20893,7 +21257,6 @@ paths:
                       title: Module is the type for VersionInfo
                   cosmos_sdk_version:
                     type: string
-                    title: 'Since: cosmos-sdk 0.43'
                 description: VersionInfo is the type for the GetNodeInfoResponse message.
             description: >-
               GetNodeInfoResponse is the response type for the Query/GetNodeInfo
@@ -21781,9 +22144,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -22270,9 +22630,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -22281,6 +22638,7 @@ paths:
   /cosmos/distribution/v1beta1/community_pool:
     get:
       summary: CommunityPool queries the community pool coins.
+      description: 'WARNING: This query will fail if an external community pool is used.'
       operationId: CommunityPool
       responses:
         '200':
@@ -22339,7 +22697,7 @@ paths:
   /cosmos/distribution/v1beta1/delegators/{delegator_address}/rewards:
     get:
       summary: |-
-        DelegationTotalRewards queries the total rewards accrued by a each
+        DelegationTotalRewards queries the total rewards accrued by each
         validator.
       operationId: DelegationTotalRewards
       responses:
@@ -23021,9 +23379,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -23031,7 +23386,7 @@ paths:
         - Query
   /cosmos/feegrant/v1beta1/allowance/{granter}/{grantee}:
     get:
-      summary: Allowance returns fee granted to the grantee by the granter.
+      summary: Allowance returns granted allwance to the grantee by the granter.
       operationId: Allowance
       responses:
         '200':
@@ -23342,7 +23697,7 @@ paths:
         - Query
   /cosmos/feegrant/v1beta1/allowances/{grantee}:
     get:
-      summary: Allowances returns all the grants for address.
+      summary: Allowances returns all the grants for the given grantee address.
       operationId: Allowances
       responses:
         '200':
@@ -23710,9 +24065,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -23721,7 +24073,6 @@ paths:
   /cosmos/feegrant/v1beta1/issued/{granter}:
     get:
       summary: AllowancesByGranter returns all the grants given by an address
-      description: 'Since: cosmos-sdk 0.46'
       operationId: AllowancesByGranter
       responses:
         '200':
@@ -23840,9 +24191,6 @@ paths:
             description: >-
               QueryAllowancesByGranterResponse is the response type for the
               Query/AllowancesByGranter RPC method.
-
-
-              Since: cosmos-sdk 0.46
         default:
           description: An unexpected error response.
           schema:
@@ -24092,9 +24440,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -24562,9 +24907,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -24955,10 +25297,7 @@ paths:
                         }
       parameters:
         - name: hash
-          description: |-
-            hash defines the evidence hash of the requested evidence.
-
-            Since: cosmos-sdk 0.47
+          description: hash defines the evidence hash of the requested evidence.
           in: path
           required: true
           type: string
@@ -25838,9 +26177,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -26646,9 +26982,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -26657,8 +26990,8 @@ paths:
   /cosmos/gov/v1beta1/proposals/{proposal_id}/deposits/{depositor}:
     get:
       summary: >-
-        Deposit queries single deposit information based proposalID,
-        depositAddr.
+        Deposit queries single deposit information based on proposalID,
+        depositor address.
       operationId: Deposit
       responses:
         '200':
@@ -27211,13 +27544,7 @@ paths:
                         description: >-
                           WeightedVoteOption defines a unit of vote for vote
                           split.
-
-
-                          Since: cosmos-sdk 0.43
-                      description: |-
-                        options is the weighted vote options.
-
-                        Since: cosmos-sdk 0.43
+                      description: options is the weighted vote options.
                   description: >-
                     Vote defines a vote on a governance proposal.
 
@@ -27497,9 +27824,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -27568,13 +27892,7 @@ paths:
                       description: >-
                         WeightedVoteOption defines a unit of vote for vote
                         split.
-
-
-                        Since: cosmos-sdk 0.43
-                    description: |-
-                      options is the weighted vote options.
-
-                      Since: cosmos-sdk 0.43
+                    description: options is the weighted vote options.
                 description: >-
                   Vote defines a vote on a governance proposal.
 
@@ -28002,7 +28320,6 @@ paths:
       summary: >-
         Subspaces queries for all registered subspaces and all keys for a
         subspace.
-      description: 'Since: cosmos-sdk 0.46'
       operationId: Subspaces
       responses:
         '200':
@@ -28026,17 +28343,11 @@ paths:
                     that exist for
 
                     the subspace.
-
-
-                    Since: cosmos-sdk 0.46
             description: >-
               QuerySubspacesResponse defines the response types for querying for
               all
 
               registered subspaces and all keys for a subspace.
-
-
-              Since: cosmos-sdk 0.46
         default:
           description: An unexpected error response.
           schema:
@@ -28140,19 +28451,19 @@ paths:
                       format: int64
                       title: >-
                         Height at which validator was first a candidate OR was
-                        unjailed
+                        un-jailed
                     index_offset:
                       type: string
                       format: int64
                       description: >-
-                        Index which is incremented each time the validator was a
-                        bonded
+                        Index which is incremented every time a validator is
+                        bonded in a block and
 
-                        in a block and may have signed a precommit or not. This
-                        in conjunction with the
+                        _may_ have signed a pre-commit or not. This in
+                        conjunction with the
 
-                        `SignedBlocksWindow` param determines the index in the
-                        `MissedBlocksBitArray`.
+                        signed_blocks_window param determines the index in the
+                        missed block bitmap.
                     jailed_until:
                       type: string
                       format: date-time
@@ -28163,18 +28474,20 @@ paths:
                       type: boolean
                       description: >-
                         Whether or not a validator has been tombstoned (killed
-                        out of validator set). It is set
+                        out of validator
 
-                        once the validator commits an equivocation or for any
-                        other configured misbehiavor.
+                        set). It is set once the validator commits an
+                        equivocation or for any other
+
+                        configured misbehavior.
                     missed_blocks_counter:
                       type: string
                       format: int64
                       description: >-
-                        A counter kept to avoid unnecessary array reads.
+                        A counter of missed (unsigned) blocks. It is used to
+                        avoid unnecessary
 
-                        Note that `Sum(MissedBlocksBitArray)` always equals
-                        `MissedBlocksCounter`.
+                        reads in the missed block bitmap.
                   description: >-
                     ValidatorSigningInfo defines a validator's signing info for
                     monitoring their
@@ -28287,9 +28600,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -28315,19 +28625,19 @@ paths:
                     format: int64
                     title: >-
                       Height at which validator was first a candidate OR was
-                      unjailed
+                      un-jailed
                   index_offset:
                     type: string
                     format: int64
                     description: >-
-                      Index which is incremented each time the validator was a
-                      bonded
+                      Index which is incremented every time a validator is
+                      bonded in a block and
 
-                      in a block and may have signed a precommit or not. This in
-                      conjunction with the
+                      _may_ have signed a pre-commit or not. This in conjunction
+                      with the
 
-                      `SignedBlocksWindow` param determines the index in the
-                      `MissedBlocksBitArray`.
+                      signed_blocks_window param determines the index in the
+                      missed block bitmap.
                   jailed_until:
                     type: string
                     format: date-time
@@ -28338,18 +28648,20 @@ paths:
                     type: boolean
                     description: >-
                       Whether or not a validator has been tombstoned (killed out
-                      of validator set). It is set
+                      of validator
 
-                      once the validator commits an equivocation or for any
-                      other configured misbehiavor.
+                      set). It is set once the validator commits an equivocation
+                      or for any other
+
+                      configured misbehavior.
                   missed_blocks_counter:
                     type: string
                     format: int64
                     description: >-
-                      A counter kept to avoid unnecessary array reads.
+                      A counter of missed (unsigned) blocks. It is used to avoid
+                      unnecessary
 
-                      Note that `Sum(MissedBlocksBitArray)` always equals
-                      `MissedBlocksCounter`.
+                      reads in the missed block bitmap.
                 description: >-
                   ValidatorSigningInfo defines a validator's signing info for
                   monitoring their
@@ -28421,13 +28733,13 @@ paths:
                         delegator_address:
                           type: string
                           description: >-
-                            delegator_address is the bech32-encoded address of
-                            the delegator.
+                            delegator_address is the encoded address of the
+                            delegator.
                         validator_address:
                           type: string
                           description: >-
-                            validator_address is the bech32-encoded address of
-                            the validator.
+                            validator_address is the encoded address of the
+                            validator.
                         shares:
                           type: string
                           description: shares define the delegation shares received.
@@ -28735,9 +29047,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -29179,9 +29488,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -29214,12 +29520,12 @@ paths:
                     delegator_address:
                       type: string
                       description: >-
-                        delegator_address is the bech32-encoded address of the
+                        delegator_address is the encoded address of the
                         delegator.
                     validator_address:
                       type: string
                       description: >-
-                        validator_address is the bech32-encoded address of the
+                        validator_address is the encoded address of the
                         validator.
                     entries:
                       type: array
@@ -29543,9 +29849,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -29862,9 +30165,6 @@ paths:
                       description: >-
                         min_self_delegation is the validator's self declared
                         minimum self delegation.
-
-
-                        Since: cosmos-sdk 0.46
                     unbonding_on_hold_ref_count:
                       type: string
                       format: int64
@@ -30175,9 +30475,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -30484,9 +30781,6 @@ paths:
                     description: >-
                       min_self_delegation is the validator's self declared
                       minimum self delegation.
-
-
-                      Since: cosmos-sdk 0.46
                   unbonding_on_hold_ref_count:
                     type: string
                     format: int64
@@ -31121,9 +31415,6 @@ paths:
                           description: >-
                             min_self_delegation is the validator's self declared
                             minimum self delegation.
-
-
-                            Since: cosmos-sdk 0.46
                         unbonding_on_hold_ref_count:
                           type: string
                           format: int64
@@ -32133,9 +32424,6 @@ paths:
                       description: >-
                         min_self_delegation is the validator's self declared
                         minimum self delegation.
-
-
-                        Since: cosmos-sdk 0.46
                     unbonding_on_hold_ref_count:
                       type: string
                       format: int64
@@ -32446,9 +32734,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -32753,9 +33038,6 @@ paths:
                     description: >-
                       min_self_delegation is the validator's self declared
                       minimum self delegation.
-
-
-                      Since: cosmos-sdk 0.46
                   unbonding_on_hold_ref_count:
                     type: string
                     format: int64
@@ -33024,13 +33306,13 @@ paths:
                         delegator_address:
                           type: string
                           description: >-
-                            delegator_address is the bech32-encoded address of
-                            the delegator.
+                            delegator_address is the encoded address of the
+                            delegator.
                         validator_address:
                           type: string
                           description: >-
-                            validator_address is the bech32-encoded address of
-                            the validator.
+                            validator_address is the encoded address of the
+                            validator.
                         shares:
                           type: string
                           description: shares define the delegation shares received.
@@ -33335,9 +33617,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -33362,12 +33641,12 @@ paths:
                       delegator_address:
                         type: string
                         description: >-
-                          delegator_address is the bech32-encoded address of the
+                          delegator_address is the encoded address of the
                           delegator.
                       validator_address:
                         type: string
                         description: >-
-                          validator_address is the bech32-encoded address of the
+                          validator_address is the encoded address of the
                           validator.
                       shares:
                         type: string
@@ -33628,14 +33907,10 @@ paths:
                 properties:
                   delegator_address:
                     type: string
-                    description: >-
-                      delegator_address is the bech32-encoded address of the
-                      delegator.
+                    description: delegator_address is the encoded address of the delegator.
                   validator_address:
                     type: string
-                    description: >-
-                      validator_address is the bech32-encoded address of the
-                      validator.
+                    description: validator_address is the encoded address of the validator.
                   entries:
                     type: array
                     items:
@@ -33917,12 +34192,12 @@ paths:
                     delegator_address:
                       type: string
                       description: >-
-                        delegator_address is the bech32-encoded address of the
+                        delegator_address is the encoded address of the
                         delegator.
                     validator_address:
                       type: string
                       description: >-
-                        validator_address is the bech32-encoded address of the
+                        validator_address is the encoded address of the
                         validator.
                     entries:
                       type: array
@@ -34246,9 +34521,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -34257,7 +34529,6 @@ paths:
   /cosmos/tx/v1beta1/decode:
     post:
       summary: TxDecode decodes the transaction.
-      description: 'Since: cosmos-sdk 0.47'
       operationId: TxDecode
       responses:
         '200':
@@ -34472,14 +34743,11 @@ paths:
             description: |-
               TxDecodeRequest is the request type for the Service.TxDecode
               RPC method.
-
-              Since: cosmos-sdk 0.47
       tags:
         - Service
   /cosmos/tx/v1beta1/decode/amino:
     post:
       summary: TxDecodeAmino decodes an Amino transaction from encoded bytes to JSON.
-      description: 'Since: cosmos-sdk 0.47'
       operationId: TxDecodeAmino
       responses:
         '200':
@@ -34494,9 +34762,6 @@ paths:
               Service.TxDecodeAmino
 
               RPC method.
-
-
-              Since: cosmos-sdk 0.47
         default:
           description: An unexpected error response.
           schema:
@@ -34706,15 +34971,11 @@ paths:
               Service.TxDecodeAmino
 
               RPC method.
-
-
-              Since: cosmos-sdk 0.47
       tags:
         - Service
   /cosmos/tx/v1beta1/encode:
     post:
       summary: TxEncode encodes the transaction.
-      description: 'Since: cosmos-sdk 0.47'
       operationId: TxEncode
       responses:
         '200':
@@ -34729,8 +34990,6 @@ paths:
             description: |-
               TxEncodeResponse is the response type for the
               Service.TxEncode method.
-
-              Since: cosmos-sdk 0.47
         default:
           description: An unexpected error response.
           schema:
@@ -34936,7 +35195,6 @@ paths:
   /cosmos/tx/v1beta1/encode/amino:
     post:
       summary: TxEncodeAmino encodes an Amino transaction from JSON to encoded bytes.
-      description: 'Since: cosmos-sdk 0.47'
       operationId: TxEncodeAmino
       responses:
         '200':
@@ -34952,9 +35210,6 @@ paths:
               Service.TxEncodeAmino
 
               RPC method.
-
-
-              Since: cosmos-sdk 0.47
         default:
           description: An unexpected error response.
           schema:
@@ -35163,9 +35418,6 @@ paths:
               Service.TxEncodeAmino
 
               RPC method.
-
-
-              Since: cosmos-sdk 0.47
       tags:
         - Service
   /cosmos/tx/v1beta1/simulate:
@@ -35240,8 +35492,7 @@ paths:
                         Event allows application developers to attach additional
                         information to
 
-                        ResponseBeginBlock, ResponseEndBlock, ResponseCheckTx
-                        and ResponseDeliverTx.
+                        ResponseFinalizeBlock and ResponseCheckTx.
 
                         Later, transactions may be queried using these events.
                     description: >-
@@ -35436,9 +35687,6 @@ paths:
                     description: >-
                       msg_responses contains the Msg handler responses type
                       packed in Anys.
-
-
-                      Since: cosmos-sdk 0.46
             description: |-
               SimulateResponse is the response type for the
               Service.SimulateRPC method.
@@ -35849,7 +36097,13 @@ paths:
                         }
       parameters:
         - name: events
-          description: events is the list of transaction event type.
+          description: >-
+            events is the list of transaction event type.
+
+            Deprecated post v0.47.x: use query instead, which should contain a
+            valid
+
+            events query.
           in: query
           required: false
           type: array
@@ -35906,15 +36160,13 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
         - name: order_by
           description: |2-
-             - ORDER_BY_UNSPECIFIED: ORDER_BY_UNSPECIFIED specifies an unknown sorting order. OrderBy defaults to ASC in this case.
+             - ORDER_BY_UNSPECIFIED: ORDER_BY_UNSPECIFIED specifies an unknown sorting order. OrderBy defaults
+            to ASC in this case.
              - ORDER_BY_ASC: ORDER_BY_ASC defines ascending order
              - ORDER_BY_DESC: ORDER_BY_DESC defines descending order
           in: query
@@ -35926,7 +36178,7 @@ paths:
             - ORDER_BY_DESC
           default: ORDER_BY_UNSPECIFIED
         - name: page
-          description: >-
+          description: |-
             page is the page number to query, starts at 1. If not provided, will
             default to first page.
           in: query
@@ -35943,6 +36195,15 @@ paths:
           required: false
           type: string
           format: uint64
+        - name: query
+          description: >-
+            query defines the transaction event query that is proxied to
+            Tendermint's
+
+            TxSearch RPC method. The query must be valid.
+          in: query
+          required: false
+          type: string
       tags:
         - Service
     post:
@@ -36255,8 +36516,7 @@ paths:
                         Event allows application developers to attach additional
                         information to
 
-                        ResponseBeginBlock, ResponseEndBlock, ResponseCheckTx
-                        and ResponseDeliverTx.
+                        ResponseFinalizeBlock and ResponseCheckTx.
 
                         Later, transactions may be queried using these events.
                     description: >-
@@ -36271,9 +36531,6 @@ paths:
 
                       additional metadata, emitted only by processing the
                       messages.
-
-
-                      Since: cosmos-sdk 0.42.11, 0.44.5, 0.45
                 description: >-
                   TxResponse defines a structure containing relevant tx data and
                   metadata. The
@@ -36497,16 +36754,18 @@ paths:
                 default: BROADCAST_MODE_UNSPECIFIED
                 description: >-
                   BroadcastMode specifies the broadcast mode for the
-                  TxService.Broadcast RPC method.
+                  TxService.Broadcast RPC
+
+                  method.
 
                    - BROADCAST_MODE_UNSPECIFIED: zero-value for mode ordering
                    - BROADCAST_MODE_BLOCK: DEPRECATED: use BROADCAST_MODE_SYNC instead,
                   BROADCAST_MODE_BLOCK is not supported by the SDK from v0.47.x
                   onwards.
-                   - BROADCAST_MODE_SYNC: BROADCAST_MODE_SYNC defines a tx broadcasting mode where the client waits for
-                  a CheckTx execution response only.
-                   - BROADCAST_MODE_ASYNC: BROADCAST_MODE_ASYNC defines a tx broadcasting mode where the client returns
-                  immediately.
+                   - BROADCAST_MODE_SYNC: BROADCAST_MODE_SYNC defines a tx broadcasting mode where the client waits
+                  for a CheckTx execution response only.
+                   - BROADCAST_MODE_ASYNC: BROADCAST_MODE_ASYNC defines a tx broadcasting mode where the client
+                  returns immediately.
             description: >-
               BroadcastTxRequest is the request type for the
               Service.BroadcastTxRequest
@@ -36517,7 +36776,6 @@ paths:
   /cosmos/tx/v1beta1/txs/block/{height}:
     get:
       summary: GetBlockWithTxs fetches a block with decoded txs.
-      description: 'Since: cosmos-sdk 0.45.2'
       operationId: GetBlockWithTxs
       responses:
         '200':
@@ -36775,9 +37033,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -37218,7 +37473,6 @@ paths:
   /cosmos/upgrade/v1beta1/authority:
     get:
       summary: Returns the account with authority to conduct upgrades
-      description: 'Since: cosmos-sdk 0.46'
       operationId: Authority
       responses:
         '200':
@@ -37228,7 +37482,6 @@ paths:
             properties:
               address:
                 type: string
-            description: 'Since: cosmos-sdk 0.46'
             title: QueryAuthorityResponse is the response type for Query/Authority
         default:
           description: An unexpected error response.
@@ -37868,7 +38121,6 @@ paths:
   /cosmos/upgrade/v1beta1/module_versions:
     get:
       summary: ModuleVersions queries the list of module versions from state.
-      description: 'Since: cosmos-sdk 0.43'
       operationId: ModuleVersions
       responses:
         '200':
@@ -37888,10 +38140,7 @@ paths:
                       type: string
                       format: uint64
                       title: consensus version of the app module
-                  description: |-
-                    ModuleVersion specifies a module and its consensus version.
-
-                    Since: cosmos-sdk 0.43
+                  description: ModuleVersion specifies a module and its consensus version.
                 description: >-
                   module_versions is a list of module names with their consensus
                   versions.
@@ -37900,9 +38149,6 @@ paths:
               Query/ModuleVersions
 
               RPC method.
-
-
-              Since: cosmos-sdk 0.43
         default:
           description: An unexpected error response.
           schema:
@@ -38132,7 +38378,6 @@ paths:
               upgraded_consensus_state:
                 type: string
                 format: byte
-                title: 'Since: cosmos-sdk 0.43'
             description: >-
               QueryUpgradedConsensusStateResponse is the response type for the
               Query/UpgradedConsensusState
@@ -38739,9 +38984,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -40594,9 +40836,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -41235,9 +41474,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -42723,9 +42959,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -43217,9 +43450,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -44391,9 +44621,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -44731,9 +44958,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -46859,9 +47083,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -48550,9 +48771,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -48768,6 +48986,7 @@ paths:
                           enum:
                             - ACCESS_TYPE_UNSPECIFIED
                             - ACCESS_TYPE_NOBODY
+                            - ACCESS_TYPE_ONLY_ADDRESS
                             - ACCESS_TYPE_EVERYBODY
                             - ACCESS_TYPE_ANY_OF_ADDRESSES
                           default: ACCESS_TYPE_UNSPECIFIED
@@ -48775,9 +48994,16 @@ paths:
                             - ACCESS_TYPE_UNSPECIFIED: AccessTypeUnspecified
                             placeholder for empty value
                              - ACCESS_TYPE_NOBODY: AccessTypeNobody forbidden
+                             - ACCESS_TYPE_ONLY_ADDRESS: AccessTypeOnlyAddress restricted to a single address
+                            Deprecated: use AccessTypeAnyOfAddresses instead
                              - ACCESS_TYPE_EVERYBODY: AccessTypeEverybody unrestricted
                              - ACCESS_TYPE_ANY_OF_ADDRESSES: AccessTypeAnyOfAddresses allow any of the addresses
                           title: AccessType permission types
+                        address:
+                          type: string
+                          title: |-
+                            Address
+                            Deprecated: replaced by addresses
                         addresses:
                           type: array
                           items:
@@ -49051,9 +49277,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -49088,6 +49311,7 @@ paths:
                         enum:
                           - ACCESS_TYPE_UNSPECIFIED
                           - ACCESS_TYPE_NOBODY
+                          - ACCESS_TYPE_ONLY_ADDRESS
                           - ACCESS_TYPE_EVERYBODY
                           - ACCESS_TYPE_ANY_OF_ADDRESSES
                         default: ACCESS_TYPE_UNSPECIFIED
@@ -49095,9 +49319,16 @@ paths:
                           - ACCESS_TYPE_UNSPECIFIED: AccessTypeUnspecified
                           placeholder for empty value
                            - ACCESS_TYPE_NOBODY: AccessTypeNobody forbidden
+                           - ACCESS_TYPE_ONLY_ADDRESS: AccessTypeOnlyAddress restricted to a single address
+                          Deprecated: use AccessTypeAnyOfAddresses instead
                            - ACCESS_TYPE_EVERYBODY: AccessTypeEverybody unrestricted
                            - ACCESS_TYPE_ANY_OF_ADDRESSES: AccessTypeAnyOfAddresses allow any of the addresses
                         title: AccessType permission types
+                      address:
+                        type: string
+                        title: |-
+                          Address
+                          Deprecated: replaced by addresses
                       addresses:
                         type: array
                         items:
@@ -49599,9 +49830,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -49629,6 +49857,7 @@ paths:
                         enum:
                           - ACCESS_TYPE_UNSPECIFIED
                           - ACCESS_TYPE_NOBODY
+                          - ACCESS_TYPE_ONLY_ADDRESS
                           - ACCESS_TYPE_EVERYBODY
                           - ACCESS_TYPE_ANY_OF_ADDRESSES
                         default: ACCESS_TYPE_UNSPECIFIED
@@ -49636,9 +49865,16 @@ paths:
                           - ACCESS_TYPE_UNSPECIFIED: AccessTypeUnspecified
                           placeholder for empty value
                            - ACCESS_TYPE_NOBODY: AccessTypeNobody forbidden
+                           - ACCESS_TYPE_ONLY_ADDRESS: AccessTypeOnlyAddress restricted to a single address
+                          Deprecated: use AccessTypeAnyOfAddresses instead
                            - ACCESS_TYPE_EVERYBODY: AccessTypeEverybody unrestricted
                            - ACCESS_TYPE_ANY_OF_ADDRESSES: AccessTypeAnyOfAddresses allow any of the addresses
                         title: AccessType permission types
+                      address:
+                        type: string
+                        title: |-
+                          Address
+                          Deprecated: replaced by addresses
                       addresses:
                         type: array
                         items:
@@ -49649,6 +49885,7 @@ paths:
                     enum:
                       - ACCESS_TYPE_UNSPECIFIED
                       - ACCESS_TYPE_NOBODY
+                      - ACCESS_TYPE_ONLY_ADDRESS
                       - ACCESS_TYPE_EVERYBODY
                       - ACCESS_TYPE_ANY_OF_ADDRESSES
                     default: ACCESS_TYPE_UNSPECIFIED
@@ -49656,6 +49893,8 @@ paths:
                       - ACCESS_TYPE_UNSPECIFIED: AccessTypeUnspecified
                       placeholder for empty value
                        - ACCESS_TYPE_NOBODY: AccessTypeNobody forbidden
+                       - ACCESS_TYPE_ONLY_ADDRESS: AccessTypeOnlyAddress restricted to a single address
+                      Deprecated: use AccessTypeAnyOfAddresses instead
                        - ACCESS_TYPE_EVERYBODY: AccessTypeEverybody unrestricted
                        - ACCESS_TYPE_ANY_OF_ADDRESSES: AccessTypeAnyOfAddresses allow any of the addresses
                     title: AccessType permission types
@@ -50140,9 +50379,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -50914,9 +51150,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -51667,9 +51900,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -51962,9 +52192,6 @@ paths:
           description: >-
             reverse is set to true if results are to be returned in the
             descending order.
-
-
-            Since: cosmos-sdk 0.43
           in: query
           required: false
           type: boolean
@@ -55138,9 +55365,6 @@ definitions:
         description: >-
           reverse is set to true if results are to be returned in the descending
           order.
-
-
-          Since: cosmos-sdk 0.43
     description: |-
       message SomeRequest {
                Foo some_parameter = 1;
@@ -56727,9 +56951,6 @@ definitions:
     description: >-
       AddressBytesToStringResponse is the response type for AddressString rpc
       method.
-
-
-      Since: cosmos-sdk 0.46
   cosmos.auth.v1beta1.AddressStringToBytesResponse:
     type: object
     properties:
@@ -56739,9 +56960,6 @@ definitions:
     description: >-
       AddressStringToBytesResponse is the response type for AddressBytes rpc
       method.
-
-
-      Since: cosmos-sdk 0.46
   cosmos.auth.v1beta1.BaseAccount:
     type: object
     properties:
@@ -56930,10 +57148,7 @@ definitions:
     properties:
       bech32_prefix:
         type: string
-    description: |-
-      Bech32PrefixResponse is the response type for Bech32Prefix rpc method.
-
-      Since: cosmos-sdk 0.46
+    description: Bech32PrefixResponse is the response type for Bech32Prefix rpc method.
   cosmos.auth.v1beta1.Params:
     type: object
     properties:
@@ -56958,7 +57173,6 @@ definitions:
     properties:
       account_address:
         type: string
-    description: 'Since: cosmos-sdk 0.46.2'
     title: >-
       QueryAccountAddressByIDResponse is the response type for
       AccountAddressByID rpc method
@@ -57147,10 +57361,7 @@ definitions:
           sequence:
             type: string
             format: uint64
-    description: |-
-      QueryAccountInfoResponse is the Query/AccountInfo response type.
-
-      Since: cosmos-sdk 0.47
+    description: QueryAccountInfoResponse is the Query/AccountInfo response type.
   cosmos.auth.v1beta1.QueryAccountResponse:
     type: object
     properties:
@@ -57516,9 +57727,6 @@ definitions:
     description: >-
       QueryAccountsResponse is the response type for the Query/Accounts RPC
       method.
-
-
-      Since: cosmos-sdk 0.43
   cosmos.auth.v1beta1.QueryModuleAccountByNameResponse:
     type: object
     properties:
@@ -57864,9 +58072,6 @@ definitions:
     description: >-
       QueryModuleAccountsResponse is the response type for the
       Query/ModuleAccounts RPC method.
-
-
-      Since: cosmos-sdk 0.46
   cosmos.auth.v1beta1.QueryParamsResponse:
     type: object
     properties:
@@ -57912,8 +58117,6 @@ definitions:
       DenomOwner defines structure representing an account that owns or holds a
       particular denominated token. It contains the account address and account
       balance of the denominated token.
-
-      Since: cosmos-sdk 0.46
   cosmos.bank.v1beta1.DenomUnit:
     type: object
     properties:
@@ -57993,7 +58196,6 @@ definitions:
           displayed in clients.
       name:
         type: string
-        description: 'Since: cosmos-sdk 0.43'
         title: 'name defines the name of the token (eg: Cosmos Atom)'
       symbol:
         type: string
@@ -58002,17 +58204,11 @@ definitions:
           can
 
           be the same as the display.
-
-
-          Since: cosmos-sdk 0.43
       uri:
         type: string
         description: >-
           URI to a document (on or off-chain) that contains additional
           information. Optional.
-
-
-          Since: cosmos-sdk 0.46
       uri_hash:
         type: string
         description: >-
@@ -58020,9 +58216,6 @@ definitions:
           verify that
 
           the document didn't change. Optional.
-
-
-          Since: cosmos-sdk 0.46
     description: |-
       Metadata represents a struct that describes
       a basic token.
@@ -58118,6 +58311,89 @@ definitions:
     description: >-
       QueryBalanceResponse is the response type for the Query/Balance RPC
       method.
+  cosmos.bank.v1beta1.QueryDenomMetadataByQueryStringResponse:
+    type: object
+    properties:
+      metadata:
+        type: object
+        properties:
+          description:
+            type: string
+          denom_units:
+            type: array
+            items:
+              type: object
+              properties:
+                denom:
+                  type: string
+                  description: >-
+                    denom represents the string name of the given denom unit
+                    (e.g uatom).
+                exponent:
+                  type: integer
+                  format: int64
+                  description: >-
+                    exponent represents power of 10 exponent that one must
+
+                    raise the base_denom to in order to equal the given
+                    DenomUnit's denom
+
+                    1 denom = 10^exponent base_denom
+
+                    (e.g. with a base_denom of uatom, one can create a DenomUnit
+                    of 'atom' with
+
+                    exponent = 6, thus: 1 atom = 10^6 uatom).
+                aliases:
+                  type: array
+                  items:
+                    type: string
+                  title: aliases is a list of string aliases for the given denom
+              description: |-
+                DenomUnit represents a struct that describes a given
+                denomination unit of the basic token.
+            title: denom_units represents the list of DenomUnit's for a given coin
+          base:
+            type: string
+            description: >-
+              base represents the base denom (should be the DenomUnit with
+              exponent = 0).
+          display:
+            type: string
+            description: |-
+              display indicates the suggested denom that should be
+              displayed in clients.
+          name:
+            type: string
+            title: 'name defines the name of the token (eg: Cosmos Atom)'
+          symbol:
+            type: string
+            description: >-
+              symbol is the token symbol usually shown on exchanges (eg: ATOM).
+              This can
+
+              be the same as the display.
+          uri:
+            type: string
+            description: >-
+              URI to a document (on or off-chain) that contains additional
+              information. Optional.
+          uri_hash:
+            type: string
+            description: >-
+              URIHash is a sha256 hash of a document pointed by URI. It's used
+              to verify that
+
+              the document didn't change. Optional.
+        description: |-
+          Metadata represents a struct that describes
+          a basic token.
+    description: >-
+      QueryDenomMetadataByQueryStringResponse is the response type for the
+      Query/DenomMetadata RPC
+
+      method. Identical with QueryDenomMetadataResponse but receives denom as
+      query string in request.
   cosmos.bank.v1beta1.QueryDenomMetadataResponse:
     type: object
     properties:
@@ -58172,7 +58448,6 @@ definitions:
               displayed in clients.
           name:
             type: string
-            description: 'Since: cosmos-sdk 0.43'
             title: 'name defines the name of the token (eg: Cosmos Atom)'
           symbol:
             type: string
@@ -58181,17 +58456,11 @@ definitions:
               This can
 
               be the same as the display.
-
-
-              Since: cosmos-sdk 0.43
           uri:
             type: string
             description: >-
               URI to a document (on or off-chain) that contains additional
               information. Optional.
-
-
-              Since: cosmos-sdk 0.46
           uri_hash:
             type: string
             description: >-
@@ -58199,9 +58468,6 @@ definitions:
               to verify that
 
               the document didn't change. Optional.
-
-
-              Since: cosmos-sdk 0.46
         description: |-
           Metadata represents a struct that describes
           a basic token.
@@ -58210,6 +58476,62 @@ definitions:
       Query/DenomMetadata RPC
 
       method.
+  cosmos.bank.v1beta1.QueryDenomOwnersByQueryResponse:
+    type: object
+    properties:
+      denom_owners:
+        type: array
+        items:
+          type: object
+          properties:
+            address:
+              type: string
+              description: address defines the address that owns a particular denomination.
+            balance:
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom
+                method
+
+                signatures required by gogoproto.
+          description: >-
+            DenomOwner defines structure representing an account that owns or
+            holds a
+
+            particular denominated token. It contains the account address and
+            account
+
+            balance of the denominated token.
+      pagination:
+        description: pagination defines the pagination in the response.
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+    description: >-
+      QueryDenomOwnersByQueryResponse defines the RPC response of a
+      DenomOwnersByQuery RPC query.
   cosmos.bank.v1beta1.QueryDenomOwnersResponse:
     type: object
     properties:
@@ -58244,9 +58566,6 @@ definitions:
             account
 
             balance of the denominated token.
-
-
-            Since: cosmos-sdk 0.46
       pagination:
         description: pagination defines the pagination in the response.
         type: object
@@ -58269,9 +58588,6 @@ definitions:
     description: >-
       QueryDenomOwnersResponse defines the RPC response of a DenomOwners RPC
       query.
-
-
-      Since: cosmos-sdk 0.46
   cosmos.bank.v1beta1.QueryDenomsMetadataResponse:
     type: object
     properties:
@@ -58328,7 +58644,6 @@ definitions:
                 displayed in clients.
             name:
               type: string
-              description: 'Since: cosmos-sdk 0.43'
               title: 'name defines the name of the token (eg: Cosmos Atom)'
             symbol:
               type: string
@@ -58337,17 +58652,11 @@ definitions:
                 ATOM). This can
 
                 be the same as the display.
-
-
-                Since: cosmos-sdk 0.43
             uri:
               type: string
               description: >-
                 URI to a document (on or off-chain) that contains additional
                 information. Optional.
-
-
-                Since: cosmos-sdk 0.46
             uri_hash:
               type: string
               description: >-
@@ -58355,9 +58664,6 @@ definitions:
                 to verify that
 
                 the document didn't change. Optional.
-
-
-                Since: cosmos-sdk 0.46
           description: |-
             Metadata represents a struct that describes
             a basic token.
@@ -58392,6 +58698,7 @@ definitions:
     type: object
     properties:
       params:
+        description: params provides the parameters of the bank module.
         type: object
         properties:
           send_enabled:
@@ -58422,7 +58729,6 @@ definitions:
               compatibility of genesis files.
           default_send_enabled:
             type: boolean
-        description: Params defines the parameters for the bank module.
     description: >-
       QueryParamsResponse defines the response type for querying x/bank
       parameters.
@@ -58464,10 +58770,7 @@ definitions:
               PageRequest.count_total
 
               was set, its value is undefined otherwise
-    description: |-
-      QuerySendEnabledResponse defines the RPC response of a SendEnable query.
-
-      Since: cosmos-sdk 0.47
+    description: QuerySendEnabledResponse defines the RPC response of a SendEnable query.
   cosmos.bank.v1beta1.QuerySpendableBalanceByDenomResponse:
     type: object
     properties:
@@ -58488,9 +58791,6 @@ definitions:
       for
 
       querying an account's spendable balance for a specific denom.
-
-
-      Since: cosmos-sdk 0.47
   cosmos.bank.v1beta1.QuerySpendableBalancesResponse:
     type: object
     properties:
@@ -58533,9 +58833,6 @@ definitions:
       querying
 
       an account's spendable balances.
-
-
-      Since: cosmos-sdk 0.46
   cosmos.bank.v1beta1.QuerySupplyOfResponse:
     type: object
     properties:
@@ -58573,10 +58870,7 @@ definitions:
             signatures required by gogoproto.
         title: supply is the supply of the coins
       pagination:
-        description: |-
-          pagination defines the pagination in the response.
-
-          Since: cosmos-sdk 0.43
+        description: pagination defines the pagination in the response.
         type: object
         properties:
           next_key:
@@ -58841,9 +59135,32 @@ definitions:
                         signature:
                           type: string
                           format: byte
+                          description: >-
+                            Vote signature by the validator if they participated
+                            in consensus for the
+
+                            associated block.
+                        extension:
+                          type: string
+                          format: byte
+                          description: >-
+                            Vote extension provided by the application. Only
+                            valid for precommit
+
+                            messages.
+                        extension_signature:
+                          type: string
+                          format: byte
+                          description: >-
+                            Vote extension signature by the validator if they
+                            participated in
+
+                            consensus for the associated block.
+
+                            Only valid for precommit messages.
                       description: >-
-                        Vote represents a prevote, precommit, or commit vote
-                        from validators for
+                        Vote represents a prevote or precommit vote from
+                        validators for
 
                         consensus.
                     vote_b:
@@ -58898,9 +59215,32 @@ definitions:
                         signature:
                           type: string
                           format: byte
+                          description: >-
+                            Vote signature by the validator if they participated
+                            in consensus for the
+
+                            associated block.
+                        extension:
+                          type: string
+                          format: byte
+                          description: >-
+                            Vote extension provided by the application. Only
+                            valid for precommit
+
+                            messages.
+                        extension_signature:
+                          type: string
+                          format: byte
+                          description: >-
+                            Vote extension signature by the validator if they
+                            participated in
+
+                            consensus for the associated block.
+
+                            Only valid for precommit messages.
                       description: >-
-                        Vote represents a prevote, precommit, or commit vote
-                        from validators for
+                        Vote represents a prevote or precommit vote from
+                        validators for
 
                         consensus.
                     total_voting_power:
@@ -59043,7 +59383,7 @@ definitions:
                                           - BLOCK_ID_FLAG_NIL
                                         default: BLOCK_ID_FLAG_UNKNOWN
                                         title: >-
-                                          BlockIdFlag indicates which BlcokID the
+                                          BlockIdFlag indicates which BlockID the
                                           signature is for
                                       validator_address:
                                         type: string
@@ -59193,7 +59533,7 @@ definitions:
                     - BLOCK_ID_FLAG_COMMIT
                     - BLOCK_ID_FLAG_NIL
                   default: BLOCK_ID_FLAG_UNKNOWN
-                  title: BlockIdFlag indicates which BlcokID the signature is for
+                  title: BlockIdFlag indicates which BlockID the signature is for
                 validator_address:
                   type: string
                   format: byte
@@ -59390,9 +59730,32 @@ definitions:
                             signature:
                               type: string
                               format: byte
+                              description: >-
+                                Vote signature by the validator if they
+                                participated in consensus for the
+
+                                associated block.
+                            extension:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension provided by the application. Only
+                                valid for precommit
+
+                                messages.
+                            extension_signature:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension signature by the validator if
+                                they participated in
+
+                                consensus for the associated block.
+
+                                Only valid for precommit messages.
                           description: >-
-                            Vote represents a prevote, precommit, or commit vote
-                            from validators for
+                            Vote represents a prevote or precommit vote from
+                            validators for
 
                             consensus.
                         vote_b:
@@ -59447,9 +59810,32 @@ definitions:
                             signature:
                               type: string
                               format: byte
+                              description: >-
+                                Vote signature by the validator if they
+                                participated in consensus for the
+
+                                associated block.
+                            extension:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension provided by the application. Only
+                                valid for precommit
+
+                                messages.
+                            extension_signature:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension signature by the validator if
+                                they participated in
+
+                                consensus for the associated block.
+
+                                Only valid for precommit messages.
                           description: >-
-                            Vote represents a prevote, precommit, or commit vote
-                            from validators for
+                            Vote represents a prevote or precommit vote from
+                            validators for
 
                             consensus.
                         total_voting_power:
@@ -59595,7 +59981,7 @@ definitions:
                                               - BLOCK_ID_FLAG_NIL
                                             default: BLOCK_ID_FLAG_UNKNOWN
                                             title: >-
-                                              BlockIdFlag indicates which BlcokID the
+                                              BlockIdFlag indicates which BlockID the
                                               signature is for
                                           validator_address:
                                             type: string
@@ -59745,7 +60131,7 @@ definitions:
                         - BLOCK_ID_FLAG_COMMIT
                         - BLOCK_ID_FLAG_NIL
                       default: BLOCK_ID_FLAG_UNKNOWN
-                      title: BlockIdFlag indicates which BlcokID the signature is for
+                      title: BlockIdFlag indicates which BlockID the signature is for
                     validator_address:
                       type: string
                       format: byte
@@ -59760,7 +60146,6 @@ definitions:
               Commit contains the evidence that a block was committed by a set
               of validators.
       sdk_block:
-        title: 'Since: cosmos-sdk 0.47'
         type: object
         properties:
           header:
@@ -59926,9 +60311,32 @@ definitions:
                             signature:
                               type: string
                               format: byte
+                              description: >-
+                                Vote signature by the validator if they
+                                participated in consensus for the
+
+                                associated block.
+                            extension:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension provided by the application. Only
+                                valid for precommit
+
+                                messages.
+                            extension_signature:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension signature by the validator if
+                                they participated in
+
+                                consensus for the associated block.
+
+                                Only valid for precommit messages.
                           description: >-
-                            Vote represents a prevote, precommit, or commit vote
-                            from validators for
+                            Vote represents a prevote or precommit vote from
+                            validators for
 
                             consensus.
                         vote_b:
@@ -59983,9 +60391,32 @@ definitions:
                             signature:
                               type: string
                               format: byte
+                              description: >-
+                                Vote signature by the validator if they
+                                participated in consensus for the
+
+                                associated block.
+                            extension:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension provided by the application. Only
+                                valid for precommit
+
+                                messages.
+                            extension_signature:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension signature by the validator if
+                                they participated in
+
+                                consensus for the associated block.
+
+                                Only valid for precommit messages.
                           description: >-
-                            Vote represents a prevote, precommit, or commit vote
-                            from validators for
+                            Vote represents a prevote or precommit vote from
+                            validators for
 
                             consensus.
                         total_voting_power:
@@ -60131,7 +60562,7 @@ definitions:
                                               - BLOCK_ID_FLAG_NIL
                                             default: BLOCK_ID_FLAG_UNKNOWN
                                             title: >-
-                                              BlockIdFlag indicates which BlcokID the
+                                              BlockIdFlag indicates which BlockID the
                                               signature is for
                                           validator_address:
                                             type: string
@@ -60281,7 +60712,7 @@ definitions:
                         - BLOCK_ID_FLAG_COMMIT
                         - BLOCK_ID_FLAG_NIL
                       default: BLOCK_ID_FLAG_UNKNOWN
-                      title: BlockIdFlag indicates which BlcokID the signature is for
+                      title: BlockIdFlag indicates which BlockID the signature is for
                     validator_address:
                       type: string
                       format: byte
@@ -60481,9 +60912,32 @@ definitions:
                             signature:
                               type: string
                               format: byte
+                              description: >-
+                                Vote signature by the validator if they
+                                participated in consensus for the
+
+                                associated block.
+                            extension:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension provided by the application. Only
+                                valid for precommit
+
+                                messages.
+                            extension_signature:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension signature by the validator if
+                                they participated in
+
+                                consensus for the associated block.
+
+                                Only valid for precommit messages.
                           description: >-
-                            Vote represents a prevote, precommit, or commit vote
-                            from validators for
+                            Vote represents a prevote or precommit vote from
+                            validators for
 
                             consensus.
                         vote_b:
@@ -60538,9 +60992,32 @@ definitions:
                             signature:
                               type: string
                               format: byte
+                              description: >-
+                                Vote signature by the validator if they
+                                participated in consensus for the
+
+                                associated block.
+                            extension:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension provided by the application. Only
+                                valid for precommit
+
+                                messages.
+                            extension_signature:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension signature by the validator if
+                                they participated in
+
+                                consensus for the associated block.
+
+                                Only valid for precommit messages.
                           description: >-
-                            Vote represents a prevote, precommit, or commit vote
-                            from validators for
+                            Vote represents a prevote or precommit vote from
+                            validators for
 
                             consensus.
                         total_voting_power:
@@ -60686,7 +61163,7 @@ definitions:
                                               - BLOCK_ID_FLAG_NIL
                                             default: BLOCK_ID_FLAG_UNKNOWN
                                             title: >-
-                                              BlockIdFlag indicates which BlcokID the
+                                              BlockIdFlag indicates which BlockID the
                                               signature is for
                                           validator_address:
                                             type: string
@@ -60836,7 +61313,7 @@ definitions:
                         - BLOCK_ID_FLAG_COMMIT
                         - BLOCK_ID_FLAG_NIL
                       default: BLOCK_ID_FLAG_UNKNOWN
-                      title: BlockIdFlag indicates which BlcokID the signature is for
+                      title: BlockIdFlag indicates which BlockID the signature is for
                     validator_address:
                       type: string
                       format: byte
@@ -60851,7 +61328,6 @@ definitions:
               Commit contains the evidence that a block was committed by a set
               of validators.
       sdk_block:
-        title: 'Since: cosmos-sdk 0.47'
         type: object
         properties:
           header:
@@ -61017,9 +61493,32 @@ definitions:
                             signature:
                               type: string
                               format: byte
+                              description: >-
+                                Vote signature by the validator if they
+                                participated in consensus for the
+
+                                associated block.
+                            extension:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension provided by the application. Only
+                                valid for precommit
+
+                                messages.
+                            extension_signature:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension signature by the validator if
+                                they participated in
+
+                                consensus for the associated block.
+
+                                Only valid for precommit messages.
                           description: >-
-                            Vote represents a prevote, precommit, or commit vote
-                            from validators for
+                            Vote represents a prevote or precommit vote from
+                            validators for
 
                             consensus.
                         vote_b:
@@ -61074,9 +61573,32 @@ definitions:
                             signature:
                               type: string
                               format: byte
+                              description: >-
+                                Vote signature by the validator if they
+                                participated in consensus for the
+
+                                associated block.
+                            extension:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension provided by the application. Only
+                                valid for precommit
+
+                                messages.
+                            extension_signature:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension signature by the validator if
+                                they participated in
+
+                                consensus for the associated block.
+
+                                Only valid for precommit messages.
                           description: >-
-                            Vote represents a prevote, precommit, or commit vote
-                            from validators for
+                            Vote represents a prevote or precommit vote from
+                            validators for
 
                             consensus.
                         total_voting_power:
@@ -61222,7 +61744,7 @@ definitions:
                                               - BLOCK_ID_FLAG_NIL
                                             default: BLOCK_ID_FLAG_UNKNOWN
                                             title: >-
-                                              BlockIdFlag indicates which BlcokID the
+                                              BlockIdFlag indicates which BlockID the
                                               signature is for
                                           validator_address:
                                             type: string
@@ -61372,7 +61894,7 @@ definitions:
                         - BLOCK_ID_FLAG_COMMIT
                         - BLOCK_ID_FLAG_NIL
                       default: BLOCK_ID_FLAG_UNKNOWN
-                      title: BlockIdFlag indicates which BlcokID the signature is for
+                      title: BlockIdFlag indicates which BlockID the signature is for
                     validator_address:
                       type: string
                       format: byte
@@ -61678,7 +62200,6 @@ definitions:
               title: Module is the type for VersionInfo
           cosmos_sdk_version:
             type: string
-            title: 'Since: cosmos-sdk 0.43'
         description: VersionInfo is the type for the GetNodeInfoResponse message.
     description: >-
       GetNodeInfoResponse is the response type for the Query/GetNodeInfo RPC
@@ -62269,7 +62790,6 @@ definitions:
           title: Module is the type for VersionInfo
       cosmos_sdk_version:
         type: string
-        title: 'Since: cosmos-sdk 0.43'
     description: VersionInfo is the type for the GetNodeInfoResponse message.
   tendermint.crypto.PublicKey:
     type: object
@@ -62494,9 +63014,32 @@ definitions:
                         signature:
                           type: string
                           format: byte
+                          description: >-
+                            Vote signature by the validator if they participated
+                            in consensus for the
+
+                            associated block.
+                        extension:
+                          type: string
+                          format: byte
+                          description: >-
+                            Vote extension provided by the application. Only
+                            valid for precommit
+
+                            messages.
+                        extension_signature:
+                          type: string
+                          format: byte
+                          description: >-
+                            Vote extension signature by the validator if they
+                            participated in
+
+                            consensus for the associated block.
+
+                            Only valid for precommit messages.
                       description: >-
-                        Vote represents a prevote, precommit, or commit vote
-                        from validators for
+                        Vote represents a prevote or precommit vote from
+                        validators for
 
                         consensus.
                     vote_b:
@@ -62551,9 +63094,32 @@ definitions:
                         signature:
                           type: string
                           format: byte
+                          description: >-
+                            Vote signature by the validator if they participated
+                            in consensus for the
+
+                            associated block.
+                        extension:
+                          type: string
+                          format: byte
+                          description: >-
+                            Vote extension provided by the application. Only
+                            valid for precommit
+
+                            messages.
+                        extension_signature:
+                          type: string
+                          format: byte
+                          description: >-
+                            Vote extension signature by the validator if they
+                            participated in
+
+                            consensus for the associated block.
+
+                            Only valid for precommit messages.
                       description: >-
-                        Vote represents a prevote, precommit, or commit vote
-                        from validators for
+                        Vote represents a prevote or precommit vote from
+                        validators for
 
                         consensus.
                     total_voting_power:
@@ -62696,7 +63262,7 @@ definitions:
                                           - BLOCK_ID_FLAG_NIL
                                         default: BLOCK_ID_FLAG_UNKNOWN
                                         title: >-
-                                          BlockIdFlag indicates which BlcokID the
+                                          BlockIdFlag indicates which BlockID the
                                           signature is for
                                       validator_address:
                                         type: string
@@ -62846,7 +63412,7 @@ definitions:
                     - BLOCK_ID_FLAG_COMMIT
                     - BLOCK_ID_FLAG_NIL
                   default: BLOCK_ID_FLAG_UNKNOWN
-                  title: BlockIdFlag indicates which BlcokID the signature is for
+                  title: BlockIdFlag indicates which BlockID the signature is for
                 validator_address:
                   type: string
                   format: byte
@@ -62885,7 +63451,7 @@ definitions:
       - BLOCK_ID_FLAG_COMMIT
       - BLOCK_ID_FLAG_NIL
     default: BLOCK_ID_FLAG_UNKNOWN
-    title: BlockIdFlag indicates which BlcokID the signature is for
+    title: BlockIdFlag indicates which BlockID the signature is for
   tendermint.types.Commit:
     type: object
     properties:
@@ -62925,7 +63491,7 @@ definitions:
                 - BLOCK_ID_FLAG_COMMIT
                 - BLOCK_ID_FLAG_NIL
               default: BLOCK_ID_FLAG_UNKNOWN
-              title: BlockIdFlag indicates which BlcokID the signature is for
+              title: BlockIdFlag indicates which BlockID the signature is for
             validator_address:
               type: string
               format: byte
@@ -62950,7 +63516,7 @@ definitions:
           - BLOCK_ID_FLAG_COMMIT
           - BLOCK_ID_FLAG_NIL
         default: BLOCK_ID_FLAG_UNKNOWN
-        title: BlockIdFlag indicates which BlcokID the signature is for
+        title: BlockIdFlag indicates which BlockID the signature is for
       validator_address:
         type: string
         format: byte
@@ -63031,10 +63597,28 @@ definitions:
           signature:
             type: string
             format: byte
-        description: >-
-          Vote represents a prevote, precommit, or commit vote from validators
-          for
+            description: >-
+              Vote signature by the validator if they participated in consensus
+              for the
 
+              associated block.
+          extension:
+            type: string
+            format: byte
+            description: >-
+              Vote extension provided by the application. Only valid for
+              precommit
+
+              messages.
+          extension_signature:
+            type: string
+            format: byte
+            description: |-
+              Vote extension signature by the validator if they participated in
+              consensus for the associated block.
+              Only valid for precommit messages.
+        description: |-
+          Vote represents a prevote or precommit vote from validators for
           consensus.
       vote_b:
         type: object
@@ -63087,10 +63671,28 @@ definitions:
           signature:
             type: string
             format: byte
-        description: >-
-          Vote represents a prevote, precommit, or commit vote from validators
-          for
+            description: >-
+              Vote signature by the validator if they participated in consensus
+              for the
 
+              associated block.
+          extension:
+            type: string
+            format: byte
+            description: >-
+              Vote extension provided by the application. Only valid for
+              precommit
+
+              messages.
+          extension_signature:
+            type: string
+            format: byte
+            description: |-
+              Vote extension signature by the validator if they participated in
+              consensus for the associated block.
+              Only valid for precommit messages.
+        description: |-
+          Vote represents a prevote or precommit vote from validators for
           consensus.
       total_voting_power:
         type: string
@@ -63161,10 +63763,31 @@ definitions:
               signature:
                 type: string
                 format: byte
-            description: >-
-              Vote represents a prevote, precommit, or commit vote from
-              validators for
+                description: >-
+                  Vote signature by the validator if they participated in
+                  consensus for the
 
+                  associated block.
+              extension:
+                type: string
+                format: byte
+                description: >-
+                  Vote extension provided by the application. Only valid for
+                  precommit
+
+                  messages.
+              extension_signature:
+                type: string
+                format: byte
+                description: >-
+                  Vote extension signature by the validator if they participated
+                  in
+
+                  consensus for the associated block.
+
+                  Only valid for precommit messages.
+            description: |-
+              Vote represents a prevote or precommit vote from validators for
               consensus.
           vote_b:
             type: object
@@ -63217,10 +63840,31 @@ definitions:
               signature:
                 type: string
                 format: byte
-            description: >-
-              Vote represents a prevote, precommit, or commit vote from
-              validators for
+                description: >-
+                  Vote signature by the validator if they participated in
+                  consensus for the
 
+                  associated block.
+              extension:
+                type: string
+                format: byte
+                description: >-
+                  Vote extension provided by the application. Only valid for
+                  precommit
+
+                  messages.
+              extension_signature:
+                type: string
+                format: byte
+                description: >-
+                  Vote extension signature by the validator if they participated
+                  in
+
+                  consensus for the associated block.
+
+                  Only valid for precommit messages.
+            description: |-
+              Vote represents a prevote or precommit vote from validators for
               consensus.
           total_voting_power:
             type: string
@@ -63360,7 +64004,7 @@ definitions:
                                 - BLOCK_ID_FLAG_NIL
                               default: BLOCK_ID_FLAG_UNKNOWN
                               title: >-
-                                BlockIdFlag indicates which BlcokID the
+                                BlockIdFlag indicates which BlockID the
                                 signature is for
                             validator_address:
                               type: string
@@ -63532,9 +64176,32 @@ definitions:
                     signature:
                       type: string
                       format: byte
+                      description: >-
+                        Vote signature by the validator if they participated in
+                        consensus for the
+
+                        associated block.
+                    extension:
+                      type: string
+                      format: byte
+                      description: >-
+                        Vote extension provided by the application. Only valid
+                        for precommit
+
+                        messages.
+                    extension_signature:
+                      type: string
+                      format: byte
+                      description: >-
+                        Vote extension signature by the validator if they
+                        participated in
+
+                        consensus for the associated block.
+
+                        Only valid for precommit messages.
                   description: >-
-                    Vote represents a prevote, precommit, or commit vote from
-                    validators for
+                    Vote represents a prevote or precommit vote from validators
+                    for
 
                     consensus.
                 vote_b:
@@ -63589,9 +64256,32 @@ definitions:
                     signature:
                       type: string
                       format: byte
+                      description: >-
+                        Vote signature by the validator if they participated in
+                        consensus for the
+
+                        associated block.
+                    extension:
+                      type: string
+                      format: byte
+                      description: >-
+                        Vote extension provided by the application. Only valid
+                        for precommit
+
+                        messages.
+                    extension_signature:
+                      type: string
+                      format: byte
+                      description: >-
+                        Vote extension signature by the validator if they
+                        participated in
+
+                        consensus for the associated block.
+
+                        Only valid for precommit messages.
                   description: >-
-                    Vote represents a prevote, precommit, or commit vote from
-                    validators for
+                    Vote represents a prevote or precommit vote from validators
+                    for
 
                     consensus.
                 total_voting_power:
@@ -63732,7 +64422,7 @@ definitions:
                                       - BLOCK_ID_FLAG_NIL
                                     default: BLOCK_ID_FLAG_UNKNOWN
                                     title: >-
-                                      BlockIdFlag indicates which BlcokID the
+                                      BlockIdFlag indicates which BlockID the
                                       signature is for
                                   validator_address:
                                     type: string
@@ -64042,7 +64732,7 @@ definitions:
                         - BLOCK_ID_FLAG_COMMIT
                         - BLOCK_ID_FLAG_NIL
                       default: BLOCK_ID_FLAG_UNKNOWN
-                      title: BlockIdFlag indicates which BlcokID the signature is for
+                      title: BlockIdFlag indicates which BlockID the signature is for
                     validator_address:
                       type: string
                       format: byte
@@ -64234,7 +64924,7 @@ definitions:
                             - BLOCK_ID_FLAG_NIL
                           default: BLOCK_ID_FLAG_UNKNOWN
                           title: >-
-                            BlockIdFlag indicates which BlcokID the signature is
+                            BlockIdFlag indicates which BlockID the signature is
                             for
                         validator_address:
                           type: string
@@ -64470,7 +65160,7 @@ definitions:
                     - BLOCK_ID_FLAG_COMMIT
                     - BLOCK_ID_FLAG_NIL
                   default: BLOCK_ID_FLAG_UNKNOWN
-                  title: BlockIdFlag indicates which BlcokID the signature is for
+                  title: BlockIdFlag indicates which BlockID the signature is for
                 validator_address:
                   type: string
                   format: byte
@@ -64622,8 +65312,26 @@ definitions:
       signature:
         type: string
         format: byte
+        description: >-
+          Vote signature by the validator if they participated in consensus for
+          the
+
+          associated block.
+      extension:
+        type: string
+        format: byte
+        description: |-
+          Vote extension provided by the application. Only valid for precommit
+          messages.
+      extension_signature:
+        type: string
+        format: byte
+        description: |-
+          Vote extension signature by the validator if they participated in
+          consensus for the associated block.
+          Only valid for precommit messages.
     description: |-
-      Vote represents a prevote, precommit, or commit vote from validators for
+      Vote represents a prevote or precommit vote from validators for
       consensus.
   tendermint.version.Consensus:
     type: object
@@ -65302,9 +66010,6 @@ definitions:
     description: >-
       QueryAllowancesByGranterResponse is the response type for the
       Query/AllowancesByGranter RPC method.
-
-
-      Since: cosmos-sdk 0.46
   cosmos.feegrant.v1beta1.QueryAllowancesResponse:
     type: object
     properties:
@@ -66861,14 +67566,8 @@ definitions:
                 weight:
                   type: string
                   description: weight is the vote weight associated with the vote option.
-              description: |-
-                WeightedVoteOption defines a unit of vote for vote split.
-
-                Since: cosmos-sdk 0.43
-            description: |-
-              options is the weighted vote options.
-
-              Since: cosmos-sdk 0.43
+              description: WeightedVoteOption defines a unit of vote for vote split.
+            description: options is the weighted vote options.
         description: |-
           Vote defines a vote on a governance proposal.
           A Vote consists of a proposal ID, the voter, and the vote option.
@@ -66925,14 +67624,8 @@ definitions:
                   weight:
                     type: string
                     description: weight is the vote weight associated with the vote option.
-                description: |-
-                  WeightedVoteOption defines a unit of vote for vote split.
-
-                  Since: cosmos-sdk 0.43
-              description: |-
-                options is the weighted vote options.
-
-                Since: cosmos-sdk 0.43
+                description: WeightedVoteOption defines a unit of vote for vote split.
+              description: options is the weighted vote options.
           description: |-
             Vote defines a vote on a governance proposal.
             A Vote consists of a proposal ID, the voter, and the vote option.
@@ -67042,14 +67735,8 @@ definitions:
             weight:
               type: string
               description: weight is the vote weight associated with the vote option.
-          description: |-
-            WeightedVoteOption defines a unit of vote for vote split.
-
-            Since: cosmos-sdk 0.43
-        description: |-
-          options is the weighted vote options.
-
-          Since: cosmos-sdk 0.43
+          description: WeightedVoteOption defines a unit of vote for vote split.
+        description: options is the weighted vote options.
     description: |-
       Vote defines a vote on a governance proposal.
       A Vote consists of a proposal ID, the voter, and the vote option.
@@ -67096,10 +67783,7 @@ definitions:
       weight:
         type: string
         description: weight is the vote weight associated with the vote option.
-    description: |-
-      WeightedVoteOption defines a unit of vote for vote split.
-
-      Since: cosmos-sdk 0.43
+    description: WeightedVoteOption defines a unit of vote for vote split.
   cosmos.mint.v1beta1.Params:
     type: object
     properties:
@@ -67215,14 +67899,9 @@ definitions:
             exist for
 
             the subspace.
-
-
-            Since: cosmos-sdk 0.46
     description: |-
       QuerySubspacesResponse defines the response types for querying for all
       registered subspaces and all keys for a subspace.
-
-      Since: cosmos-sdk 0.46
   cosmos.params.v1beta1.Subspace:
     type: object
     properties:
@@ -67235,8 +67914,6 @@ definitions:
     description: |-
       Subspace defines a parameter subspace name and all the keys that exist for
       the subspace.
-
-      Since: cosmos-sdk 0.46
   cosmos.slashing.v1beta1.Params:
     type: object
     properties:
@@ -67288,18 +67965,19 @@ definitions:
           start_height:
             type: string
             format: int64
-            title: Height at which validator was first a candidate OR was unjailed
+            title: Height at which validator was first a candidate OR was un-jailed
           index_offset:
             type: string
             format: int64
             description: >-
-              Index which is incremented each time the validator was a bonded
+              Index which is incremented every time a validator is bonded in a
+              block and
 
-              in a block and may have signed a precommit or not. This in
-              conjunction with the
+              _may_ have signed a pre-commit or not. This in conjunction with
+              the
 
-              `SignedBlocksWindow` param determines the index in the
-              `MissedBlocksBitArray`.
+              signed_blocks_window param determines the index in the missed
+              block bitmap.
           jailed_until:
             type: string
             format: date-time
@@ -67310,18 +67988,20 @@ definitions:
             type: boolean
             description: >-
               Whether or not a validator has been tombstoned (killed out of
-              validator set). It is set
+              validator
 
-              once the validator commits an equivocation or for any other
-              configured misbehiavor.
+              set). It is set once the validator commits an equivocation or for
+              any other
+
+              configured misbehavior.
           missed_blocks_counter:
             type: string
             format: int64
             description: >-
-              A counter kept to avoid unnecessary array reads.
+              A counter of missed (unsigned) blocks. It is used to avoid
+              unnecessary
 
-              Note that `Sum(MissedBlocksBitArray)` always equals
-              `MissedBlocksCounter`.
+              reads in the missed block bitmap.
         description: >-
           ValidatorSigningInfo defines a validator's signing info for monitoring
           their
@@ -67346,18 +68026,19 @@ definitions:
             start_height:
               type: string
               format: int64
-              title: Height at which validator was first a candidate OR was unjailed
+              title: Height at which validator was first a candidate OR was un-jailed
             index_offset:
               type: string
               format: int64
               description: >-
-                Index which is incremented each time the validator was a bonded
+                Index which is incremented every time a validator is bonded in a
+                block and
 
-                in a block and may have signed a precommit or not. This in
-                conjunction with the
+                _may_ have signed a pre-commit or not. This in conjunction with
+                the
 
-                `SignedBlocksWindow` param determines the index in the
-                `MissedBlocksBitArray`.
+                signed_blocks_window param determines the index in the missed
+                block bitmap.
             jailed_until:
               type: string
               format: date-time
@@ -67368,18 +68049,20 @@ definitions:
               type: boolean
               description: >-
                 Whether or not a validator has been tombstoned (killed out of
-                validator set). It is set
+                validator
 
-                once the validator commits an equivocation or for any other
-                configured misbehiavor.
+                set). It is set once the validator commits an equivocation or
+                for any other
+
+                configured misbehavior.
             missed_blocks_counter:
               type: string
               format: int64
               description: >-
-                A counter kept to avoid unnecessary array reads.
+                A counter of missed (unsigned) blocks. It is used to avoid
+                unnecessary
 
-                Note that `Sum(MissedBlocksBitArray)` always equals
-                `MissedBlocksCounter`.
+                reads in the missed block bitmap.
           description: >-
             ValidatorSigningInfo defines a validator's signing info for
             monitoring their
@@ -67425,18 +68108,18 @@ definitions:
       start_height:
         type: string
         format: int64
-        title: Height at which validator was first a candidate OR was unjailed
+        title: Height at which validator was first a candidate OR was un-jailed
       index_offset:
         type: string
         format: int64
         description: >-
-          Index which is incremented each time the validator was a bonded
+          Index which is incremented every time a validator is bonded in a block
+          and
 
-          in a block and may have signed a precommit or not. This in conjunction
-          with the
+          _may_ have signed a pre-commit or not. This in conjunction with the
 
-          `SignedBlocksWindow` param determines the index in the
-          `MissedBlocksBitArray`.
+          signed_blocks_window param determines the index in the missed block
+          bitmap.
       jailed_until:
         type: string
         format: date-time
@@ -67447,18 +68130,18 @@ definitions:
         type: boolean
         description: >-
           Whether or not a validator has been tombstoned (killed out of
-          validator set). It is set
+          validator
 
-          once the validator commits an equivocation or for any other configured
-          misbehiavor.
+          set). It is set once the validator commits an equivocation or for any
+          other
+
+          configured misbehavior.
       missed_blocks_counter:
         type: string
         format: int64
-        description: >-
-          A counter kept to avoid unnecessary array reads.
-
-          Note that `Sum(MissedBlocksBitArray)` always equals
-          `MissedBlocksCounter`.
+        description: |-
+          A counter of missed (unsigned) blocks. It is used to avoid unnecessary
+          reads in the missed block bitmap.
     description: >-
       ValidatorSigningInfo defines a validator's signing info for monitoring
       their
@@ -67532,10 +68215,10 @@ definitions:
     properties:
       delegator_address:
         type: string
-        description: delegator_address is the bech32-encoded address of the delegator.
+        description: delegator_address is the encoded address of the delegator.
       validator_address:
         type: string
-        description: validator_address is the bech32-encoded address of the validator.
+        description: validator_address is the encoded address of the validator.
       shares:
         type: string
         description: shares define the delegation shares received.
@@ -67551,10 +68234,10 @@ definitions:
         properties:
           delegator_address:
             type: string
-            description: delegator_address is the bech32-encoded address of the delegator.
+            description: delegator_address is the encoded address of the delegator.
           validator_address:
             type: string
-            description: validator_address is the bech32-encoded address of the validator.
+            description: validator_address is the encoded address of the validator.
           shares:
             type: string
             description: shares define the delegation shares received.
@@ -67955,9 +68638,6 @@ definitions:
               description: >-
                 min_self_delegation is the validator's self declared minimum
                 self delegation.
-
-
-                Since: cosmos-sdk 0.46
             unbonding_on_hold_ref_count:
               type: string
               format: int64
@@ -68053,14 +68733,10 @@ definitions:
             properties:
               delegator_address:
                 type: string
-                description: >-
-                  delegator_address is the bech32-encoded address of the
-                  delegator.
+                description: delegator_address is the encoded address of the delegator.
               validator_address:
                 type: string
-                description: >-
-                  validator_address is the bech32-encoded address of the
-                  validator.
+                description: validator_address is the encoded address of the validator.
               shares:
                 type: string
                 description: shares define the delegation shares received.
@@ -68109,14 +68785,10 @@ definitions:
               properties:
                 delegator_address:
                   type: string
-                  description: >-
-                    delegator_address is the bech32-encoded address of the
-                    delegator.
+                  description: delegator_address is the encoded address of the delegator.
                 validator_address:
                   type: string
-                  description: >-
-                    validator_address is the bech32-encoded address of the
-                    validator.
+                  description: validator_address is the encoded address of the validator.
                 shares:
                   type: string
                   description: shares define the delegation shares received.
@@ -68182,14 +68854,10 @@ definitions:
           properties:
             delegator_address:
               type: string
-              description: >-
-                delegator_address is the bech32-encoded address of the
-                delegator.
+              description: delegator_address is the encoded address of the delegator.
             validator_address:
               type: string
-              description: >-
-                validator_address is the bech32-encoded address of the
-                validator.
+              description: validator_address is the encoded address of the validator.
             entries:
               type: array
               items:
@@ -68526,9 +69194,6 @@ definitions:
             description: >-
               min_self_delegation is the validator's self declared minimum self
               delegation.
-
-
-              Since: cosmos-sdk 0.46
           unbonding_on_hold_ref_count:
             type: string
             format: int64
@@ -68847,9 +69512,6 @@ definitions:
               description: >-
                 min_self_delegation is the validator's self declared minimum
                 self delegation.
-
-
-                Since: cosmos-sdk 0.46
             unbonding_on_hold_ref_count:
               type: string
               format: int64
@@ -69275,9 +69937,6 @@ definitions:
                   description: >-
                     min_self_delegation is the validator's self declared minimum
                     self delegation.
-
-
-                    Since: cosmos-sdk 0.46
                 unbonding_on_hold_ref_count:
                   type: string
                   format: int64
@@ -69531,10 +70190,10 @@ definitions:
         properties:
           delegator_address:
             type: string
-            description: delegator_address is the bech32-encoded address of the delegator.
+            description: delegator_address is the encoded address of the delegator.
           validator_address:
             type: string
-            description: validator_address is the bech32-encoded address of the validator.
+            description: validator_address is the encoded address of the validator.
           entries:
             type: array
             items:
@@ -69591,14 +70250,10 @@ definitions:
               properties:
                 delegator_address:
                   type: string
-                  description: >-
-                    delegator_address is the bech32-encoded address of the
-                    delegator.
+                  description: delegator_address is the encoded address of the delegator.
                 validator_address:
                   type: string
-                  description: >-
-                    validator_address is the bech32-encoded address of the
-                    validator.
+                  description: validator_address is the encoded address of the validator.
                 shares:
                   type: string
                   description: shares define the delegation shares received.
@@ -69925,9 +70580,6 @@ definitions:
             description: >-
               min_self_delegation is the validator's self declared minimum self
               delegation.
-
-
-              Since: cosmos-sdk 0.46
           unbonding_on_hold_ref_count:
             type: string
             format: int64
@@ -69974,14 +70626,10 @@ definitions:
           properties:
             delegator_address:
               type: string
-              description: >-
-                delegator_address is the bech32-encoded address of the
-                delegator.
+              description: delegator_address is the encoded address of the delegator.
             validator_address:
               type: string
-              description: >-
-                validator_address is the bech32-encoded address of the
-                validator.
+              description: validator_address is the encoded address of the validator.
             entries:
               type: array
               items:
@@ -70326,9 +70974,6 @@ definitions:
               description: >-
                 min_self_delegation is the validator's self declared minimum
                 self delegation.
-
-
-                Since: cosmos-sdk 0.46
             unbonding_on_hold_ref_count:
               type: string
               format: int64
@@ -70658,10 +71303,10 @@ definitions:
     properties:
       delegator_address:
         type: string
-        description: delegator_address is the bech32-encoded address of the delegator.
+        description: delegator_address is the encoded address of the delegator.
       validator_address:
         type: string
-        description: validator_address is the bech32-encoded address of the validator.
+        description: validator_address is the encoded address of the validator.
       entries:
         type: array
         items:
@@ -70993,9 +71638,6 @@ definitions:
         description: >-
           min_self_delegation is the validator's self declared minimum self
           delegation.
-
-
-          Since: cosmos-sdk 0.46
       unbonding_on_hold_ref_count:
         type: string
         format: int64
@@ -71135,8 +71777,7 @@ definitions:
             Event allows application developers to attach additional information
             to
 
-            ResponseBeginBlock, ResponseEndBlock, ResponseCheckTx and
-            ResponseDeliverTx.
+            ResponseFinalizeBlock and ResponseCheckTx.
 
             Later, transactions may be queried using these events.
         description: >-
@@ -71313,10 +71954,7 @@ definitions:
                   "@type": "type.googleapis.com/google.protobuf.Duration",
                   "value": "1.212s"
                 }
-        description: |-
-          msg_responses contains the Msg handler responses type packed in Anys.
-
-          Since: cosmos-sdk 0.46
+        description: msg_responses contains the Msg handler responses type packed in Anys.
     description: Result is the union of ResponseFormat and ResponseCheckTx.
   cosmos.base.abci.v1beta1.StringEvent:
     type: object
@@ -71620,8 +72258,7 @@ definitions:
             Event allows application developers to attach additional information
             to
 
-            ResponseBeginBlock, ResponseEndBlock, ResponseCheckTx and
-            ResponseDeliverTx.
+            ResponseFinalizeBlock and ResponseCheckTx.
 
             Later, transactions may be queried using these events.
         description: >-
@@ -71634,9 +72271,6 @@ definitions:
           emitted from the ante. Whereas Logs contains the events, with
 
           additional metadata, emitted only by processing the messages.
-
-
-          Since: cosmos-sdk 0.42.11, 0.44.5, 0.45
     description: >-
       TxResponse defines a structure containing relevant tx data and metadata.
       The
@@ -71682,11 +72316,12 @@ definitions:
       verified with raw bytes from Tx.
        - SIGN_MODE_TEXTUAL: SIGN_MODE_TEXTUAL is a future signing mode that will verify some
       human-readable textual representation on top of the binary representation
-      from SIGN_MODE_DIRECT. It is currently not supported.
+      from SIGN_MODE_DIRECT.
+
+      Since: cosmos-sdk 0.50
        - SIGN_MODE_DIRECT_AUX: SIGN_MODE_DIRECT_AUX specifies a signing mode which uses
       SignDocDirectAux. As opposed to SIGN_MODE_DIRECT, this sign mode does not
-      require signers signing over other signers' `signer_info`. It also allows
-      for adding Tips in transactions.
+      require signers signing over other signers' `signer_info`.
 
       Since: cosmos-sdk 0.46
        - SIGN_MODE_LEGACY_AMINO_JSON: SIGN_MODE_LEGACY_AMINO_JSON is a backwards compatibility mode which uses
@@ -71762,23 +72397,28 @@ definitions:
             type: string
             description: >-
               if unset, the first signer is responsible for paying the fees. If
-              set, the specified account must pay the fees.
+              set, the
 
-              the payer must be a tx signer (and thus have signed this field in
-              AuthInfo).
+              specified account must pay the fees. the payer must be a tx signer
+              (and
 
-              setting this field does *not* change the ordering of required
-              signers for the transaction.
+              thus have signed this field in AuthInfo). setting this field does
+              *not*
+
+              change the ordering of required signers for the transaction.
           granter:
             type: string
             title: >-
               if set, the fee payer (either the first signer or the value of the
-              payer field) requests that a fee grant be used
+              payer
 
-              to pay fees instead of the fee payer's own balance. If an
-              appropriate fee grant does not exist or the chain does
+              field) requests that a fee grant be used to pay fees instead of
+              the fee
 
-              not support fee grants, this will fail
+              payer's own balance. If an appropriate fee grant does not exist or
+              the
+
+              chain does not support fee grants, this will fail
       tip:
         description: >-
           Tip is the optional tip used for transactions fees paid in another
@@ -71789,9 +72429,6 @@ definitions:
           the
 
           `TipDecorator` in its posthandler.
-
-
-          Since: cosmos-sdk 0.46
         type: object
         properties:
           amount:
@@ -71826,17 +72463,17 @@ definitions:
       - BROADCAST_MODE_SYNC
       - BROADCAST_MODE_ASYNC
     default: BROADCAST_MODE_UNSPECIFIED
-    description: >-
+    description: |-
       BroadcastMode specifies the broadcast mode for the TxService.Broadcast RPC
       method.
 
        - BROADCAST_MODE_UNSPECIFIED: zero-value for mode ordering
        - BROADCAST_MODE_BLOCK: DEPRECATED: use BROADCAST_MODE_SYNC instead,
       BROADCAST_MODE_BLOCK is not supported by the SDK from v0.47.x onwards.
-       - BROADCAST_MODE_SYNC: BROADCAST_MODE_SYNC defines a tx broadcasting mode where the client waits for
-      a CheckTx execution response only.
-       - BROADCAST_MODE_ASYNC: BROADCAST_MODE_ASYNC defines a tx broadcasting mode where the client returns
-      immediately.
+       - BROADCAST_MODE_SYNC: BROADCAST_MODE_SYNC defines a tx broadcasting mode where the client waits
+      for a CheckTx execution response only.
+       - BROADCAST_MODE_ASYNC: BROADCAST_MODE_ASYNC defines a tx broadcasting mode where the client
+      returns immediately.
   cosmos.tx.v1beta1.BroadcastTxRequest:
     type: object
     properties:
@@ -71854,15 +72491,17 @@ definitions:
         default: BROADCAST_MODE_UNSPECIFIED
         description: >-
           BroadcastMode specifies the broadcast mode for the TxService.Broadcast
-          RPC method.
+          RPC
+
+          method.
 
            - BROADCAST_MODE_UNSPECIFIED: zero-value for mode ordering
            - BROADCAST_MODE_BLOCK: DEPRECATED: use BROADCAST_MODE_SYNC instead,
           BROADCAST_MODE_BLOCK is not supported by the SDK from v0.47.x onwards.
-           - BROADCAST_MODE_SYNC: BROADCAST_MODE_SYNC defines a tx broadcasting mode where the client waits for
-          a CheckTx execution response only.
-           - BROADCAST_MODE_ASYNC: BROADCAST_MODE_ASYNC defines a tx broadcasting mode where the client returns
-          immediately.
+           - BROADCAST_MODE_SYNC: BROADCAST_MODE_SYNC defines a tx broadcasting mode where the client waits
+          for a CheckTx execution response only.
+           - BROADCAST_MODE_ASYNC: BROADCAST_MODE_ASYNC defines a tx broadcasting mode where the client
+          returns immediately.
     description: |-
       BroadcastTxRequest is the request type for the Service.BroadcastTxRequest
       RPC method.
@@ -72158,8 +72797,7 @@ definitions:
                 Event allows application developers to attach additional
                 information to
 
-                ResponseBeginBlock, ResponseEndBlock, ResponseCheckTx and
-                ResponseDeliverTx.
+                ResponseFinalizeBlock and ResponseCheckTx.
 
                 Later, transactions may be queried using these events.
             description: >-
@@ -72172,9 +72810,6 @@ definitions:
               emitted from the ante. Whereas Logs contains the events, with
 
               additional metadata, emitted only by processing the messages.
-
-
-              Since: cosmos-sdk 0.42.11, 0.44.5, 0.45
         description: >-
           TxResponse defines a structure containing relevant tx data and
           metadata. The
@@ -72213,23 +72848,27 @@ definitions:
         type: string
         description: >-
           if unset, the first signer is responsible for paying the fees. If set,
-          the specified account must pay the fees.
+          the
 
-          the payer must be a tx signer (and thus have signed this field in
-          AuthInfo).
+          specified account must pay the fees. the payer must be a tx signer
+          (and
 
-          setting this field does *not* change the ordering of required signers
-          for the transaction.
+          thus have signed this field in AuthInfo). setting this field does
+          *not*
+
+          change the ordering of required signers for the transaction.
       granter:
         type: string
         title: >-
           if set, the fee payer (either the first signer or the value of the
-          payer field) requests that a fee grant be used
+          payer
 
-          to pay fees instead of the fee payer's own balance. If an appropriate
-          fee grant does not exist or the chain does
+          field) requests that a fee grant be used to pay fees instead of the
+          fee
 
-          not support fee grants, this will fail
+          payer's own balance. If an appropriate fee grant does not exist or the
+
+          chain does not support fee grants, this will fail
     description: >-
       Fee includes the amount of coins paid in fees and the maximum
 
@@ -72421,9 +73060,32 @@ definitions:
                             signature:
                               type: string
                               format: byte
+                              description: >-
+                                Vote signature by the validator if they
+                                participated in consensus for the
+
+                                associated block.
+                            extension:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension provided by the application. Only
+                                valid for precommit
+
+                                messages.
+                            extension_signature:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension signature by the validator if
+                                they participated in
+
+                                consensus for the associated block.
+
+                                Only valid for precommit messages.
                           description: >-
-                            Vote represents a prevote, precommit, or commit vote
-                            from validators for
+                            Vote represents a prevote or precommit vote from
+                            validators for
 
                             consensus.
                         vote_b:
@@ -72478,9 +73140,32 @@ definitions:
                             signature:
                               type: string
                               format: byte
+                              description: >-
+                                Vote signature by the validator if they
+                                participated in consensus for the
+
+                                associated block.
+                            extension:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension provided by the application. Only
+                                valid for precommit
+
+                                messages.
+                            extension_signature:
+                              type: string
+                              format: byte
+                              description: >-
+                                Vote extension signature by the validator if
+                                they participated in
+
+                                consensus for the associated block.
+
+                                Only valid for precommit messages.
                           description: >-
-                            Vote represents a prevote, precommit, or commit vote
-                            from validators for
+                            Vote represents a prevote or precommit vote from
+                            validators for
 
                             consensus.
                         total_voting_power:
@@ -72626,7 +73311,7 @@ definitions:
                                               - BLOCK_ID_FLAG_NIL
                                             default: BLOCK_ID_FLAG_UNKNOWN
                                             title: >-
-                                              BlockIdFlag indicates which BlcokID the
+                                              BlockIdFlag indicates which BlockID the
                                               signature is for
                                           validator_address:
                                             type: string
@@ -72776,7 +73461,7 @@ definitions:
                         - BLOCK_ID_FLAG_COMMIT
                         - BLOCK_ID_FLAG_NIL
                       default: BLOCK_ID_FLAG_UNKNOWN
-                      title: BlockIdFlag indicates which BlcokID the signature is for
+                      title: BlockIdFlag indicates which BlockID the signature is for
                     validator_address:
                       type: string
                       format: byte
@@ -72811,10 +73496,9 @@ definitions:
               was set, its value is undefined otherwise
     description: >-
       GetBlockWithTxsResponse is the response type for the
-      Service.GetBlockWithTxs method.
+      Service.GetBlockWithTxs
 
-
-      Since: cosmos-sdk 0.45.2
+      method.
   cosmos.tx.v1beta1.GetTxResponse:
     type: object
     properties:
@@ -73110,8 +73794,7 @@ definitions:
                 Event allows application developers to attach additional
                 information to
 
-                ResponseBeginBlock, ResponseEndBlock, ResponseCheckTx and
-                ResponseDeliverTx.
+                ResponseFinalizeBlock and ResponseCheckTx.
 
                 Later, transactions may be queried using these events.
             description: >-
@@ -73124,9 +73807,6 @@ definitions:
               emitted from the ante. Whereas Logs contains the events, with
 
               additional metadata, emitted only by processing the messages.
-
-
-              Since: cosmos-sdk 0.42.11, 0.44.5, 0.45
         description: >-
           TxResponse defines a structure containing relevant tx data and
           metadata. The
@@ -73436,8 +74116,7 @@ definitions:
                   Event allows application developers to attach additional
                   information to
 
-                  ResponseBeginBlock, ResponseEndBlock, ResponseCheckTx and
-                  ResponseDeliverTx.
+                  ResponseFinalizeBlock and ResponseCheckTx.
 
                   Later, transactions may be queried using these events.
               description: >-
@@ -73450,9 +74129,6 @@ definitions:
                 emitted from the ante. Whereas Logs contains the events, with
 
                 additional metadata, emitted only by processing the messages.
-
-
-                Since: cosmos-sdk 0.42.11, 0.44.5, 0.45
           description: >-
             TxResponse defines a structure containing relevant tx data and
             metadata. The
@@ -73531,15 +74207,15 @@ definitions:
               human-readable textual representation on top of the binary
               representation
 
-              from SIGN_MODE_DIRECT. It is currently not supported.
+              from SIGN_MODE_DIRECT.
+
+
+              Since: cosmos-sdk 0.50
                - SIGN_MODE_DIRECT_AUX: SIGN_MODE_DIRECT_AUX specifies a signing mode which uses
               SignDocDirectAux. As opposed to SIGN_MODE_DIRECT, this sign mode
               does not
 
-              require signers signing over other signers' `signer_info`. It also
-              allows
-
-              for adding Tips in transactions.
+              require signers signing over other signers' `signer_info`.
 
 
               Since: cosmos-sdk 0.46
@@ -73635,15 +74311,15 @@ definitions:
           human-readable textual representation on top of the binary
           representation
 
-          from SIGN_MODE_DIRECT. It is currently not supported.
+          from SIGN_MODE_DIRECT.
+
+
+          Since: cosmos-sdk 0.50
            - SIGN_MODE_DIRECT_AUX: SIGN_MODE_DIRECT_AUX specifies a signing mode which uses
           SignDocDirectAux. As opposed to SIGN_MODE_DIRECT, this sign mode does
           not
 
-          require signers signing over other signers' `signer_info`. It also
-          allows
-
-          for adding Tips in transactions.
+          require signers signing over other signers' `signer_info`.
 
 
           Since: cosmos-sdk 0.46
@@ -73679,7 +74355,9 @@ definitions:
     default: ORDER_BY_UNSPECIFIED
     description: >-
       - ORDER_BY_UNSPECIFIED: ORDER_BY_UNSPECIFIED specifies an unknown sorting
-      order. OrderBy defaults to ASC in this case.
+      order. OrderBy defaults
+
+      to ASC in this case.
        - ORDER_BY_ASC: ORDER_BY_ASC defines ascending order
        - ORDER_BY_DESC: ORDER_BY_DESC defines descending order
     title: OrderBy defines the sorting order
@@ -73879,10 +74557,7 @@ definitions:
       tx_bytes:
         type: string
         format: byte
-        description: |-
-          tx_bytes is the raw transaction.
-
-          Since: cosmos-sdk 0.43
+        description: tx_bytes is the raw transaction.
     description: |-
       SimulateRequest is the request type for the Service.Simulate
       RPC method.
@@ -73951,8 +74626,7 @@ definitions:
                 Event allows application developers to attach additional
                 information to
 
-                ResponseBeginBlock, ResponseEndBlock, ResponseCheckTx and
-                ResponseDeliverTx.
+                ResponseFinalizeBlock and ResponseCheckTx.
 
                 Later, transactions may be queried using these events.
             description: >-
@@ -74139,9 +74813,6 @@ definitions:
             description: >-
               msg_responses contains the Msg handler responses type packed in
               Anys.
-
-
-              Since: cosmos-sdk 0.46
     description: |-
       SimulateResponse is the response type for the
       Service.SimulateRPC method.
@@ -74166,10 +74837,7 @@ definitions:
       tipper:
         type: string
         title: tipper is the address of the account paying for the tip
-    description: |-
-      Tip is the tip used for meta-transactions.
-
-      Since: cosmos-sdk 0.46
+    description: Tip is the tip used for meta-transactions.
   cosmos.tx.v1beta1.Tx:
     type: object
     properties:
@@ -74381,13 +75049,56 @@ definitions:
               called memo,
 
               but should be called `note` instead (see
+
               https://github.com/cosmos/cosmos-sdk/issues/9122).
           timeout_height:
             type: string
             format: uint64
-            title: |-
-              timeout is the block height after which this transaction will not
-              be processed by the chain
+            description: >-
+              timeout_height is the block height after which this transaction
+              will not
+
+              be processed by the chain.
+          unordered:
+            type: boolean
+            description: >-
+              unordered, when set to true, indicates that the transaction
+              signer(s)
+
+              intend for the transaction to be evaluated and executed in an
+              un-ordered
+
+              fashion. Specifically, the account's nonce will NOT be checked or
+
+              incremented, which allows for fire-and-forget as well as
+              concurrent
+
+              transaction execution.
+
+
+              Note, when set to true, the existing 'timeout_timestamp' value
+              must
+
+              be set and will be used to correspond to a timestamp in which the
+              transaction is deemed
+
+              valid.
+          timeout_timestamp:
+            type: string
+            format: date-time
+            description: >-
+              timeout_timestamp is the block time after which this transaction
+              will not
+
+              be processed by the chain.
+
+
+              Note, if unordered=true this value MUST be set
+
+              and will act as a short-lived TTL in which the transaction is
+              deemed valid
+
+              and kept in memory to prevent duplicates.
           extension_options:
             type: array
             items:
@@ -74973,13 +75684,53 @@ definitions:
           memo,
 
           but should be called `note` instead (see
+
           https://github.com/cosmos/cosmos-sdk/issues/9122).
       timeout_height:
         type: string
         format: uint64
-        title: |-
-          timeout is the block height after which this transaction will not
-          be processed by the chain
+        description: >-
+          timeout_height is the block height after which this transaction will
+          not
+
+          be processed by the chain.
+      unordered:
+        type: boolean
+        description: >-
+          unordered, when set to true, indicates that the transaction signer(s)
+
+          intend for the transaction to be evaluated and executed in an
+          un-ordered
+
+          fashion. Specifically, the account's nonce will NOT be checked or
+
+          incremented, which allows for fire-and-forget as well as concurrent
+
+          transaction execution.
+
+
+          Note, when set to true, the existing 'timeout_timestamp' value must
+
+          be set and will be used to correspond to a timestamp in which the
+          transaction is deemed
+
+          valid.
+      timeout_timestamp:
+        type: string
+        format: date-time
+        description: >-
+          timeout_timestamp is the block time after which this transaction will
+          not
+
+          be processed by the chain.
+
+
+          Note, if unordered=true this value MUST be set
+
+          and will act as a short-lived TTL in which the transaction is deemed
+          valid
+
+          and kept in memory to prevent duplicates.
       extension_options:
         type: array
         items:
@@ -75342,8 +76093,6 @@ definitions:
     description: |-
       TxDecodeAminoRequest is the request type for the Service.TxDecodeAmino
       RPC method.
-
-      Since: cosmos-sdk 0.47
   cosmos.tx.v1beta1.TxDecodeAminoResponse:
     type: object
     properties:
@@ -75352,8 +76101,6 @@ definitions:
     description: |-
       TxDecodeAminoResponse is the response type for the Service.TxDecodeAmino
       RPC method.
-
-      Since: cosmos-sdk 0.47
   cosmos.tx.v1beta1.TxDecodeRequest:
     type: object
     properties:
@@ -75364,8 +76111,6 @@ definitions:
     description: |-
       TxDecodeRequest is the request type for the Service.TxDecode
       RPC method.
-
-      Since: cosmos-sdk 0.47
   cosmos.tx.v1beta1.TxDecodeResponse:
     type: object
     properties:
@@ -75375,8 +76120,6 @@ definitions:
     description: |-
       TxDecodeResponse is the response type for the
       Service.TxDecode method.
-
-      Since: cosmos-sdk 0.47
   cosmos.tx.v1beta1.TxEncodeAminoRequest:
     type: object
     properties:
@@ -75385,8 +76128,6 @@ definitions:
     description: |-
       TxEncodeAminoRequest is the request type for the Service.TxEncodeAmino
       RPC method.
-
-      Since: cosmos-sdk 0.47
   cosmos.tx.v1beta1.TxEncodeAminoResponse:
     type: object
     properties:
@@ -75396,8 +76137,6 @@ definitions:
     description: |-
       TxEncodeAminoResponse is the response type for the Service.TxEncodeAmino
       RPC method.
-
-      Since: cosmos-sdk 0.47
   cosmos.tx.v1beta1.TxEncodeRequest:
     type: object
     properties:
@@ -75407,8 +76146,6 @@ definitions:
     description: |-
       TxEncodeRequest is the request type for the Service.TxEncode
       RPC method.
-
-      Since: cosmos-sdk 0.47
   cosmos.tx.v1beta1.TxEncodeResponse:
     type: object
     properties:
@@ -75419,8 +76156,6 @@ definitions:
     description: |-
       TxEncodeResponse is the response type for the
       Service.TxEncode method.
-
-      Since: cosmos-sdk 0.47
   tendermint.abci.Event:
     type: object
     properties:
@@ -75438,12 +76173,9 @@ definitions:
             index:
               type: boolean
           description: EventAttribute is a single key-value pair, associated with an event.
-    description: >-
+    description: |-
       Event allows application developers to attach additional information to
-
-      ResponseBeginBlock, ResponseEndBlock, ResponseCheckTx and
-      ResponseDeliverTx.
-
+      ResponseFinalizeBlock and ResponseCheckTx.
       Later, transactions may be queried using these events.
   tendermint.abci.EventAttribute:
     type: object
@@ -75465,10 +76197,7 @@ definitions:
         type: string
         format: uint64
         title: consensus version of the app module
-    description: |-
-      ModuleVersion specifies a module and its consensus version.
-
-      Since: cosmos-sdk 0.43
+    description: ModuleVersion specifies a module and its consensus version.
   cosmos.upgrade.v1beta1.Plan:
     type: object
     properties:
@@ -75695,7 +76424,6 @@ definitions:
     properties:
       address:
         type: string
-    description: 'Since: cosmos-sdk 0.46'
     title: QueryAuthorityResponse is the response type for Query/Authority
   cosmos.upgrade.v1beta1.QueryCurrentPlanResponse:
     type: object
@@ -75937,10 +76665,7 @@ definitions:
               type: string
               format: uint64
               title: consensus version of the app module
-          description: |-
-            ModuleVersion specifies a module and its consensus version.
-
-            Since: cosmos-sdk 0.43
+          description: ModuleVersion specifies a module and its consensus version.
         description: >-
           module_versions is a list of module names with their consensus
           versions.
@@ -75949,16 +76674,12 @@ definitions:
       Query/ModuleVersions
 
       RPC method.
-
-
-      Since: cosmos-sdk 0.43
   cosmos.upgrade.v1beta1.QueryUpgradedConsensusStateResponse:
     type: object
     properties:
       upgraded_consensus_state:
         type: string
         format: byte
-        title: 'Since: cosmos-sdk 0.43'
     description: >-
       QueryUpgradedConsensusStateResponse is the response type for the
       Query/UpgradedConsensusState
@@ -80383,6 +81104,7 @@ definitions:
         enum:
           - ACCESS_TYPE_UNSPECIFIED
           - ACCESS_TYPE_NOBODY
+          - ACCESS_TYPE_ONLY_ADDRESS
           - ACCESS_TYPE_EVERYBODY
           - ACCESS_TYPE_ANY_OF_ADDRESSES
         default: ACCESS_TYPE_UNSPECIFIED
@@ -80390,9 +81112,16 @@ definitions:
           - ACCESS_TYPE_UNSPECIFIED: AccessTypeUnspecified placeholder for empty
           value
            - ACCESS_TYPE_NOBODY: AccessTypeNobody forbidden
+           - ACCESS_TYPE_ONLY_ADDRESS: AccessTypeOnlyAddress restricted to a single address
+          Deprecated: use AccessTypeAnyOfAddresses instead
            - ACCESS_TYPE_EVERYBODY: AccessTypeEverybody unrestricted
            - ACCESS_TYPE_ANY_OF_ADDRESSES: AccessTypeAnyOfAddresses allow any of the addresses
         title: AccessType permission types
+      address:
+        type: string
+        title: |-
+          Address
+          Deprecated: replaced by addresses
       addresses:
         type: array
         items:
@@ -80403,6 +81132,7 @@ definitions:
     enum:
       - ACCESS_TYPE_UNSPECIFIED
       - ACCESS_TYPE_NOBODY
+      - ACCESS_TYPE_ONLY_ADDRESS
       - ACCESS_TYPE_EVERYBODY
       - ACCESS_TYPE_ANY_OF_ADDRESSES
     default: ACCESS_TYPE_UNSPECIFIED
@@ -80410,6 +81140,8 @@ definitions:
       - ACCESS_TYPE_UNSPECIFIED: AccessTypeUnspecified placeholder for empty
       value
        - ACCESS_TYPE_NOBODY: AccessTypeNobody forbidden
+       - ACCESS_TYPE_ONLY_ADDRESS: AccessTypeOnlyAddress restricted to a single address
+      Deprecated: use AccessTypeAnyOfAddresses instead
        - ACCESS_TYPE_EVERYBODY: AccessTypeEverybody unrestricted
        - ACCESS_TYPE_ANY_OF_ADDRESSES: AccessTypeAnyOfAddresses allow any of the addresses
     title: AccessType permission types
@@ -80432,6 +81164,7 @@ definitions:
             enum:
               - ACCESS_TYPE_UNSPECIFIED
               - ACCESS_TYPE_NOBODY
+              - ACCESS_TYPE_ONLY_ADDRESS
               - ACCESS_TYPE_EVERYBODY
               - ACCESS_TYPE_ANY_OF_ADDRESSES
             default: ACCESS_TYPE_UNSPECIFIED
@@ -80439,9 +81172,16 @@ definitions:
               - ACCESS_TYPE_UNSPECIFIED: AccessTypeUnspecified placeholder for
               empty value
                - ACCESS_TYPE_NOBODY: AccessTypeNobody forbidden
+               - ACCESS_TYPE_ONLY_ADDRESS: AccessTypeOnlyAddress restricted to a single address
+              Deprecated: use AccessTypeAnyOfAddresses instead
                - ACCESS_TYPE_EVERYBODY: AccessTypeEverybody unrestricted
                - ACCESS_TYPE_ANY_OF_ADDRESSES: AccessTypeAnyOfAddresses allow any of the addresses
             title: AccessType permission types
+          address:
+            type: string
+            title: |-
+              Address
+              Deprecated: replaced by addresses
           addresses:
             type: array
             items:
@@ -80728,6 +81468,7 @@ definitions:
             enum:
               - ACCESS_TYPE_UNSPECIFIED
               - ACCESS_TYPE_NOBODY
+              - ACCESS_TYPE_ONLY_ADDRESS
               - ACCESS_TYPE_EVERYBODY
               - ACCESS_TYPE_ANY_OF_ADDRESSES
             default: ACCESS_TYPE_UNSPECIFIED
@@ -80735,9 +81476,16 @@ definitions:
               - ACCESS_TYPE_UNSPECIFIED: AccessTypeUnspecified placeholder for
               empty value
                - ACCESS_TYPE_NOBODY: AccessTypeNobody forbidden
+               - ACCESS_TYPE_ONLY_ADDRESS: AccessTypeOnlyAddress restricted to a single address
+              Deprecated: use AccessTypeAnyOfAddresses instead
                - ACCESS_TYPE_EVERYBODY: AccessTypeEverybody unrestricted
                - ACCESS_TYPE_ANY_OF_ADDRESSES: AccessTypeAnyOfAddresses allow any of the addresses
             title: AccessType permission types
+          address:
+            type: string
+            title: |-
+              Address
+              Deprecated: replaced by addresses
           addresses:
             type: array
             items:
@@ -80748,6 +81496,7 @@ definitions:
         enum:
           - ACCESS_TYPE_UNSPECIFIED
           - ACCESS_TYPE_NOBODY
+          - ACCESS_TYPE_ONLY_ADDRESS
           - ACCESS_TYPE_EVERYBODY
           - ACCESS_TYPE_ANY_OF_ADDRESSES
         default: ACCESS_TYPE_UNSPECIFIED
@@ -80755,6 +81504,8 @@ definitions:
           - ACCESS_TYPE_UNSPECIFIED: AccessTypeUnspecified placeholder for empty
           value
            - ACCESS_TYPE_NOBODY: AccessTypeNobody forbidden
+           - ACCESS_TYPE_ONLY_ADDRESS: AccessTypeOnlyAddress restricted to a single address
+          Deprecated: use AccessTypeAnyOfAddresses instead
            - ACCESS_TYPE_EVERYBODY: AccessTypeEverybody unrestricted
            - ACCESS_TYPE_ANY_OF_ADDRESSES: AccessTypeAnyOfAddresses allow any of the addresses
         title: AccessType permission types
@@ -80820,6 +81571,7 @@ definitions:
                 enum:
                   - ACCESS_TYPE_UNSPECIFIED
                   - ACCESS_TYPE_NOBODY
+                  - ACCESS_TYPE_ONLY_ADDRESS
                   - ACCESS_TYPE_EVERYBODY
                   - ACCESS_TYPE_ANY_OF_ADDRESSES
                 default: ACCESS_TYPE_UNSPECIFIED
@@ -80827,9 +81579,16 @@ definitions:
                   - ACCESS_TYPE_UNSPECIFIED: AccessTypeUnspecified placeholder
                   for empty value
                    - ACCESS_TYPE_NOBODY: AccessTypeNobody forbidden
+                   - ACCESS_TYPE_ONLY_ADDRESS: AccessTypeOnlyAddress restricted to a single address
+                  Deprecated: use AccessTypeAnyOfAddresses instead
                    - ACCESS_TYPE_EVERYBODY: AccessTypeEverybody unrestricted
                    - ACCESS_TYPE_ANY_OF_ADDRESSES: AccessTypeAnyOfAddresses allow any of the addresses
                 title: AccessType permission types
+              address:
+                type: string
+                title: |-
+                  Address
+                  Deprecated: replaced by addresses
               addresses:
                 type: array
                 items:
@@ -80864,6 +81623,7 @@ definitions:
                   enum:
                     - ACCESS_TYPE_UNSPECIFIED
                     - ACCESS_TYPE_NOBODY
+                    - ACCESS_TYPE_ONLY_ADDRESS
                     - ACCESS_TYPE_EVERYBODY
                     - ACCESS_TYPE_ANY_OF_ADDRESSES
                   default: ACCESS_TYPE_UNSPECIFIED
@@ -80871,9 +81631,16 @@ definitions:
                     - ACCESS_TYPE_UNSPECIFIED: AccessTypeUnspecified placeholder
                     for empty value
                      - ACCESS_TYPE_NOBODY: AccessTypeNobody forbidden
+                     - ACCESS_TYPE_ONLY_ADDRESS: AccessTypeOnlyAddress restricted to a single address
+                    Deprecated: use AccessTypeAnyOfAddresses instead
                      - ACCESS_TYPE_EVERYBODY: AccessTypeEverybody unrestricted
                      - ACCESS_TYPE_ANY_OF_ADDRESSES: AccessTypeAnyOfAddresses allow any of the addresses
                   title: AccessType permission types
+                address:
+                  type: string
+                  title: |-
+                    Address
+                    Deprecated: replaced by addresses
                 addresses:
                   type: array
                   items:
@@ -81263,6 +82030,7 @@ definitions:
                 enum:
                   - ACCESS_TYPE_UNSPECIFIED
                   - ACCESS_TYPE_NOBODY
+                  - ACCESS_TYPE_ONLY_ADDRESS
                   - ACCESS_TYPE_EVERYBODY
                   - ACCESS_TYPE_ANY_OF_ADDRESSES
                 default: ACCESS_TYPE_UNSPECIFIED
@@ -81270,9 +82038,16 @@ definitions:
                   - ACCESS_TYPE_UNSPECIFIED: AccessTypeUnspecified placeholder
                   for empty value
                    - ACCESS_TYPE_NOBODY: AccessTypeNobody forbidden
+                   - ACCESS_TYPE_ONLY_ADDRESS: AccessTypeOnlyAddress restricted to a single address
+                  Deprecated: use AccessTypeAnyOfAddresses instead
                    - ACCESS_TYPE_EVERYBODY: AccessTypeEverybody unrestricted
                    - ACCESS_TYPE_ANY_OF_ADDRESSES: AccessTypeAnyOfAddresses allow any of the addresses
                 title: AccessType permission types
+              address:
+                type: string
+                title: |-
+                  Address
+                  Deprecated: replaced by addresses
               addresses:
                 type: array
                 items:
@@ -81283,6 +82058,7 @@ definitions:
             enum:
               - ACCESS_TYPE_UNSPECIFIED
               - ACCESS_TYPE_NOBODY
+              - ACCESS_TYPE_ONLY_ADDRESS
               - ACCESS_TYPE_EVERYBODY
               - ACCESS_TYPE_ANY_OF_ADDRESSES
             default: ACCESS_TYPE_UNSPECIFIED
@@ -81290,6 +82066,8 @@ definitions:
               - ACCESS_TYPE_UNSPECIFIED: AccessTypeUnspecified placeholder for
               empty value
                - ACCESS_TYPE_NOBODY: AccessTypeNobody forbidden
+               - ACCESS_TYPE_ONLY_ADDRESS: AccessTypeOnlyAddress restricted to a single address
+              Deprecated: use AccessTypeAnyOfAddresses instead
                - ACCESS_TYPE_EVERYBODY: AccessTypeEverybody unrestricted
                - ACCESS_TYPE_ANY_OF_ADDRESSES: AccessTypeAnyOfAddresses allow any of the addresses
             title: AccessType permission types
