@@ -200,8 +200,7 @@ type AxelarApp struct {
 
 	interfaceRegistry types.InterfaceRegistry
 
-	mm                 *FilteredModuleManager
-	basicModuleManager module.BasicManager
+	mm *FilteredModuleManager
 }
 
 // NewAxelarApp is a constructor function for axelar
@@ -338,24 +337,6 @@ func NewAxelarApp(
 	)
 
 	mm := NewFilteredModuleManager(appModules, []string{vestingtypes.ModuleName})
-
-	// BasicModuleManager defines the module BasicManager is in charge of setting up basic,
-	// non-dependant module elements, such as codec registration and genesis verification.
-	// By default, it is composed of all the module from the module manager.
-	// Additionally, app module basics can be overwritten by passing them as argument.
-	basicModuleManager := module.NewBasicManagerFromManager(
-		module.NewManager(appModules...),
-		map[string]module.AppModuleBasic{
-			genutiltypes.ModuleName: genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
-			govtypes.ModuleName: gov.NewAppModuleBasic(
-				[]govclient.ProposalHandler{
-					paramsclient.ProposalHandler,
-				},
-			),
-		})
-	basicModuleManager.RegisterLegacyAminoCodec(legacyAmino)
-	basicModuleManager.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-
 	mm.SetOrderMigrations(orderMigrations()...)
 	mm.SetOrderBeginBlockers(orderBeginBlockers()...)
 	mm.SetOrderEndBlockers(orderEndBlockers()...)
@@ -367,13 +348,12 @@ func NewAxelarApp(
 	mm.RegisterServices(configurator)
 
 	var app = &AxelarApp{
-		BaseApp:            bApp,
-		appCodec:           appCodec,
-		interfaceRegistry:  encodingConfig.InterfaceRegistry,
-		Keepers:            keepers,
-		Keys:               keys,
-		mm:                 mm,
-		basicModuleManager: basicModuleManager,
+		BaseApp:           bApp,
+		appCodec:          appCodec,
+		interfaceRegistry: encodingConfig.InterfaceRegistry,
+		Keepers:           keepers,
+		Keys:              keys,
+		mm:                mm,
 	}
 
 	app.setUpgradeBehaviour(configurator, keepers)
@@ -1050,9 +1030,6 @@ func (app *AxelarApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.API
 
 	// Register grpc-gateway routes for all modules.
 	GetModuleBasics().RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
-
-	// Register grpc-gateway routes for all modules.
-	app.basicModuleManager.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// register swagger API from root so that other applications can override easily
 	if apiConfig.Swagger {
