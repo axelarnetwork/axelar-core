@@ -61,9 +61,6 @@ jobs:
           git config --global user.email "cicd@axelar.network"
           git config --global user.name "axelar-cicd-bot"
 
-          git commit --allow-empty -m "${{ steps.release.outputs.new_tag }}"
-          git push
-
           if [ -n "$new_release_branch" ]; then
             git checkout -b $new_release_branch
             git push -u origin $new_release_branch
@@ -72,7 +69,7 @@ jobs:
       - name: Bump version and push tag
         uses: anothrNick/github-tag-action@1.39.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
           DEFAULT_BUMP: ${{ github.event.inputs.bumpType }}
           TAG_CONTEXT: branch
           RELEASE_BRANCHES: main,releases.*
