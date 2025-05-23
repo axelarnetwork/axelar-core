@@ -21,7 +21,7 @@ jobs:
       - id: release
         uses: anothrNick/github-tag-action@1.39.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
           DEFAULT_BUMP: ${{ github.event.inputs.bumpType }}
           TAG_CONTEXT: branch
           RELEASE_BRANCHES: main,releases.*
