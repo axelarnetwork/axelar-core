@@ -100,6 +100,7 @@ import (
 	ibcante "github.com/cosmos/ibc-go/v8/modules/core/ante"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
+	ibctendermint "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cast"
@@ -1088,6 +1089,7 @@ func GetModuleBasics() module.BasicManager {
 		evidence.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 		ibc.AppModuleBasic{},
+		ibctendermint.AppModuleBasic{},
 		transfer.AppModuleBasic{},
 
 		multisig.AppModuleBasic{},
