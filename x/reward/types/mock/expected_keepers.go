@@ -10,7 +10,6 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
-	"github.com/cometbft/cometbft/libs/log"
 	cosmossdktypes "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"sync"
