@@ -2,9 +2,7 @@ package vald
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"time"
 
@@ -13,13 +11,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/vald/config"
 	"github.com/axelarnetwork/axelar-core/vald/tss"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
-	"github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapshotTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss/tofnd"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -101,13 +97,10 @@ func checkTofnd(ctx context.Context, _ client.Context, serverCtx *server.Context
 		panic(err)
 	}
 
-	nopLogger := server.ZeroLogWrapper{Logger: zerolog.New(io.Discard)}
-
 	conn, err := tss.Connect(valdCfg.TssConfig.Host, valdCfg.TssConfig.Port, valdCfg.TssConfig.DialTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to reach tofnd: %s", err.Error())
 	}
-	nopLogger.Debug("successful connection to tofnd gRPC server")
 
 	// creates client to communicate with the external tofnd process multisig service
 	client := tofnd.NewMultisigClient(conn)
@@ -141,38 +134,32 @@ func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *
 	if str == "" {
 		return fmt.Errorf("no operator address specified")
 	}
+
 	operator, err := sdk.ValAddressFromBech32(str)
 	if err != nil {
 		return err
 	}
 
-	bz, _, err := clientCtx.Query(fmt.Sprintf("custom/%s/%s/%s", snapshotTypes.QuerierRoute, keeper.QProxy, operator.String()))
+	grpcCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	snapshotClient := snapshotTypes.NewQueryServiceClient(clientCtx)
+	proxyResponse, err := snapshotClient.ProxyByOperator(grpcCtx, &snapshotTypes.ProxyByOperatorRequest{OperatorAddress: operator.String()})
 	if err != nil {
 		return err
 	}
 
-	reply := struct {
-		Address string `json:"address"`
-		Status  string `json:"status"`
-	}{}
-	if err := json.Unmarshal(bz, &reply); err != nil {
-		return err
-	}
-
-	broadcaster, err := sdk.AccAddressFromBech32(reply.Address)
+	broadcaster, err := sdk.AccAddressFromBech32(proxyResponse.ProxyAddress)
 	if err != nil {
 		return err
 	}
 
-	if reply.Status != "active" {
+	if proxyResponse.Status != snapshotTypes.Active {
 		return fmt.Errorf("broadcaster for operator %s not active", operator.String())
 	}
 
 	queryClient := bankTypes.NewQueryClient(clientCtx)
 	params := bankTypes.NewQueryBalanceRequest(broadcaster, axelarnet.NativeAsset)
-
-	grpcCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
 
 	res, err := queryClient.Balance(grpcCtx, params)
 	if err != nil {

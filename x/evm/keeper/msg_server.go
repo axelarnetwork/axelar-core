@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -436,7 +437,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	mintLimit, err := sdk.ParseUint(req.DailyMintLimit)
+	mintLimit, err := math.ParseUint(req.DailyMintLimit)
 	if err != nil {
 		return nil, err
 	}

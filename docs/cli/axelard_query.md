@@ -30,7 +30,7 @@ axelard query [flags]
 - [axelard query auth](axelard_query_auth.md) - Querying commands for the auth module
 - [axelard query axelarnet](axelard_query_axelarnet.md) - Querying commands for the axelarnet module
 - [axelard query bank](axelard_query_bank.md) - Querying commands for the bank module
-- [axelard query block](axelard_query_block.md) - Get verified data for a the block at given height
+- [axelard query block](axelard_query_block.md) - Get verified data for the block at given height
 - [axelard query distribution](axelard_query_distribution.md) - Querying commands for the distribution module
 - [axelard query evidence](axelard_query_evidence.md) - Query for evidence by hash or for all (paginated) submitted evidence
 - [axelard query evm](axelard_query_evm.md) - Querying commands for the evm module

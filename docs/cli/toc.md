@@ -6,7 +6,9 @@
   - [collect-gentxs](axelard_collect-gentxs.md) - Collect genesis txs and output a genesis.json file
   - [debug](axelard_debug.md) - Tool for helping with debugging your application
     - [addr [address]](axelard_debug_addr.md) - Convert an address between hex and bech32
+    - [prefixes](axelard_debug_prefixes.md) - List prefixes used for Human-Readable Part (HRP) in Bech32
     - [pubkey [pubkey]](axelard_debug_pubkey.md) - Decode a pubkey from proto JSON
+    - [pubkey-raw [pubkey] -t [{ed25519, secp256k1}]](axelard_debug_pubkey-raw.md) - Decode a ED25519 or secp256k1 pubkey from hex, base64, or bech32
     - [raw-bytes [raw-bytes]](axelard_debug_raw-bytes.md) - Convert raw bytes output (eg. [10 21 13 255]) to hex
   - [export](axelard_export.md) - Export state to JSON
   - [gentx [key_name] [amount]](axelard_gentx.md) - Generate a genesis tx carrying a self delegation
@@ -17,10 +19,13 @@
     - [delete \<name>...](axelard_keys_delete.md) - Delete the given keys
     - [export \<name>](axelard_keys_export.md) - Export private keys
     - [import \<name> \<keyfile>](axelard_keys_import.md) - Import private keys into the local keybase
+    - [import-hex \<name> \<hex>](axelard_keys_import-hex.md) - Import private keys into the local keybase
     - [list](axelard_keys_list.md) - List all keys
-    - [migrate \<old_home_dir>](axelard_keys_migrate.md) - Migrate keys from the legacy (db-based) Keybase
+    - [list-key-types](axelard_keys_list-key-types.md) - List all key types
+    - [migrate](axelard_keys_migrate.md) - Migrate keys from amino to proto serialization format
     - [mnemonic](axelard_keys_mnemonic.md) - Compute the bip39 mnemonic for some input entropy
     - [parse \<hex-or-bech32-address>](axelard_keys_parse.md) - Parse address from hex to bech32 and vice versa
+    - [rename \<old_name> \<new_name>](axelard_keys_rename.md) - Rename an existing key
     - [show \[name_or_address [name_or_address...]\]](axelard_keys_show.md) - Retrieve key information by name or address
   - [migrate [target-version] [genesis-file]](axelard_migrate.md) - Migrate genesis to a specified target version
   - [query](axelard_query.md) - Querying subcommands
@@ -28,7 +33,9 @@
     - [auth](axelard_query_auth.md) - Querying commands for the auth module
       - [account [address]](axelard_query_auth_account.md) - Query for account by address
       - [accounts](axelard_query_auth_accounts.md) - Query all the accounts
+      - [address-by-acc-num [acc-num]](axelard_query_auth_address-by-acc-num.md) - Query for an address by account number
       - [module-account [module-name]](axelard_query_auth_module-account.md) - Query module account info by module name
+      - [module-accounts](axelard_query_auth_module-accounts.md) - Query all module accounts
       - [params](axelard_query_auth_params.md) - Query the current auth parameters
     - [axelarnet](axelard_query_axelarnet.md) - Querying commands for the axelarnet module
       - [chain-by-ibc-path [ibc path]](axelard_query_axelarnet_chain-by-ibc-path.md) - Returns the Cosmos chain for the given IBC path
@@ -38,14 +45,17 @@
     - [bank](axelard_query_bank.md) - Querying commands for the bank module
       - [balances [address]](axelard_query_bank_balances.md) - Query for account balances by address
       - [denom-metadata](axelard_query_bank_denom-metadata.md) - Query the client metadata for coin denominations
+      - [send-enabled [denom1 ...]](axelard_query_bank_send-enabled.md) - Query for send enabled entries
+      - [spendable-balances [address]](axelard_query_bank_spendable-balances.md) - Query for account spendable balances by address
       - [total](axelard_query_bank_total.md) - Query the total supply of coins of the chain
-    - [block [height]](axelard_query_block.md) - Get verified data for a the block at given height
+    - [block [height]](axelard_query_block.md) - Get verified data for the block at given height
     - [distribution](axelard_query_distribution.md) - Querying commands for the distribution module
       - [commission [validator]](axelard_query_distribution_commission.md) - Query distribution validator commission
       - [community-pool](axelard_query_distribution_community-pool.md) - Query the amount of coins in the community pool
       - [params](axelard_query_distribution_params.md) - Query distribution params
       - [rewards [delegator-addr] [validator-addr]](axelard_query_distribution_rewards.md) - Query all distribution delegator rewards or rewards from a particular validator
       - [slashes [validator] [start-height] [end-height]](axelard_query_distribution_slashes.md) - Query distribution validator slashes
+      - [validator-distribution-info [validator]](axelard_query_distribution_validator-distribution-info.md) - Query validator distribution info
       - [validator-outstanding-rewards [validator]](axelard_query_distribution_validator-outstanding-rewards.md) - Query distribution outstanding (un-withdrawn) rewards for a validator and all their delegations
     - [evidence](axelard_query_evidence.md) - Query for evidence by hash or for all (paginated) submitted evidence
     - [evm](axelard_query_evm.md) - Querying commands for the evm module
@@ -105,6 +115,7 @@
       - [connection](axelard_query_ibc_connection.md) - IBC connection query subcommands
         - [connections](axelard_query_ibc_connection_connections.md) - Query all connections
         - [end [connection-id]](axelard_query_ibc_connection_end.md) - Query stored connection end
+        - [params](axelard_query_ibc_connection_params.md) - Query the current ibc connection parameters
         - [path [client-id]](axelard_query_ibc_connection_path.md) - Query stored client connection paths
     - [ibc-transfer](axelard_query_ibc-transfer.md) - IBC fungible token transfer query subcommands
       - [denom-hash [trace]](axelard_query_ibc-transfer_denom-hash.md) - Query the denom hash info from a given denom trace
@@ -112,6 +123,7 @@
       - [denom-traces](axelard_query_ibc-transfer_denom-traces.md) - Query the trace info for all token denominations
       - [escrow-address](axelard_query_ibc-transfer_escrow-address.md) - Get the escrow address for a channel
       - [params](axelard_query_ibc-transfer_params.md) - Query the current ibc-transfer parameters
+      - [total-escrow [denom]](axelard_query_ibc-transfer_total-escrow.md) - Query the total amount of tokens in escrow for a denom
     - [mint](axelard_query_mint.md) - Querying commands for the minting module
       - [annual-provisions](axelard_query_mint_annual-provisions.md) - Query the current minting annual provisions value
       - [inflation](axelard_query_mint_inflation.md) - Query the current minting inflation value
@@ -211,6 +223,7 @@
   - [start](axelard_start.md) - Run the full node
   - [status](axelard_status.md) - Query remote node for status
   - [tendermint](axelard_tendermint.md) - Tendermint subcommands
+    - [bootstrap-state](axelard_tendermint_bootstrap-state.md) - Bootstrap CometBFT state at an arbitrary block height using a light client
     - [reset-state](axelard_tendermint_reset-state.md) - Remove all the data and WAL
     - [show-address](axelard_tendermint_show-address.md) - Shows this node's tendermint validator consensus address
     - [show-node-id](axelard_tendermint_show-node-id.md) - Show this node's ID
@@ -230,13 +243,12 @@
       - [route-ibc-transfers](axelard_tx_axelarnet_route-ibc-transfers.md) - Routes pending transfers to cosmos chains
       - [route-message [message ID] [payload]](axelard_tx_axelarnet_route-message.md) - Route an approved general message to the destination chain
     - [bank](axelard_tx_bank.md) - Bank transaction subcommands
+      - [multi-send [from_key_or_address] [to_address_1 to_address_2 ...] [amount]](axelard_tx_bank_multi-send.md) - Send funds from one account to two or more accounts.
       - [send [from_key_or_address] [to_address] [amount]](axelard_tx_bank_send.md) - Send funds from one account to another.
-        Note, the'--from' flag is ignored as it is implied from [from_key_or_address].
-        When using '--dry-run' a key name cannot be used, only a bech32 address.
     - [broadcast [file_path]](axelard_tx_broadcast.md) - Broadcast transactions generated offline
     - [crisis](axelard_tx_crisis.md) - Crisis transactions subcommands
       - [invariant-broken [module-name] [invariant-route]](axelard_tx_crisis_invariant-broken.md) - Submit proof that an invariant broken to halt the chain
-    - [decode [amino-byte-string]](axelard_tx_decode.md) - Decode a binary encoded transaction string
+    - [decode [protobuf-byte-string]](axelard_tx_decode.md) - Decode a binary encoded transaction string
     - [distribution](axelard_tx_distribution.md) - Distribution transactions subcommands
       - [fund-community-pool [amount]](axelard_tx_distribution_fund-community-pool.md) - Funds the community pool with the specified amount
       - [set-withdraw-addr [withdraw-addr]](axelard_tx_distribution_set-withdraw-addr.md) - change the default withdraw address for rewards associated with an address
@@ -263,44 +275,33 @@
       - [revoke [granter] [grantee]](axelard_tx_feegrant_revoke.md) - revoke fee-grant
     - [gov](axelard_tx_gov.md) - Governance transactions subcommands
       - [deposit [proposal-id] [deposit]](axelard_tx_gov_deposit.md) - Deposit tokens for an active proposal
-      - [submit-proposal](axelard_tx_gov_submit-proposal.md) - Submit a proposal along with an initial deposit
-        - [call-contracts [proposal-file]](axelard_tx_gov_submit-proposal_call-contracts.md) - Submit a call contracts proposal
-        - [cancel-software-upgrade [flags]](axelard_tx_gov_submit-proposal_cancel-software-upgrade.md) - Cancel the current software upgrade proposal
-        - [clear-contract-admin [contract_addr_bech32]](axelard_tx_gov_submit-proposal_clear-contract-admin.md) - Submit a clear admin for a contract to prevent further migrations proposal
-        - [community-pool-spend [proposal-file]](axelard_tx_gov_submit-proposal_community-pool-spend.md) - Submit a community pool spend proposal
-        - [execute-contract [contract_addr_bech32] [json_encoded_migration_args]](axelard_tx_gov_submit-proposal_execute-contract.md) - Submit a execute wasm contract proposal (run by any address)
-        - [ibc-upgrade [name] [height] [path/to/upgraded_client_state.json] [flags]](axelard_tx_gov_submit-proposal_ibc-upgrade.md) - Submit an IBC upgrade proposal
-        - [instantiate-contract [code_id_int64] [json_encoded_init_args] --label [text] --title [text] --description [text] --run-as [address] --admin [address,optional] --amount [coins,optional]](axelard_tx_gov_submit-proposal_instantiate-contract.md) - Submit an instantiate wasm contract proposal
-        - [instantiate-contract-2 [code_id_int64] [json_encoded_init_args] [salt] --label [text] --title [text] --description [text] --run-as [address] --admin [address,optional] --amount [coins,optional] --fix-msg [bool,optional]](axelard_tx_gov_submit-proposal_instantiate-contract-2.md) - Submit an instantiate wasm contract proposal with predictable address
-        - [migrate-contract [contract_addr_bech32] [new_code_id_int64] [json_encoded_migration_args]](axelard_tx_gov_submit-proposal_migrate-contract.md) - Submit a migrate wasm contract to a new code version proposal
-        - [param-change [proposal-file]](axelard_tx_gov_submit-proposal_param-change.md) - Submit a parameter change proposal
-        - [pin-codes [code-ids]](axelard_tx_gov_submit-proposal_pin-codes.md) - Submit a pin code proposal for pinning a code to cache
-        - [set-contract-admin [contract_addr_bech32] [new_admin_addr_bech32]](axelard_tx_gov_submit-proposal_set-contract-admin.md) - Submit a new admin for a contract proposal
-        - [software-upgrade [name] (--upgrade-height [height]) (--upgrade-info [info]) [flags]](axelard_tx_gov_submit-proposal_software-upgrade.md) - Submit a software upgrade proposal
-        - [store-instantiate [wasm file] [json_encoded_init_args] --label [text] --title [text] --description [text] --run-as [address]--unpin-code [unpin_code,optional] --source [source,optional] --builder [builder,optional] --code-hash [code_hash,optional] --admin [address,optional] --amount [coins,optional]](axelard_tx_gov_submit-proposal_store-instantiate.md) - Submit and instantiate a wasm contract proposal
-        - [sudo-contract [contract_addr_bech32] [json_encoded_migration_args]](axelard_tx_gov_submit-proposal_sudo-contract.md) - Submit a sudo wasm contract proposal (to call privileged commands)
-        - [unpin-codes [code-ids]](axelard_tx_gov_submit-proposal_unpin-codes.md) - Submit a unpin code proposal for unpinning a code to cache
-        - [update-client [subject-client-id] [substitute-client-id]](axelard_tx_gov_submit-proposal_update-client.md) - Submit an update IBC client proposal
-        - [update-instantiate-config [code-id:permission]...](axelard_tx_gov_submit-proposal_update-instantiate-config.md) - Submit an update instantiate config proposal.
-        - [wasm-store [wasm file] --title [text] --description [text] --run-as [address] --unpin-code [unpin_code] --source [source] --builder [builder] --code-hash [code_hash]](axelard_tx_gov_submit-proposal_wasm-store.md) - Submit a wasm binary proposal
+      - [draft-proposal](axelard_tx_gov_draft-proposal.md) - Generate a draft proposal json file. The generated proposal json contains only one message (skeleton).
+      - [submit-legacy-proposal](axelard_tx_gov_submit-legacy-proposal.md) - Submit a legacy proposal along with an initial deposit
+        - [call-contracts [proposal-file]](axelard_tx_gov_submit-legacy-proposal_call-contracts.md) - Submit a call contracts proposal
+        - [cancel-software-upgrade [flags]](axelard_tx_gov_submit-legacy-proposal_cancel-software-upgrade.md) - Cancel the current software upgrade proposal
+        - [ibc-upgrade [name] [height] [path/to/upgraded_client_state.json] [flags]](axelard_tx_gov_submit-legacy-proposal_ibc-upgrade.md) - Submit an IBC upgrade proposal
+        - [param-change [proposal-file]](axelard_tx_gov_submit-legacy-proposal_param-change.md) - Submit a parameter change proposal
+        - [software-upgrade [name] (--upgrade-height [height]) (--upgrade-info [info]) [flags]](axelard_tx_gov_submit-legacy-proposal_software-upgrade.md) - Submit a software upgrade proposal
+        - [update-client [subject-client-id] [substitute-client-id]](axelard_tx_gov_submit-legacy-proposal_update-client.md) - Submit an update IBC client proposal
+      - [submit-proposal [path/to/proposal.json]](axelard_tx_gov_submit-proposal.md) - Submit a proposal along with some messages, metadata and deposit
       - [vote [proposal-id] [option]](axelard_tx_gov_vote.md) - Vote for an active proposal, options: yes/no/no_with_veto/abstain
       - [weighted-vote [proposal-id] [weighted-options]](axelard_tx_gov_weighted-vote.md) - Vote for an active proposal, options: yes/no/no_with_veto/abstain
     - [ibc](axelard_tx_ibc.md) - IBC transaction subcommands
       - [channel](axelard_tx_ibc_channel.md) - IBC channel transaction subcommands
       - [client](axelard_tx_ibc_client.md) - IBC client transaction subcommands
         - [create [path/to/client_state.json] [path/to/consensus_state.json]](axelard_tx_ibc_client_create.md) - create new IBC client
-        - [misbehaviour [path/to/misbehaviour.json]](axelard_tx_ibc_client_misbehaviour.md) - submit a client misbehaviour
-        - [update [client-id] [path/to/header.json]](axelard_tx_ibc_client_update.md) - update existing client with a header
+        - [misbehaviour [clientID] [path/to/misbehaviour.json]](axelard_tx_ibc_client_misbehaviour.md) - submit a client misbehaviour
+        - [update [client-id] [path/to/client_msg.json]](axelard_tx_ibc_client_update.md) - update existing client with a client message
         - [upgrade [client-identifier] [path/to/client_state.json] [path/to/consensus_state.json] [upgrade-client-proof] [upgrade-consensus-state-proof]](axelard_tx_ibc_client_upgrade.md) - upgrade an IBC client
     - [ibc-transfer](axelard_tx_ibc-transfer.md) - IBC fungible token transfer transaction subcommands
       - [transfer [src-port] [src-channel] [receiver] [amount]](axelard_tx_ibc-transfer_transfer.md) - Transfer a fungible token through IBC
+    - [multi-sign [file] [name] \[[signature]...\]](axelard_tx_multi-sign.md) - Generate multisig signatures for transactions generated offline
     - [multisig](axelard_tx_multisig.md) - multisig transactions subcommands
       - [keygen](axelard_tx_multisig_keygen.md) - sub-commands for keygen
         - [opt-in](axelard_tx_multisig_keygen_opt-in.md) - Opt the sender into future keygens. Sender should be a proxy address for a validator
         - [opt-out](axelard_tx_multisig_keygen_opt-out.md) - Opt the sender out of future keygens. Sender should be a proxy address for a validator
         - [start](axelard_tx_multisig_keygen_start.md) - Initiate key generation protocol
       - [rotate [chain] [keyID]](axelard_tx_multisig_rotate.md) - Rotate the given chain to the given key
-    - [multisign [file] [name] \[[signature]...\]](axelard_tx_multisign.md) - Generate multisig signatures for transactions generated offline
     - [multisign-batch [file] [name] \[[signature-file]...\]](axelard_tx_multisign-batch.md) - Assemble multisig transactions in batch from batch signatures
     - [nexus](axelard_tx_nexus.md) - nexus transactions subcommands
       - [activate-chain [chain]...](axelard_tx_nexus_activate-chain.md) - activate the given chains
@@ -314,7 +315,7 @@
       - [register-controller [controller]](axelard_tx_permission_register-controller.md) - Register controller account
       - [update-governance-key [threshold] \[[pubKey]...\]](axelard_tx_permission_update-governance-key.md) - Update the multisig governance key for axelar network
     - [sign [file]](axelard_tx_sign.md) - Sign a transaction generated offline
-    - [sign-batch [file]](axelard_tx_sign-batch.md) - Sign transaction batch files
+    - [sign-batch [file] ([file2]...)](axelard_tx_sign-batch.md) - Sign transaction batch files
     - [slashing](axelard_tx_slashing.md) - Slashing transaction subcommands
       - [unjail](axelard_tx_slashing_unjail.md) - unjail validator previously jailed for downtime
     - [snapshot](axelard_tx_snapshot.md) - snapshot transactions subcommands
@@ -322,6 +323,7 @@
       - [register-proxy [proxy address]](axelard_tx_snapshot_register-proxy.md) - Register a proxy account for a specific validator principal to broadcast transactions in its stead
       - [send-tokens [amount] [address 1] ... [address n]](axelard_tx_snapshot_send-tokens.md) - Sends the specified amount of tokens to the designated addresses
     - [staking](axelard_tx_staking.md) - Staking transaction subcommands
+      - [cancel-unbond [validator-addr] [amount] [creation-height]](axelard_tx_staking_cancel-unbond.md) - Cancel unbonding delegation and delegate back to the validator
       - [create-validator](axelard_tx_staking_create-validator.md) - create new validator initialized with a self-delegation to it
       - [delegate [validator-addr] [amount]](axelard_tx_staking_delegate.md) - Delegate liquid tokens to a validator
       - [edit-validator](axelard_tx_staking_edit-validator.md) - edit an existing validator account
@@ -329,18 +331,41 @@
       - [unbond [validator-addr] [amount]](axelard_tx_staking_unbond.md) - Unbond shares from a validator
     - [validate-signatures [file]](axelard_tx_validate-signatures.md) - validate transactions signatures
     - [vesting](axelard_tx_vesting.md) - Vesting transaction subcommands
+      - [create-periodic-vesting-account [to_address] [periods_json_file]](axelard_tx_vesting_create-periodic-vesting-account.md) - Create a new vesting account funded with an allocation of tokens.
+      - [create-permanent-locked-account [to_address] [amount]](axelard_tx_vesting_create-permanent-locked-account.md) - Create a new permanently locked account funded with an allocation of tokens.
       - [create-vesting-account [to_address] [amount] [end_time]](axelard_tx_vesting_create-vesting-account.md) - Create a new vesting account funded with an allocation of tokens.
     - [vesting](axelard_tx_vesting.md) - Vesting transaction subcommands
+      - [create-periodic-vesting-account [to_address] [periods_json_file]](axelard_tx_vesting_create-periodic-vesting-account.md) - Create a new vesting account funded with an allocation of tokens.
+      - [create-permanent-locked-account [to_address] [amount]](axelard_tx_vesting_create-permanent-locked-account.md) - Create a new permanently locked account funded with an allocation of tokens.
       - [create-vesting-account [to_address] [amount] [end_time]](axelard_tx_vesting_create-vesting-account.md) - Create a new vesting account funded with an allocation of tokens.
     - [wasm](axelard_tx_wasm.md) - Wasm transaction subcommands
       - [clear-contract-admin [contract_addr_bech32]](axelard_tx_wasm_clear-contract-admin.md) - Clears admin for a contract to prevent further migrations
       - [execute [contract_addr_bech32] [json_encoded_send_args] --amount [coins,optional]](axelard_tx_wasm_execute.md) - Execute a command on a wasm contract
-      - [grant [grantee] [message_type="execution"|"migration"] [contract_addr_bech32] --allow-raw-msgs [msg1,msg2,...] --allow-msg-keys [key1,key2,...] --allow-all-messages](axelard_tx_wasm_grant.md) - Grant authorization to an address
+      - [grant](axelard_tx_wasm_grant.md) - Grant a authz permission
+        - [contract [grantee] [message_type="execution"|"migration"] [contract_addr_bech32] --allow-raw-msgs [msg1,msg2,...] --allow-msg-keys [key1,key2,...] --allow-all-messages](axelard_tx_wasm_grant_contract.md) - Grant authorization to interact with a contract on behalf of you
+        - [store-code [grantee] [code_hash:permission]](axelard_tx_wasm_grant_store-code.md) - Grant authorization to upload contract code on behalf of you
       - [instantiate [code_id_int64] [json_encoded_init_args] --label [text] --admin [address,optional] --amount [coins,optional] ](axelard_tx_wasm_instantiate.md) - Instantiate a wasm contract
       - [instantiate2 [code_id_int64] [json_encoded_init_args] [salt] --label [text] --admin [address,optional] --amount [coins,optional] --fix-msg [bool,optional]](axelard_tx_wasm_instantiate2.md) - Instantiate a wasm contract with predictable address
       - [migrate [contract_addr_bech32] [new_code_id_int64] [json_encoded_migration_args]](axelard_tx_wasm_migrate.md) - Migrate a wasm contract to a new code version
       - [set-contract-admin [contract_addr_bech32] [new_admin_addr_bech32]](axelard_tx_wasm_set-contract-admin.md) - Set new admin for a contract
+      - [set-contract-label [contract_addr_bech32] [new_label]](axelard_tx_wasm_set-contract-label.md) - Set new label for a contract
       - [store [wasm file]](axelard_tx_wasm_store.md) - Upload a wasm binary
+      - [submit-proposal](axelard_tx_wasm_submit-proposal.md) - Submit a wasm proposal.
+        - [add-code-upload-params-addresses [addresses] --title [text] --summary [text] --authority [address]](axelard_tx_wasm_submit-proposal_add-code-upload-params-addresses.md) - Submit an add code upload params addresses proposal to add addresses to code upload config params
+        - [clear-contract-admin [contract_addr_bech32] --title [text] --summary [text] --authority [address]](axelard_tx_wasm_submit-proposal_clear-contract-admin.md) - Submit a clear admin for a contract to prevent further migrations proposal
+        - [execute-contract [contract_addr_bech32] [json_encoded_execution_args] --title [text] --summary [text] --authority [address]](axelard_tx_wasm_submit-proposal_execute-contract.md) - Submit a execute wasm contract proposal (run by any address)
+        - [instantiate-contract [code_id_int64] [json_encoded_init_args] --authority [address] --label [text] --title [text] --summary [text] --admin [address,optional] --amount [coins,optional]](axelard_tx_wasm_submit-proposal_instantiate-contract.md) - Submit an instantiate wasm contract proposal
+        - [instantiate-contract-2 [code_id_int64] [json_encoded_init_args] --authority [address] --label [text] --title [text] --summary [text] --admin [address,optional] --amount [coins,optional]](axelard_tx_wasm_submit-proposal_instantiate-contract-2.md) - Submit an instantiate wasm contract proposal with predictable address
+        - [migrate-contract [contract_addr_bech32] [new_code_id_int64] [json_encoded_migration_args] --title [text] --summary [text] --authority [address]](axelard_tx_wasm_submit-proposal_migrate-contract.md) - Submit a migrate wasm contract to a new code version proposal
+        - [pin-codes [code-ids] --title [text] --summary [text] --authority [address]](axelard_tx_wasm_submit-proposal_pin-codes.md) - Submit a pin code proposal for pinning a code to cache
+        - [remove-code-upload-params-addresses [addresses] --title [text] --summary [text] --authority [address]](axelard_tx_wasm_submit-proposal_remove-code-upload-params-addresses.md) - Submit a remove code upload params addresses proposal to remove addresses from code upload config params
+        - [set-contract-admin [contract_addr_bech32] [new_admin_addr_bech32] --title [text] --summary [text] --authority [address]](axelard_tx_wasm_submit-proposal_set-contract-admin.md) - Submit a new admin for a contract proposal
+        - [store-instantiate [wasm file] [json_encoded_init_args] --authority [address] --label [text] --title [text] --summary [text]--unpin-code [unpin_code,optional] --source [source,optional] --builder [builder,optional] --code-hash [code_hash,optional] --admin [address,optional] --amount [coins,optional]](axelard_tx_wasm_submit-proposal_store-instantiate.md) - Submit a store and instantiate wasm contract proposal
+        - [store-migrate [wasm file] [contract_addr_bech32] [json_encoded_migration_args] --title [text] --summary [text] --authority [address]](axelard_tx_wasm_submit-proposal_store-migrate.md) - Submit a store and migrate wasm contract proposal
+        - [sudo-contract [contract_addr_bech32] [json_encoded_migration_args] --title [text] --summary [text] --authority [address]](axelard_tx_wasm_submit-proposal_sudo-contract.md) - Submit a sudo wasm contract proposal (to call privileged commands)
+        - [unpin-codes [code-ids] --title [text] --summary [text] --authority [address]](axelard_tx_wasm_submit-proposal_unpin-codes.md) - Submit a unpin code proposal for unpinning a code to cache
+        - [update-instantiate-config [code-id:permission] --title [text] --summary [text] --authority [address]](axelard_tx_wasm_submit-proposal_update-instantiate-config.md) - Submit an update instantiate config proposal.
+        - [wasm-store [wasm file] --title [text] --summary [text] --authority [address]](axelard_tx_wasm_submit-proposal_wasm-store.md) - Submit a wasm binary proposal
       - [update-instantiate-config [code_id_int64]](axelard_tx_wasm_update-instantiate-config.md) - Update instantiate config for a codeID
   - [vald-sign [key-id] [validator-addr] [hash to sign]](axelard_vald-sign.md) - Sign hash with the key corresponding to the key id for the given validator. If unspecified, the public key will be retrieved from the node.
   - [vald-start](axelard_vald-start.md) -

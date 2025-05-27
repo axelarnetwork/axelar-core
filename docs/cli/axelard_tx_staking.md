@@ -26,6 +26,7 @@ axelard tx staking [flags]
 ### SEE ALSO
 
 - [axelard tx](axelard_tx.md) - Transactions subcommands
+- [axelard tx staking cancel-unbond](axelard_tx_staking_cancel-unbond.md) - Cancel unbonding delegation and delegate back to the validator
 - [axelard tx staking create-validator](axelard_tx_staking_create-validator.md) - create new validator initialized with a self-delegation to it
 - [axelard tx staking delegate](axelard_tx_staking_delegate.md) - Delegate liquid tokens to a validator
 - [axelard tx staking edit-validator](axelard_tx_staking_edit-validator.md) - edit an existing validator account

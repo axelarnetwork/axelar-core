@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	govv3 "github.com/cosmos/cosmos-sdk/x/gov/migrations/v3"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
@@ -27,16 +28,17 @@ func (k Keeper) Hooks(nexus types.Nexus, gov types.GovKeeper) Hooks {
 // AfterProposalDeposit implements govtypes.GovHooks.
 func (h Hooks) AfterProposalDeposit(ctx sdk.Context, proposalID uint64, _ sdk.AccAddress) {
 	proposal := funcs.MustOk(h.gov.GetProposal(ctx, proposalID))
+	legacyProposal := funcs.Must(govv3.ConvertToLegacyProposal(proposal))
 
-	switch c := proposal.GetContent().(type) {
+	switch c := legacyProposal.GetContent().(type) {
 	case *types.CallContractsProposal:
 		minDepositsMap := h.k.GetParams(ctx).CallContractsProposalMinDeposits.ToMap(ctx, h.nexus)
 
 		for _, contractCall := range c.ContractCalls {
 			minDeposit := minDepositsMap.Get(contractCall.Chain, contractCall.ContractAddress)
-			if !proposal.TotalDeposit.IsAllGTE(minDeposit) {
+			if !legacyProposal.TotalDeposit.IsAllGTE(minDeposit) {
 				panic(fmt.Errorf("proposal %d does not have enough deposits for calling contract %s on chain %s (required: %s, provided: %s)",
-					proposalID, contractCall.ContractAddress, contractCall.Chain, minDeposit.String(), proposal.TotalDeposit.String()))
+					proposalID, contractCall.ContractAddress, contractCall.Chain, minDeposit.String(), legacyProposal.TotalDeposit.String()))
 			}
 		}
 	default:
@@ -50,8 +52,9 @@ func (Hooks) AfterProposalFailedMinDeposit(ctx sdk.Context, proposalID uint64) {
 // AfterProposalSubmission implements govtypes.GovHooks.
 func (h Hooks) AfterProposalSubmission(ctx sdk.Context, proposalID uint64) {
 	proposal := funcs.MustOk(h.gov.GetProposal(ctx, proposalID))
+	legacyProposal := funcs.Must(govv3.ConvertToLegacyProposal(proposal))
 
-	switch c := proposal.GetContent().(type) {
+	switch c := legacyProposal.GetContent().(type) {
 	case *types.CallContractsProposal:
 		// perform stateful validations of the proposal
 		for _, contractCall := range c.ContractCalls {

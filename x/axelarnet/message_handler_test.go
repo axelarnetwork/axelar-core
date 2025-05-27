@@ -5,18 +5,19 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	mathrand "math/rand"
 	"strconv"
 	"strings"
 	"testing"
 
+	tmbytes "github.com/cometbft/cometbft/libs/bytes"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	captypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	ibcchanneltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/assert"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
@@ -75,7 +76,9 @@ func TestHandleMessage(t *testing.T) {
 			IBCPath:    axelartestutils.RandomIBCPath(),
 			AddrPrefix: "cosmos",
 		}))
-		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
+		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+			return mathrand.Uint64(), nil
+		}
 		n = &mock.NexusMock{
 			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
 				lockableAsset = &nexusmock.LockableAssetMock{
@@ -161,7 +164,7 @@ func TestHandleMessage(t *testing.T) {
 
 	nonGMPPacket := func() {
 		ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
-			rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), rand.AccAddr().String(),
+			rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), rand.AccAddr().String(), "",
 		)
 
 		ics20Packet.Memo = string(rand.BytesBetween(100, 500))
@@ -179,7 +182,7 @@ func TestHandleMessage(t *testing.T) {
 	whenPacketReceiverIsGMPAccount := givenPacketWithMessage.
 		When("receiver is gmp account", func() {
 			ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
-				rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), types.AxelarIBCAccount.String(),
+				rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), types.AxelarIBCAccount.String(), "",
 			)
 			ics20Packet.Memo = string(funcs.Must(json.Marshal(message)))
 			packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
@@ -474,7 +477,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 		denom = rand.Denom(5, 10)
 		amount = strconv.FormatInt(rand.PosI64(), 10)
 		ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
-			denom, amount, rand.AccAddr().String(), types.AxelarIBCAccount.String(),
+			denom, amount, rand.AccAddr().String(), types.AxelarIBCAccount.String(), "",
 		)
 		ics20Packet.Memo = string(funcs.Must(json.Marshal(message)))
 		packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
@@ -489,8 +492,9 @@ func TestHandleMessageWithToken(t *testing.T) {
 			IBCPath:    path,
 			AddrPrefix: rand.StrBetween(5, 10),
 		}))
-
-		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
+		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+			return mathrand.Uint64(), nil
+		}
 		lockableAsset = &nexusmock.LockableAssetMock{
 			GetAssetFunc: func() sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
 			GetCoinFunc:  func(_ sdk.Context) sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
@@ -722,7 +726,7 @@ func TestHandleSendToken(t *testing.T) {
 		denom = rand.Denom(5, 10)
 		amount = strconv.FormatInt(rand.PosI64(), 10)
 		ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
-			denom, amount, rand.AccAddr().String(), types.AxelarIBCAccount.String(),
+			denom, amount, rand.AccAddr().String(), types.AxelarIBCAccount.String(), "",
 		)
 		ics20Packet.Memo = string(funcs.Must(json.Marshal(message)))
 		packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
@@ -738,7 +742,9 @@ func TestHandleSendToken(t *testing.T) {
 			AddrPrefix: rand.StrBetween(5, 10),
 		}))
 
-		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
+		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+			return mathrand.Uint64(), nil
+		}
 		lockableAsset = &nexusmock.LockableAssetMock{
 			GetAssetFunc: func() sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
 			GetCoinFunc:  func(_ sdk.Context) sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
@@ -926,7 +932,9 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 			IBCPath:    axelartestutils.RandomIBCPath(),
 			AddrPrefix: "cosmos",
 		}))
-		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, ibcexported.PacketI) error { return nil }
+		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+			return mathrand.Uint64(), nil
+		}
 		lockableAsset = &nexusmock.LockableAssetMock{}
 		n = &mock.NexusMock{
 			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
@@ -985,7 +993,7 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 	whenPacketReceiverIsGMPWithTokenAccount := givenPacketWithMessage.
 		When("receiver is gmp with token account", func() {
 			ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
-				rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), types.AxelarIBCAccount.String(),
+				rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), types.AxelarIBCAccount.String(), "",
 			)
 			ics20Packet.Memo = string(funcs.Must(json.Marshal(gmpWithToken)))
 			packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
@@ -994,7 +1002,7 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 	whenPacketReceiverIsSendTokenAccount := givenPacketWithMessage.
 		When("receiver is send token account", func() {
 			ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
-				rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), types.AxelarIBCAccount.String(),
+				rand.Denom(5, 10), strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), types.AxelarIBCAccount.String(), "",
 			)
 			ics20Packet.Memo = string(funcs.Must(json.Marshal(sendToken)))
 			packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)

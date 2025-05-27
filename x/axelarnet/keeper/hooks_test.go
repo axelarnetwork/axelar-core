@@ -5,16 +5,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
+	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -31,7 +33,7 @@ import (
 
 func TestAfterProposalDeposit(t *testing.T) {
 	var (
-		proposal govtypes.Proposal
+		proposal govv1beta1.Proposal
 	)
 
 	encCfg := app.MakeEncodingConfig()
@@ -54,13 +56,13 @@ func TestAfterProposalDeposit(t *testing.T) {
 	}
 
 	Given("a proposal is created", func() {
-		govK.GetProposalFunc = func(ctx sdk.Context, proposalID uint64) (govtypes.Proposal, bool) {
-			return proposal, proposalID == proposal.ProposalId
+		govK.GetProposalFunc = func(ctx sdk.Context, proposalID uint64) (govv1.Proposal, bool) {
+			return funcs.Must(convertToNewProposal(proposal)), proposalID == proposal.ProposalId
 		}
 	}).
 		Branch(
 			When("the proposal is not a nexus call contracts proposal", func() {
-				proposal = funcs.Must(govtypes.NewProposal(
+				proposal = funcs.Must(govv1beta1.NewProposal(
 					paramstypes.NewParameterChangeProposal("title", "description", []paramstypes.ParamChange{}),
 					uint64(rand.I64Between(1, 100)),
 					time.Now(),
@@ -74,7 +76,7 @@ func TestAfterProposalDeposit(t *testing.T) {
 				}),
 
 			When("the proposal is a nexus call contracts proposal", func() {
-				proposal = funcs.Must(govtypes.NewProposal(
+				proposal = funcs.Must(govv1beta1.NewProposal(
 					types.NewCallContractsProposal("title", "description", []types.ContractCall{contractCall}),
 					1,
 					time.Now(),
@@ -142,7 +144,7 @@ func TestAfterProposalDeposit(t *testing.T) {
 
 func TestAfterProposalSubmission(t *testing.T) {
 	var (
-		proposal govtypes.Proposal
+		proposal govv1beta1.Proposal
 	)
 
 	encCfg := app.MakeEncodingConfig()
@@ -163,13 +165,13 @@ func TestAfterProposalSubmission(t *testing.T) {
 	keeper.SetParams(ctx, types.DefaultParams())
 
 	Given("a proposal is created", func() {
-		govK.GetProposalFunc = func(ctx sdk.Context, proposalID uint64) (govtypes.Proposal, bool) {
-			return proposal, proposalID == proposal.ProposalId
+		govK.GetProposalFunc = func(ctx sdk.Context, proposalID uint64) (govv1.Proposal, bool) {
+			return funcs.Must(convertToNewProposal(proposal)), proposalID == proposal.ProposalId
 		}
 	}).
 		Branch(
 			When("the proposal is not a nexus call contracts proposal", func() {
-				proposal = funcs.Must(govtypes.NewProposal(
+				proposal = funcs.Must(govv1beta1.NewProposal(
 					paramstypes.NewParameterChangeProposal("title", "description", []paramstypes.ParamChange{}),
 					uint64(rand.I64Between(1, 100)),
 					time.Now(),
@@ -183,7 +185,7 @@ func TestAfterProposalSubmission(t *testing.T) {
 				}),
 
 			When("the proposal is a nexus call contracts proposal", func() {
-				proposal = funcs.Must(govtypes.NewProposal(
+				proposal = funcs.Must(govv1beta1.NewProposal(
 					types.NewCallContractsProposal("title", "description", []types.ContractCall{}),
 					1,
 					time.Now(),
@@ -238,4 +240,34 @@ func TestAfterProposalSubmission(t *testing.T) {
 				),
 		).
 		Run(t)
+}
+
+func convertToNewProposal(oldProp govv1beta1.Proposal) (govv1.Proposal, error) {
+	msg, err := govv1.NewLegacyContent(oldProp.GetContent(), authtypes.NewModuleAddress(types.ModuleName).String())
+	if err != nil {
+		return govv1.Proposal{}, err
+	}
+	msgAny, err := codectypes.NewAnyWithValue(msg)
+	if err != nil {
+		return govv1.Proposal{}, err
+	}
+
+	return govv1.Proposal{
+		Id:       oldProp.ProposalId,
+		Messages: []*codectypes.Any{msgAny},
+		Status:   govv1.ProposalStatus(oldProp.Status),
+		FinalTallyResult: &govv1.TallyResult{
+			YesCount:        oldProp.FinalTallyResult.Yes.String(),
+			NoCount:         oldProp.FinalTallyResult.No.String(),
+			AbstainCount:    oldProp.FinalTallyResult.Abstain.String(),
+			NoWithVetoCount: oldProp.FinalTallyResult.NoWithVeto.String(),
+		},
+		SubmitTime:      &oldProp.SubmitTime,
+		DepositEndTime:  &oldProp.DepositEndTime,
+		TotalDeposit:    oldProp.TotalDeposit,
+		VotingStartTime: &oldProp.VotingStartTime,
+		VotingEndTime:   &oldProp.VotingEndTime,
+		Title:           oldProp.GetContent().GetTitle(),
+		Summary:         oldProp.GetContent().GetDescription(),
+	}, nil
 }

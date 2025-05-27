@@ -1,9 +1,9 @@
 package reward
 
 import (
+	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
@@ -67,7 +67,7 @@ func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s
 	rewardPool := k.GetPool(ctx, multisigTypes.ModuleName)
 	minter := m.GetMinter(ctx)
 	mintParams := m.GetParams(ctx)
-	totalAmount := minter.BlockProvision(mintParams).Amount.ToDec().Mul(k.GetParams(ctx).KeyMgmtRelativeInflationRate)
+	totalAmount := minter.BlockProvision(mintParams).Amount.ToLegacyDec().Mul(k.GetParams(ctx).KeyMgmtRelativeInflationRate)
 
 	isKeygenParticipant := func(v snapshot.ValidatorI) bool {
 		proxy, isActive := ss.GetProxy(ctx, v.GetOperator())
@@ -100,7 +100,7 @@ func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n typ
 	blocksPerYear := m.GetParams(ctx).BlocksPerYear
 	inflationRate := k.GetParams(ctx).ExternalChainVotingInflationRate
 	denom := m.GetParams(ctx).MintDenom
-	amountPerChain := totalStakingSupply.ToDec().Mul(inflationRate).QuoInt64(int64(blocksPerYear))
+	amountPerChain := totalStakingSupply.ToLegacyDec().Mul(inflationRate).QuoInt64(int64(blocksPerYear))
 
 	for _, chain := range n.GetChains(ctx) {
 		// ignore inactive chain

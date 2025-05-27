@@ -1,10 +1,10 @@
 package keeper
 
 import (
+	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	distribution "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distributionTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/distribution/types"
@@ -38,7 +38,7 @@ func NewKeeper(
 // AllocateTokens modifies the fee distribution by:
 // - Allocating the community tax portion to the community pool
 // - Burning all remaining tokens instead of distributing to validators
-func (k Keeper) AllocateTokens(ctx sdk.Context, _, _ int64, _ sdk.ConsAddress, _ []abci.VoteInfo) {
+func (k Keeper) AllocateTokens(ctx sdk.Context, _ int64, _ []abci.VoteInfo) {
 	// fetch and clear the collected fees for distribution, since this is
 	// called in BeginBlock, collected fees will be from the previous block
 	// (and distributed to the previous proposer)

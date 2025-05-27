@@ -9,6 +9,11 @@ import (
 	"testing"
 	"time"
 
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/bytes"
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
+	tm "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -21,11 +26,6 @@ import (
 	tx2 "github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/bytes"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
-	tm "github.com/tendermint/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
@@ -35,6 +35,7 @@ import (
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 	"github.com/axelarnetwork/utils/test/rand"
@@ -60,24 +61,25 @@ func TestStatefulBroadcaster(t *testing.T) {
 		}
 	})
 	txFactory := Given("a tx factory", func() {
+		priv := cryptotypes.PrivKey(ed25519.GenPrivKey())
+		pub := priv.PubKey()
+		record := funcs.Must(keyring.NewLocalRecord("testrecord", priv, pub))
 		accountRetriever = &mock2.AccountRetrieverMock{}
-		keyringInfoMock := &mock2.InfoMock{
-			GetPubKeyFunc: func() cryptotypes.PubKey { return ed25519.GenPrivKey().PubKey() },
-		}
+
 		txf = tx.Factory{}.
 			WithChainID(rand.StrBetween(5, 20)).
 			WithSimulateAndExecute(true).
 			WithAccountRetriever(accountRetriever).
 			WithTxConfig(clientCtx.TxConfig).
 			WithKeybase(&mock2.KeyringMock{
-				KeyFunc: func(string) (keyring.Info, error) {
-					return keyringInfoMock, nil
+				KeyFunc: func(string) (*keyring.Record, error) {
+					return record, nil
 				},
 				SignFunc: func(string, []byte) ([]byte, cryptotypes.PubKey, error) {
 					return rand.Bytes(10), nil, nil
 				},
-				ListFunc: func() ([]keyring.Info, error) {
-					return []keyring.Info{keyringInfoMock}, nil
+				ListFunc: func() ([]*keyring.Record, error) {
+					return []*keyring.Record{record}, nil
 				},
 			})
 	})

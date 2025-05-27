@@ -12,13 +12,13 @@ import (
 
 // WasmerEngine is a wrapper around the WasmerEngine to add a transaction ID generator
 type WasmerEngine struct {
-	wasmtypes.WasmerEngine
+	wasmtypes.WasmEngine
 	msgIDGenerator types.MsgIDGenerator
 }
 
 // NewWasmerEngine wraps the given engine with a transaction ID generator
-func NewWasmerEngine(inner wasmtypes.WasmerEngine, msgIDGenerator types.MsgIDGenerator) wasmtypes.WasmerEngine {
-	return &WasmerEngine{WasmerEngine: inner, msgIDGenerator: msgIDGenerator}
+func NewWasmerEngine(inner wasmtypes.WasmEngine, msgIDGenerator types.MsgIDGenerator) wasmtypes.WasmEngine {
+	return &WasmerEngine{WasmEngine: inner, msgIDGenerator: msgIDGenerator}
 }
 
 func getCtx(querier wasmvm.Querier) sdk.Context {
@@ -46,7 +46,7 @@ func (w *WasmerEngine) Instantiate(
 ) (*wasmvmtypes.Response, uint64, error) {
 	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
-	return w.WasmerEngine.Instantiate(checksum, env, info, initMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
+	return w.WasmEngine.Instantiate(checksum, env, info, initMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
 }
 
 // Execute calls the inner engine and increments the transaction ID
@@ -64,7 +64,7 @@ func (w *WasmerEngine) Execute(
 ) (*wasmvmtypes.Response, uint64, error) {
 	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
-	return w.WasmerEngine.Execute(code, env, info, executeMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
+	return w.WasmEngine.Execute(code, env, info, executeMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
 }
 
 // Migrate calls the inner engine and increments the transaction ID
@@ -81,7 +81,7 @@ func (w *WasmerEngine) Migrate(
 ) (*wasmvmtypes.Response, uint64, error) {
 	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
-	return w.WasmerEngine.Migrate(checksum, env, migrateMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
+	return w.WasmEngine.Migrate(checksum, env, migrateMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
 }
 
 // Sudo calls the inner engine and increments the transaction ID
@@ -98,7 +98,7 @@ func (w *WasmerEngine) Sudo(
 ) (*wasmvmtypes.Response, uint64, error) {
 	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
-	return w.WasmerEngine.Sudo(checksum, env, sudoMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
+	return w.WasmEngine.Sudo(checksum, env, sudoMsg, store, goapi, querier, gasMeter, gasLimit, deserCost)
 }
 
 // Reply calls the inner engine and increments the transaction ID
@@ -115,5 +115,5 @@ func (w *WasmerEngine) Reply(
 ) (*wasmvmtypes.Response, uint64, error) {
 	defer w.msgIDGenerator.IncrID(getCtx(querier))
 
-	return w.WasmerEngine.Reply(checksum, env, reply, store, goapi, querier, gasMeter, gasLimit, deserCost)
+	return w.WasmEngine.Reply(checksum, env, reply, store, goapi, querier, gasMeter, gasLimit, deserCost)
 }

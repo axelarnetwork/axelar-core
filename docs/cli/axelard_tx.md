@@ -39,8 +39,8 @@ axelard tx [flags]
 - [axelard tx gov](axelard_tx_gov.md) - Governance transactions subcommands
 - [axelard tx ibc](axelard_tx_ibc.md) - IBC transaction subcommands
 - [axelard tx ibc-transfer](axelard_tx_ibc-transfer.md) - IBC fungible token transfer transaction subcommands
+- [axelard tx multi-sign](axelard_tx_multi-sign.md) - Generate multisig signatures for transactions generated offline
 - [axelard tx multisig](axelard_tx_multisig.md) - multisig transactions subcommands
-- [axelard tx multisign](axelard_tx_multisign.md) - Generate multisig signatures for transactions generated offline
 - [axelard tx multisign-batch](axelard_tx_multisign-batch.md) - Assemble multisig transactions in batch from batch signatures
 - [axelard tx nexus](axelard_tx_nexus.md) - nexus transactions subcommands
 - [axelard tx permission](axelard_tx_permission.md) - permission transactions subcommands

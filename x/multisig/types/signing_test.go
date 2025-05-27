@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/math"
 	"github.com/btcsuite/btcd/btcec/v2"
 	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -438,7 +439,7 @@ func TestSigningSession(t *testing.T) {
 				assert.NoError(t, actual.ValidateBasic())
 				assert.Equal(t, signingSession.Key.ID, actual.KeyID)
 
-				participantsWeight := sdk.ZeroUint()
+				participantsWeight := math.ZeroUint()
 				for p, sig := range actual.Sigs {
 					participantsWeight = participantsWeight.Add(signingSession.Key.Snapshot.GetParticipantWeight(funcs.Must(sdk.ValAddressFromBech32(p))))
 

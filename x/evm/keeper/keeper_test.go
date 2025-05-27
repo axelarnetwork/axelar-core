@@ -4,15 +4,16 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
+	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
@@ -329,7 +330,7 @@ func TestGetConfirmedDepositsPaginated(t *testing.T) {
 
 func TestBaseKeeper(t *testing.T) {
 	var (
-		evmStoreKey       *sdk.KVStoreKey
+		evmStoreKey       *store.KVStoreKey
 		keeper            *evmKeeper.BaseKeeper
 		ctx               sdk.Context
 		expectedChainName nexus.ChainName

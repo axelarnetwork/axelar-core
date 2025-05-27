@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"golang.org/x/exp/maps"
 
@@ -19,7 +20,7 @@ import (
 func QuadraticWeightFunc(consensusPower sdk.Uint) sdk.Uint {
 	bigInt := consensusPower.BigInt()
 
-	return sdk.NewUintFromBigInt(bigInt.Sqrt(bigInt))
+	return math.NewUintFromBigInt(bigInt.Sqrt(bigInt))
 }
 
 // ValidatorI provides necessary functions to the validator information
@@ -108,7 +109,7 @@ func (m Snapshot) GetParticipantAddresses() []sdk.ValAddress {
 
 // GetParticipantsWeight returns the sum of all participants' weights
 func (m Snapshot) GetParticipantsWeight() sdk.Uint {
-	weight := sdk.ZeroUint()
+	weight := math.ZeroUint()
 	for _, p := range m.Participants {
 		weight = weight.Add(p.Weight)
 	}
@@ -122,7 +123,7 @@ func (m Snapshot) GetParticipantWeight(participant sdk.ValAddress) sdk.Uint {
 		return participant.Weight
 	}
 
-	return sdk.ZeroUint()
+	return math.ZeroUint()
 }
 
 // CalculateMinPassingWeight returns the minimum amount of weights to pass the given threshold

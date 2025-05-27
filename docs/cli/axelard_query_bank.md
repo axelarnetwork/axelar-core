@@ -28,4 +28,6 @@ axelard query bank [flags]
 - [axelard query](axelard_query.md) - Querying subcommands
 - [axelard query bank balances](axelard_query_bank_balances.md) - Query for account balances by address
 - [axelard query bank denom-metadata](axelard_query_bank_denom-metadata.md) - Query the client metadata for coin denominations
+- [axelard query bank send-enabled](axelard_query_bank_send-enabled.md) - Query for send enabled entries
+- [axelard query bank spendable-balances](axelard_query_bank_spendable-balances.md) - Query for account spendable balances by address
 - [axelard query bank total](axelard_query_bank_total.md) - Query the total supply of coins of the chain

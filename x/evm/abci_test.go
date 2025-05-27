@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/math"
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	evmCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -1731,7 +1732,7 @@ func randTransferKeyEvent(chain nexus.ChainName) types.Event {
 		return types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
 	}, int(rand.I64Between(10, 50)))
 
-	totalWeight := sdk.ZeroUint()
+	totalWeight := math.ZeroUint()
 	newWeights := slices.Expand(func(_ int) sdk.Uint {
 		newWeight := sdk.NewUint(uint64(rand.I64Between(1, 20)))
 		totalWeight = totalWeight.Add(newWeight)

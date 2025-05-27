@@ -3,9 +3,9 @@ package config_test
 import (
 	"testing"
 
+	tmcfg "github.com/cometbft/cometbft/config"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
-	tmcfg "github.com/tendermint/tendermint/config"
 
 	"github.com/axelarnetwork/axelar-core/config"
 )

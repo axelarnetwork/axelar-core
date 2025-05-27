@@ -1,7 +1,7 @@
 package grpc
 
 import (
-	protogrpc "github.com/gogo/protobuf/grpc"
+	protogrpc "github.com/cosmos/gogoproto/grpc"
 )
 
 //go:generate moq -pkg mock -out mock/grpc.go . Server

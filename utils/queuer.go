@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	db "github.com/cometbft/cometbft-db"
+	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	gogoprototypes "github.com/gogo/protobuf/types"
-	"github.com/tendermint/tendermint/libs/log"
-	db "github.com/tendermint/tm-db"
+	gogoprototypes "github.com/cosmos/gogoproto/types"
 )
 
 //go:generate moq -out ./mock/queuer.go -pkg mock . KVQueue

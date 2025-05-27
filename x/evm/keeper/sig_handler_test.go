@@ -4,14 +4,14 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/cometbft/cometbft/libs/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/cosmos/gogoproto/types"
 	"github.com/ethereum/go-ethereum/common"
-	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	fakeMock "github.com/axelarnetwork/axelar-core/testutils/fake/interfaces/mock"
