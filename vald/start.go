@@ -11,7 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -419,7 +418,7 @@ func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCf
 	return broadcaster
 }
 
-func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, valAddr sdk.ValAddress) *multisig.Mgr {
+func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx sdkClient.Context, axelarCfg config.ValdConfig, valAddr sdk.ValAddress) *multisig.Mgr {
 	conn, err := grpc.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout)
 	if err != nil {
 		panic(sdkerrors.Wrap(err, "failed to create multisig manager"))
@@ -429,7 +428,7 @@ func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context,
 	return multisig.NewMgr(tofnd.NewMultisigClient(conn), cliCtx, valAddr, broadcaster, timeout)
 }
 
-func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx sdkClient.Context, axelarCfg config.ValdConfig, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
 		conn, err := tss.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout)
 		if err != nil {
@@ -487,7 +486,7 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broad
 			Debugf("created JSON-RPC client of type %T", client)
 
 		// clean up evmRPC connection on process shutdown
-		cleanupCommands = append(cleanupCommands, client.Close)
+		cleanupCommands = append(cleanupCommands, sdkClient.Close)
 
 		rpcs[chainName] = client
 		log.Infof("successfully connected to EVM bridge for chain %s", chainName)
