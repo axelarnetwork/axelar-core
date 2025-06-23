@@ -100,13 +100,14 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 			}
 
 			axelarAppTemplate, axelarAppConfig := initAppConfig()
-			customTMConfig := initCometBFTConfig()
-			err = server.InterceptConfigsPreRunHandler(cmd, axelarAppTemplate, axelarAppConfig, customTMConfig)
+
+			cmConfig := cmtcfg.DefaultConfig()
+			err = server.InterceptConfigsPreRunHandler(cmd, axelarAppTemplate, axelarAppConfig, cmConfig)
 			if err != nil {
 				return err
 			}
 
-			serverCtx, err := server.InterceptConfigsAndCreateContext(cmd, axelarAppTemplate, axelarAppConfig, customTMConfig)
+			serverCtx, err := server.InterceptConfigsAndCreateContext(cmd, axelarAppTemplate, axelarAppConfig, cmConfig)
 			if err != nil {
 				return err
 			}
@@ -263,18 +264,6 @@ func initAppConfig() (string, interface{}) {
 	customAppTemplate := serverconfig.DefaultConfigTemplate
 
 	return customAppTemplate, axelarAppConfig
-}
-
-// initCometBFTConfig helps to override default CometBFT Config values.
-// return cmtcfg.DefaultConfig if no custom configuration is required for the application.
-func initCometBFTConfig() *cmtcfg.Config {
-	cfg := cmtcfg.DefaultConfig()
-
-	// these values put a higher strain on node memory
-	// cfg.P2P.MaxNumInboundPeers = 100
-	// cfg.P2P.MaxNumOutboundPeers = 40
-
-	return cfg
 }
 
 func tempDir() string {

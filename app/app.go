@@ -44,7 +44,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-	"github.com/cosmos/cosmos-sdk/std"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -215,21 +214,12 @@ func NewAxelarApp(
 	wasmOpts []wasm.Option,
 	baseAppOptions ...func(*bam.BaseApp),
 ) *AxelarApp {
-	appCodec := codec.NewProtoCodec(encodingConfig.InterfaceRegistry)
-	legacyAmino := codec.NewLegacyAmino()
-
-	if err := encodingConfig.InterfaceRegistry.SigningContext().Validate(); err != nil {
-		panic(err)
-	}
-
-	std.RegisterLegacyAminoCodec(legacyAmino)
-	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-
 	keys := CreateStoreKeys()
 	tkeys := store.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := store.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
 	keepers := NewKeeperCache()
+	appCodec := codec.NewProtoCodec(encodingConfig.InterfaceRegistry)
 
 	SetKeeper(keepers, initParamsKeeper(encodingConfig, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
 	SetKeeper(keepers, initConsensusParamsKeeper(appCodec, keys))
@@ -257,7 +247,6 @@ func NewAxelarApp(
 	}
 	homePath := cast.ToString(appOpts.Get(flags.FlagHome))
 	SetKeeper(keepers, initUpgradeKeeper(appCodec, keys, skipUpgradeHeights, homePath, bApp))
-
 	SetKeeper(keepers, initEvidenceKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initFeegrantKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initCapabilityKeeper(appCodec, keys, memKeys))

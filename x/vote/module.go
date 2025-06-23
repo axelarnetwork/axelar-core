@@ -15,6 +15,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/grpc"
 	"github.com/axelarnetwork/axelar-core/x/vote/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/vote/keeper"
@@ -116,7 +117,9 @@ func (AppModule) QuerierRoute() string {
 
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
-	return EndBlocker(sdk.UnwrapSDKContext(ctx), am.keeper)
+	return utils.RunCached(sdk.UnwrapSDKContext(ctx), am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
+		return EndBlocker(sdk.UnwrapSDKContext(ctx), am.keeper)
+	}), nil
 }
 
 // RegisterServices registers a GRPC query service to respond to the

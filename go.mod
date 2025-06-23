@@ -3,19 +3,26 @@ module github.com/axelarnetwork/axelar-core
 go 1.23.6
 
 require (
+	cosmossdk.io/client/v2 v2.0.0-beta.3
+	cosmossdk.io/core v0.11.1
+	cosmossdk.io/errors v1.0.1
 	cosmossdk.io/log v1.5.0
 	cosmossdk.io/math v1.5.0
 	cosmossdk.io/store v1.1.1
+	cosmossdk.io/tools/confix v0.1.2
 	cosmossdk.io/x/evidence v0.1.1
 	cosmossdk.io/x/feegrant v0.1.1
+	cosmossdk.io/x/tx v0.13.7
 	cosmossdk.io/x/upgrade v0.1.4
 	github.com/CosmWasm/wasmd v0.54.0
+	github.com/CosmWasm/wasmvm v1.5.9
 	// Ensure WASMVM_VERSION in the Dockerfile is updated when changing wasmvm version.
 	github.com/CosmWasm/wasmvm/v2 v2.2.3
 	github.com/axelarnetwork/tm-events v0.0.0-20250318181253-c71853c5bb8f
 	github.com/axelarnetwork/utils v0.0.0-20250317211301-dd7399dbbc5f
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/cometbft/cometbft v0.38.17
+	github.com/cometbft/cometbft-db v0.14.1
 	github.com/cosmos/cosmos-db v1.1.1
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
 	github.com/cosmos/cosmos-sdk v0.50.13
@@ -26,10 +33,12 @@ require (
 	github.com/cosmos/rosetta v0.50.12
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/go-errors/errors v1.5.1
+	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
+	github.com/hashicorp/go-metrics v0.5.3
 	github.com/matryer/moq v0.5.1
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.2
 	github.com/mitchellh/mapstructure v1.5.0
@@ -53,18 +62,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20241202173237-19429a94021a
 	google.golang.org/grpc v1.70.0
 	google.golang.org/protobuf v1.36.4
-)
-
-require (
-	cosmossdk.io/client/v2 v2.0.0-beta.3
-	cosmossdk.io/core v0.11.1
-	cosmossdk.io/errors v1.0.1
-	cosmossdk.io/tools/confix v0.1.2
-	cosmossdk.io/x/tx v0.13.7
-	github.com/CosmWasm/wasmvm v1.5.9
-	github.com/cometbft/cometbft-db v0.14.1
-	github.com/gogo/protobuf v1.3.2
-	github.com/hashicorp/go-metrics v0.5.3
 )
 
 require (
