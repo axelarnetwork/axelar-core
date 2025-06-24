@@ -234,9 +234,9 @@ SWAGGER_DIR=./swagger-proto
 THIRD_PARTY_DIR=$(SWAGGER_DIR)/third_party
 
 # Dependency versions
-COSMOS_SDK_VERSION=$(go list -m -json github.com/cosmos/cosmos-sdk | jq -r .Version)
-IBC_VERSION=$(go list -m all | grep "github.com/cosmos/ibc-go" | cut -d' ' -f2)
-WASMD_VERSION=$(go list -m -json github.com/CosmWasm/wasmd |  jq -r .Version)
+COSMOS_SDK_VERSION=$(shell go list -m -json github.com/cosmos/cosmos-sdk | jq -r .Version)
+IBC_VERSION=$(shell go list -m all | grep "github.com/cosmos/ibc-go/v" | cut -d' ' -f2)
+WASMD_VERSION=$(shell go list -m -json github.com/CosmWasm/wasmd |  jq -r .Version)
 
 proto-swagger-download-deps:
 	@make clean
