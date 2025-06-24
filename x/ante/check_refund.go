@@ -100,9 +100,13 @@ func (d CheckRefundFeeDecorator) validateRefundQualification(ctx sdk.Context, ms
 			}
 
 			signers, _, err := d.cdc.GetMsgV1Signers(msg)
-			if err != nil || len(signers) == 0 {
+			if err != nil {
 				return sdkerrors.ErrInvalidRequest.Wrap(err.Error())
 			}
+			if len(signers) == 0 {
+				return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "message has no signers")
+			}
+
 			operatorAddr := d.snapshotter.GetOperator(ctx, signers[0])
 			if operatorAddr == nil {
 				return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "signer is not a registered proxy")

@@ -118,7 +118,7 @@ func (AppModule) QuerierRoute() string {
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
 	return utils.RunCached(sdk.UnwrapSDKContext(ctx), am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
-		return EndBlocker(sdk.UnwrapSDKContext(ctx), am.keeper)
+		return EndBlocker(ctx, am.keeper)
 	}), nil
 }
 
