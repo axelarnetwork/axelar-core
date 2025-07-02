@@ -263,3 +263,5 @@ replace github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.9.0
 replace github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt/v4 v4.4.2
 
 replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
+
+replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.50.12-0.20250702172758-ea01aa1dc0be
