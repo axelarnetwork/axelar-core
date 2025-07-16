@@ -1,6 +1,7 @@
 PACKAGES=$(shell go list ./... | grep -v '/simulation')
 
-VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
+# VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
+VERSION := 1.3.0
 COMMIT := $(shell git log -1 --format='%H')
 
 DOCKER := $(shell which docker)

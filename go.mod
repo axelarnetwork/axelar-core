@@ -1,6 +1,6 @@
 module github.com/axelarnetwork/axelar-core
 
-go 1.23
+go 1.23.0
 
 require (
 	github.com/CosmWasm/wasmd v0.34.1
