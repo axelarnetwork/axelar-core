@@ -1,6 +1,6 @@
 PACKAGES=$(shell go list ./... | grep -v '/simulation')
 
-VERSION := 1.4.0
+VERSION := 1.3.0
 COMMIT := $(shell git log -1 --format='%H')
 
 DOCKER := $(shell which docker)
