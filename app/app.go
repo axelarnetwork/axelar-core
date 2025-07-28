@@ -58,6 +58,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/cosmos/cosmos-sdk/x/consensus"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
@@ -553,6 +554,7 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 		evidence.NewAppModule(*GetKeeper[evidencekeeper.Keeper](keepers)),
 		params.NewAppModule(*GetKeeper[paramskeeper.Keeper](keepers)),
 		capability.NewAppModule(appCodec, *GetKeeper[capabilitykeeper.Keeper](keepers), false),
+		consensus.NewAppModule(appCodec, *GetKeeper[consensusparamkeeper.Keeper](keepers)),
 	}
 
 	// wasm module needs to be added in a specific order, so we cannot just append it at the end
