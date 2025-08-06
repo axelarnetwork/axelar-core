@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -486,33 +485,6 @@ func (app *AxelarApp) registerWasmSnapshotExtension(keepers *KeeperCache) {
 				panic(fmt.Errorf("failed to register snapshot extension: %s", err))
 			}
 		}
-	}
-}
-
-func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keepers *KeeperCache) {
-	upgradeKeeper := GetKeeper[upgradekeeper.Keeper](keepers)
-	upgradeKeeper.SetUpgradeHandler(
-		upgradeName(app.Version()),
-		func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-			updatedVM, err := app.mm.RunMigrations(ctx, configurator, fromVM)
-			if err != nil {
-				return updatedVM, err
-			}
-
-			return updatedVM, err
-		},
-	)
-
-	upgradeInfo, err := upgradeKeeper.ReadUpgradeInfoFromDisk()
-	if err != nil {
-		panic(err)
-	}
-
-	if upgradeInfo.Name == upgradeName(app.Version()) && !upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{}
-
-		// configure store loader that checks if version == upgradeHeight and applies store upgrades
-		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
 	}
 }
 
