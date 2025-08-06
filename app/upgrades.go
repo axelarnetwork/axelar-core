@@ -38,6 +38,7 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keep
 	upgradeKeeper.SetUpgradeHandler(
 		upgradeName(app.Version()),
 		func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+			app.Logger().Info("Running upgrade handler", "version", app.Version())
 			// Migrate Tendermint consensus parameters from x/params module to a
 			// dedicated x/consensus module.
 			sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -102,8 +103,5 @@ func setupLegacyKeyTables(k *paramskeeper.Keeper) {
 		if !subspace.HasKeyTable() {
 			subspace.WithKeyTable(keyTable)
 		}
-
-		k.Subspace(baseapp.Paramspace).
-			WithKeyTable(paramstypes.ConsensusParamsKeyTable())
 	}
 }
