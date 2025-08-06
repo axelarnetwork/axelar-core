@@ -102,5 +102,8 @@ func setupLegacyKeyTables(k *paramskeeper.Keeper) {
 		if !subspace.HasKeyTable() {
 			subspace.WithKeyTable(keyTable)
 		}
+
+		k.Subspace(baseapp.Paramspace).
+			WithKeyTable(paramstypes.ConsensusParamsKeyTable())
 	}
 }
