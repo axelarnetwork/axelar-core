@@ -31,6 +31,7 @@ import (
 	tmos "github.com/cometbft/cometbft/libs/os"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -61,6 +62,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/consensus"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
+	consensustypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
@@ -490,10 +492,18 @@ func (app *AxelarApp) registerWasmSnapshotExtension(keepers *KeeperCache) {
 }
 
 func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keepers *KeeperCache) {
+	baseAppLegacySS := GetKeeper[paramskeeper.Keeper](keepers).Subspace(baseapp.Paramspace).WithKeyTable(paramstypes.ConsensusParamsKeyTable())
+
 	upgradeKeeper := GetKeeper[upgradekeeper.Keeper](keepers)
 	upgradeKeeper.SetUpgradeHandler(
 		upgradeName(app.Version()),
 		func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+			// Migrate Tendermint consensus parameters from x/params module to a
+			// dedicated x/consensus module.
+			sdkCtx := sdk.UnwrapSDKContext(ctx)
+			consensusParams := GetKeeper[consensusparamkeeper.Keeper](keepers)
+			funcs.MustNoErr(baseapp.MigrateParams(sdkCtx, baseAppLegacySS, consensusParams.ParamsStore))
+
 			updatedVM, err := app.mm.RunMigrations(ctx, configurator, fromVM)
 			if err != nil {
 				return updatedVM, err
@@ -509,7 +519,12 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keep
 	}
 
 	if upgradeInfo.Name == upgradeName(app.Version()) && !upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{}
+		storeUpgrades := store.StoreUpgrades{
+			Added: []string{
+				crisistypes.ModuleName,
+				consensustypes.ModuleName,
+			},
+		}
 
 		// configure store loader that checks if version == upgradeHeight and applies store upgrades
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
