@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -491,6 +490,7 @@ func (app *AxelarApp) registerWasmSnapshotExtension(keepers *KeeperCache) {
 	}
 }
 
+<<<<<<< HEAD
 func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keepers *KeeperCache) {
 	baseAppLegacySS := GetKeeper[paramskeeper.Keeper](keepers).Subspace(baseapp.Paramspace).WithKeyTable(paramstypes.ConsensusParamsKeyTable())
 
@@ -531,6 +531,8 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keep
 	}
 }
 
+=======
+>>>>>>> 19c1065fe747fdc2a28f5add514cb78ab724f59c
 func initBaseApp(db dbm.DB, traceStore io.Writer, encodingConfig axelarParams.EncodingConfig, keepers *KeeperCache, baseAppOptions []func(*bam.BaseApp), logger sdklogger.Logger) *bam.BaseApp {
 	bApp := bam.NewBaseApp(Name, logger, db, encodingConfig.TxConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
