@@ -346,6 +346,7 @@ func NewAxelarApp(
 		mm:                mm,
 	}
 
+	app.Logger().Info("New Axelar app", "version", upgradeName(app.Version()))
 	app.setUpgradeBehaviour(configurator, keepers)
 
 	// initialize stores
