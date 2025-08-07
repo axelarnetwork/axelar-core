@@ -54,6 +54,7 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keep
 		},
 	)
 
+	app.Logger().Info("Reading upgrade info from disk", "version", app.Version())
 	upgradeInfo, err := upgradeKeeper.ReadUpgradeInfoFromDisk()
 	if err != nil {
 		panic(err)
