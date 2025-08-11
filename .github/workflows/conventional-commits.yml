@@ -9,7 +9,7 @@ jobs:
 
     steps:
       - name: semantic-pull-request
-        uses: amannn/action-semantic-pull-request@v3.2.6
+        uses: amannn/action-semantic-pull-request@81acd1c603cf23bd6f6fbe16be9e882cd25cd4e6 # v3.2.6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

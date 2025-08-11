@@ -13,13 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba490695 # v4
         with:
           fetch-depth: '0'
           submodules: recursive
 
       - id: release
-        uses: anothrNick/github-tag-action@1.39.0
+        uses: anothrNick/github-tag-action@3840ec22ac98e14d981375e3ae2d8d0392964521 # v1.39.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: ${{ github.event.inputs.bumpType }}
@@ -29,7 +29,7 @@ jobs:
           DRY_RUN: true
 
       - id: parsed-release
-        uses: booxmedialtd/ws-action-parse-semver@v1
+        uses: booxmedialtd/ws-action-parse-semver@7784200024d6b3fc01253e617ec0168daf603de3 # v1
         with:
           input_string: ${{ steps.release.outputs.tag }}
 
@@ -70,7 +70,7 @@ jobs:
           fi
 
       - name: Bump version and push tag
-        uses: anothrNick/github-tag-action@1.39.0
+        uses: anothrNick/github-tag-action@3840ec22ac98e14d981375e3ae2d8d0392964521 # v1.39.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: ${{ github.event.inputs.bumpType }}

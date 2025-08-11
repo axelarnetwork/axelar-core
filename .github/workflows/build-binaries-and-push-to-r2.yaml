@@ -32,7 +32,7 @@ jobs:
                 echo "ref=$ref" >> $GITHUB_OUTPUT
 
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba490695 # v4
               with:
                 fetch-depth: "0"
                 path: axelar-core
@@ -52,7 +52,7 @@ jobs:
                 sudo mv axelar-core/bin/axelard ./$commit_hash/axelard-linux-amd64-$semver
                 echo "binary-directory=./$commit_hash" >> $GITHUB_OUTPUT
 
-            - uses: ryand56/r2-upload-action@v1.3.2
+            - uses: ryand56/r2-upload-action@31453780fdaaf43c8eff7231dd521f8669b48621 # v1.3.2
               with:
                 r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
                 r2-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_CF }}
