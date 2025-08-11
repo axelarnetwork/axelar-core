@@ -40,8 +40,10 @@ func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulat
 				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 			}
 
-			// only restrict a validator from unbonding it's self-delegation
-			if !delegatorAddress.Equals(valAddress) {
+			// Only restrict a validator from unbonding it's self-delegation
+			// Convert validator address to account address for comparison
+			valAccAddress := sdk.AccAddress(valAddress)
+			if !delegatorAddress.Equals(valAccAddress) {
 				continue
 			}
 
