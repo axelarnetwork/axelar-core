@@ -6,7 +6,7 @@ Submit a software upgrade proposal
 
 Submit a software upgrade along with an initial deposit.
 Please specify a unique name and height for the upgrade to take effect.
-You may include info to reference a binary download link, in a format compatible with: https://github.com/cosmos/cosmos-sdk/tree/master/cosmovisor
+You may include info to reference a binary download link, in a format compatible with: https://github.com/cosmos/cosmos-sdk/tree/main/tools/cosmovisor
 
 ```
 axelard tx gov submit-proposal software-upgrade [name] (--upgrade-height [height]) (--upgrade-info [info]) [flags]
