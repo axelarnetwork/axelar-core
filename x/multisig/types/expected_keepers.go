@@ -2,6 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -67,4 +68,9 @@ type Rewarder interface {
 type Nexus interface {
 	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
 	GetChains(ctx sdk.Context) []nexus.Chain
+}
+
+// Governance provides governance keeper functionality
+type Governance interface {
+	GetGovernanceAccount(ctx sdk.Context) authtypes.ModuleAccountI
 }

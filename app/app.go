@@ -579,6 +579,7 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 			GetKeeper[snapKeeper.Keeper](keepers),
 			GetKeeper[rewardKeeper.Keeper](keepers),
 			GetKeeper[nexusKeeper.Keeper](keepers),
+			GetKeeper[govkeeper.Keeper](keepers),
 		),
 		tss.NewAppModule(
 			*GetKeeper[tssKeeper.Keeper](keepers),

@@ -18,16 +18,18 @@ type msgServer struct {
 	snapshotter Snapshotter
 	staker      types.Staker
 	nexus       types.Nexus
+	gov         types.Governance
 }
 
 // NewMsgServer returns an implementation of the MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServer(keeper Keeper, snapshotter Snapshotter, staker types.Staker, nexus types.Nexus) types.MsgServiceServer {
+func NewMsgServer(keeper Keeper, snapshotter Snapshotter, staker types.Staker, nexus types.Nexus, gov types.Governance) types.MsgServiceServer {
 	return msgServer{
 		Keeper:      keeper,
 		snapshotter: snapshotter,
 		staker:      staker,
 		nexus:       nexus,
+		gov:         gov,
 	}
 }
 
@@ -121,12 +123,14 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 		return nil, fmt.Errorf("unknown chain")
 	}
 
-	if _, ok := s.GetCurrentKeyID(ctx, req.Chain); ok {
-		return nil, fmt.Errorf("manual key rotation is only allowed when no key is active")
-	}
+	if !req.Sender.Equals(s.gov.GetGovernanceAccount(ctx).GetAddress()) {
+		if _, ok := s.GetCurrentKeyID(ctx, req.Chain); ok {
+			return nil, fmt.Errorf("manual key rotation is only allowed when no key is active or through a governance proposal")
+		}
 
-	if err := s.AssignKey(ctx, req.Chain, req.KeyID); err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to assign the next key")
+		if err := s.AssignKey(ctx, req.Chain, req.KeyID); err != nil {
+			return nil, sdkerrors.Wrap(err, "failed to assign the next key")
+		}
 	}
 
 	if err := s.Keeper.RotateKey(ctx, req.Chain); err != nil {

@@ -90,10 +90,11 @@ type AppModule struct {
 	snapshotter keeper.Snapshotter
 	rewarder    types.Rewarder
 	nexus       types.Nexus
+	gov         types.Governance
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k keeper.Keeper, staker types.Staker, slasher types.Slasher, snapshotter types.Snapshotter, rewarder types.Rewarder, nexus types.Nexus) AppModule {
+func NewAppModule(k keeper.Keeper, staker types.Staker, slasher types.Slasher, snapshotter types.Snapshotter, rewarder types.Rewarder, nexus types.Nexus, gov types.Governance) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -101,6 +102,7 @@ func NewAppModule(k keeper.Keeper, staker types.Staker, slasher types.Slasher, s
 		snapshotter:    keeper.NewSnapshotCreator(k, snapshotter, staker, slasher),
 		rewarder:       rewarder,
 		nexus:          nexus,
+		gov:            gov,
 	}
 }
 
@@ -142,7 +144,7 @@ func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.staker))
-	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrMultisig, Logger: am.keeper.Logger}, keeper.NewMsgServer(am.keeper, am.snapshotter, am.staker, am.nexus))
+	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrMultisig, Logger: am.keeper.Logger}, keeper.NewMsgServer(am.keeper, am.snapshotter, am.staker, am.nexus, am.gov))
 
 	err := cfg.RegisterMigration(types.ModuleName, 1, keeper.GetMigrationHandler())
 	if err != nil {
