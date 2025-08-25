@@ -32,6 +32,7 @@ axelard query [flags]
 - [axelard query block-results](axelard_query_block-results.md) - Query for a committed block's results by height
 - [axelard query blocks](axelard_query_blocks.md) - Query for paginated blocks that match a set of events
 - [axelard query comet-validator-set](axelard_query_comet-validator-set.md) - Get the full CometBFT validator set at given height
+- [axelard query consensus](axelard_query_consensus.md) - Querying commands for the consensus module
 - [axelard query distribution](axelard_query_distribution.md) - Querying commands for the distribution module
 - [axelard query evidence](axelard_query_evidence.md) - Querying commands for the evidence module
 - [axelard query evm](axelard_query_evm.md) - Querying commands for the evm module
