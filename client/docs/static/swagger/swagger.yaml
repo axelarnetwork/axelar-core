@@ -41,9 +41,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: object
                 properties:
@@ -124,9 +121,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               contract_address:
@@ -199,9 +193,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               deposit_address:
                 type: string
                 format: byte
@@ -249,9 +240,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               sender:
                 type: string
             title: >-
@@ -301,9 +289,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               recipient_addr:
                 type: string
               recipient_chain:
@@ -356,9 +341,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               asset:
@@ -419,9 +401,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               fee_collector:
                 type: string
                 format: byte
@@ -471,9 +450,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               id:
@@ -520,9 +496,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               sender:
                 type: string
             title: >-
@@ -569,9 +542,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               id:
                 type: string
               payload:
@@ -986,9 +956,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               name:
                 type: string
               key_type:
@@ -1215,9 +1182,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               tx_id:
@@ -1444,9 +1408,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               tx_id:
@@ -1665,9 +1626,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               tx_ids:
@@ -1888,9 +1846,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               tx_id:
@@ -2117,9 +2072,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               tx_id:
@@ -2338,9 +2290,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               sender:
@@ -2561,9 +2510,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               asset:
@@ -2809,9 +2755,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               sender:
@@ -3032,9 +2975,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               key_id:
@@ -3255,9 +3195,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               recipient_addr:
@@ -3484,9 +3421,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               event_id:
@@ -3704,9 +3638,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               address:
@@ -3932,9 +3863,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               sender:
@@ -7662,9 +7590,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               sender:
                 type: string
       tags:
@@ -7706,9 +7631,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               sender:
                 type: string
       tags:
@@ -7967,9 +7889,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chains:
                 type: array
                 items:
@@ -8065,9 +7984,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chains:
                 type: array
                 items:
@@ -8113,9 +8029,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               fee_info:
                 type: object
                 properties:
@@ -8178,9 +8091,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chains:
                 type: array
                 items:
@@ -8226,9 +8136,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chain:
                 type: string
               limit:
@@ -9596,9 +9503,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               inner_message:
                 type: object
                 properties:
@@ -10853,9 +10757,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               key_ids:
                 type: array
                 items:
@@ -11439,9 +11340,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               controller:
                 type: string
                 format: byte
@@ -11661,9 +11559,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               controller:
                 type: string
                 format: byte
@@ -11883,9 +11778,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               governance_key:
                 type: object
                 properties:
@@ -13133,9 +13025,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               poll_id:
                 type: string
                 format: uint64
@@ -55004,9 +54893,6 @@ definitions:
   axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: object
         properties:
@@ -55074,9 +54960,6 @@ definitions:
   axelar.axelarnet.v1beta1.CallContractRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       contract_address:
@@ -55120,9 +55003,6 @@ definitions:
   axelar.axelarnet.v1beta1.ConfirmDepositRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       deposit_address:
         type: string
         format: byte
@@ -55136,9 +55016,6 @@ definitions:
   axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       sender:
         type: string
     title: |-
@@ -55175,9 +55052,6 @@ definitions:
   axelar.axelarnet.v1beta1.LinkRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       recipient_addr:
         type: string
       recipient_chain:
@@ -55288,9 +55162,6 @@ definitions:
   axelar.axelarnet.v1beta1.RegisterAssetRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       asset:
@@ -55315,9 +55186,6 @@ definitions:
   axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       fee_collector:
         type: string
         format: byte
@@ -55331,9 +55199,6 @@ definitions:
   axelar.axelarnet.v1beta1.RetryIBCTransferRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       id:
@@ -55346,9 +55211,6 @@ definitions:
   axelar.axelarnet.v1beta1.RouteIBCTransfersRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       sender:
         type: string
     title: >-
@@ -55361,9 +55223,6 @@ definitions:
   axelar.axelarnet.v1beta1.RouteMessageRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       id:
         type: string
       payload:
@@ -55424,9 +55283,6 @@ definitions:
   axelar.evm.v1beta1.AddChainRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       name:
         type: string
       key_type:
@@ -55590,9 +55446,6 @@ definitions:
   axelar.evm.v1beta1.ConfirmDepositRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       tx_id:
@@ -55612,9 +55465,6 @@ definitions:
   axelar.evm.v1beta1.ConfirmGatewayTxRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       tx_id:
@@ -55627,9 +55477,6 @@ definitions:
   axelar.evm.v1beta1.ConfirmGatewayTxsRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       tx_ids:
@@ -55644,9 +55491,6 @@ definitions:
   axelar.evm.v1beta1.ConfirmTokenRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       tx_id:
@@ -55667,9 +55511,6 @@ definitions:
   axelar.evm.v1beta1.ConfirmTransferKeyRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       tx_id:
@@ -55688,9 +55529,6 @@ definitions:
   axelar.evm.v1beta1.CreateBurnTokensRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       sender:
@@ -55703,9 +55541,6 @@ definitions:
   axelar.evm.v1beta1.CreateDeployTokenRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       asset:
@@ -55743,9 +55578,6 @@ definitions:
   axelar.evm.v1beta1.CreatePendingTransfersRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       sender:
@@ -55760,9 +55592,6 @@ definitions:
   axelar.evm.v1beta1.CreateTransferOperatorshipRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       key_id:
@@ -56186,9 +56015,6 @@ definitions:
   axelar.evm.v1beta1.LinkRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       recipient_addr:
@@ -56407,9 +56233,6 @@ definitions:
   axelar.evm.v1beta1.RetryFailedEventRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       event_id:
@@ -56421,9 +56244,6 @@ definitions:
   axelar.evm.v1beta1.SetGatewayRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       address:
@@ -56436,9 +56256,6 @@ definitions:
   axelar.evm.v1beta1.SignCommandsRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       sender:
@@ -56571,9 +56388,6 @@ definitions:
   axelar.multisig.v1beta1.KeygenOptInRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       sender:
         type: string
   axelar.multisig.v1beta1.KeygenOptInResponse:
@@ -56581,9 +56395,6 @@ definitions:
   axelar.multisig.v1beta1.KeygenOptOutRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       sender:
         type: string
   axelar.multisig.v1beta1.KeygenOptOutResponse:
@@ -57015,9 +56826,6 @@ definitions:
   axelar.nexus.v1beta1.ActivateChainRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chains:
         type: array
         items:
@@ -57238,9 +57046,6 @@ definitions:
   axelar.nexus.v1beta1.DeregisterChainMaintainerRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chains:
         type: array
         items:
@@ -57531,9 +57336,6 @@ definitions:
   axelar.nexus.v1beta1.RegisterAssetFeeRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       fee_info:
         type: object
         properties:
@@ -57560,9 +57362,6 @@ definitions:
   axelar.nexus.v1beta1.RegisterChainMaintainerRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chains:
         type: array
         items:
@@ -57574,9 +57373,6 @@ definitions:
   axelar.nexus.v1beta1.SetTransferRateLimitRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chain:
         type: string
       limit:
@@ -57896,9 +57692,6 @@ definitions:
   axelar.reward.v1beta1.RefundMsgRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       inner_message:
         type: object
         properties:
@@ -58250,9 +58043,6 @@ definitions:
   axelar.tss.v1beta1.HeartBeatRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       key_ids:
         type: array
         items:
@@ -58580,9 +58370,6 @@ definitions:
   axelar.permission.v1beta1.DeregisterControllerRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       controller:
         type: string
         format: byte
@@ -58797,9 +58584,6 @@ definitions:
   axelar.permission.v1beta1.RegisterControllerRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       controller:
         type: string
         format: byte
@@ -58813,9 +58597,6 @@ definitions:
   axelar.permission.v1beta1.UpdateGovernanceKeyRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       governance_key:
         type: object
         properties:
@@ -59233,9 +59014,6 @@ definitions:
   axelar.vote.v1beta1.VoteRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       poll_id:
         type: string
         format: uint64
