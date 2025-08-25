@@ -17,10 +17,7 @@ message VoteRequest {
 
   reserved 2, 3; // poll_key and vote were removed in v0.20
 
-  bytes sender_bz = 1 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
-    deprecated = true
-  ];
+  reserved 1; // used to be sender_bz
   uint64 poll_id = 4 [
     (gogoproto.customname) = "PollID",
     (gogoproto.customtype) =
