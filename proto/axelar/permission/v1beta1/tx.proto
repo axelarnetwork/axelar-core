@@ -15,7 +15,7 @@ message UpdateGovernanceKeyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   cosmos.crypto.multisig.LegacyAminoPubKey governance_key = 2
       [ (gogoproto.nullable) = false ];
   string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
@@ -28,7 +28,7 @@ message RegisterControllerRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   bytes controller = 2 [ (gogoproto.casttype) =
                              "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
@@ -41,7 +41,7 @@ message DeregisterControllerRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   bytes controller = 2 [ (gogoproto.casttype) =
                              "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];

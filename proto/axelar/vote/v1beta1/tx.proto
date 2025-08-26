@@ -17,7 +17,7 @@ message VoteRequest {
 
   reserved 2, 3; // poll_key and vote were removed in v0.20
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   uint64 poll_id = 4 [
     (gogoproto.customname) = "PollID",
     (gogoproto.customtype) =

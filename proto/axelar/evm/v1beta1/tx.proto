@@ -16,7 +16,7 @@ message SetGatewayRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -33,7 +33,7 @@ message ConfirmGatewayTxRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -51,7 +51,7 @@ message ConfirmGatewayTxsRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -70,7 +70,7 @@ message ConfirmDepositRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -96,7 +96,7 @@ message ConfirmTokenRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -117,7 +117,7 @@ message ConfirmTransferKeyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -137,7 +137,7 @@ message LinkRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -157,7 +157,7 @@ message CreateBurnTokensRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -172,7 +172,7 @@ message CreateDeployTokenRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -193,7 +193,7 @@ message CreatePendingTransfersRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -208,7 +208,7 @@ message CreateTransferOwnershipRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -226,7 +226,7 @@ message CreateTransferOperatorshipRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -244,7 +244,7 @@ message SignCommandsRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -263,7 +263,7 @@ message AddChainRequest {
 
   reserved 3; // native_asset was removed in v0.14
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string name = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -279,7 +279,7 @@ message RetryFailedEventRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];

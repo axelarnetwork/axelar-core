@@ -14,10 +14,7 @@ message RegisterProxyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender_bz = 1 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ValAddress",
-    deprecated = true
-  ];
+  reserved 1; // used to be sender bytes with ValAddress cast
   bytes proxy_addr = 2 [ (gogoproto.casttype) =
                              "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];

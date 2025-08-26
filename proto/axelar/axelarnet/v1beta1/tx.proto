@@ -19,7 +19,7 @@ message LinkRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string recipient_addr = 2;
   string recipient_chain = 3
       [ (gogoproto.casttype) =
@@ -35,7 +35,7 @@ message ConfirmDepositRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
 
   reserved 2; // tx_id was removed in v0.14
 
@@ -57,7 +57,7 @@ message ExecutePendingTransfersRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string sender = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
@@ -71,7 +71,7 @@ message RegisterIBCPathRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -87,7 +87,7 @@ message AddCosmosBasedChainRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   nexus.exported.v1beta1.Chain chain = 2 [
     deprecated = true,
     (gogoproto.nullable) = false
@@ -114,7 +114,7 @@ message RegisterAssetRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -136,7 +136,7 @@ message RouteIBCTransfersRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string sender = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
@@ -148,7 +148,7 @@ message RegisterFeeCollectorRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   bytes fee_collector = 2
       [ (gogoproto.casttype) =
             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
@@ -161,7 +161,7 @@ message RetryIBCTransferRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2 [
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName",
@@ -181,7 +181,7 @@ message RouteMessageRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string id = 2 [ (gogoproto.customname) = "ID" ];
   bytes payload = 3;
   bytes feegranter = 4 [ (gogoproto.casttype) =
@@ -195,7 +195,7 @@ message CallContractRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender_bz
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
