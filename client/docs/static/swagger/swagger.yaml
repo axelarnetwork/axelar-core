@@ -7278,9 +7278,6 @@ paths:
                 type: string
               key_id:
                 type: string
-              sender_bz:
-                type: string
-                format: byte
       tags:
         - MsgService
   /axelar/multisig/start_keygen:
@@ -7324,9 +7321,6 @@ paths:
                 type: string
               key_id:
                 type: string
-              sender_bz:
-                type: string
-                format: byte
       tags:
         - MsgService
   /axelar/multisig/submit_pub_key:
@@ -7376,9 +7370,6 @@ paths:
               signature:
                 type: string
                 format: byte
-              sender_bz:
-                type: string
-                format: byte
       tags:
         - MsgService
   /axelar/multisig/submit_signature:
@@ -7424,9 +7415,6 @@ paths:
                 type: string
                 format: uint64
               signature:
-                type: string
-                format: byte
-              sender_bz:
                 type: string
                 format: byte
       tags:
@@ -7935,9 +7923,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               chains:
                 type: array
                 items:
@@ -10411,9 +10396,6 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
-                type: string
-                format: byte
               proxy_addr:
                 type: string
                 format: byte
@@ -56571,9 +56553,6 @@ definitions:
         type: string
       key_id:
         type: string
-      sender_bz:
-        type: string
-        format: byte
   axelar.multisig.v1beta1.RotateKeyResponse:
     type: object
   axelar.multisig.v1beta1.StartKeygenRequest:
@@ -56583,9 +56562,6 @@ definitions:
         type: string
       key_id:
         type: string
-      sender_bz:
-        type: string
-        format: byte
   axelar.multisig.v1beta1.StartKeygenResponse:
     type: object
   axelar.multisig.v1beta1.SubmitPubKeyRequest:
@@ -56601,9 +56577,6 @@ definitions:
       signature:
         type: string
         format: byte
-      sender_bz:
-        type: string
-        format: byte
   axelar.multisig.v1beta1.SubmitPubKeyResponse:
     type: object
   axelar.multisig.v1beta1.SubmitSignatureRequest:
@@ -56615,9 +56588,6 @@ definitions:
         type: string
         format: uint64
       signature:
-        type: string
-        format: byte
-      sender_bz:
         type: string
         format: byte
   axelar.multisig.v1beta1.SubmitSignatureResponse:
@@ -57031,9 +57001,6 @@ definitions:
   axelar.nexus.v1beta1.DeactivateChainRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       chains:
         type: array
         items:
@@ -57920,9 +57887,6 @@ definitions:
   axelar.snapshot.v1beta1.RegisterProxyRequest:
     type: object
     properties:
-      sender_bz:
-        type: string
-        format: byte
       proxy_addr:
         type: string
         format: byte
