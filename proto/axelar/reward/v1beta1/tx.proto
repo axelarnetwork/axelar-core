@@ -15,10 +15,7 @@ message RefundMsgRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender_bz = 1 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
-    deprecated = true
-  ];
+  reserved 1; // used to be sender bytes with AccAddress cast
   google.protobuf.Any inner_message = 2
       [ (cosmos_proto.accepts_interface) = "Refundable" ];
   string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];

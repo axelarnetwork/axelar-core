@@ -86,6 +86,15 @@
     - [block-results [height]](axelard_query_block-results.md) - Query for a committed block's results by height
     - [blocks](axelard_query_blocks.md) - Query for paginated blocks that match a set of events
     - [comet-validator-set [height]](axelard_query_comet-validator-set.md) - Get the full CometBFT validator set at given height
+    - [consensus](axelard_query_consensus.md) - Querying commands for the consensus module
+      - [comet](axelard_query_consensus_comet.md) - Querying commands for the cosmos.base.tendermint.v1beta1.Service service
+        - [block-by-height [height]](axelard_query_consensus_comet_block-by-height.md) - Query for a committed block by height
+        - [block-latest](axelard_query_consensus_comet_block-latest.md) - Query for the latest committed block
+        - [node-info](axelard_query_consensus_comet_node-info.md) - Query the current node info
+        - [syncing](axelard_query_consensus_comet_syncing.md) - Query node syncing status
+        - [validator-set](axelard_query_consensus_comet_validator-set.md) - Query for the latest validator set
+        - [validator-set-by-height [height]](axelard_query_consensus_comet_validator-set-by-height.md) - Query for a validator set by height
+      - [params](axelard_query_consensus_params.md) - Query the current consensus parameters
     - [distribution](axelard_query_distribution.md) - Querying commands for the distribution module
       - [commission [validator]](axelard_query_distribution_commission.md) - Query distribution validator commission
       - [community-pool](axelard_query_distribution_community-pool.md) - Query the amount of coins in the community pool
@@ -295,6 +304,7 @@
       - [multi-send [from_key_or_address] [to_address_1 to_address_2 ...] [amount]](axelard_tx_bank_multi-send.md) - Send funds from one account to two or more accounts.
       - [send [from_key_or_address] [to_address] [amount]](axelard_tx_bank_send.md) - Send funds from one account to another.
     - [broadcast [file_path]](axelard_tx_broadcast.md) - Broadcast transactions generated offline
+    - [consensus](axelard_tx_consensus.md) - Transactions commands for the consensus module
     - [crisis](axelard_tx_crisis.md) - Transactions commands for the crisis module
       - [invariant-broken [module-name] [invariant-route] --from mykey](axelard_tx_crisis_invariant-broken.md) - Submit proof that an invariant broken
     - [decode [protobuf-byte-string]](axelard_tx_decode.md) - Decode a binary encoded transaction string

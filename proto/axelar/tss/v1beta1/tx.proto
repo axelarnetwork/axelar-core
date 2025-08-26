@@ -29,10 +29,7 @@ message RotateKeyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender_bz = 1 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
-    deprecated = true
-  ];
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -52,10 +49,7 @@ message ProcessKeygenTrafficRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender_bz = 1 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
-    deprecated = true
-  ];
+  reserved 1; // used to be sender bytes with AccAddress cast
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
   tss.tofnd.v1beta1.TrafficOut payload = 3 [ (gogoproto.nullable) = false ];
   string sender = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
@@ -68,10 +62,7 @@ message ProcessSignTrafficRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender_bz = 1 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
-    deprecated = true
-  ];
+  reserved 1; // used to be sender bytes with AccAddress cast
   string session_id = 2 [ (gogoproto.customname) = "SessionID" ];
   tss.tofnd.v1beta1.TrafficOut payload = 3 [ (gogoproto.nullable) = false ];
   string sender = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
@@ -84,10 +75,7 @@ message VotePubKeyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender_bz = 1 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
-    deprecated = true
-  ];
+  reserved 1; // used to be sender bytes with AccAddress cast
   vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
   tss.tofnd.v1beta1.MessageOut.KeygenResult result = 3
       [ (gogoproto.nullable) = false ];
@@ -100,10 +88,7 @@ message VoteSigRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender_bz = 1 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
-    deprecated = true
-  ];
+  reserved 1; // used to be sender_bz
   vote.exported.v1beta1.PollKey poll_key = 2 [ (gogoproto.nullable) = false ];
   tss.tofnd.v1beta1.MessageOut.SignResult result = 3
       [ (gogoproto.nullable) = false ];
@@ -116,10 +101,7 @@ message HeartBeatRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender_bz = 1 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
-    deprecated = true
-  ];
+  reserved 1; // used to be sender_bz
 
   // Deprecated: this field will be removed in the next release
   repeated string key_ids = 2 [
@@ -146,10 +128,7 @@ message RegisterExternalKeysRequest {
     bytes pub_key = 2;
   }
 
-  bytes sender_bz = 1 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
-    deprecated = true
-  ];
+  reserved 1; // used to be sender bytes with AccAddress cast
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -163,10 +142,7 @@ message SubmitMultisigPubKeysRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender_bz = 1 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
-    deprecated = true
-  ];
+  reserved 1; // used to be sender bytes with AccAddress cast
   string key_id = 2 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =
@@ -183,10 +159,7 @@ message SubmitMultisigSignaturesRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender_bz = 1 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
-    deprecated = true
-  ];
+  reserved 1; // used to be sender bytes with AccAddress cast
   string sig_id = 2 [ (gogoproto.customname) = "SigID" ];
 
   repeated bytes signatures = 3;

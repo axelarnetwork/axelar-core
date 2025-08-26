@@ -15,10 +15,7 @@ message BatchRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender_bz = 1 [
-    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
-    deprecated = true
-  ];
+  reserved 1; // used to be sender bytes with AccAddress cast
   repeated google.protobuf.Any messages = 2 [
     (gogoproto.nullable) = false,
     (cosmos_proto.accepts_interface) = "cosmos.base.v1beta1.Msg"
