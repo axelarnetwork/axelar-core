@@ -48,6 +48,7 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 				return nil, nil
 			},
 			Staking: func(_ sdk.AccAddress, _ *wasmvmtypes.StakingMsg) ([]sdk.Msg, error) { return nil, nil },
+			Any:     func(_ sdk.AccAddress, _ *wasmvmtypes.AnyMsg) ([]sdk.Msg, error) { return nil, nil },
 			Wasm:    func(_ sdk.AccAddress, _ *wasmvmtypes.WasmMsg) ([]sdk.Msg, error) { return nil, nil },
 			Gov:     func(_ sdk.AccAddress, _ *wasmvmtypes.GovMsg) ([]sdk.Msg, error) { return nil, nil },
 		}
@@ -180,6 +181,23 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 			Then("the message should get dispatched without error", func(t *testing.T) {
 				assert.NoError(t, err)
 			}),
+		When("it dispatches a single any message", func() {
+			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
+				wasmvmtypes.CosmosMsg{Any: &wasmvmtypes.AnyMsg{
+					TypeURL: "type",
+					Value:   []byte("value"),
+				}},
+			)
+		}).
+			Then("antehandlers should get triggered", func(t *testing.T) {
+				assert.True(t, antehandlerCalled)
+			}).
+			Then("messagehandlers should get triggered", func(t *testing.T) {
+				assert.True(t, messagehandlerCalled)
+			}).
+			Then("the message should get dispatched without error", func(t *testing.T) {
+				assert.NoError(t, err)
+			}),
 	).Run(t)
 }
 
@@ -192,6 +210,18 @@ func TestMsgTypeBlacklistMessenger_DispatchMsg(t *testing.T) {
 	Given("a message handler with blacklisted message types", func() {
 		messenger = app.NewMsgTypeBlacklistMessenger()
 	}).Branch(
+		When("it dispatches an any message", func() {
+			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
+				wasmvmtypes.CosmosMsg{Any: &wasmvmtypes.AnyMsg{
+					TypeURL: "type",
+					Value:   []byte("value"),
+				}},
+			)
+		}).
+			Then("it should return an error that is not 'unknown msg'", func(t *testing.T) {
+				assert.Error(t, err)
+				assert.NotEqual(t, err, wasmtypes.ErrUnknownMsg)
+			}),
 		When("it dispatches an IBC  message", func() {
 			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
 				wasmvmtypes.CosmosMsg{IBC: &wasmvmtypes.IBCMsg{SendPacket: &wasmvmtypes.SendPacketMsg{

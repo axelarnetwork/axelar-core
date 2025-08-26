@@ -68,9 +68,9 @@ func assertSingleMessageIsSet(msg wasmvmtypes.CosmosMsg) error {
 
 	msgCount := 0
 	for msgType, typedMsgs := range msgs {
-		// custom and stargate msgs are not categorized in CosmosMsg, so the next lower structural level would be message fields and not individual messages,
+		// custom and any / stargate msgs are not categorized in CosmosMsg, so the next lower structural level would be message fields and not individual messages,
 		// so we can safely assume that there is only one message
-		if msgType == "custom" || msgType == "stargate" {
+		if msgType == "custom" || msgType == "any" {
 			msgCount++
 		} else if typedMsgs, ok := typedMsgs.(map[string]interface{}); ok {
 			msgCount += len(maps.Keys(typedMsgs))
@@ -102,8 +102,8 @@ func NewMsgTypeBlacklistMessenger() MsgTypeBlacklistMessenger {
 }
 
 func (m MsgTypeBlacklistMessenger) DispatchMsg(_ sdk.Context, _ sdk.AccAddress, _ string, msg wasmvmtypes.CosmosMsg) (events []sdk.Event, data [][]byte, msgResponses [][]*codectypes.Any, err error) {
-	if isIBCSendPacketMsg(msg) {
-		return nil, nil, nil, fmt.Errorf("ibc send packet is not supported")
+	if isIBCSendPacketMsg(msg) || isAnyMsg(msg) {
+		return nil, nil, nil, fmt.Errorf("ibc send packet and any messages are not supported")
 	}
 
 	// this means that this message handler doesn't know how to deal with these messages (i.e. they can pass through),
@@ -113,6 +113,10 @@ func (m MsgTypeBlacklistMessenger) DispatchMsg(_ sdk.Context, _ sdk.AccAddress, 
 
 func isBankBurnMsg(msg wasmvmtypes.CosmosMsg) bool {
 	return msg.Bank != nil && msg.Bank.Burn != nil
+}
+
+func isAnyMsg(msg wasmvmtypes.CosmosMsg) bool {
+	return msg.Any != nil
 }
 
 func isIBCSendPacketMsg(msg wasmvmtypes.CosmosMsg) bool {
