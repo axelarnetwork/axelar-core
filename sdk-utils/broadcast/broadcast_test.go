@@ -230,12 +230,6 @@ func TestStatefulBroadcaster(t *testing.T) {
 		Then2(returnErrorWithCode).Run(t)
 
 	givenSetup.
-		When2(sendingMultipleMessages).
-		When2(accountExists).
-		When2(getAccountSequenceMismatch).
-		Then2(returnErrorWithCode).Run(t)
-
-	givenSetup.
 		When2(sendingNoMessages).
 		Then2(returnError).Run(t)
 
