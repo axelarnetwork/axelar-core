@@ -71,7 +71,7 @@ message ConfirmGatewayTxsResponse {}
 
 // MsgConfirmDeposit represents an erc20 deposit confirmation message
 message ConfirmDepositRequest {
-  option (amino.name) = "axelarnet/ConfirmDeposit";
+  option (amino.name) = "evm/ConfirmDeposit";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
