@@ -10,10 +10,12 @@ import "axelar/nexus/exported/v1beta1/types.proto";
 import "axelar/permission/exported/v1beta1/types.proto";
 import "cosmos_proto/cosmos.proto";
 import "cosmos/msg/v1/msg.proto";
+import "amino/amino.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
 message RegisterChainMaintainerRequest {
+  option (amino.name) = "nexus/RegisterChainMaintainer";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -27,6 +29,7 @@ message RegisterChainMaintainerRequest {
 message RegisterChainMaintainerResponse {}
 
 message DeregisterChainMaintainerRequest {
+  option (amino.name) = "nexus/DeregisterChainMaintainer";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -41,6 +44,7 @@ message DeregisterChainMaintainerResponse {}
 
 // ActivateChainRequest represents a message to activate chains
 message ActivateChainRequest {
+  option (amino.name) = "nexus/ActivateChain";
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -55,6 +59,7 @@ message ActivateChainResponse {}
 
 // DeactivateChainRequest represents a message to deactivate chains
 message DeactivateChainRequest {
+  option (amino.name) = "nexus/DeactivateChain";
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -70,6 +75,7 @@ message DeactivateChainResponse {}
 // RegisterAssetFeeRequest represents a message to register the transfer fee
 // info associated to an asset on a chain
 message RegisterAssetFeeRequest {
+  option (amino.name) = "nexus/RegisterAssetFee";
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -83,6 +89,7 @@ message RegisterAssetFeeResponse {}
 // SetTransferRateLimitRequest represents a message to set rate limits on
 // transfers
 message SetTransferRateLimitRequest {
+  option (amino.name) = "nexus/SetTransferRateLimit";
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 

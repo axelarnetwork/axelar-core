@@ -8,10 +8,12 @@ import "cosmos/crypto/multisig/keys.proto";
 import "axelar/permission/exported/v1beta1/types.proto";
 import "cosmos_proto/cosmos.proto";
 import "cosmos/msg/v1/msg.proto";
+import "amino/amino.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
 message UpdateGovernanceKeyRequest {
+  option (amino.name) = "permission/UpdateGovernanceKey";
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -25,6 +27,7 @@ message UpdateGovernanceKeyResponse {}
 
 // MsgRegisterController represents a message to register a controller account
 message RegisterControllerRequest {
+  option (amino.name) = "permission/RegisterController";
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -38,6 +41,7 @@ message RegisterControllerResponse {}
 
 // DeregisterController represents a message to deregister a controller account
 message DeregisterControllerRequest {
+  option (amino.name) = "permission/DeregisterController";
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
