@@ -141,7 +141,7 @@ message ConfirmTransferKeyResponse {}
 // MsgLink represents the message that links a cross chain address to a burner
 // address
 message LinkRequest {
-  option (amino.name) = "axelarnet/Link";
+  option (amino.name) = "evm/Link";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
