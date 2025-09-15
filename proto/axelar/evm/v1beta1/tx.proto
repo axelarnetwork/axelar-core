@@ -9,10 +9,12 @@ import "axelar/evm/v1beta1/types.proto";
 import "axelar/permission/exported/v1beta1/types.proto";
 import "cosmos_proto/cosmos.proto";
 import "cosmos/msg/v1/msg.proto";
+import "amino/amino.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
 message SetGatewayRequest {
+  option (amino.name) = "evm/SetGatewayRequest";
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -28,6 +30,7 @@ message SetGatewayRequest {
 message SetGatewayResponse {}
 
 message ConfirmGatewayTxRequest {
+  option (amino.name) = "evm/ConfirmGatewayTxRequest";
   option deprecated = true;
 
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
@@ -48,6 +51,7 @@ message ConfirmGatewayTxRequest {
 message ConfirmGatewayTxResponse { option deprecated = true; }
 
 message ConfirmGatewayTxsRequest {
+  option (amino.name) = "evm/ConfirmGatewayTxsRequest";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -67,6 +71,7 @@ message ConfirmGatewayTxsResponse {}
 
 // MsgConfirmDeposit represents an erc20 deposit confirmation message
 message ConfirmDepositRequest {
+  option (amino.name) = "evm/ConfirmDeposit";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -93,6 +98,7 @@ message ConfirmDepositResponse {}
 
 // MsgConfirmToken represents a token deploy confirmation message
 message ConfirmTokenRequest {
+  option (amino.name) = "evm/ConfirmToken";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -112,6 +118,7 @@ message ConfirmTokenRequest {
 message ConfirmTokenResponse {}
 
 message ConfirmTransferKeyRequest {
+  option (amino.name) = "evm/ConfirmTransferKey";
   reserved 4, 5; // transfer_type and key_id were deleted in v0.20
 
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
@@ -134,6 +141,7 @@ message ConfirmTransferKeyResponse {}
 // MsgLink represents the message that links a cross chain address to a burner
 // address
 message LinkRequest {
+  option (amino.name) = "evm/Link";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -154,6 +162,7 @@ message LinkResponse { string deposit_addr = 1; }
 // CreateBurnTokensRequest represents the message to create commands to burn
 // tokens with AxelarGateway
 message CreateBurnTokensRequest {
+  option (amino.name) = "evm/CreateBurnTokens";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -169,6 +178,7 @@ message CreateBurnTokensResponse {}
 // CreateDeployTokenRequest represents the message to create a deploy token
 // command for AxelarGateway
 message CreateDeployTokenRequest {
+  option (amino.name) = "evm/CreateDeployToken";
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -190,6 +200,7 @@ message CreateDeployTokenResponse {}
 // CreatePendingTransfersRequest represents a message to trigger the creation of
 // commands handling all pending transfers
 message CreatePendingTransfersRequest {
+  option (amino.name) = "evm/CreatePendingTransfers";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -223,6 +234,7 @@ message CreateTransferOwnershipRequest {
 message CreateTransferOwnershipResponse { option deprecated = true; }
 
 message CreateTransferOperatorshipRequest {
+  option (amino.name) = "evm/CreateTransferOperatorship";
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -241,6 +253,7 @@ message CreateTransferOperatorshipRequest {
 message CreateTransferOperatorshipResponse {}
 
 message SignCommandsRequest {
+  option (amino.name) = "evm/SignCommands";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -258,6 +271,7 @@ message SignCommandsResponse {
 }
 
 message AddChainRequest {
+  option (amino.name) = "evm/AddChainRequest";
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -276,6 +290,7 @@ message AddChainRequest {
 message AddChainResponse {}
 
 message RetryFailedEventRequest {
+  option (amino.name) = "evm/RetryFailedEvent";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 

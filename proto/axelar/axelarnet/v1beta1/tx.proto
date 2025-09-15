@@ -10,12 +10,14 @@ import "axelar/axelarnet/v1beta1/types.proto";
 import "axelar/permission/exported/v1beta1/types.proto";
 import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
+import "amino/amino.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
 // MsgLink represents a message to link a cross-chain address to an Axelar
 // address
 message LinkRequest {
+  option (amino.name) = "axelarnet/Link";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -32,6 +34,7 @@ message LinkResponse { string deposit_addr = 1; };
 
 // MsgConfirmDeposit represents a deposit confirmation message
 message ConfirmDepositRequest {
+  option (amino.name) = "axelarnet/ConfirmDeposit";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -54,6 +57,7 @@ message ConfirmDepositResponse {}
 // MsgExecutePendingTransfers represents a message to trigger transfer all
 // pending transfers
 message ExecutePendingTransfersRequest {
+  option (amino.name) = "axelarnet/ExecutePendingTransfers";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -84,6 +88,7 @@ message RegisterIBCPathResponse {}
 // MsgAddCosmosBasedChain represents a message to register a cosmos based chain
 // to nexus
 message AddCosmosBasedChainRequest {
+  option (amino.name) = "axelarnet/AddCosmosBasedChain";
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -111,6 +116,7 @@ message AddCosmosBasedChainResponse {}
 // RegisterAssetRequest represents a message to register an asset to a cosmos
 // based chain
 message RegisterAssetRequest {
+  option (amino.name) = "axelarnet/RegisterAsset";
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -133,6 +139,7 @@ message RegisterAssetResponse {}
 // RouteIBCTransfersRequest represents a message to route pending transfers to
 // cosmos based chains
 message RouteIBCTransfersRequest {
+  option (amino.name) = "axelarnet/RouteIBCTransfers";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -145,6 +152,7 @@ message RouteIBCTransfersResponse {}
 // RegisterFeeCollectorRequest represents a message to register axelarnet fee
 // collector account
 message RegisterFeeCollectorRequest {
+  option (amino.name) = "axelarnet/RegisterFeeCollector";
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -158,6 +166,7 @@ message RegisterFeeCollectorRequest {
 message RegisterFeeCollectorResponse {}
 
 message RetryIBCTransferRequest {
+  option (amino.name) = "axelarnet/RetryIBCTransfer";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -178,6 +187,7 @@ message RetryIBCTransferRequest {
 message RetryIBCTransferResponse {}
 
 message RouteMessageRequest {
+  option (amino.name) = "axelarnet/RouteMessage";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
@@ -192,6 +202,7 @@ message RouteMessageRequest {
 message RouteMessageResponse {}
 
 message CallContractRequest {
+  option (amino.name) = "axelarnet/CallContract";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
