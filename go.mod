@@ -15,7 +15,6 @@ require (
 	cosmossdk.io/x/tx v0.13.7
 	cosmossdk.io/x/upgrade v0.1.4
 	github.com/CosmWasm/wasmd v0.54.0
-	github.com/CosmWasm/wasmvm v1.5.9
 	// Ensure WASMVM_VERSION in the Dockerfile is updated when changing wasmvm version.
 	github.com/CosmWasm/wasmvm/v2 v2.2.3
 	github.com/axelarnetwork/tm-events v0.0.0-20250318181253-c71853c5bb8f
