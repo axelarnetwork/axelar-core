@@ -25,6 +25,9 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	ibcconnectiontypes "github.com/cosmos/ibc-go/v8/modules/core/03-connection/types"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 
 	"github.com/axelarnetwork/utils/funcs"
 )
@@ -92,6 +95,11 @@ func setupLegacyKeyTables(k *paramskeeper.Keeper) {
 			keyTable = govv1.ParamKeyTable()
 		case crisistypes.ModuleName:
 			keyTable = crisistypes.ParamKeyTable()
+		case ibcexported.ModuleName:
+			// Register legacy key table for IBC client and connection params so migrations can read them
+			keyTable = paramstypes.NewKeyTable().
+				RegisterParamSet(&ibcclienttypes.Params{}).
+				RegisterParamSet(&ibcconnectiontypes.Params{})
 		case ibctransfertypes.ModuleName:
 			keyTable = ibctransfertypes.ParamKeyTable()
 		case wasmtypes.ModuleName:

@@ -519,7 +519,7 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 		bank.NewAppModule(appCodec, *GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(banktypes.ModuleName))),
 		crisis.NewAppModule(GetKeeper[crisiskeeper.Keeper](keepers), skipGenesisInvariants, funcs.MustOk(paramsKeeper.GetSubspace(crisistypes.ModuleName))),
 		gov.NewAppModule(appCodec, GetKeeper[govkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(govtypes.ModuleName))),
-		mint.NewAppModule(appCodec, *GetKeeper[mintkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), nil, funcs.MustOk(paramsKeeper.GetSubspace(govtypes.ModuleName))),
+		mint.NewAppModule(appCodec, *GetKeeper[mintkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), nil, funcs.MustOk(paramsKeeper.GetSubspace(minttypes.ModuleName))),
 		slashing.NewAppModule(appCodec, *GetKeeper[slashingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(slashingtypes.ModuleName)), encodingConfig.InterfaceRegistry),
 		axelardistr.NewAppModule(distrAppModule, *GetKeeper[axelardistrkeeper.Keeper](keepers)),
 		staking.NewAppModule(appCodec, GetKeeper[stakingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(stakingtypes.ModuleName))),
