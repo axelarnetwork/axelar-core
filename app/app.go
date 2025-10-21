@@ -355,6 +355,7 @@ func NewAxelarApp(
 
 	// The initChainer handles translating the genesis.json file into initial state for the network
 	app.SetInitChainer(app.InitChainer)
+	app.SetPreBlocker(app.PreBlocker)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
 
@@ -952,6 +953,11 @@ func (app *AxelarApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (
 	}
 
 	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
+}
+
+// PreBlocker checks if there is a scheduled upgrade and executes it if it is ready
+func (app *AxelarApp) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
+	return app.mm.PreBlock(ctx)
 }
 
 // BeginBlocker calls the BeginBlock() function of every module at the beginning of a new block
