@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -45,5 +47,33 @@ func (m ConfirmTransferKeyRequest) ValidateBasic() error {
 // GetSignBytes implements sdk.Msg
 func (m ConfirmTransferKeyRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
+	return sdk.MustSortJSON(bz)
+}
+
+// NewForceConfirmTransferKeyRequest creates a governance-only message to force confirm key transfer
+func NewForceConfirmTransferKeyRequest(sender sdk.AccAddress, chain string) *ForceConfirmTransferKeyRequest {
+	return &ForceConfirmTransferKeyRequest{
+		Sender: sender.String(),
+		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
+	}
+}
+
+// ValidateBasic implements sdk.Msg
+func (m ForceConfirmTransferKeyRequest) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
+	}
+
+	if err := m.Chain.Validate(); err != nil {
+		return errorsmod.Wrap(err, "invalid chain")
+	}
+
+	return nil
+}
+
+// GetSignBytes implements sdk.Msg
+func (m ForceConfirmTransferKeyRequest) GetSignBytes() []byte {
+	// use minimal JSON marshaling to satisfy interface prior to proto generation
+	bz := []byte(fmt.Sprintf("{\"chain\":\"%s\",\"sender\":\"%s\"}", m.Chain, m.Sender))
 	return sdk.MustSortJSON(bz)
 }

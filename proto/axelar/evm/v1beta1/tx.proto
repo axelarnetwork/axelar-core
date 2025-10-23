@@ -138,6 +138,19 @@ message ConfirmTransferKeyRequest {
 
 message ConfirmTransferKeyResponse {}
 
+message ForceConfirmTransferKeyRequest {
+  option (amino.name) = "evm/ForceConfirmTransferKey";
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  option (cosmos.msg.v1.signer) = "sender";
+
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string sender = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+}
+
+message ForceConfirmTransferKeyResponse {}
+
 // MsgLink represents the message that links a cross chain address to a burner
 // address
 message LinkRequest {

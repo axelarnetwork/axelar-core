@@ -22,6 +22,7 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -430,6 +431,67 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 	events.Emit(ctx, types.NewConfirmKeyTransferStarted(chain.Name, req.TxID, gatewayAddr, params.ConfirmationHeight, pollParticipants))
 
 	return &types.ConfirmTransferKeyResponse{}, nil
+}
+
+// ForceConfirmTransferKey allows governance to force-mark the current key transfer as confirmed
+func (s msgServer) ForceConfirmTransferKey(c context.Context, req *types.ForceConfirmTransferKeyRequest) (*types.ForceConfirmTransferKeyResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+	chain, ok := s.nexus.GetChain(ctx, req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	}
+
+	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
+		return nil, err
+	}
+
+	// Ensure a rotation is actually pending
+	if _, ok := s.multisigKeeper.GetNextKeyID(ctx, chain.Name); !ok {
+		return nil, fmt.Errorf("no pending key rotation for chain %s", chain.Name)
+	}
+
+	// Construct a synthetic operatorship transferred event using the next key
+	nextKeyID := funcs.MustOk(s.multisigKeeper.GetNextKeyID(ctx, chain.Name))
+	nextKey := funcs.MustOk(s.multisigKeeper.GetKey(ctx, nextKeyID))
+
+	// Derive expected weights/threshold from the next key
+	expectedAddressWeights, expectedThreshold := types.ParseMultisigKey(nextKey)
+
+	// Build ordered arrays matching expectedAddressWeights
+	newOperators := make([]types.Address, 0, len(expectedAddressWeights))
+	newWeights := make([]math.Uint, 0, len(expectedAddressWeights))
+	for addrHex, weight := range expectedAddressWeights {
+		newOperators = append(newOperators, types.Address(common.HexToAddress(addrHex)))
+		newWeights = append(newWeights, weight)
+	}
+
+	// Create a synthetic event with empty txID/index since no on-chain tx proof exists
+	ev := types.Event{
+		Chain: chain.Name,
+		TxID:  types.Hash{},
+		Index: 0,
+		Event: &types.Event_MultisigOperatorshipTransferred{
+			MultisigOperatorshipTransferred: &types.EventMultisigOperatorshipTransferred{
+				NewOperators: newOperators,
+				NewThreshold: expectedThreshold,
+				NewWeights:   newWeights,
+			},
+		},
+	}
+
+	// Mark confirmed and enqueue for processing in end blocker
+	keeper, err := s.ForChain(ctx, chain.Name)
+	if err != nil {
+		return nil, err
+	}
+	if err := keeper.SetConfirmedEvent(ctx, ev); err != nil {
+		return nil, err
+	}
+	if err := keeper.EnqueueConfirmedEvent(ctx, ev.GetID()); err != nil {
+		return nil, err
+	}
+
+	return &types.ForceConfirmTransferKeyResponse{}, nil
 }
 
 func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployTokenRequest) (*types.CreateDeployTokenResponse, error) {

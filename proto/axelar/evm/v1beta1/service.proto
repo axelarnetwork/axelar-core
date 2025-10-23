@@ -65,6 +65,17 @@ service MsgService {
     };
   }
 
+  // ForceConfirmTransferKey allows governance to force-mark the current
+  // operatorship transfer as confirmed when the source chain cannot be
+  // verified (e.g. ephemeral state on testnets). Governance only.
+  rpc ForceConfirmTransferKey(ForceConfirmTransferKeyRequest)
+      returns (ForceConfirmTransferKeyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/evm/force_confirm_transfer_key"
+      body : "*"
+    };
+  }
+
   rpc CreateDeployToken(CreateDeployTokenRequest)
       returns (CreateDeployTokenResponse) {
     option (google.api.http) = {
