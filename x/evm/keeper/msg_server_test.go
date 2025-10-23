@@ -13,6 +13,7 @@ import (
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
 	store "cosmossdk.io/store/types"
+	storetypes "cosmossdk.io/store/types"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -26,8 +27,10 @@ import (
 	evmCrypto "github.com/ethereum/go-ethereum/crypto"
 	evmParams "github.com/ethereum/go-ethereum/params"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -35,6 +38,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	utilsMock "github.com/axelarnetwork/axelar-core/utils/mock"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	"github.com/axelarnetwork/axelar-core/x/evm"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -42,7 +46,9 @@ import (
 	evmTestUtils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
+	multisigtypesutils "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexusutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -149,6 +155,65 @@ func TestSetGateway(t *testing.T) {
 		assert.Len(t, chainKeeper.SetGatewayCalls(), 1)
 		assert.Equal(t, req.Address, chainKeeper.SetGatewayCalls()[0].Address)
 	})
+}
+
+func TestForceConfirmTransferKey(t *testing.T) {
+	// Mocks
+	ctx, msgServer, bk, n, _, _, multisigKeeper := setup(t)
+	cdc := params.MakeEncodingConfig().Codec
+	confirmedEventQueue := utils.NewGeneralKVQueue(
+		"q",
+		utils.NewNormalizedStore(ctx.KVStore(storetypes.NewKVStoreKey("q")), cdc),
+		ctx.Logger(),
+		func(value codec.ProtoMarshaler) utils.Key {
+			return utils.KeyFromStr(value.String())
+		},
+	)
+	// Capture the synthetic event produced by ForceConfirmTransferKey
+	var capturedEvent *types.Event
+	// Chain setup
+	chain := nexus.Chain{Name: nexusutils.RandomChainName(), Module: types.ModuleName}
+	ck := &mock.ChainKeeperMock{
+		LoggerFunc:                 func(sdk.Context) log.Logger { return ctx.Logger() },
+		GetParamsFunc:              func(sdk.Context) types.Params { return types.DefaultParams()[0] },
+		GetConfirmedEventQueueFunc: func(sdk.Context) utils.KVQueue { return confirmedEventQueue },
+		EnqueueConfirmedEventFunc: func(_ sdk.Context, id types.EventID) error {
+			require.NotNil(t, capturedEvent)
+			require.Equal(t, capturedEvent.GetID(), id)
+			confirmedEventQueue.Enqueue(utils.LowerCaseKey(string(id)), capturedEvent)
+			return nil
+		},
+		SetConfirmedEventFunc: func(_ sdk.Context, ev types.Event) error { capturedEvent = &ev; return nil },
+		SetEventCompletedFunc: func(_ sdk.Context, id types.EventID) error { return nil },
+	}
+	bk.ForChainFunc = func(sdk.Context, nexus.ChainName) (types.ChainKeeper, error) { return ck, nil }
+	bk.LoggerFunc = func(sdk.Context) log.Logger { return ctx.Logger() }
+
+	n.GetChainFunc = func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return chain, true }
+	n.GetChainsFunc = func(sdk.Context) []nexus.Chain { return []nexus.Chain{chain} }
+	n.IsChainActivatedFunc = func(sdk.Context, nexus.Chain) bool { return true }
+	n.GetProcessingMessagesFunc = func(sdk.Context, nexus.ChainName, int64) []nexus.GeneralMessage {
+		return []nexus.GeneralMessage{}
+	}
+	// Multisig state: pending rotation and next key
+	nextKeyID := multisigTestUtils.KeyID()
+	key := multisigtypesutils.Key()
+	multisigKeeper.GetNextKeyIDFunc = func(sdk.Context, nexus.ChainName) (multisig.KeyID, bool) { return nextKeyID, true }
+	multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return &key, true }
+	multisigKeeper.RotateKeyFunc = func(sdk.Context, nexus.ChainName) error { return nil }
+
+	// Force the transfer from governance; this creates and stores a synthetic event
+	_, err := msgServer.ForceConfirmTransferKey(ctx, &types.ForceConfirmTransferKeyRequest{
+		Chain:  chain.Name,
+		Sender: rand.AccAddr().String(),
+	})
+	assert.NoError(t, err)
+	assert.NotZero(t, capturedEvent.GetID(), "synthetic event must be captured")
+
+	// EndBlocker should rotate the key
+	_, err = evm.EndBlocker(ctx, bk, n, multisigKeeper)
+	assert.NoError(t, err)
+	assert.Len(t, multisigKeeper.RotateKeyCalls(), 1, "forced confirmation should rotate the key exactly once")
 }
 
 func TestSignCommands(t *testing.T) {
