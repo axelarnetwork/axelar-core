@@ -5,7 +5,10 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"strings"
+
+	"golang.org/x/exp/maps"
 
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -22,6 +25,7 @@ import (
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -459,12 +463,14 @@ func (s msgServer) ForceConfirmTransferKey(c context.Context, req *types.ForceCo
 	expectedAddressWeights, expectedThreshold := types.ParseMultisigKey(nextKey)
 
 	// Build ordered arrays matching expectedAddressWeights
-	newOperators := make([]types.Address, 0, len(expectedAddressWeights))
-	newWeights := make([]math.Uint, 0, len(expectedAddressWeights))
-	for addrHex, weight := range expectedAddressWeights {
-		newOperators = append(newOperators, types.Address(common.HexToAddress(addrHex)))
-		newWeights = append(newWeights, weight)
-	}
+	hexAddresses := maps.Keys(expectedAddressWeights)
+	sort.Strings(hexAddresses)
+	newOperators := slices.Map(hexAddresses, func(addrHex string) types.Address {
+		return types.Address(common.HexToAddress(addrHex))
+	})
+	newWeights := slices.Map(hexAddresses, func(addrHex string) math.Uint {
+		return expectedAddressWeights[addrHex]
+	})
 
 	// Create a synthetic event with empty txID/index since no on-chain tx proof exists
 	// and we need to provide a valid TxID for further processing
