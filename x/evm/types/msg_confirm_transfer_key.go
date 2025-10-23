@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -73,7 +71,6 @@ func (m ForceConfirmTransferKeyRequest) ValidateBasic() error {
 
 // GetSignBytes implements sdk.Msg
 func (m ForceConfirmTransferKeyRequest) GetSignBytes() []byte {
-	// use minimal JSON marshaling to satisfy interface prior to proto generation
-	bz := []byte(fmt.Sprintf("{\"chain\":\"%s\",\"sender\":\"%s\"}", m.Chain, m.Sender))
+	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
 }

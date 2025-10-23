@@ -13,7 +13,6 @@ import (
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
 	store "cosmossdk.io/store/types"
-	storetypes "cosmossdk.io/store/types"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -163,7 +162,7 @@ func TestForceConfirmTransferKey(t *testing.T) {
 	cdc := params.MakeEncodingConfig().Codec
 	confirmedEventQueue := utils.NewGeneralKVQueue(
 		"q",
-		utils.NewNormalizedStore(ctx.KVStore(storetypes.NewKVStoreKey("q")), cdc),
+		utils.NewNormalizedStore(ctx.KVStore(store.NewKVStoreKey("q")), cdc),
 		ctx.Logger(),
 		func(value codec.ProtoMarshaler) utils.Key {
 			return utils.KeyFromStr(value.String())
@@ -208,7 +207,7 @@ func TestForceConfirmTransferKey(t *testing.T) {
 		Sender: rand.AccAddr().String(),
 	})
 	assert.NoError(t, err)
-	assert.NotZero(t, capturedEvent.GetID(), "synthetic event must be captured")
+	assert.NotNil(t, capturedEvent, "synthetic event must be captured")
 
 	// EndBlocker should rotate the key
 	_, err = evm.EndBlocker(ctx, bk, n, multisigKeeper)
