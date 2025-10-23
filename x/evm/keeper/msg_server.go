@@ -23,6 +23,7 @@ import (
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -466,9 +467,11 @@ func (s msgServer) ForceConfirmTransferKey(c context.Context, req *types.ForceCo
 	}
 
 	// Create a synthetic event with empty txID/index since no on-chain tx proof exists
+	// and we need to provide a valid TxID for further processing
+	txID := crypto.Keccak256([]byte(fmt.Sprintf("force-confirm:%s:%s:%d", chain.Name, nextKey, ctx.BlockHeight())))
 	ev := types.Event{
 		Chain: chain.Name,
-		TxID:  types.Hash{},
+		TxID:  types.Hash(txID),
 		Index: 0,
 		Event: &types.Event_MultisigOperatorshipTransferred{
 			MultisigOperatorshipTransferred: &types.EventMultisigOperatorshipTransferred{
