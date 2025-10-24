@@ -17,7 +17,7 @@ jobs:
       - name: Setup Golang with cache
         uses: magnetikonline/action-golang-cache@777394c89f8ed6fcf1649505277c46c1cd06494d # v4
         with:
-          go-version: 1.23
+          go-version: 1.25
 
       - name: Run test and coverage
         run: |
