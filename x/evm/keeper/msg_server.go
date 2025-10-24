@@ -471,9 +471,9 @@ func (s msgServer) ForceConfirmTransferKey(c context.Context, req *types.ForceCo
 		return expectedAddressWeights[addrHex]
 	})
 
-	// Create a synthetic event with empty txID/index since no on-chain tx proof exists
+	// Create a synthetic event with placeholder txID/index since no on-chain tx proof exists
 	// and we need to provide a valid TxID for further processing
-	txID := crypto.Keccak256([]byte(fmt.Sprintf("force-confirm:%s:%s:%d", chain.Name, nextKeyID, ctx.BlockHeight())))
+	txID := crypto.Keccak256(fmt.Appendf(nil, "force-confirm:%s:%s:%d", chain.Name, nextKeyID, ctx.BlockHeight()))
 	ev := types.Event{
 		Chain: chain.Name,
 		TxID:  types.Hash(txID),
