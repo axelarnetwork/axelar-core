@@ -48,6 +48,7 @@ import (
 	multisigtypesutils "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
+	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -64,7 +65,7 @@ var (
 	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
 
-func setup(t log.TestingT) (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.NexusMock, *mock.VoterMock, *mock.SnapshotterMock, *mock.MultisigKeeperMock) {
+func setup(t log.TestingT) (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.NexusMock, *mock.VoterMock, *mock.SnapshotterMock, *mock.MultisigKeeperMock, *mock.PermissionMock) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 
 	evmBaseKeeper := &mock.BaseKeeperMock{}
@@ -78,14 +79,14 @@ func setup(t log.TestingT) (sdk.Context, types.MsgServiceServer, *mock.BaseKeepe
 
 	return ctx,
 		keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper, permissionKeeper),
-		evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, multisigKeeper
+		evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, multisigKeeper, permissionKeeper
 }
 
 func TestSetGateway(t *testing.T) {
 	req := types.NewSetGatewayRequest(rand.AccAddr(), rand.Str(5), evmTestUtils.RandomAddress())
 
 	t.Run("should fail if current key is not set", func(t *testing.T) {
-		ctx, msgServer, _, nexusKeeper, _, _, multisigKeeper := setup(t)
+		ctx, msgServer, _, nexusKeeper, _, _, multisigKeeper, _ := setup(t)
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			if chain == req.Chain {
@@ -105,7 +106,7 @@ func TestSetGateway(t *testing.T) {
 	})
 
 	t.Run("should fail if gateway is already set", func(t *testing.T) {
-		ctx, msgServer, baseKeeper, nexusKeeper, _, _, multisigKeeper := setup(t)
+		ctx, msgServer, baseKeeper, nexusKeeper, _, _, multisigKeeper, _ := setup(t)
 		chainKeeper := &mock.ChainKeeperMock{}
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -130,7 +131,7 @@ func TestSetGateway(t *testing.T) {
 	})
 
 	t.Run("should set gateway", func(t *testing.T) {
-		ctx, msgServer, baseKeeper, nexusKeeper, _, _, multisigKeeper := setup(t)
+		ctx, msgServer, baseKeeper, nexusKeeper, _, _, multisigKeeper, _ := setup(t)
 		chainKeeper := &mock.ChainKeeperMock{}
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -157,9 +158,9 @@ func TestSetGateway(t *testing.T) {
 	})
 }
 
-func TestForceConfirmTransferKey(t *testing.T) {
+func TestConfirmTransferKeyFromGovernance(t *testing.T) {
 	// Mocks
-	ctx, msgServer, bk, n, _, _, multisigKeeper := setup(t)
+	ctx, msgServer, bk, n, _, _, multisigKeeper, permissionKeeper := setup(t)
 	cdc := params.MakeEncodingConfig().Codec
 	confirmedEventQueue := utils.NewGeneralKVQueue(
 		"q",
@@ -169,7 +170,7 @@ func TestForceConfirmTransferKey(t *testing.T) {
 			return utils.KeyFromStr(value.String())
 		},
 	)
-	// Capture the synthetic event produced by ForceConfirmTransferKey
+	// Capture the synthetic event produced by ConfirmTransferKey
 	var capturedEvent *types.Event
 	// Chain setup
 	chain := nexus.Chain{Name: nexusutils.RandomChainName(), Module: types.ModuleName}
@@ -202,10 +203,18 @@ func TestForceConfirmTransferKey(t *testing.T) {
 	multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return &key, true }
 	multisigKeeper.RotateKeyFunc = func(sdk.Context, nexus.ChainName) error { return nil }
 
+	chainMgr := rand.AccAddr()
+	permissionKeeper.GetRoleFunc = func(_ sdk.Context, addr sdk.AccAddress) permission.Role {
+		if addr.Equals(chainMgr) {
+			return permission.ROLE_CHAIN_MANAGEMENT
+		}
+		return permission.ROLE_UNRESTRICTED
+	}
+
 	// Force the transfer from governance; this creates and stores a synthetic event
-	_, err := msgServer.ForceConfirmTransferKey(ctx, &types.ForceConfirmTransferKeyRequest{
+	_, err := msgServer.ConfirmTransferKey(ctx, &types.ConfirmTransferKeyRequest{
 		Chain:  chain.Name,
-		Sender: rand.AccAddr().String(),
+		Sender: chainMgr.String(),
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, capturedEvent, "synthetic event must be captured")
@@ -1358,7 +1367,7 @@ func TestRetryFailedEvent(t *testing.T) {
 		n   *mock.NexusMock
 	)
 
-	ctx, msgServer, bk, n, _, _, _ := setup(t)
+	ctx, msgServer, bk, n, _, _, _, _ := setup(t)
 	contractCallQueue := &utilsMock.KVQueueMock{
 		EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler) {},
 	}
