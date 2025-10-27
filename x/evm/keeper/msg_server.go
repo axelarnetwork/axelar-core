@@ -405,6 +405,10 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 // ConfirmTransferKey handles transfer operatorship confirmation
 func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTransferKeyRequest) (*types.ConfirmTransferKeyResponse, error) {
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidAddress.Wrapf("invalid sender: %s", err)
+	}
 	ctx := sdk.UnwrapSDKContext(c)
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
@@ -424,18 +428,68 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, err
 	}
 
-	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
-	if !ok {
-		return nil, fmt.Errorf("axelar gateway address not set")
-	}
+	if s.permission.GetRole(ctx, sender) != permission.ROLE_CHAIN_MANAGEMENT {
+		// Normal flow, initialize a poll for vald.
+		gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
+		if !ok {
+			return nil, fmt.Errorf("axelar gateway address not set")
+		}
 
-	pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
-	if err != nil {
-		return nil, err
-	}
+		pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
+		if err != nil {
+			return nil, err
+		}
 
-	params := keeper.GetParams(ctx)
-	events.Emit(ctx, types.NewConfirmKeyTransferStarted(chain.Name, req.TxID, gatewayAddr, params.ConfirmationHeight, pollParticipants))
+		params := keeper.GetParams(ctx)
+		events.Emit(ctx, types.NewConfirmKeyTransferStarted(chain.Name, req.TxID, gatewayAddr, params.ConfirmationHeight, pollParticipants))
+
+	} else {
+		// Chain management role skips the poll.
+		// Construct a synthetic operatorship transferred event using the next key
+		nextKeyID := funcs.MustOk(s.multisigKeeper.GetNextKeyID(ctx, chain.Name))
+		nextKey := funcs.MustOk(s.multisigKeeper.GetKey(ctx, nextKeyID))
+
+		// Derive expected weights/threshold from the next key
+		expectedAddressWeights, expectedThreshold := types.ParseMultisigKey(nextKey)
+
+		// Build ordered arrays matching expectedAddressWeights
+		hexAddresses := maps.Keys(expectedAddressWeights)
+		sort.Strings(hexAddresses)
+		newOperators := slices.Map(hexAddresses, func(addrHex string) types.Address {
+			return types.Address(common.HexToAddress(addrHex))
+		})
+		newWeights := slices.Map(hexAddresses, func(addrHex string) math.Uint {
+			return expectedAddressWeights[addrHex]
+		})
+
+		// Create a synthetic event with placeholder txID/index since no on-chain tx proof exists
+		// and we need to provide a valid TxID for further processing
+		txID := crypto.Keccak256(fmt.Appendf(nil, "force-confirm:%s:%s:%d", chain.Name, nextKeyID, ctx.BlockHeight()))
+		ev := types.Event{
+			Chain: chain.Name,
+			TxID:  types.Hash(txID),
+			Index: 0,
+			Event: &types.Event_MultisigOperatorshipTransferred{
+				MultisigOperatorshipTransferred: &types.EventMultisigOperatorshipTransferred{
+					NewOperators: newOperators,
+					NewThreshold: expectedThreshold,
+					NewWeights:   newWeights,
+				},
+			},
+		}
+
+		// Mark confirmed and enqueue for processing in end blocker
+		keeper, err := s.ForChain(ctx, chain.Name)
+		if err != nil {
+			return nil, err
+		}
+		if err := keeper.SetConfirmedEvent(ctx, ev); err != nil {
+			return nil, err
+		}
+		if err := keeper.EnqueueConfirmedEvent(ctx, ev.GetID()); err != nil {
+			return nil, err
+		}
+	}
 
 	return &types.ConfirmTransferKeyResponse{}, nil
 }
