@@ -22,6 +22,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -39,11 +40,12 @@ type msgServer struct {
 	staking        types.StakingKeeper
 	slashing       types.SlashingKeeper
 	multisigKeeper types.MultisigKeeper
+	permission     types.Permission
 }
 
 // NewMsgServerImpl returns an implementation of the evm MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper types.BaseKeeper, n types.Nexus, v types.Voter, snap types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper, multisigKeeper types.MultisigKeeper) types.MsgServiceServer {
+func NewMsgServerImpl(keeper types.BaseKeeper, n types.Nexus, v types.Voter, snap types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper, multisigKeeper types.MultisigKeeper, permission types.Permission) types.MsgServiceServer {
 	return msgServer{
 		BaseKeeper:     keeper,
 		nexus:          n,
@@ -52,6 +54,7 @@ func NewMsgServerImpl(keeper types.BaseKeeper, n types.Nexus, v types.Voter, sna
 		staking:        staking,
 		slashing:       slashing,
 		multisigKeeper: multisigKeeper,
+		permission:     permission,
 	}
 }
 

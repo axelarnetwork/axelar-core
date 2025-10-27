@@ -74,9 +74,10 @@ func setup(t log.TestingT) (sdk.Context, types.MsgServiceServer, *mock.BaseKeepe
 	stakingKeeper := &mock.StakingKeeperMock{}
 	slashingKeeper := &mock.SlashingKeeperMock{}
 	multisigKeeper := &mock.MultisigKeeperMock{}
+	permissionKeeper := &mock.PermissionMock{}
 
 	return ctx,
-		keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper),
+		keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper, permissionKeeper),
 		evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, multisigKeeper
 }
 
@@ -226,11 +227,12 @@ func TestSignCommands(t *testing.T) {
 		stakingKeeper := &mock.StakingKeeperMock{}
 		slashingKeeper := &mock.SlashingKeeperMock{}
 		multisigKeeper := &mock.MultisigKeeperMock{}
+		permissionKeeper := &mock.PermissionMock{}
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, true }
 		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 
-		msgServer := keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper)
+		msgServer := keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper, permissionKeeper)
 
 		return ctx, msgServer, evmBaseKeeper, multisigKeeper
 	}
@@ -374,8 +376,9 @@ func TestCreateBurnTokens(t *testing.T) {
 		snapshotKeeper = &mock.SnapshotterMock{}
 		stakingKeeper := &mock.StakingKeeperMock{}
 		slashingKeeper := &mock.SlashingKeeperMock{}
+		permissionKeeper := &mock.PermissionMock{}
 
-		server = keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper)
+		server = keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper, permissionKeeper)
 	}
 
 	t.Run("should do nothing if no confirmed deposits exist", testutils.Func(func(t *testing.T) {
@@ -531,7 +534,7 @@ func TestLink_UnknownChain(t *testing.T) {
 		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 		GetChainFunc:         func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false },
 	}
-	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{})
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{}, &mock.PermissionMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr().String(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: asset})
 
 	assert.Error(t, err)
@@ -582,7 +585,8 @@ func TestLink_NoGateway(t *testing.T) {
 			return multisigTestUtils.KeyID(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
+	permissionKeeper := &mock.PermissionMock{}
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper, permissionKeeper)
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.AccAddr().String(), RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -613,7 +617,8 @@ func TestLink_NoRecipientChain(t *testing.T) {
 			return multisigTestUtils.KeyID(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
+	permissionKeeper := &mock.PermissionMock{}
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper, permissionKeeper)
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.AccAddr().String(), RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
@@ -644,7 +649,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 			return multisigTestUtils.KeyID(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper, &mock.PermissionMock{})
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr().String(), Chain: evmChain, RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
 
@@ -702,7 +707,8 @@ func TestLink_Success(t *testing.T) {
 			return multisigTestUtils.KeyID(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
+	permissionKeeper := &mock.PermissionMock{}
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper, permissionKeeper)
 	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr().String(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: axelarnet.NativeAsset})
 
 	assert.NoError(t, err)
@@ -888,7 +894,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		stakingKeeper := &mock.StakingKeeperMock{
 			PowerReductionFunc: func(context.Context) math.Int { return math.OneInt() },
 		}
-		server = keeper.NewMsgServerImpl(basek, n, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{}, multisigKeeper)
+		server = keeper.NewMsgServerImpl(basek, n, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{}, multisigKeeper, &mock.PermissionMock{})
 	}
 
 	repeats := 20
@@ -997,7 +1003,7 @@ func TestAddChain(t *testing.T) {
 			Params: params,
 		}
 
-		server = keeper.NewMsgServerImpl(basek, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{})
+		server = keeper.NewMsgServerImpl(basek, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{}, &mock.PermissionMock{})
 	}
 
 	repeats := 20
@@ -1138,7 +1144,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		stakingKeeper := &mock.StakingKeeperMock{
 			PowerReductionFunc: func(context.Context) math.Int { return math.OneInt() },
 		}
-		server = keeper.NewMsgServerImpl(basek, n, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{}, multisigKeeper)
+		server = keeper.NewMsgServerImpl(basek, n, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{}, multisigKeeper, &mock.PermissionMock{})
 	}
 
 	repeats := 20
@@ -1276,7 +1282,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			},
 		}
 
-		server = keeper.NewMsgServerImpl(basek, n, v, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
+		server = keeper.NewMsgServerImpl(basek, n, v, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper, &mock.PermissionMock{})
 	}
 
 	repeats := 20
@@ -1486,7 +1492,7 @@ func TestHandleMsgConfirmGatewayTxs(t *testing.T) {
 		v = &mock.VoterMock{}
 		pollID = vote.PollID(0)
 
-		msgServer = keeper.NewMsgServerImpl(bk, n, v, snapshotter, &mock.StakingKeeperMock{}, s, &mock.MultisigKeeperMock{})
+		msgServer = keeper.NewMsgServerImpl(bk, n, v, snapshotter, &mock.StakingKeeperMock{}, s, &mock.MultisigKeeperMock{}, &mock.PermissionMock{})
 	})
 
 	whenChainIsValid := When("chain is set and activated", func() {
