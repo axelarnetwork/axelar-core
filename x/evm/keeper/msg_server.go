@@ -461,10 +461,6 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		}
 
 		// Mark confirmed and enqueue for processing in end blocker
-		keeper, err := s.ForChain(ctx, chain.Name)
-		if err != nil {
-			return nil, err
-		}
 		if err := keeper.SetConfirmedEvent(ctx, ev); err != nil {
 			return nil, err
 		}
