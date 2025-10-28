@@ -1210,7 +1210,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		errMsg := "failed to initialize poll"
 		v.InitializePollFunc = func(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) {
-			return 0, fmt.Errorf(errMsg)
+			return 0, fmt.Errorf("%v", errMsg)
 		}
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
