@@ -14,7 +14,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -428,23 +427,8 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, err
 	}
 
-	if s.permission.GetRole(ctx, sender) != permission.ROLE_CHAIN_MANAGEMENT {
-		// Normal flow, initialize a poll for vald.
-		gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
-		if !ok {
-			return nil, fmt.Errorf("axelar gateway address not set")
-		}
-
-		pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
-		if err != nil {
-			return nil, err
-		}
-
-		params := keeper.GetParams(ctx)
-		events.Emit(ctx, types.NewConfirmKeyTransferStarted(chain.Name, req.TxID, gatewayAddr, params.ConfirmationHeight, pollParticipants))
-
-	} else {
-		// Chain management role skips the poll.
+	// Chain management role skips the poll.
+	if s.permission.GetRole(ctx, sender) == permission.ROLE_CHAIN_MANAGEMENT {
 		// Construct a synthetic operatorship transferred event using the next key
 		nextKeyID := funcs.MustOk(s.multisigKeeper.GetNextKeyID(ctx, chain.Name))
 		nextKey := funcs.MustOk(s.multisigKeeper.GetKey(ctx, nextKeyID))
@@ -462,13 +446,11 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 			return expectedAddressWeights[addrHex]
 		})
 
-		// Create a synthetic event with placeholder txID/index since no on-chain tx proof exists
-		// and we need to provide a valid TxID for further processing
-		txID := crypto.Keccak256(fmt.Appendf(nil, "force-confirm:%s:%s:%d", chain.Name, nextKeyID, ctx.BlockHeight()))
+		// Create a synthetic event
 		ev := types.Event{
 			Chain: chain.Name,
-			TxID:  types.Hash(txID),
-			Index: 0,
+			TxID:  req.TxID,
+			Index: 0, // placeholder since no on-chain tx proof exists
 			Event: &types.Event_MultisigOperatorshipTransferred{
 				MultisigOperatorshipTransferred: &types.EventMultisigOperatorshipTransferred{
 					NewOperators: newOperators,
@@ -489,7 +471,23 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		if err := keeper.EnqueueConfirmedEvent(ctx, ev.GetID()); err != nil {
 			return nil, err
 		}
+
+		return &types.ConfirmTransferKeyResponse{}, nil
 	}
+
+	// Normal flow, initialize a poll for vald.
+	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
+	if !ok {
+		return nil, fmt.Errorf("axelar gateway address not set")
+	}
+
+	pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
+	if err != nil {
+		return nil, err
+	}
+
+	params := keeper.GetParams(ctx)
+	events.Emit(ctx, types.NewConfirmKeyTransferStarted(chain.Name, req.TxID, gatewayAddr, params.ConfirmationHeight, pollParticipants))
 
 	return &types.ConfirmTransferKeyResponse{}, nil
 }
