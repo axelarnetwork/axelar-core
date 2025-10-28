@@ -596,6 +596,7 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 			GetKeeper[stakingkeeper.Keeper](keepers),
 			GetKeeper[slashingkeeper.Keeper](keepers),
 			GetKeeper[multisigKeeper.Keeper](keepers),
+			GetKeeper[permissionKeeper.Keeper](keepers),
 		),
 		axelarnetModule,
 		reward.NewAppModule(

@@ -14,12 +14,13 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper MultisigKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper MultisigKeeper Permission
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -161,4 +162,9 @@ type MultisigKeeper interface {
 	AssignKey(ctx sdk.Context, chainName nexus.ChainName, keyID multisig.KeyID) error
 	RotateKey(ctx sdk.Context, chainName nexus.ChainName) error
 	Sign(ctx sdk.Context, keyID multisig.KeyID, payloadHash multisig.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error
+}
+
+// Permission provides access to the permission functionality
+type Permission interface {
+	GetRole(ctx sdk.Context, address sdk.AccAddress) permission.Role
 }
