@@ -429,6 +429,8 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 
 	// Chain management role skips the poll.
 	if s.permission.GetRole(ctx, sender) == permission.ROLE_CHAIN_MANAGEMENT {
+		s.Logger(ctx).Info(fmt.Sprintf("key transfer confirmation signed by chain managment (%s), skipping poll and forcing confirmation", sender.String()))
+
 		// Construct a synthetic operatorship transferred event using the next key
 		nextKeyID := funcs.MustOk(s.multisigKeeper.GetNextKeyID(ctx, chain.Name))
 		nextKey := funcs.MustOk(s.multisigKeeper.GetKey(ctx, nextKeyID))
