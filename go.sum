@@ -696,6 +696,8 @@ github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20241216210753-523fb865146c h1:VD
 github.com/axelarnetwork/cosmos-sdk v0.45.17-0.20241216210753-523fb865146c/go.mod h1:bScuNwWAP0TZJpUf+SHXRU3xGoUPp+X9nAzfeIXts40=
 github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b h1:qTbA+WlbMRiPtK5zn5evVfU2XhmIOrOZNIE8VNU1O3Q=
 github.com/axelarnetwork/tm-events v0.0.0-20230704201410-3cf91089034b/go.mod h1:vDpqqxWxMvMIKbF6DN3BkxXAI4UJjolCHvaMGhE/FCI=
+github.com/axelarnetwork/tm-events v0.0.0-20250327144720-4b9e151680e5 h1:CdOxK4rU+NxX+6UtClMl4MRls41quXa6j2n5XfXEYdU=
+github.com/axelarnetwork/tm-events v0.0.0-20250327144720-4b9e151680e5/go.mod h1:EsgwciHYhL2T62n/GqGGjwROM9ZnFz9/gZYv9Y7SW+w=
 github.com/axelarnetwork/utils v0.0.0-20230706045331-b7aacc1f4a2f h1:Q0Qh79MuZ/PWKzytqU8/4dt+S2QemdYYPXkjwp/i4l0=
 github.com/axelarnetwork/utils v0.0.0-20230706045331-b7aacc1f4a2f/go.mod h1:7N7/Qo5WOm8HnwCtWvQs7T5QQLwVoLU/v+KkMLrvxiA=
 github.com/axelarnetwork/wasmd v0.34.2-0.20250204232001-5afc4d484c69 h1:KtIVuYfsqcdfza2M1C/doGdITg77LP0dC40ZSHqpruE=
