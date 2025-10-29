@@ -303,7 +303,7 @@ func TestBytecode(t *testing.T) {
 	t.Run("chain exists", testutils.Func(func(t *testing.T) {
 		setup()
 		for _, bytecode := range contracts {
-			hexBytecode := fmt.Sprintf("0x" + common.Bytes2Hex([]byte(bytecode)))
+			hexBytecode := "0x" + common.Bytes2Hex([]byte(bytecode))
 			expectedRes = types.BytecodeResponse{
 				Bytecode: hexBytecode,
 			}
