@@ -1,9 +1,27 @@
+version: "2"
 run:
   tests: false
-  timeout: 5m
-
-linters-settings:
-  staticcheck:
-    checks:
-      - all
-      - '-SA1019' # deprecated check
+linters:
+  settings:
+    staticcheck:
+      checks:
+        - all
+        - -SA1019
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
