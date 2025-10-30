@@ -8,7 +8,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
@@ -32,7 +31,7 @@ type BankKeeper interface {
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
 	GetChains(ctx sdk.Context) []nexus.Chain
-	IsChainMaintainer(ctx sdk.Context, chain exported.Chain, maintainer sdk.ValAddress) bool
+	IsChainMaintainer(ctx sdk.Context, chain nexus.Chain, maintainer sdk.ValAddress) bool
 	RemoveChainMaintainer(ctx sdk.Context, chain nexus.Chain, maintainer sdk.ValAddress) error
 }
 

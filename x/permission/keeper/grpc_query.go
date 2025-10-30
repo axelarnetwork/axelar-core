@@ -26,10 +26,10 @@ func (k Keeper) GovernanceKey(c context.Context, req *types.QueryGovernanceKeyRe
 }
 
 // Params returns the reward module params
-func (q Keeper) Params(c context.Context, req *types.ParamsRequest) (*types.ParamsResponse, error) {
+func (k Keeper) Params(c context.Context, req *types.ParamsRequest) (*types.ParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	params := q.GetParams(ctx)
+	params := k.GetParams(ctx)
 
 	return &types.ParamsResponse{
 		Params: params,

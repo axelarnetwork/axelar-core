@@ -53,7 +53,7 @@ func (app *AxelarApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowe
 		AppState:        appState,
 		Validators:      validators,
 		Height:          height,
-		ConsensusParams: app.BaseApp.GetConsensusParams(ctx),
+		ConsensusParams: app.GetConsensusParams(ctx),
 	}, nil
 }
 
@@ -61,12 +61,8 @@ func (app *AxelarApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowe
 // NOTE zero height genesis is a temporary feature which will be deprecated
 // in favour of export at a block height
 func (app *AxelarApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []string) {
-	applyWhiteList := false
-
 	// Check if there is a whitelist
-	if len(jailAllowedAddrs) > 0 {
-		applyWhiteList = true
-	}
+	applyWhiteList := len(jailAllowedAddrs) > 0
 
 	allowedAddrsMap := make(map[string]bool)
 

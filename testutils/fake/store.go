@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"cosmossdk.io/store/types"
-	store "cosmossdk.io/store/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake/interfaces"
 	"github.com/axelarnetwork/axelar-core/testutils/fake/interfaces/mock"
@@ -26,7 +25,7 @@ type CachedMultiStore struct {
 }
 
 // NewMultiStore returns a new Multistore instance used for testing
-func NewMultiStore() store.MultiStore {
+func NewMultiStore() types.MultiStore {
 	ms := MultiStore{
 		kvstore:        map[string]interfaces.KVStore{},
 		MultiStoreMock: &mock.MultiStoreMock{},
@@ -49,7 +48,7 @@ func NewMultiStore() store.MultiStore {
 }
 
 // NewCachedMultiStore returns a new CacheMultiStore instance for testing
-func NewCachedMultiStore(ms MultiStore) store.CacheMultiStore {
+func NewCachedMultiStore(ms MultiStore) types.CacheMultiStore {
 	kvstore := map[string]interfaces.KVStore{}
 
 	for key, store := range ms.kvstore {
@@ -101,12 +100,12 @@ func newTestKVStore() *TestKVStore {
 }
 
 // GetStoreType is not implemented
-func (t TestKVStore) GetStoreType() store.StoreType {
+func (t TestKVStore) GetStoreType() types.StoreType {
 	panic("implement me")
 }
 
 // CacheWrap is not implemented
-func (t *TestKVStore) CacheWrap() store.CacheWrap {
+func (t *TestKVStore) CacheWrap() types.CacheWrap {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
 
@@ -124,12 +123,12 @@ func (t *TestKVStore) CacheWrap() store.CacheWrap {
 }
 
 // CacheWrapWithTrace is not implemented
-func (t TestKVStore) CacheWrapWithTrace(_ io.Writer, _ store.TraceContext) store.CacheWrap {
+func (t TestKVStore) CacheWrapWithTrace(_ io.Writer, _ types.TraceContext) types.CacheWrap {
 	panic("implement me")
 }
 
 // CacheWrapWithListeners is not implemented
-func (t TestKVStore) CacheWrapWithListeners(storeKey store.StoreKey, listeners []store.MemoryListener) types.CacheWrap {
+func (t TestKVStore) CacheWrapWithListeners(storeKey types.StoreKey, listeners []types.MemoryListener) types.CacheWrap {
 	panic("implement me")
 }
 
@@ -169,7 +168,7 @@ func (t TestKVStore) Delete(key []byte) {
 }
 
 // Iterator returns an interator over the given key domain
-func (t TestKVStore) Iterator(start, end []byte) store.Iterator {
+func (t TestKVStore) Iterator(start, end []byte) types.Iterator {
 
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
@@ -178,7 +177,7 @@ func (t TestKVStore) Iterator(start, end []byte) store.Iterator {
 }
 
 // ReverseIterator returns an iterator that iterates over all keys in the given domain in reverse order
-func (t TestKVStore) ReverseIterator(start, end []byte) store.Iterator {
+func (t TestKVStore) ReverseIterator(start, end []byte) types.Iterator {
 
 	t.mutex.Lock()
 	defer t.mutex.Unlock()

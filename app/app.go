@@ -371,7 +371,7 @@ func NewAxelarApp(
 		}
 
 		if IsWasmEnabled() {
-			ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{})
+			ctx := app.NewUncachedContext(true, tmproto.Header{})
 
 			// Initialize pinned codes in wasmvm as they are not persisted there
 			if err := GetKeeper[wasm.Keeper](keepers).InitializePinnedCodes(ctx); err != nil {
@@ -423,7 +423,7 @@ func initIBCMiddleware(keepers *KeeperCache, ics4Middleware ibchooks.ICS4Middlew
 }
 
 func InitWasmHooks(keys map[string]*store.KVStoreKey) *ibchooks.WasmHooks {
-	if !(IsWasmEnabled() && IsIBCWasmHooksEnabled()) {
+	if !IsWasmEnabled() || !IsIBCWasmHooksEnabled() {
 		return nil
 	}
 
@@ -1021,12 +1021,12 @@ func RegisterSwaggerAPI(rtr *mux.Router) {
 
 // RegisterTxService implements the Application.RegisterTxService method.
 func (app *AxelarApp) RegisterTxService(clientCtx client.Context) {
-	authtx.RegisterTxService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.BaseApp.Simulate, app.interfaceRegistry)
+	authtx.RegisterTxService(app.GRPCQueryRouter(), clientCtx, app.Simulate, app.interfaceRegistry)
 }
 
 // RegisterTendermintService implements the Application.RegisterTendermintService method.
 func (app *AxelarApp) RegisterTendermintService(clientCtx client.Context) {
-	cmtservice.RegisterTendermintService(clientCtx, app.BaseApp.GRPCQueryRouter(), app.interfaceRegistry, app.Query)
+	cmtservice.RegisterTendermintService(clientCtx, app.GRPCQueryRouter(), app.interfaceRegistry, app.Query)
 }
 
 func (app *AxelarApp) RegisterNodeService(clientCtx client.Context, cfg config.Config) {
