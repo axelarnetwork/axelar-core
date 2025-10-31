@@ -1,7 +1,7 @@
 run:
   tests: false
   timeout: 10m
-  concurrency: 5
+  concurrency: 4
 
 linters-settings:
   staticcheck:

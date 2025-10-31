@@ -19,11 +19,7 @@ jobs:
         run: make prereqs
 
       - name: Go Lint
-        run: |
-          # Set memory limit for golangci-lint to prevent OOM
-          export GOGC=50
-          export GOMEMLIMIT=6GiB
-          make lint
+        run: make lint
 
       - name: Proto lint
         run: make proto-lint
