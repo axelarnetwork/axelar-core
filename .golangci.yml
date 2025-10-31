@@ -1,10 +1,37 @@
+version: "2"
 run:
+  concurrency: 4
   tests: false
-  timeout: 30m
-  concurrency: 1
-
-linters-settings:
-  staticcheck:
-    checks:
-      - all
-      - '-SA1019' # deprecated check
+linters:
+  settings:
+    staticcheck:
+      checks:
+        - all
+        - -SA1019
+        # The following checks are excluded for backwards compatibility with v1.61.0 behavior
+        # These should be revisited and potentially enabled in the future
+        - -QF1001  # De Morgan's law simplification
+        - -QF1004  # strings.ReplaceAll suggestion
+        - -QF1007  # merge conditional assignment
+        - -QF1008  # embedded field selector simplification
+        - -ST1003  # naming conventions (underscores, ALL_CAPS, ID suffix)
+        - -ST1016  # consistent receiver names
+        - -ST1019  # duplicate imports
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
