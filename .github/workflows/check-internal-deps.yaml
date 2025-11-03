@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - releases/*
 
 jobs:
   check-internal-deps-up-to-date:
@@ -12,15 +13,15 @@ jobs:
       - name: Setup Golang with cache
         uses: magnetikonline/action-golang-cache@v2
         with:
-          go-version: 1.23
+          go-version: 1.24
 
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Update internal dependencies
         run: |
-          go get -u github.com/axelarnetwork/utils@latest
-          go get -u github.com/axelarnetwork/tm-events@latest
+          go get github.com/axelarnetwork/utils@latest
+          go get github.com/axelarnetwork/tm-events@latest
 
       - name: Check for changes
         run: |
