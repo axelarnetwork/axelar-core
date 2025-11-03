@@ -15,6 +15,14 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
+// these constants are kept for compatibility reasons. We can't just change the default params without a data migration,
+// but go-ethereum no longer supports these networks
+const (
+	RopstenChainId uint64 = 3
+	RinkebyChainId uint64 = 4
+	GoerliChainId  uint64 = 5
+)
+
 // Parameter keys
 var (
 	KeyChain               = []byte("chain")
@@ -63,15 +71,15 @@ func DefaultParams() []Params {
 			},
 			{
 				Name: Ropsten,
-				Id:   sdk.NewIntFromBigInt(gethParams.RopstenChainConfig.ChainID),
+				Id:   sdk.NewIntFromUint64(RopstenChainId),
 			},
 			{
 				Name: Rinkeby,
-				Id:   sdk.NewIntFromBigInt(gethParams.RinkebyChainConfig.ChainID),
+				Id:   sdk.NewIntFromUint64(RinkebyChainId),
 			},
 			{
 				Name: Goerli,
-				Id:   sdk.NewIntFromBigInt(gethParams.GoerliChainConfig.ChainID),
+				Id:   sdk.NewIntFromUint64(GoerliChainId),
 			},
 			{
 				Name: Ganache,
