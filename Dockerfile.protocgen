@@ -5,7 +5,7 @@ FROM tendermintdev/sdk-proto-gen:v0.2 as build
 # Remove the outdated Go installation
 RUN rm -rf /usr/local/go
 
-COPY --from=golang:1.23-alpine /usr/local/go/ /usr/local/go/
+COPY --from=golang:1.24-alpine /usr/local/go/ /usr/local/go/
 
 RUN apk add --no-cache --update \
   git \
