@@ -186,3 +186,7 @@ var _ votetypes.MsgServiceClient = TestMsgServer{}
 func (m TestMsgServer) Vote(_ context.Context, _ *votetypes.VoteRequest, _ ...grpc.CallOption) (*votetypes.VoteResponse, error) {
 	return &votetypes.VoteResponse{}, nil
 }
+
+func (m TestMsgServer) UpdateParams(_ context.Context, _ *votetypes.UpdateParamsRequest, _ ...grpc.CallOption) (*votetypes.UpdateParamsResponse, error) {
+	return &votetypes.UpdateParamsResponse{}, nil
+}

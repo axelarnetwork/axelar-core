@@ -1854,6 +1854,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 //			SetLatestSignedCommandBatchIDFunc: func(ctx sdk.Context, id []byte)  {
 //				panic("mock out the SetLatestSignedCommandBatchID method")
 //			},
+//			SetParamsFunc: func(ctx sdk.Context, params types.Params)  {
+//				panic("mock out the SetParams method")
+//			},
 //		}
 //
 //		// use mockedChainKeeper in code that requires types.ChainKeeper
@@ -1992,6 +1995,9 @@ type ChainKeeperMock struct {
 
 	// SetLatestSignedCommandBatchIDFunc mocks the SetLatestSignedCommandBatchID method.
 	SetLatestSignedCommandBatchIDFunc func(ctx sdk.Context, id []byte)
+
+	// SetParamsFunc mocks the SetParams method.
+	SetParamsFunc func(ctx sdk.Context, params types.Params)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -2281,6 +2287,13 @@ type ChainKeeperMock struct {
 			// ID is the id argument value.
 			ID []byte
 		}
+		// SetParams holds details about calls to the SetParams method.
+		SetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Params is the params argument value.
+			Params types.Params
+		}
 	}
 	lockCreateERC20Token              sync.RWMutex
 	lockCreateNewBatchToSign          sync.RWMutex
@@ -2326,6 +2339,7 @@ type ChainKeeperMock struct {
 	lockSetEventFailed                sync.RWMutex
 	lockSetGateway                    sync.RWMutex
 	lockSetLatestSignedCommandBatchID sync.RWMutex
+	lockSetParams                     sync.RWMutex
 }
 
 // CreateERC20Token calls CreateERC20TokenFunc.
@@ -3864,6 +3878,42 @@ func (mock *ChainKeeperMock) SetLatestSignedCommandBatchIDCalls() []struct {
 	mock.lockSetLatestSignedCommandBatchID.RLock()
 	calls = mock.calls.SetLatestSignedCommandBatchID
 	mock.lockSetLatestSignedCommandBatchID.RUnlock()
+	return calls
+}
+
+// SetParams calls SetParamsFunc.
+func (mock *ChainKeeperMock) SetParams(ctx sdk.Context, params types.Params) {
+	if mock.SetParamsFunc == nil {
+		panic("ChainKeeperMock.SetParamsFunc: method is nil but ChainKeeper.SetParams was just called")
+	}
+	callInfo := struct {
+		Ctx    sdk.Context
+		Params types.Params
+	}{
+		Ctx:    ctx,
+		Params: params,
+	}
+	mock.lockSetParams.Lock()
+	mock.calls.SetParams = append(mock.calls.SetParams, callInfo)
+	mock.lockSetParams.Unlock()
+	mock.SetParamsFunc(ctx, params)
+}
+
+// SetParamsCalls gets all the calls that were made to SetParams.
+// Check the length with:
+//
+//	len(mockedChainKeeper.SetParamsCalls())
+func (mock *ChainKeeperMock) SetParamsCalls() []struct {
+	Ctx    sdk.Context
+	Params types.Params
+} {
+	var calls []struct {
+		Ctx    sdk.Context
+		Params types.Params
+	}
+	mock.lockSetParams.RLock()
+	calls = mock.calls.SetParams
+	mock.lockSetParams.RUnlock()
 	return calls
 }
 

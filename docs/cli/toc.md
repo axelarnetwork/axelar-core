@@ -377,6 +377,7 @@
       - [update-governance-key [threshold] \[[pubKey]...\]](axelard_tx_permission_update-governance-key.md) - Update the multisig governance key for axelar network
     - [reward](axelard_tx_reward.md) - Transactions commands for the reward module
       - [refund-msg](axelard_tx_reward_refund-msg.md) - Execute the RefundMsg RPC method
+      - [update-params](axelard_tx_reward_update-params.md) - Execute the UpdateParams RPC method
     - [sign [file]](axelard_tx_sign.md) - Sign a transaction generated offline
     - [sign-batch [file] ([file2]...)](axelard_tx_sign-batch.md) - Sign transaction batch files
     - [simulate /path/to/unsigned-tx.json --from keyname](axelard_tx_simulate.md) - Simulate the gas usage of a transaction
@@ -395,6 +396,7 @@
       - [unbond [validator-addr] [amount]](axelard_tx_staking_unbond.md) - Unbond shares from a validator
     - [tss](axelard_tx_tss.md) - Transactions commands for the tss module
       - [heart-beat](axelard_tx_tss_heart-beat.md) - Execute the HeartBeat RPC method
+      - [update-params](axelard_tx_tss_update-params.md) - Execute the UpdateParams RPC method
     - [upgrade](axelard_tx_upgrade.md) - Upgrade transaction subcommands
       - [cancel-software-upgrade [flags]](axelard_tx_upgrade_cancel-software-upgrade.md) - Cancel the current software upgrade proposal
       - [software-upgrade [name] (--upgrade-height [height]) (--upgrade-info [info]) [flags]](axelard_tx_upgrade_software-upgrade.md) - Submit a software upgrade proposal
@@ -404,6 +406,7 @@
       - [create-permanent-locked-account [to_address] [amount]](axelard_tx_vesting_create-permanent-locked-account.md) - Create a new permanently locked account funded with an allocation of tokens.
       - [create-vesting-account [to_address] [amount] [end_time]](axelard_tx_vesting_create-vesting-account.md) - Create a new vesting account funded with an allocation of tokens.
     - [vote](axelard_tx_vote.md) - Transactions commands for the vote module
+      - [update-params](axelard_tx_vote_update-params.md) - Execute the UpdateParams RPC method
       - [vote](axelard_tx_vote_vote.md) - Execute the Vote RPC method
     - [wasm](axelard_tx_wasm.md) - Wasm transaction subcommands
       - [clear-contract-admin [contract_addr_bech32]](axelard_tx_wasm_clear-contract-admin.md) - Clears admin for a contract to prevent further migrations

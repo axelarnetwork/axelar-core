@@ -65,7 +65,7 @@ func getEVMChains(ctx sdk.Context, n types.Nexus) []nexustypes.Chain {
 	return slices.Filter(n.GetChains(ctx), types.IsEVMChain)
 }
 
-// Params returns the reward module params
+// Params returns the evm module params
 func (q Querier) Params(c context.Context, req *types.ParamsRequest) (*types.ParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 

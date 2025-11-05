@@ -64,3 +64,14 @@ func (s msgServer) DeregisterController(c context.Context, req *types.Deregister
 
 	return &types.DeregisterControllerResponse{}, nil
 }
+
+func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsRequest) (*types.UpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := req.Params.Validate(); err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+	}
+
+	s.setParams(ctx, req.Params)
+	return &types.UpdateParamsResponse{}, nil
+}

@@ -8,6 +8,7 @@ import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
 import "cosmos/msg/v1/msg.proto";
 import "axelar/permission/exported/v1beta1/types.proto";
+import "axelar/reward/v1beta1/params.proto";
 import "amino/amino.proto";
 
 option (gogoproto.goproto_getters_all) = false;
@@ -27,3 +28,13 @@ message RefundMsgResponse {
   bytes data = 1;
   string log = 2;
 }
+
+message UpdateParamsRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  Params params = 2 [ (gogoproto.nullable) = false ];
+}
+
+message UpdateParamsResponse {}
