@@ -810,6 +810,22 @@ func TestRouteMessage(t *testing.T) {
 		Run(t)
 }
 
+func TestUpdateParams(t *testing.T) {
+	ctx, k, _, _ := setup(t)
+	k.InitGenesis(ctx, types.DefaultGenesisState())
+	ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
+	server := keeper.NewMsgServerImpl(k, &mock.NexusMock{}, &mock.BankKeeperMock{}, ibcK)
+
+	params := types.DefaultParams()
+	params.TransferLimit = params.TransferLimit + 1
+	params.EndBlockerLimit = params.EndBlockerLimit + 1
+
+	_, err := server.UpdateParams(ctx, &types.UpdateParamsRequest{Authority: rand.AccAddr().String(), Params: params})
+	assert.NoError(t, err)
+	got := k.GetParams(ctx)
+	assert.Equal(t, params, got)
+}
+
 func TestHandleCallContract(t *testing.T) {
 	var (
 		server types.MsgServiceServer

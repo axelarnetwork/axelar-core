@@ -158,6 +158,25 @@ func TestSetGateway(t *testing.T) {
 	})
 }
 
+func TestUpdateParams(t *testing.T) {
+	ctx, msgServer, baseKeeper, _, _, _, _, _ := setup(t)
+
+	ck := &mock.ChainKeeperMock{
+		SetParamsFunc: func(ctx sdk.Context, params types.Params) {},
+	}
+	baseKeeper.ForChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+		require.Equal(t, chain, exported.Ethereum.Name)
+		return ck, nil
+	}
+
+	p := types.DefaultParams()[0]
+	p.TransferLimit = p.TransferLimit + 1
+	_, err := msgServer.UpdateParams(ctx, &types.UpdateParamsRequest{Authority: rand2.AccAddr().String(), Params: p})
+	assert.NoError(t, err)
+	assert.Len(t, ck.SetParamsCalls(), 1)
+	assert.Equal(t, p, ck.SetParamsCalls()[0].Params)
+}
+
 func TestConfirmTransferKeyFromGovernance(t *testing.T) {
 	// Mocks
 	ctx, msgServer, bk, n, _, _, multisigKeeper, permissionKeeper := setup(t)

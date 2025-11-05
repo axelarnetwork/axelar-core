@@ -368,3 +368,23 @@ func TestMsgServer(t *testing.T) {
 			Run(t)
 	})
 }
+
+func TestUpdateParams(t *testing.T) {
+	encCfg := app.MakeEncodingConfig()
+	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "multisig")
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(types.StoreKey), subspace)
+	ctx := rand2.Context(fake.NewMultiStore(), t)
+	k.InitGenesis(ctx, types.DefaultGenesisState())
+
+	server := keeper.NewMsgServer(k, &mock.SnapshotterMock{}, &mock2.StakerMock{}, &mock2.NexusMock{})
+
+	// modify a param and update
+	p := types.DefaultParams()
+	p.KeygenTimeout = p.KeygenTimeout + 1
+
+	_, err := server.UpdateParams(ctx, &types.UpdateParamsRequest{Authority: rand2.AccAddr().String(), Params: p})
+	assert.NoError(t, err)
+
+	got := k.GetParams(ctx)
+	assert.Equal(t, p, got)
+}
