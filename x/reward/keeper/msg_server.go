@@ -54,7 +54,7 @@ func (s msgServer) RefundMsg(c context.Context, req *types.RefundMsgRequest) (*t
 		return nil, errorsmod.Wrapf(err, "failed to execute message")
 	}
 
-    refund, found := s.GetPendingRefund(ctx, *req)
+	refund, found := s.Refunder.GetPendingRefund(ctx, *req)
 	if found {
 		// refund tx fee to the given account.
 		err = s.bank.SendCoinsFromModuleToAccount(ctx, authtypes.FeeCollectorName, refund.Payer, refund.Fees)
@@ -62,7 +62,7 @@ func (s msgServer) RefundMsg(c context.Context, req *types.RefundMsgRequest) (*t
 			return nil, errorsmod.Wrapf(err, "failed to refund tx fee")
 		}
 
-        s.DeletePendingRefund(ctx, *req)
+		s.Refunder.DeletePendingRefund(ctx, *req)
 	}
 
 	ctx.EventManager().EmitEvents(result.GetEvents())

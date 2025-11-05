@@ -98,7 +98,7 @@ func checkTofnd(ctx context.Context, _ client.Context, serverCtx *server.Context
 		panic(err)
 	}
 
-	conn, err := tss.Connect(valdCfg.Host, valdCfg.Port, valdCfg.DialTimeout)
+	conn, err := tss.Connect(valdCfg.TssConfig.Host, valdCfg.TssConfig.Port, valdCfg.TssConfig.DialTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to reach tofnd: %s", err.Error())
 	}

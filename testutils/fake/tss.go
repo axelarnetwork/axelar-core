@@ -45,8 +45,8 @@ func (t *Tofnd) KeyGen(keyID string) []byte {
 	}
 
 	var x, y btcec.FieldVal
-	x.SetByteSlice(sk.X.Bytes())
-	y.SetByteSlice(sk.Y.Bytes())
+	x.SetByteSlice(sk.PublicKey.X.Bytes())
+	y.SetByteSlice(sk.PublicKey.Y.Bytes())
 	pk := btcec.NewPublicKey(&x, &y)
 	return pk.SerializeCompressed()
 }

@@ -7,6 +7,7 @@ import (
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 	ibcchanneltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	commitmenttypes "github.com/cosmos/ibc-go/v8/modules/core/23-commitment/types"
@@ -44,7 +45,7 @@ func ClientState() *ibctm.ClientState {
 		time.Hour*24*7*2,
 		time.Hour*24*7*3,
 		time.Second*10,
-		ibcclienttypes.NewHeight(0, 5),
+		clienttypes.NewHeight(0, 5),
 		commitmenttypes.GetSDKSpecs(),
 		ibctesting.UpgradePath,
 	)

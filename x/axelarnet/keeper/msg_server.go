@@ -242,7 +242,7 @@ func (s msgServer) ExecutePendingTransfers(c context.Context, _ *types.ExecutePe
 		return nil, fmt.Errorf("%s is not a registered chain", types.ModuleName)
 	}
 
-	transferLimit := s.GetTransferLimit(ctx)
+	transferLimit := s.Keeper.GetTransferLimit(ctx)
 	pageRequest := &query.PageRequest{
 		Key:        nil,
 		Offset:     0,
@@ -405,7 +405,7 @@ func (s msgServer) RouteIBCTransfers(c context.Context, _ *types.RouteIBCTransfe
 		}
 		portID, channelID := pathSplit[0], pathSplit[1]
 
-		transferLimit := s.GetTransferLimit(ctx)
+		transferLimit := s.Keeper.GetTransferLimit(ctx)
 		pageRequest := &query.PageRequest{
 			Key:        nil,
 			Offset:     0,

@@ -266,11 +266,11 @@ func (s msgServer) isActivationThresholdMet(ctx sdk.Context, chain exported.Chai
 		isProxyActive,
 	)
 
-    params := s.GetParams(ctx)
+	params := s.Nexus.GetParams(ctx)
 
 	_, err := s.snapshotter.CreateSnapshot(
 		ctx,
-        s.GetChainMaintainers(ctx, chain),
+		s.Nexus.GetChainMaintainers(ctx, chain),
 		filter,
 		snapshot.QuadraticWeightFunc,
 		params.ChainActivationThreshold,

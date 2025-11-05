@@ -13,6 +13,7 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
+	"github.com/cosmos/cosmos-sdk/client"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -416,7 +417,7 @@ func createEventBus(client *tendermint.RobustClient, startBlock int64, retries i
 func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig) broadcast.Broadcaster {
 	codec := app.MakeEncodingConfig().Codec
 
-	broadcaster := broadcast.WithStateManager(ctx, txf, broadcast.WithResponseTimeout(axelarCfg.MaxTimeout))
+	broadcaster := broadcast.WithStateManager(ctx, txf, broadcast.WithResponseTimeout(axelarCfg.BroadcastConfig.MaxTimeout))
 	broadcaster = broadcast.WithRetry(broadcaster, axelarCfg.MaxRetries, axelarCfg.MinSleepBeforeRetry)
 	broadcaster = broadcast.Batched(broadcaster, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, codec)
 	broadcaster = broadcast.WithRefund(broadcaster, codec)
@@ -425,8 +426,8 @@ func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCf
 	return broadcaster
 }
 
-func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx sdkClient.Context, axelarCfg config.ValdConfig, valAddr sdk.ValAddress) *multisig.Mgr {
-	conn, err := grpc.Connect(axelarCfg.Host, axelarCfg.Port, axelarCfg.DialTimeout)
+func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, valAddr sdk.ValAddress) *multisig.Mgr {
+	conn, err := grpc.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout)
 	if err != nil {
 		panic(errorsmod.Wrap(err, "failed to create multisig manager"))
 	}
@@ -435,9 +436,9 @@ func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx sdkClient.Conte
 	return multisig.NewMgr(tofnd.NewMultisigClient(conn), cliCtx, valAddr, broadcaster, timeout)
 }
 
-func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx sdkClient.Context, axelarCfg config.ValdConfig, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
-		conn, err := tss.Connect(axelarCfg.Host, axelarCfg.Port, axelarCfg.DialTimeout)
+		conn, err := tss.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout)
 		if err != nil {
 			return nil, err
 		}

@@ -96,7 +96,7 @@ func genTOC(cmd *cobra.Command, dir string) error {
 }
 
 func genTOCEntry(cmd *cobra.Command, dir string) []string {
-	basename := strings.ReplaceAll(cmd.CommandPath(), " ", "_") + ".md"
+	basename := strings.Replace(cmd.CommandPath(), " ", "_", -1) + ".md"
 	label := cmd.Use
 	label = strings.ReplaceAll(label, "<", "\\<")
 	label = strings.ReplaceAll(label, ">", "\\>")

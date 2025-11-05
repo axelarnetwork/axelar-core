@@ -174,7 +174,7 @@ func (k Keeper) setMessageProcessing(ctx sdk.Context, id string) error {
 		return fmt.Errorf("general message %s not found", id)
 	}
 
-	if !msg.Is(exported.Approved) && !msg.Is(exported.Failed) {
+	if !(msg.Is(exported.Approved) || msg.Is(exported.Failed)) {
 		return fmt.Errorf("general message has to be approved or failed")
 	}
 
@@ -254,7 +254,7 @@ func (k Keeper) EnqueueRouteMessage(ctx sdk.Context, id string) error {
 		return fmt.Errorf("general message %s not found", id)
 	}
 
-	if !msg.Is(exported.Approved) && !msg.Is(exported.Failed) {
+	if !(msg.Is(exported.Approved) || msg.Is(exported.Failed)) {
 		return fmt.Errorf("general message has to be approved or failed")
 	}
 

@@ -7,6 +7,7 @@ import (
 
 	"cosmossdk.io/log"
 	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/store/types"
 	storetypes "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -352,7 +353,7 @@ func AccAddr() sdk.AccAddress {
 }
 
 // Context generates a random Context data structure
-func Context(store storetypes.MultiStore, t log.TestingT) sdk.Context {
+func Context(store types.MultiStore, t log.TestingT) sdk.Context {
 	ctx := sdk.NewContext(store, tmproto.Header{Height: PosI64(), Time: rand2.Time()}, false, log.NewTestLogger(t)).
 		WithHeaderHash(BytesBetween(1024, 101240)).
 		WithBlockGasMeter(storetypes.NewGasMeter(1000000))

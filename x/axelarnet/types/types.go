@@ -32,7 +32,7 @@ const (
 	DefaultRateLimitWindow = 6 * time.Hour
 )
 
-const ZeroXPrefix = "0x"
+const ZERO_X_PREFIX = "0x"
 
 // NewLinkedAddress creates a new address to make a deposit which can be transferred to another blockchain
 func NewLinkedAddress(ctx sdk.Context, chain nexus.ChainName, symbol, recipientAddr string) sdk.AccAddress {
@@ -331,10 +331,10 @@ func (minDeposits CallContractProposalMinDeposits) ToMap(ctx sdk.Context, nexus 
 		if chain, ok := nexus.GetChain(ctx, minDeposit.Chain); !ok || !chain.IsFrom(evmtypes.ModuleName) {
 			continue
 		}
-		if strings.HasPrefix(contractAddress, ZeroXPrefix) {
-			minDepositsMap[chain][strings.TrimPrefix(contractAddress, ZeroXPrefix)] = minDeposit.MinDeposits
+		if strings.HasPrefix(contractAddress, ZERO_X_PREFIX) {
+			minDepositsMap[chain][strings.TrimPrefix(contractAddress, ZERO_X_PREFIX)] = minDeposit.MinDeposits
 		} else {
-			minDepositsMap[chain][fmt.Sprintf("%s%s", ZeroXPrefix, contractAddress)] = minDeposit.MinDeposits
+			minDepositsMap[chain][fmt.Sprintf("%s%s", ZERO_X_PREFIX, contractAddress)] = minDeposit.MinDeposits
 		}
 	}
 
