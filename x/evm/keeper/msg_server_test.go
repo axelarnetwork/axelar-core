@@ -58,8 +58,8 @@ import (
 
 var (
 	evmChain    = exported.Ethereum.Name
-	network     = types.Rinkeby
-	networkConf = evmParams.RinkebyChainConfig
+	network     = types.Ganache
+	networkConf = evmParams.AllCliqueProtocolChanges
 	tokenBC     = rand.Bytes(64)
 	burnerBC    = common.Hex2Bytes(types.Burnable)
 	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
@@ -1210,7 +1210,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		errMsg := "failed to initialize poll"
 		v.InitializePollFunc = func(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) {
-			return 0, fmt.Errorf("%v", errMsg)
+			return 0, errors.New(errMsg)
 		}
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
