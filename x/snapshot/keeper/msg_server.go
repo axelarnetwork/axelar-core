@@ -36,7 +36,7 @@ func (s msgServer) RegisterProxy(c context.Context, req *types.RegisterProxyRequ
 		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender: %s", err)
 	}
 
-	if err := s.ActivateProxy(ctx, sdk.ValAddress(sender), req.ProxyAddr); err != nil {
+    if err := s.ActivateProxy(ctx, sdk.ValAddress(sender), req.ProxyAddr); err != nil {
 		return nil, errorsmod.Wrap(types.ErrSnapshot, err.Error())
 	}
 
@@ -71,9 +71,9 @@ func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxy
 		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender: %s", err)
 	}
 
-	proxy, _ := s.GetProxy(ctx, sdk.ValAddress(sender))
+    proxy, _ := s.GetProxy(ctx, sdk.ValAddress(sender))
 
-	if err := s.Keeper.DeactivateProxy(ctx, sdk.ValAddress(sender)); err != nil {
+    if err := s.Keeper.DeactivateProxy(ctx, sdk.ValAddress(sender)); err != nil {
 		return nil, errorsmod.Wrap(types.ErrSnapshot, err.Error())
 	}
 
@@ -96,7 +96,7 @@ func (s msgServer) DeactivateProxy(c context.Context, req *types.DeactivateProxy
 			telemetry.NewLabel("proxy_address", proxy.String()),
 		})
 
-	s.Logger(ctx).Info(fmt.Sprintf("validator %s has de-activated proxy %s", req.Sender, proxy.String()))
+    s.Logger(ctx).Info(fmt.Sprintf("validator %s has de-activated proxy %s", req.Sender, proxy.String()))
 
 	return &types.DeactivateProxyResponse{}, nil
 }
