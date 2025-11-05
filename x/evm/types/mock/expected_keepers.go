@@ -11,6 +11,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	github_com_axelarnetwork_axelar_core_x_multisig_exported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -4419,5 +4420,77 @@ func (mock *MultisigKeeperMock) SignCalls() []struct {
 	mock.lockSign.RLock()
 	calls = mock.calls.Sign
 	mock.lockSign.RUnlock()
+	return calls
+}
+
+// Ensure, that PermissionMock does implement types.Permission.
+// If this is not the case, regenerate this file with moq.
+var _ types.Permission = &PermissionMock{}
+
+// PermissionMock is a mock implementation of types.Permission.
+//
+//	func TestSomethingThatUsesPermission(t *testing.T) {
+//
+//		// make and configure a mocked types.Permission
+//		mockedPermission := &PermissionMock{
+//			GetRoleFunc: func(ctx sdk.Context, address sdk.AccAddress) permission.Role {
+//				panic("mock out the GetRole method")
+//			},
+//		}
+//
+//		// use mockedPermission in code that requires types.Permission
+//		// and then make assertions.
+//
+//	}
+type PermissionMock struct {
+	// GetRoleFunc mocks the GetRole method.
+	GetRoleFunc func(ctx sdk.Context, address sdk.AccAddress) permission.Role
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetRole holds details about calls to the GetRole method.
+		GetRole []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// Address is the address argument value.
+			Address sdk.AccAddress
+		}
+	}
+	lockGetRole sync.RWMutex
+}
+
+// GetRole calls GetRoleFunc.
+func (mock *PermissionMock) GetRole(ctx sdk.Context, address sdk.AccAddress) permission.Role {
+	if mock.GetRoleFunc == nil {
+		panic("PermissionMock.GetRoleFunc: method is nil but Permission.GetRole was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		Address sdk.AccAddress
+	}{
+		Ctx:     ctx,
+		Address: address,
+	}
+	mock.lockGetRole.Lock()
+	mock.calls.GetRole = append(mock.calls.GetRole, callInfo)
+	mock.lockGetRole.Unlock()
+	return mock.GetRoleFunc(ctx, address)
+}
+
+// GetRoleCalls gets all the calls that were made to GetRole.
+// Check the length with:
+//
+//	len(mockedPermission.GetRoleCalls())
+func (mock *PermissionMock) GetRoleCalls() []struct {
+	Ctx     sdk.Context
+	Address sdk.AccAddress
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		Address sdk.AccAddress
+	}
+	mock.lockGetRole.RLock()
+	calls = mock.calls.GetRole
+	mock.lockGetRole.RUnlock()
 	return calls
 }

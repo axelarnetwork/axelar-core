@@ -83,6 +83,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 	keeper      *keeper.BaseKeeper
+	permission  types.Permission
 	voter       types.Voter
 	nexus       types.Nexus
 	snapshotter types.Snapshotter
@@ -92,7 +93,7 @@ type AppModule struct {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k *keeper.BaseKeeper, voter types.Voter, nexus types.Nexus, snapshotter types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper, multisig types.MultisigKeeper) AppModule {
+func NewAppModule(k *keeper.BaseKeeper, voter types.Voter, nexus types.Nexus, snapshotter types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper, multisig types.MultisigKeeper, permission types.Permission) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -102,6 +103,7 @@ func NewAppModule(k *keeper.BaseKeeper, voter types.Voter, nexus types.Nexus, sn
 		staking:        staking,
 		slashing:       slashing,
 		multisig:       multisig,
+		permission:     permission,
 	}
 }
 
@@ -133,7 +135,7 @@ func (AppModule) QuerierRoute() string {
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	msgServer := keeper.NewMsgServerImpl(am.keeper, am.nexus, am.voter, am.snapshotter, am.staking, am.slashing, am.multisig)
+	msgServer := keeper.NewMsgServerImpl(am.keeper, am.nexus, am.voter, am.snapshotter, am.staking, am.slashing, am.multisig, am.permission)
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrEVM, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus, am.multisig))
 

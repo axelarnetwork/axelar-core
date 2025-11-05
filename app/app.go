@@ -355,6 +355,7 @@ func NewAxelarApp(
 
 	// The initChainer handles translating the genesis.json file into initial state for the network
 	app.SetInitChainer(app.InitChainer)
+	app.SetPreBlocker(app.PreBlocker)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
 
@@ -518,7 +519,7 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 		bank.NewAppModule(appCodec, *GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(banktypes.ModuleName))),
 		crisis.NewAppModule(GetKeeper[crisiskeeper.Keeper](keepers), skipGenesisInvariants, funcs.MustOk(paramsKeeper.GetSubspace(crisistypes.ModuleName))),
 		gov.NewAppModule(appCodec, GetKeeper[govkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(govtypes.ModuleName))),
-		mint.NewAppModule(appCodec, *GetKeeper[mintkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), nil, funcs.MustOk(paramsKeeper.GetSubspace(govtypes.ModuleName))),
+		mint.NewAppModule(appCodec, *GetKeeper[mintkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), nil, funcs.MustOk(paramsKeeper.GetSubspace(minttypes.ModuleName))),
 		slashing.NewAppModule(appCodec, *GetKeeper[slashingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(slashingtypes.ModuleName)), encodingConfig.InterfaceRegistry),
 		axelardistr.NewAppModule(distrAppModule, *GetKeeper[axelardistrkeeper.Keeper](keepers)),
 		staking.NewAppModule(appCodec, GetKeeper[stakingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(stakingtypes.ModuleName))),
@@ -595,6 +596,7 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 			GetKeeper[stakingkeeper.Keeper](keepers),
 			GetKeeper[slashingkeeper.Keeper](keepers),
 			GetKeeper[multisigKeeper.Keeper](keepers),
+			GetKeeper[permissionKeeper.Keeper](keepers),
 		),
 		axelarnetModule,
 		reward.NewAppModule(
@@ -952,6 +954,11 @@ func (app *AxelarApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (
 	}
 
 	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
+}
+
+// PreBlocker checks if there is a scheduled upgrade and executes it if it is ready
+func (app *AxelarApp) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
+	return app.mm.PreBlock(ctx)
 }
 
 // BeginBlocker calls the BeginBlock() function of every module at the beginning of a new block

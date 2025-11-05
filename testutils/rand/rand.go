@@ -1,6 +1,7 @@
 package rand
 
 import (
+	"math"
 	"math/rand"
 	"strings"
 	"time"
@@ -12,7 +13,7 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
-	"github.com/ethereum/go-ethereum/common/math"
+	gethmath "github.com/ethereum/go-ethereum/common/math"
 	"golang.org/x/text/unicode/norm"
 
 	rand2 "github.com/axelarnetwork/utils/test/rand"
@@ -59,7 +60,7 @@ func I64Between(lower int64, upper int64) int64 {
 }
 
 func ThresholdDec() sdkmath.LegacyDec {
-	return sdkmath.LegacyNewDecWithPrec(I64Between(0, math.BigPow(10, 18).Int64()), 18)
+	return sdkmath.LegacyNewDecWithPrec(I64Between(0, gethmath.BigPow(10, 18).Int64()), 18)
 }
 
 // NormalizeString normalizes a string as NFKC
