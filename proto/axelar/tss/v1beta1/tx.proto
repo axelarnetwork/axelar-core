@@ -172,6 +172,7 @@ message SubmitMultisigSignaturesRequest {
 message SubmitMultisigSignaturesResponse {}
 
 message UpdateParamsRequest {
+  option (amino.name) = "tss/UpdateParams";
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "authority";
 

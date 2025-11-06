@@ -35,6 +35,7 @@ message VoteRequest {
 message VoteResponse { string log = 1; }
 
 message UpdateParamsRequest {
+  option (amino.name) = "vote/UpdateParams";
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "authority";
 

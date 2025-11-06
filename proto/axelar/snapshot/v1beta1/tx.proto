@@ -40,6 +40,7 @@ message DeactivateProxyRequest {
 message DeactivateProxyResponse {}
 
 message UpdateParamsRequest {
+  option (amino.name) = "snapshot/UpdateParams";
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "authority";
 

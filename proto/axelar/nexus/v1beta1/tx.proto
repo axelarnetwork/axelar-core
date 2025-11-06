@@ -107,6 +107,7 @@ message SetTransferRateLimitRequest {
 message SetTransferRateLimitResponse {}
 
 message UpdateParamsRequest {
+  option (amino.name) = "nexus/UpdateParams";
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "authority";
 
