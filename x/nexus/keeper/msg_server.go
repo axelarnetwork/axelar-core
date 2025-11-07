@@ -309,3 +309,14 @@ func (s msgServer) SetTransferRateLimit(c context.Context, req *types.SetTransfe
 
 	return &types.SetTransferRateLimitResponse{}, nil
 }
+
+func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsRequest) (*types.UpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := req.Params.Validate(); err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+	}
+
+	s.Nexus.SetParams(ctx, req.Params)
+	return &types.UpdateParamsResponse{}, nil
+}

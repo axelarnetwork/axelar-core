@@ -136,6 +136,25 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 
 }
 
+func TestUpdateParams(t *testing.T) {
+	ctx := rand2.Context(fake.NewMultiStore(), t)
+	msgServiceRouter := bam.NewMsgServiceRouter()
+
+	ref := &mock.RefunderMock{
+		LoggerFunc:    func(ctx sdk.Context) log.Logger { return log.NewTestLogger(t) },
+		SetParamsFunc: func(ctx sdk.Context, params types.Params) {},
+	}
+	bankK := &mock.BankerMock{}
+	server := keeper.NewMsgServerImpl(ref, bankK, msgServiceRouter, appParams.MakeEncodingConfig().Codec)
+
+	p := types.DefaultParams()
+	p.KeyMgmtRelativeInflationRate = p.KeyMgmtRelativeInflationRate.Add(math.LegacyMustNewDecFromStr("0.01"))
+	_, err := server.UpdateParams(ctx, &types.UpdateParamsRequest{Authority: rand2.AccAddr().String(), Params: p})
+	assert.NoError(t, err)
+	assert.Len(t, ref.SetParamsCalls(), 1)
+	assert.Equal(t, p, ref.SetParamsCalls()[0].Params)
+}
+
 func randomMsgLink(sender sdk.AccAddress) *axelarnet.LinkRequest {
 	return axelarnet.NewLinkRequest(
 		sender,
@@ -185,4 +204,8 @@ var _ votetypes.MsgServiceClient = TestMsgServer{}
 
 func (m TestMsgServer) Vote(_ context.Context, _ *votetypes.VoteRequest, _ ...grpc.CallOption) (*votetypes.VoteResponse, error) {
 	return &votetypes.VoteResponse{}, nil
+}
+
+func (m TestMsgServer) UpdateParams(_ context.Context, _ *votetypes.UpdateParamsRequest, _ ...grpc.CallOption) (*votetypes.UpdateParamsResponse, error) {
+	return &votetypes.UpdateParamsResponse{}, nil
 }

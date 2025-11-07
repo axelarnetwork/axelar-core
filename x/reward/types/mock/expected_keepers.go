@@ -194,6 +194,9 @@ var _ rewardtypes.Refunder = &RefunderMock{}
 //			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 //				panic("mock out the Logger method")
 //			},
+//			SetParamsFunc: func(ctx cosmossdktypes.Context, params rewardtypes.Params)  {
+//				panic("mock out the SetParams method")
+//			},
 //		}
 //
 //		// use mockedRefunder in code that requires rewardtypes.Refunder
@@ -209,6 +212,9 @@ type RefunderMock struct {
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
+
+	// SetParamsFunc mocks the SetParams method.
+	SetParamsFunc func(ctx cosmossdktypes.Context, params rewardtypes.Params)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -231,10 +237,18 @@ type RefunderMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
+		// SetParams holds details about calls to the SetParams method.
+		SetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Params is the params argument value.
+			Params rewardtypes.Params
+		}
 	}
 	lockDeletePendingRefund sync.RWMutex
 	lockGetPendingRefund    sync.RWMutex
 	lockLogger              sync.RWMutex
+	lockSetParams           sync.RWMutex
 }
 
 // DeletePendingRefund calls DeletePendingRefundFunc.
@@ -338,6 +352,42 @@ func (mock *RefunderMock) LoggerCalls() []struct {
 	mock.lockLogger.RLock()
 	calls = mock.calls.Logger
 	mock.lockLogger.RUnlock()
+	return calls
+}
+
+// SetParams calls SetParamsFunc.
+func (mock *RefunderMock) SetParams(ctx cosmossdktypes.Context, params rewardtypes.Params) {
+	if mock.SetParamsFunc == nil {
+		panic("RefunderMock.SetParamsFunc: method is nil but Refunder.SetParams was just called")
+	}
+	callInfo := struct {
+		Ctx    cosmossdktypes.Context
+		Params rewardtypes.Params
+	}{
+		Ctx:    ctx,
+		Params: params,
+	}
+	mock.lockSetParams.Lock()
+	mock.calls.SetParams = append(mock.calls.SetParams, callInfo)
+	mock.lockSetParams.Unlock()
+	mock.SetParamsFunc(ctx, params)
+}
+
+// SetParamsCalls gets all the calls that were made to SetParams.
+// Check the length with:
+//
+//	len(mockedRefunder.SetParamsCalls())
+func (mock *RefunderMock) SetParamsCalls() []struct {
+	Ctx    cosmossdktypes.Context
+	Params rewardtypes.Params
+} {
+	var calls []struct {
+		Ctx    cosmossdktypes.Context
+		Params rewardtypes.Params
+	}
+	mock.lockSetParams.RLock()
+	calls = mock.calls.SetParams
+	mock.lockSetParams.RUnlock()
 	return calls
 }
 

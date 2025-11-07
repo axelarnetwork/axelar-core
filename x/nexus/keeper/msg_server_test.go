@@ -53,3 +53,25 @@ func TestMsgServerActivateDeactivateWasm(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, k.IsWasmConnectionActivated(ctx))
 }
+
+func TestUpdateParams(t *testing.T) {
+	encodingConfig := params.MakeEncodingConfig()
+	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "nexus")
+
+	k := keeper.NewKeeper(
+		encodingConfig.Codec,
+		store.NewKVStoreKey(types.StoreKey),
+		subspace,
+	)
+
+	msgServer := keeper.NewMsgServerImpl(k, &mock.SnapshotterMock{}, &mock.SlashingKeeperMock{}, &mock.StakingKeeperMock{}, &mock.AxelarnetKeeperMock{})
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t))
+
+	p := types.DefaultParams()
+	p.ChainMaintainerCheckWindow = p.ChainMaintainerCheckWindow + 1
+	_, err := msgServer.UpdateParams(ctx, &types.UpdateParamsRequest{Authority: "", Params: p})
+	assert.NoError(t, err)
+	assert.Equal(t, p, k.GetParams(ctx))
+}

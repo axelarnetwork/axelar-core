@@ -936,6 +936,22 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 	return &types.RetryFailedEventResponse{}, nil
 }
 
+func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsRequest) (*types.UpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := req.Params.Validate(); err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+	}
+
+	// Update params for the specified chain
+	ck, err := s.ForChain(ctx, req.Params.Chain)
+	if err != nil {
+		return nil, err
+	}
+	ck.SetParams(ctx, req.Params)
+	return &types.UpdateParamsResponse{}, nil
+}
+
 func (s msgServer) CreateSnapshot(ctx sdk.Context, chain nexus.Chain) (snapshot.Snapshot, error) {
 	keeper, err := s.ForChain(ctx, chain.Name)
 	if err != nil {

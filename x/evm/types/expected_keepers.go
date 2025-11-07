@@ -37,6 +37,7 @@ type ChainKeeper interface {
 	GetName() nexus.ChainName
 
 	GetParams(ctx sdk.Context) Params
+	SetParams(ctx sdk.Context, params Params)
 
 	GetNetwork(ctx sdk.Context) string
 	GetChainID(ctx sdk.Context) (math.Int, bool)

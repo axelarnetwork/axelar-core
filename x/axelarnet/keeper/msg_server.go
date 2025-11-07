@@ -535,6 +535,17 @@ func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageReques
 	return &types.RouteMessageResponse{}, nil
 }
 
+func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsRequest) (*types.UpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := req.Params.Validate(); err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+	}
+
+	s.SetParams(ctx, req.Params)
+	return &types.UpdateParamsResponse{}, nil
+}
+
 func transfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeeper, ibc types.IBCKeeper, recipient sdk.AccAddress, coin sdk.Coin) error {
 	lockableAsset, err := n.NewLockableAsset(ctx, ibc, b, coin)
 	if err != nil {

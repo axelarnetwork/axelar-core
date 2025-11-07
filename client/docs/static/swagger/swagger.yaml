@@ -747,6 +747,87 @@ paths:
                       format: byte
       tags:
         - QueryService
+    post:
+      operationId: AxelarnetUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+              params:
+                type: object
+                properties:
+                  route_timeout_window:
+                    type: string
+                    format: uint64
+                    title: IBC packet route timeout window
+                  transfer_limit:
+                    type: string
+                    format: uint64
+                  end_blocker_limit:
+                    type: string
+                    format: uint64
+                  call_contracts_proposal_min_deposits:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        chain:
+                          type: string
+                        contract_address:
+                          type: string
+                        min_deposits:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              denom:
+                                type: string
+                              amount:
+                                type: string
+                            description: >-
+                              Coin defines a token with a denomination and an
+                              amount.
+
+
+                              NOTE: The amount field is an Int which implements
+                              the custom method
+
+                              signatures required by gogoproto.
+                title: Params represent the genesis parameters for the module
+      tags:
+        - MsgService
   /axelar/evm/add_chain:
     post:
       operationId: AddChain
@@ -6490,6 +6571,279 @@ paths:
           type: string
       tags:
         - QueryService
+  /axelar/evm/v1beta1/params:
+    post:
+      operationId: EVMUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                      description: >-
+                        A URL/resource name that uniquely identifies the type of
+                        the serialized
+
+                        protocol buffer message. This string must contain at
+                        least
+
+                        one "/" character. The last segment of the URL's path
+                        must represent
+
+                        the fully qualified name of the type (as in
+
+                        `path/google.protobuf.Duration`). The name should be in
+                        a canonical form
+
+                        (e.g., leading "." is not accepted).
+
+
+                        In practice, teams usually precompile into the binary
+                        all types that they
+
+                        expect it to use in the context of Any. However, for
+                        URLs which use the
+
+                        scheme `http`, `https`, or no scheme, one can optionally
+                        set up a type
+
+                        server that maps type URLs to message definitions as
+                        follows:
+
+
+                        * If no scheme is provided, `https` is assumed.
+
+                        * An HTTP GET on the URL must yield a
+                        [google.protobuf.Type][]
+                          value in binary format, or produce an error.
+                        * Applications are allowed to cache lookup results based
+                        on the
+                          URL, or have them precompiled into a binary to avoid any
+                          lookup. Therefore, binary compatibility needs to be preserved
+                          on changes to types. (Use versioned type names to manage
+                          breaking changes.)
+
+                        Note: this functionality is not currently available in
+                        the official
+
+                        protobuf release, and it is not used for type URLs
+                        beginning with
+
+                        type.googleapis.com.
+
+
+                        Schemes other than `http`, `https` (or the empty scheme)
+                        might be
+
+                        used with implementation specific semantics.
+                    value:
+                      type: string
+                      format: byte
+                      description: >-
+                        Must be a valid serialized protocol buffer of the above
+                        specified type.
+                  description: >-
+                    `Any` contains an arbitrary serialized protocol buffer
+                    message along with a
+
+                    URL that describes the type of the serialized message.
+
+
+                    Protobuf library provides support to pack/unpack Any values
+                    in the form
+
+                    of utility functions or additional generated methods of the
+                    Any type.
+
+
+                    Example 1: Pack and unpack a message in C++.
+
+                        Foo foo = ...;
+                        Any any;
+                        any.PackFrom(foo);
+                        ...
+                        if (any.UnpackTo(&foo)) {
+                          ...
+                        }
+
+                    Example 2: Pack and unpack a message in Java.
+
+                        Foo foo = ...;
+                        Any any = Any.pack(foo);
+                        ...
+                        if (any.is(Foo.class)) {
+                          foo = any.unpack(Foo.class);
+                        }
+                        // or ...
+                        if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+                          foo = any.unpack(Foo.getDefaultInstance());
+                        }
+
+                    Example 3: Pack and unpack a message in Python.
+
+                        foo = Foo(...)
+                        any = Any()
+                        any.Pack(foo)
+                        ...
+                        if any.Is(Foo.DESCRIPTOR):
+                          any.Unpack(foo)
+                          ...
+
+                    Example 4: Pack and unpack a message in Go
+
+                         foo := &pb.Foo{...}
+                         any, err := anypb.New(foo)
+                         if err != nil {
+                           ...
+                         }
+                         ...
+                         foo := &pb.Foo{}
+                         if err := any.UnmarshalTo(foo); err != nil {
+                           ...
+                         }
+
+                    The pack methods provided by protobuf library will by
+                    default use
+
+                    'type.googleapis.com/full.type.name' as the type URL and the
+                    unpack
+
+                    methods only use the fully qualified type name after the
+                    last '/'
+
+                    in the type URL, for example "foo.bar.com/x/y.z" will yield
+                    type
+
+                    name "y.z".
+
+
+                    JSON
+
+
+                    The JSON representation of an `Any` value uses the regular
+
+                    representation of the deserialized, embedded message, with
+                    an
+
+                    additional field `@type` which contains the type URL.
+                    Example:
+
+                        package google.profile;
+                        message Person {
+                          string first_name = 1;
+                          string last_name = 2;
+                        }
+
+                        {
+                          "@type": "type.googleapis.com/google.profile.Person",
+                          "firstName": <string>,
+                          "lastName": <string>
+                        }
+
+                    If the embedded message type is well-known and has a custom
+                    JSON
+
+                    representation, that representation will be embedded adding
+                    a field
+
+                    `value` which holds the custom JSON in addition to the
+                    `@type`
+
+                    field. Example (for message [google.protobuf.Duration][]):
+
+                        {
+                          "@type": "type.googleapis.com/google.protobuf.Duration",
+                          "value": "1.212s"
+                        }
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+              params:
+                type: object
+                properties:
+                  chain:
+                    type: string
+                  confirmation_height:
+                    type: string
+                    format: uint64
+                  network:
+                    type: string
+                  token_code:
+                    type: string
+                    format: byte
+                  burnable:
+                    type: string
+                    format: byte
+                  revote_locking_period:
+                    type: string
+                    format: int64
+                  networks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        id:
+                          type: string
+                          format: byte
+                      title: NetworkInfo describes information about a network
+                  voting_threshold:
+                    type: object
+                    properties:
+                      numerator:
+                        type: string
+                        format: int64
+                        title: >-
+                          split threshold into Numerator and denominator to
+                          avoid floating point
+
+                          errors down the line
+                      denominator:
+                        type: string
+                        format: int64
+                  min_voter_count:
+                    type: string
+                    format: int64
+                  commands_gas_limit:
+                    type: integer
+                    format: int64
+                  voting_grace_period:
+                    type: string
+                    format: int64
+                  end_blocker_limit:
+                    type: string
+                    format: int64
+                  transfer_limit:
+                    type: string
+                    format: uint64
+                title: Params is the parameter set for this module
+      tags:
+        - MsgService
   /axelar/evm/v1beta1/params/{chain}:
     get:
       operationId: EVMParams
@@ -7840,6 +8194,93 @@ paths:
                       format: byte
       tags:
         - QueryService
+    post:
+      operationId: MultisigUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+              params:
+                type: object
+                properties:
+                  keygen_threshold:
+                    type: object
+                    properties:
+                      numerator:
+                        type: string
+                        format: int64
+                        title: >-
+                          split threshold into Numerator and denominator to
+                          avoid floating point
+
+                          errors down the line
+                      denominator:
+                        type: string
+                        format: int64
+                  signing_threshold:
+                    type: object
+                    properties:
+                      numerator:
+                        type: string
+                        format: int64
+                        title: >-
+                          split threshold into Numerator and denominator to
+                          avoid floating point
+
+                          errors down the line
+                      denominator:
+                        type: string
+                        format: int64
+                  keygen_timeout:
+                    type: string
+                    format: int64
+                  keygen_grace_period:
+                    type: string
+                    format: int64
+                  signing_timeout:
+                    type: string
+                    format: int64
+                  signing_grace_period:
+                    type: string
+                    format: int64
+                  active_epoch_count:
+                    type: string
+                    format: uint64
+                title: Params represent the genesis parameters for the module
+      tags:
+        - MsgService
   /axelar/nexus/activate_chain:
     post:
       operationId: ActivateChain
@@ -8830,6 +9271,101 @@ paths:
                       format: byte
       tags:
         - QueryService
+    post:
+      operationId: NexusUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+              params:
+                type: object
+                properties:
+                  chain_activation_threshold:
+                    type: object
+                    properties:
+                      numerator:
+                        type: string
+                        format: int64
+                        title: >-
+                          split threshold into Numerator and denominator to
+                          avoid floating point
+
+                          errors down the line
+                      denominator:
+                        type: string
+                        format: int64
+                  chain_maintainer_missing_vote_threshold:
+                    type: object
+                    properties:
+                      numerator:
+                        type: string
+                        format: int64
+                        title: >-
+                          split threshold into Numerator and denominator to
+                          avoid floating point
+
+                          errors down the line
+                      denominator:
+                        type: string
+                        format: int64
+                  chain_maintainer_incorrect_vote_threshold:
+                    type: object
+                    properties:
+                      numerator:
+                        type: string
+                        format: int64
+                        title: >-
+                          split threshold into Numerator and denominator to
+                          avoid floating point
+
+                          errors down the line
+                      denominator:
+                        type: string
+                        format: int64
+                  chain_maintainer_check_window:
+                    type: integer
+                    format: int32
+                  gateway:
+                    type: string
+                    format: byte
+                  end_blocker_limit:
+                    type: string
+                    format: uint64
+                title: Params represent the genesis parameters for the module
+      tags:
+        - MsgService
   /axelar/nexus/v1beta1/recipient_address/{deposit_chain}/{deposit_addr}:
     get:
       summary: >-
@@ -10309,6 +10845,228 @@ paths:
                         }
       tags:
         - QueryService
+    post:
+      operationId: RewardUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                      description: >-
+                        A URL/resource name that uniquely identifies the type of
+                        the serialized
+
+                        protocol buffer message. This string must contain at
+                        least
+
+                        one "/" character. The last segment of the URL's path
+                        must represent
+
+                        the fully qualified name of the type (as in
+
+                        `path/google.protobuf.Duration`). The name should be in
+                        a canonical form
+
+                        (e.g., leading "." is not accepted).
+
+
+                        In practice, teams usually precompile into the binary
+                        all types that they
+
+                        expect it to use in the context of Any. However, for
+                        URLs which use the
+
+                        scheme `http`, `https`, or no scheme, one can optionally
+                        set up a type
+
+                        server that maps type URLs to message definitions as
+                        follows:
+
+
+                        * If no scheme is provided, `https` is assumed.
+
+                        * An HTTP GET on the URL must yield a
+                        [google.protobuf.Type][]
+                          value in binary format, or produce an error.
+                        * Applications are allowed to cache lookup results based
+                        on the
+                          URL, or have them precompiled into a binary to avoid any
+                          lookup. Therefore, binary compatibility needs to be preserved
+                          on changes to types. (Use versioned type names to manage
+                          breaking changes.)
+
+                        Note: this functionality is not currently available in
+                        the official
+
+                        protobuf release, and it is not used for type URLs
+                        beginning with
+
+                        type.googleapis.com.
+
+
+                        Schemes other than `http`, `https` (or the empty scheme)
+                        might be
+
+                        used with implementation specific semantics.
+                    value:
+                      type: string
+                      format: byte
+                      description: >-
+                        Must be a valid serialized protocol buffer of the above
+                        specified type.
+                  description: >-
+                    `Any` contains an arbitrary serialized protocol buffer
+                    message along with a
+
+                    URL that describes the type of the serialized message.
+
+
+                    Protobuf library provides support to pack/unpack Any values
+                    in the form
+
+                    of utility functions or additional generated methods of the
+                    Any type.
+
+
+                    Example 1: Pack and unpack a message in C++.
+
+                        Foo foo = ...;
+                        Any any;
+                        any.PackFrom(foo);
+                        ...
+                        if (any.UnpackTo(&foo)) {
+                          ...
+                        }
+
+                    Example 2: Pack and unpack a message in Java.
+
+                        Foo foo = ...;
+                        Any any = Any.pack(foo);
+                        ...
+                        if (any.is(Foo.class)) {
+                          foo = any.unpack(Foo.class);
+                        }
+                        // or ...
+                        if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+                          foo = any.unpack(Foo.getDefaultInstance());
+                        }
+
+                    Example 3: Pack and unpack a message in Python.
+
+                        foo = Foo(...)
+                        any = Any()
+                        any.Pack(foo)
+                        ...
+                        if any.Is(Foo.DESCRIPTOR):
+                          any.Unpack(foo)
+                          ...
+
+                    Example 4: Pack and unpack a message in Go
+
+                         foo := &pb.Foo{...}
+                         any, err := anypb.New(foo)
+                         if err != nil {
+                           ...
+                         }
+                         ...
+                         foo := &pb.Foo{}
+                         if err := any.UnmarshalTo(foo); err != nil {
+                           ...
+                         }
+
+                    The pack methods provided by protobuf library will by
+                    default use
+
+                    'type.googleapis.com/full.type.name' as the type URL and the
+                    unpack
+
+                    methods only use the fully qualified type name after the
+                    last '/'
+
+                    in the type URL, for example "foo.bar.com/x/y.z" will yield
+                    type
+
+                    name "y.z".
+
+
+                    JSON
+
+
+                    The JSON representation of an `Any` value uses the regular
+
+                    representation of the deserialized, embedded message, with
+                    an
+
+                    additional field `@type` which contains the type URL.
+                    Example:
+
+                        package google.profile;
+                        message Person {
+                          string first_name = 1;
+                          string last_name = 2;
+                        }
+
+                        {
+                          "@type": "type.googleapis.com/google.profile.Person",
+                          "firstName": <string>,
+                          "lastName": <string>
+                        }
+
+                    If the embedded message type is well-known and has a custom
+                    JSON
+
+                    representation, that representation will be embedded adding
+                    a field
+
+                    `value` which holds the custom JSON in addition to the
+                    `@type`
+
+                    field. Example (for message [google.protobuf.Duration][]):
+
+                        {
+                          "@type": "type.googleapis.com/google.protobuf.Duration",
+                          "value": "1.212s"
+                        }
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+              params:
+                type: object
+                properties:
+                  external_chain_voting_inflation_rate:
+                    type: string
+                    format: byte
+                  key_mgmt_relative_inflation_rate:
+                    type: string
+                    format: byte
+                title: Params represent the genesis parameters for the module
+      tags:
+        - MsgService
   /axelar/snapshot/deactivate_proxy:
     post:
       summary: DeactivateProxy defines a method for deregistering a proxy account.
@@ -10483,6 +11241,53 @@ paths:
                       format: byte
       tags:
         - QueryService
+    post:
+      operationId: SnapshotUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+              params:
+                type: object
+                properties:
+                  min_proxy_balance:
+                    type: string
+                    format: int64
+                title: Params represent the genesis parameters for the module
+      tags:
+        - MsgService
   /axelar/snapshot/v1beta1/proxy:
     get:
       operationId: ProxyByOperator
@@ -11113,6 +11918,378 @@ paths:
                         }
       tags:
         - QueryService
+    post:
+      operationId: TSSUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                      description: >-
+                        A URL/resource name that uniquely identifies the type of
+                        the serialized
+
+                        protocol buffer message. This string must contain at
+                        least
+
+                        one "/" character. The last segment of the URL's path
+                        must represent
+
+                        the fully qualified name of the type (as in
+
+                        `path/google.protobuf.Duration`). The name should be in
+                        a canonical form
+
+                        (e.g., leading "." is not accepted).
+
+
+                        In practice, teams usually precompile into the binary
+                        all types that they
+
+                        expect it to use in the context of Any. However, for
+                        URLs which use the
+
+                        scheme `http`, `https`, or no scheme, one can optionally
+                        set up a type
+
+                        server that maps type URLs to message definitions as
+                        follows:
+
+
+                        * If no scheme is provided, `https` is assumed.
+
+                        * An HTTP GET on the URL must yield a
+                        [google.protobuf.Type][]
+                          value in binary format, or produce an error.
+                        * Applications are allowed to cache lookup results based
+                        on the
+                          URL, or have them precompiled into a binary to avoid any
+                          lookup. Therefore, binary compatibility needs to be preserved
+                          on changes to types. (Use versioned type names to manage
+                          breaking changes.)
+
+                        Note: this functionality is not currently available in
+                        the official
+
+                        protobuf release, and it is not used for type URLs
+                        beginning with
+
+                        type.googleapis.com.
+
+
+                        Schemes other than `http`, `https` (or the empty scheme)
+                        might be
+
+                        used with implementation specific semantics.
+                    value:
+                      type: string
+                      format: byte
+                      description: >-
+                        Must be a valid serialized protocol buffer of the above
+                        specified type.
+                  description: >-
+                    `Any` contains an arbitrary serialized protocol buffer
+                    message along with a
+
+                    URL that describes the type of the serialized message.
+
+
+                    Protobuf library provides support to pack/unpack Any values
+                    in the form
+
+                    of utility functions or additional generated methods of the
+                    Any type.
+
+
+                    Example 1: Pack and unpack a message in C++.
+
+                        Foo foo = ...;
+                        Any any;
+                        any.PackFrom(foo);
+                        ...
+                        if (any.UnpackTo(&foo)) {
+                          ...
+                        }
+
+                    Example 2: Pack and unpack a message in Java.
+
+                        Foo foo = ...;
+                        Any any = Any.pack(foo);
+                        ...
+                        if (any.is(Foo.class)) {
+                          foo = any.unpack(Foo.class);
+                        }
+                        // or ...
+                        if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+                          foo = any.unpack(Foo.getDefaultInstance());
+                        }
+
+                    Example 3: Pack and unpack a message in Python.
+
+                        foo = Foo(...)
+                        any = Any()
+                        any.Pack(foo)
+                        ...
+                        if any.Is(Foo.DESCRIPTOR):
+                          any.Unpack(foo)
+                          ...
+
+                    Example 4: Pack and unpack a message in Go
+
+                         foo := &pb.Foo{...}
+                         any, err := anypb.New(foo)
+                         if err != nil {
+                           ...
+                         }
+                         ...
+                         foo := &pb.Foo{}
+                         if err := any.UnmarshalTo(foo); err != nil {
+                           ...
+                         }
+
+                    The pack methods provided by protobuf library will by
+                    default use
+
+                    'type.googleapis.com/full.type.name' as the type URL and the
+                    unpack
+
+                    methods only use the fully qualified type name after the
+                    last '/'
+
+                    in the type URL, for example "foo.bar.com/x/y.z" will yield
+                    type
+
+                    name "y.z".
+
+
+                    JSON
+
+
+                    The JSON representation of an `Any` value uses the regular
+
+                    representation of the deserialized, embedded message, with
+                    an
+
+                    additional field `@type` which contains the type URL.
+                    Example:
+
+                        package google.profile;
+                        message Person {
+                          string first_name = 1;
+                          string last_name = 2;
+                        }
+
+                        {
+                          "@type": "type.googleapis.com/google.profile.Person",
+                          "firstName": <string>,
+                          "lastName": <string>
+                        }
+
+                    If the embedded message type is well-known and has a custom
+                    JSON
+
+                    representation, that representation will be embedded adding
+                    a field
+
+                    `value` which holds the custom JSON in addition to the
+                    `@type`
+
+                    field. Example (for message [google.protobuf.Duration][]):
+
+                        {
+                          "@type": "type.googleapis.com/google.protobuf.Duration",
+                          "value": "1.212s"
+                        }
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+              params:
+                type: object
+                properties:
+                  key_requirements:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key_role:
+                          type: string
+                          enum:
+                            - KEY_ROLE_UNSPECIFIED
+                            - KEY_ROLE_MASTER_KEY
+                            - KEY_ROLE_SECONDARY_KEY
+                            - KEY_ROLE_EXTERNAL_KEY
+                          default: KEY_ROLE_UNSPECIFIED
+                        key_type:
+                          type: string
+                          enum:
+                            - KEY_TYPE_UNSPECIFIED
+                            - KEY_TYPE_NONE
+                            - KEY_TYPE_THRESHOLD
+                            - KEY_TYPE_MULTISIG
+                          default: KEY_TYPE_UNSPECIFIED
+                        min_keygen_threshold:
+                          type: object
+                          properties:
+                            numerator:
+                              type: string
+                              format: int64
+                              title: >-
+                                split threshold into Numerator and denominator
+                                to avoid floating point
+
+                                errors down the line
+                            denominator:
+                              type: string
+                              format: int64
+                        safety_threshold:
+                          type: object
+                          properties:
+                            numerator:
+                              type: string
+                              format: int64
+                              title: >-
+                                split threshold into Numerator and denominator
+                                to avoid floating point
+
+                                errors down the line
+                            denominator:
+                              type: string
+                              format: int64
+                        key_share_distribution_policy:
+                          type: string
+                          enum:
+                            - KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED
+                            - KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE
+                            - KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR
+                          default: KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED
+                        max_total_share_count:
+                          type: string
+                          format: int64
+                        min_total_share_count:
+                          type: string
+                          format: int64
+                        keygen_voting_threshold:
+                          type: object
+                          properties:
+                            numerator:
+                              type: string
+                              format: int64
+                              title: >-
+                                split threshold into Numerator and denominator
+                                to avoid floating point
+
+                                errors down the line
+                            denominator:
+                              type: string
+                              format: int64
+                        sign_voting_threshold:
+                          type: object
+                          properties:
+                            numerator:
+                              type: string
+                              format: int64
+                              title: >-
+                                split threshold into Numerator and denominator
+                                to avoid floating point
+
+                                errors down the line
+                            denominator:
+                              type: string
+                              format: int64
+                        keygen_timeout:
+                          type: string
+                          format: int64
+                        sign_timeout:
+                          type: string
+                          format: int64
+                      title: KeyRequirement defines requirements for keys
+                    title: KeyRequirements defines the requirement for each key role
+                  suspend_duration_in_blocks:
+                    type: string
+                    format: int64
+                    title: >-
+                      SuspendDurationInBlocks defines the number of blocks a
+
+                      validator is disallowed to participate in any TSS ceremony
+                      after
+
+                      committing a malicious behaviour during signing
+                  heartbeat_period_in_blocks:
+                    type: string
+                    format: int64
+                    title: >-
+                      HeartBeatPeriodInBlocks defines the time period in blocks
+                      for tss to
+
+                      emit the event asking validators to send their heartbeats
+                  max_missed_blocks_per_window:
+                    type: object
+                    properties:
+                      numerator:
+                        type: string
+                        format: int64
+                        title: >-
+                          split threshold into Numerator and denominator to
+                          avoid floating point
+
+                          errors down the line
+                      denominator:
+                        type: string
+                        format: int64
+                  unbonding_locking_key_rotation_count:
+                    type: string
+                    format: int64
+                  external_multisig_threshold:
+                    type: object
+                    properties:
+                      numerator:
+                        type: string
+                        format: int64
+                        title: >-
+                          split threshold into Numerator and denominator to
+                          avoid floating point
+
+                          errors down the line
+                      denominator:
+                        type: string
+                        format: int64
+                  max_sign_queue_size:
+                    type: string
+                    format: int64
+                  max_simultaneous_sign_shares:
+                    type: string
+                    format: int64
+                  tss_signed_blocks_window:
+                    type: string
+                    format: int64
+                title: Params is the parameter set for this module
+      tags:
+        - MsgService
   /axelar/permission/deregister_controller:
     post:
       operationId: DeregisterController
@@ -12569,6 +13746,221 @@ paths:
                         }
       tags:
         - Query
+    post:
+      operationId: PermissionUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                      description: >-
+                        A URL/resource name that uniquely identifies the type of
+                        the serialized
+
+                        protocol buffer message. This string must contain at
+                        least
+
+                        one "/" character. The last segment of the URL's path
+                        must represent
+
+                        the fully qualified name of the type (as in
+
+                        `path/google.protobuf.Duration`). The name should be in
+                        a canonical form
+
+                        (e.g., leading "." is not accepted).
+
+
+                        In practice, teams usually precompile into the binary
+                        all types that they
+
+                        expect it to use in the context of Any. However, for
+                        URLs which use the
+
+                        scheme `http`, `https`, or no scheme, one can optionally
+                        set up a type
+
+                        server that maps type URLs to message definitions as
+                        follows:
+
+
+                        * If no scheme is provided, `https` is assumed.
+
+                        * An HTTP GET on the URL must yield a
+                        [google.protobuf.Type][]
+                          value in binary format, or produce an error.
+                        * Applications are allowed to cache lookup results based
+                        on the
+                          URL, or have them precompiled into a binary to avoid any
+                          lookup. Therefore, binary compatibility needs to be preserved
+                          on changes to types. (Use versioned type names to manage
+                          breaking changes.)
+
+                        Note: this functionality is not currently available in
+                        the official
+
+                        protobuf release, and it is not used for type URLs
+                        beginning with
+
+                        type.googleapis.com.
+
+
+                        Schemes other than `http`, `https` (or the empty scheme)
+                        might be
+
+                        used with implementation specific semantics.
+                    value:
+                      type: string
+                      format: byte
+                      description: >-
+                        Must be a valid serialized protocol buffer of the above
+                        specified type.
+                  description: >-
+                    `Any` contains an arbitrary serialized protocol buffer
+                    message along with a
+
+                    URL that describes the type of the serialized message.
+
+
+                    Protobuf library provides support to pack/unpack Any values
+                    in the form
+
+                    of utility functions or additional generated methods of the
+                    Any type.
+
+
+                    Example 1: Pack and unpack a message in C++.
+
+                        Foo foo = ...;
+                        Any any;
+                        any.PackFrom(foo);
+                        ...
+                        if (any.UnpackTo(&foo)) {
+                          ...
+                        }
+
+                    Example 2: Pack and unpack a message in Java.
+
+                        Foo foo = ...;
+                        Any any = Any.pack(foo);
+                        ...
+                        if (any.is(Foo.class)) {
+                          foo = any.unpack(Foo.class);
+                        }
+                        // or ...
+                        if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+                          foo = any.unpack(Foo.getDefaultInstance());
+                        }
+
+                    Example 3: Pack and unpack a message in Python.
+
+                        foo = Foo(...)
+                        any = Any()
+                        any.Pack(foo)
+                        ...
+                        if any.Is(Foo.DESCRIPTOR):
+                          any.Unpack(foo)
+                          ...
+
+                    Example 4: Pack and unpack a message in Go
+
+                         foo := &pb.Foo{...}
+                         any, err := anypb.New(foo)
+                         if err != nil {
+                           ...
+                         }
+                         ...
+                         foo := &pb.Foo{}
+                         if err := any.UnmarshalTo(foo); err != nil {
+                           ...
+                         }
+
+                    The pack methods provided by protobuf library will by
+                    default use
+
+                    'type.googleapis.com/full.type.name' as the type URL and the
+                    unpack
+
+                    methods only use the fully qualified type name after the
+                    last '/'
+
+                    in the type URL, for example "foo.bar.com/x/y.z" will yield
+                    type
+
+                    name "y.z".
+
+
+                    JSON
+
+
+                    The JSON representation of an `Any` value uses the regular
+
+                    representation of the deserialized, embedded message, with
+                    an
+
+                    additional field `@type` which contains the type URL.
+                    Example:
+
+                        package google.profile;
+                        message Person {
+                          string first_name = 1;
+                          string last_name = 2;
+                        }
+
+                        {
+                          "@type": "type.googleapis.com/google.profile.Person",
+                          "firstName": <string>,
+                          "lastName": <string>
+                        }
+
+                    If the embedded message type is well-known and has a custom
+                    JSON
+
+                    representation, that representation will be embedded adding
+                    a field
+
+                    `value` which holds the custom JSON in addition to the
+                    `@type`
+
+                    field. Example (for message [google.protobuf.Duration][]):
+
+                        {
+                          "@type": "type.googleapis.com/google.protobuf.Duration",
+                          "value": "1.212s"
+                        }
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+              params:
+                type: object
+                title: Params represent the genesis parameters for the module
+      tags:
+        - Msg
   /axelar/vote/v1beta1/params:
     get:
       operationId: VoteParams
@@ -12795,6 +14187,239 @@ paths:
                         }
       tags:
         - QueryService
+    post:
+      operationId: VoteUpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                      description: >-
+                        A URL/resource name that uniquely identifies the type of
+                        the serialized
+
+                        protocol buffer message. This string must contain at
+                        least
+
+                        one "/" character. The last segment of the URL's path
+                        must represent
+
+                        the fully qualified name of the type (as in
+
+                        `path/google.protobuf.Duration`). The name should be in
+                        a canonical form
+
+                        (e.g., leading "." is not accepted).
+
+
+                        In practice, teams usually precompile into the binary
+                        all types that they
+
+                        expect it to use in the context of Any. However, for
+                        URLs which use the
+
+                        scheme `http`, `https`, or no scheme, one can optionally
+                        set up a type
+
+                        server that maps type URLs to message definitions as
+                        follows:
+
+
+                        * If no scheme is provided, `https` is assumed.
+
+                        * An HTTP GET on the URL must yield a
+                        [google.protobuf.Type][]
+                          value in binary format, or produce an error.
+                        * Applications are allowed to cache lookup results based
+                        on the
+                          URL, or have them precompiled into a binary to avoid any
+                          lookup. Therefore, binary compatibility needs to be preserved
+                          on changes to types. (Use versioned type names to manage
+                          breaking changes.)
+
+                        Note: this functionality is not currently available in
+                        the official
+
+                        protobuf release, and it is not used for type URLs
+                        beginning with
+
+                        type.googleapis.com.
+
+
+                        Schemes other than `http`, `https` (or the empty scheme)
+                        might be
+
+                        used with implementation specific semantics.
+                    value:
+                      type: string
+                      format: byte
+                      description: >-
+                        Must be a valid serialized protocol buffer of the above
+                        specified type.
+                  description: >-
+                    `Any` contains an arbitrary serialized protocol buffer
+                    message along with a
+
+                    URL that describes the type of the serialized message.
+
+
+                    Protobuf library provides support to pack/unpack Any values
+                    in the form
+
+                    of utility functions or additional generated methods of the
+                    Any type.
+
+
+                    Example 1: Pack and unpack a message in C++.
+
+                        Foo foo = ...;
+                        Any any;
+                        any.PackFrom(foo);
+                        ...
+                        if (any.UnpackTo(&foo)) {
+                          ...
+                        }
+
+                    Example 2: Pack and unpack a message in Java.
+
+                        Foo foo = ...;
+                        Any any = Any.pack(foo);
+                        ...
+                        if (any.is(Foo.class)) {
+                          foo = any.unpack(Foo.class);
+                        }
+                        // or ...
+                        if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+                          foo = any.unpack(Foo.getDefaultInstance());
+                        }
+
+                    Example 3: Pack and unpack a message in Python.
+
+                        foo = Foo(...)
+                        any = Any()
+                        any.Pack(foo)
+                        ...
+                        if any.Is(Foo.DESCRIPTOR):
+                          any.Unpack(foo)
+                          ...
+
+                    Example 4: Pack and unpack a message in Go
+
+                         foo := &pb.Foo{...}
+                         any, err := anypb.New(foo)
+                         if err != nil {
+                           ...
+                         }
+                         ...
+                         foo := &pb.Foo{}
+                         if err := any.UnmarshalTo(foo); err != nil {
+                           ...
+                         }
+
+                    The pack methods provided by protobuf library will by
+                    default use
+
+                    'type.googleapis.com/full.type.name' as the type URL and the
+                    unpack
+
+                    methods only use the fully qualified type name after the
+                    last '/'
+
+                    in the type URL, for example "foo.bar.com/x/y.z" will yield
+                    type
+
+                    name "y.z".
+
+
+                    JSON
+
+
+                    The JSON representation of an `Any` value uses the regular
+
+                    representation of the deserialized, embedded message, with
+                    an
+
+                    additional field `@type` which contains the type URL.
+                    Example:
+
+                        package google.profile;
+                        message Person {
+                          string first_name = 1;
+                          string last_name = 2;
+                        }
+
+                        {
+                          "@type": "type.googleapis.com/google.profile.Person",
+                          "firstName": <string>,
+                          "lastName": <string>
+                        }
+
+                    If the embedded message type is well-known and has a custom
+                    JSON
+
+                    representation, that representation will be embedded adding
+                    a field
+
+                    `value` which holds the custom JSON in addition to the
+                    `@type`
+
+                    field. Example (for message [google.protobuf.Duration][]):
+
+                        {
+                          "@type": "type.googleapis.com/google.protobuf.Duration",
+                          "value": "1.212s"
+                        }
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+              params:
+                type: object
+                properties:
+                  default_voting_threshold:
+                    type: object
+                    properties:
+                      numerator:
+                        type: string
+                        format: int64
+                        title: >-
+                          split threshold into Numerator and denominator to
+                          avoid floating point
+
+                          errors down the line
+                      denominator:
+                        type: string
+                        format: int64
+                  end_blocker_limit:
+                    type: string
+                    format: int64
+                title: Params represent the genesis parameters for the module
+      tags:
+        - MsgService
   /axelar/vote/vote:
     post:
       operationId: AxelarVote
@@ -55217,6 +56842,53 @@ definitions:
         type: string
   axelar.axelarnet.v1beta1.RouteMessageResponse:
     type: object
+  axelar.axelarnet.v1beta1.UpdateParamsRequest:
+    type: object
+    properties:
+      authority:
+        type: string
+      params:
+        type: object
+        properties:
+          route_timeout_window:
+            type: string
+            format: uint64
+            title: IBC packet route timeout window
+          transfer_limit:
+            type: string
+            format: uint64
+          end_blocker_limit:
+            type: string
+            format: uint64
+          call_contracts_proposal_min_deposits:
+            type: array
+            items:
+              type: object
+              properties:
+                chain:
+                  type: string
+                contract_address:
+                  type: string
+                min_deposits:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      denom:
+                        type: string
+                      amount:
+                        type: string
+                    description: >-
+                      Coin defines a token with a denomination and an amount.
+
+
+                      NOTE: The amount field is an Int which implements the
+                      custom method
+
+                      signatures required by gogoproto.
+        title: Params represent the genesis parameters for the module
+  axelar.axelarnet.v1beta1.UpdateParamsResponse:
+    type: object
   axelar.nexus.exported.v1beta1.Asset:
     type: object
     properties:
@@ -56297,6 +57969,73 @@ definitions:
       - TOKEN_TYPE_INTERNAL
       - TOKEN_TYPE_EXTERNAL
     default: TOKEN_TYPE_UNSPECIFIED
+  axelar.evm.v1beta1.UpdateParamsRequest:
+    type: object
+    properties:
+      authority:
+        type: string
+      params:
+        type: object
+        properties:
+          chain:
+            type: string
+          confirmation_height:
+            type: string
+            format: uint64
+          network:
+            type: string
+          token_code:
+            type: string
+            format: byte
+          burnable:
+            type: string
+            format: byte
+          revote_locking_period:
+            type: string
+            format: int64
+          networks:
+            type: array
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                id:
+                  type: string
+                  format: byte
+              title: NetworkInfo describes information about a network
+          voting_threshold:
+            type: object
+            properties:
+              numerator:
+                type: string
+                format: int64
+                title: >-
+                  split threshold into Numerator and denominator to avoid
+                  floating point
+
+                  errors down the line
+              denominator:
+                type: string
+                format: int64
+          min_voter_count:
+            type: string
+            format: int64
+          commands_gas_limit:
+            type: integer
+            format: int64
+          voting_grace_period:
+            type: string
+            format: int64
+          end_blocker_limit:
+            type: string
+            format: int64
+          transfer_limit:
+            type: string
+            format: uint64
+        title: Params is the parameter set for this module
+  axelar.evm.v1beta1.UpdateParamsResponse:
+    type: object
   axelar.utils.v1beta1.Threshold:
     type: object
     properties:
@@ -56591,6 +58330,60 @@ definitions:
         type: string
         format: byte
   axelar.multisig.v1beta1.SubmitSignatureResponse:
+    type: object
+  axelar.multisig.v1beta1.UpdateParamsRequest:
+    type: object
+    properties:
+      authority:
+        type: string
+      params:
+        type: object
+        properties:
+          keygen_threshold:
+            type: object
+            properties:
+              numerator:
+                type: string
+                format: int64
+                title: >-
+                  split threshold into Numerator and denominator to avoid
+                  floating point
+
+                  errors down the line
+              denominator:
+                type: string
+                format: int64
+          signing_threshold:
+            type: object
+            properties:
+              numerator:
+                type: string
+                format: int64
+                title: >-
+                  split threshold into Numerator and denominator to avoid
+                  floating point
+
+                  errors down the line
+              denominator:
+                type: string
+                format: int64
+          keygen_timeout:
+            type: string
+            format: int64
+          keygen_grace_period:
+            type: string
+            format: int64
+          signing_timeout:
+            type: string
+            format: int64
+          signing_grace_period:
+            type: string
+            format: int64
+          active_epoch_count:
+            type: string
+            format: uint64
+        title: Params represent the genesis parameters for the module
+  axelar.multisig.v1beta1.UpdateParamsResponse:
     type: object
   axelar.nexus.exported.v1beta1.CrossChainAddress:
     type: object
@@ -57519,6 +59312,68 @@ definitions:
                    repeated Bar results = 1;
                    PageResponse page = 2;
            }
+  axelar.nexus.v1beta1.UpdateParamsRequest:
+    type: object
+    properties:
+      authority:
+        type: string
+      params:
+        type: object
+        properties:
+          chain_activation_threshold:
+            type: object
+            properties:
+              numerator:
+                type: string
+                format: int64
+                title: >-
+                  split threshold into Numerator and denominator to avoid
+                  floating point
+
+                  errors down the line
+              denominator:
+                type: string
+                format: int64
+          chain_maintainer_missing_vote_threshold:
+            type: object
+            properties:
+              numerator:
+                type: string
+                format: int64
+                title: >-
+                  split threshold into Numerator and denominator to avoid
+                  floating point
+
+                  errors down the line
+              denominator:
+                type: string
+                format: int64
+          chain_maintainer_incorrect_vote_threshold:
+            type: object
+            properties:
+              numerator:
+                type: string
+                format: int64
+                title: >-
+                  split threshold into Numerator and denominator to avoid
+                  floating point
+
+                  errors down the line
+              denominator:
+                type: string
+                format: int64
+          chain_maintainer_check_window:
+            type: integer
+            format: int32
+          gateway:
+            type: string
+            format: byte
+          end_blocker_limit:
+            type: string
+            format: uint64
+        title: Params represent the genesis parameters for the module
+  axelar.nexus.v1beta1.UpdateParamsResponse:
+    type: object
   axelar.utils.v1beta1.Bitmap:
     type: object
     properties:
@@ -57833,6 +59688,23 @@ definitions:
         format: byte
       log:
         type: string
+  axelar.reward.v1beta1.UpdateParamsRequest:
+    type: object
+    properties:
+      authority:
+        type: string
+      params:
+        type: object
+        properties:
+          external_chain_voting_inflation_rate:
+            type: string
+            format: byte
+          key_mgmt_relative_inflation_rate:
+            type: string
+            format: byte
+        title: Params represent the genesis parameters for the module
+  axelar.reward.v1beta1.UpdateParamsResponse:
+    type: object
   axelar.snapshot.v1beta1.DeactivateProxyRequest:
     type: object
     properties:
@@ -57893,6 +59765,20 @@ definitions:
       sender:
         type: string
   axelar.snapshot.v1beta1.RegisterProxyResponse:
+    type: object
+  axelar.snapshot.v1beta1.UpdateParamsRequest:
+    type: object
+    properties:
+      authority:
+        type: string
+      params:
+        type: object
+        properties:
+          min_proxy_balance:
+            type: string
+            format: int64
+        title: Params represent the genesis parameters for the module
+  axelar.snapshot.v1beta1.UpdateParamsResponse:
     type: object
   axelar.tss.exported.v1beta1.KeyRequirement:
     type: object
@@ -58331,6 +60217,170 @@ definitions:
             type: string
             format: int64
         title: Params is the parameter set for this module
+  axelar.tss.v1beta1.UpdateParamsRequest:
+    type: object
+    properties:
+      authority:
+        type: string
+      params:
+        type: object
+        properties:
+          key_requirements:
+            type: array
+            items:
+              type: object
+              properties:
+                key_role:
+                  type: string
+                  enum:
+                    - KEY_ROLE_UNSPECIFIED
+                    - KEY_ROLE_MASTER_KEY
+                    - KEY_ROLE_SECONDARY_KEY
+                    - KEY_ROLE_EXTERNAL_KEY
+                  default: KEY_ROLE_UNSPECIFIED
+                key_type:
+                  type: string
+                  enum:
+                    - KEY_TYPE_UNSPECIFIED
+                    - KEY_TYPE_NONE
+                    - KEY_TYPE_THRESHOLD
+                    - KEY_TYPE_MULTISIG
+                  default: KEY_TYPE_UNSPECIFIED
+                min_keygen_threshold:
+                  type: object
+                  properties:
+                    numerator:
+                      type: string
+                      format: int64
+                      title: >-
+                        split threshold into Numerator and denominator to avoid
+                        floating point
+
+                        errors down the line
+                    denominator:
+                      type: string
+                      format: int64
+                safety_threshold:
+                  type: object
+                  properties:
+                    numerator:
+                      type: string
+                      format: int64
+                      title: >-
+                        split threshold into Numerator and denominator to avoid
+                        floating point
+
+                        errors down the line
+                    denominator:
+                      type: string
+                      format: int64
+                key_share_distribution_policy:
+                  type: string
+                  enum:
+                    - KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED
+                    - KEY_SHARE_DISTRIBUTION_POLICY_WEIGHTED_BY_STAKE
+                    - KEY_SHARE_DISTRIBUTION_POLICY_ONE_PER_VALIDATOR
+                  default: KEY_SHARE_DISTRIBUTION_POLICY_UNSPECIFIED
+                max_total_share_count:
+                  type: string
+                  format: int64
+                min_total_share_count:
+                  type: string
+                  format: int64
+                keygen_voting_threshold:
+                  type: object
+                  properties:
+                    numerator:
+                      type: string
+                      format: int64
+                      title: >-
+                        split threshold into Numerator and denominator to avoid
+                        floating point
+
+                        errors down the line
+                    denominator:
+                      type: string
+                      format: int64
+                sign_voting_threshold:
+                  type: object
+                  properties:
+                    numerator:
+                      type: string
+                      format: int64
+                      title: >-
+                        split threshold into Numerator and denominator to avoid
+                        floating point
+
+                        errors down the line
+                    denominator:
+                      type: string
+                      format: int64
+                keygen_timeout:
+                  type: string
+                  format: int64
+                sign_timeout:
+                  type: string
+                  format: int64
+              title: KeyRequirement defines requirements for keys
+            title: KeyRequirements defines the requirement for each key role
+          suspend_duration_in_blocks:
+            type: string
+            format: int64
+            title: |-
+              SuspendDurationInBlocks defines the number of blocks a
+              validator is disallowed to participate in any TSS ceremony after
+              committing a malicious behaviour during signing
+          heartbeat_period_in_blocks:
+            type: string
+            format: int64
+            title: >-
+              HeartBeatPeriodInBlocks defines the time period in blocks for tss
+              to
+
+              emit the event asking validators to send their heartbeats
+          max_missed_blocks_per_window:
+            type: object
+            properties:
+              numerator:
+                type: string
+                format: int64
+                title: >-
+                  split threshold into Numerator and denominator to avoid
+                  floating point
+
+                  errors down the line
+              denominator:
+                type: string
+                format: int64
+          unbonding_locking_key_rotation_count:
+            type: string
+            format: int64
+          external_multisig_threshold:
+            type: object
+            properties:
+              numerator:
+                type: string
+                format: int64
+                title: >-
+                  split threshold into Numerator and denominator to avoid
+                  floating point
+
+                  errors down the line
+              denominator:
+                type: string
+                format: int64
+          max_sign_queue_size:
+            type: string
+            format: int64
+          max_simultaneous_sign_shares:
+            type: string
+            format: int64
+          tss_signed_blocks_window:
+            type: string
+            format: int64
+        title: Params is the parameter set for this module
+  axelar.tss.v1beta1.UpdateParamsResponse:
+    type: object
   axelar.permission.v1beta1.DeregisterControllerRequest:
     type: object
     properties:
@@ -58751,6 +60801,16 @@ definitions:
         type: string
   axelar.permission.v1beta1.UpdateGovernanceKeyResponse:
     type: object
+  axelar.permission.v1beta1.UpdateParamsRequest:
+    type: object
+    properties:
+      authority:
+        type: string
+      params:
+        type: object
+        title: Params represent the genesis parameters for the module
+  axelar.permission.v1beta1.UpdateParamsResponse:
+    type: object
   cosmos.crypto.multisig.LegacyAminoPubKey:
     type: object
     properties:
@@ -58975,6 +61035,34 @@ definitions:
             type: string
             format: int64
         title: Params represent the genesis parameters for the module
+  axelar.vote.v1beta1.UpdateParamsRequest:
+    type: object
+    properties:
+      authority:
+        type: string
+      params:
+        type: object
+        properties:
+          default_voting_threshold:
+            type: object
+            properties:
+              numerator:
+                type: string
+                format: int64
+                title: >-
+                  split threshold into Numerator and denominator to avoid
+                  floating point
+
+                  errors down the line
+              denominator:
+                type: string
+                format: int64
+          end_blocker_limit:
+            type: string
+            format: int64
+        title: Params represent the genesis parameters for the module
+  axelar.vote.v1beta1.UpdateParamsResponse:
+    type: object
   axelar.vote.v1beta1.VoteRequest:
     type: object
     properties:

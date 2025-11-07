@@ -77,3 +77,14 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 		panic(fmt.Sprintf("unexpected poll state %s", poll.GetState().String()))
 	}
 }
+
+func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsRequest) (*types.UpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := req.Params.Validate(); err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+	}
+
+	s.SetParams(ctx, req.Params)
+	return &types.UpdateParamsResponse{}, nil
+}

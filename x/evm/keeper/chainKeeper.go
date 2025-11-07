@@ -61,6 +61,11 @@ func (k chainKeeper) GetParams(ctx sdk.Context) types.Params {
 	return p
 }
 
+// SetParams sets the evm module's parameters
+func (k chainKeeper) SetParams(ctx sdk.Context, params types.Params) {
+	k.getSubspace().SetParamSet(ctx, &params)
+}
+
 // returns the EVM network's gas limist for batched commands
 func (k chainKeeper) getCommandsGasLimit(ctx sdk.Context) uint32 {
 	return getParam[uint32](k, ctx, types.KeyCommandsGasLimit)

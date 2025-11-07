@@ -27,6 +27,7 @@ type Refunder interface {
 	Logger(ctx sdk.Context) log.Logger
 	GetPendingRefund(ctx sdk.Context, req RefundMsgRequest) (Refund, bool)
 	DeletePendingRefund(ctx sdk.Context, req RefundMsgRequest)
+	SetParams(ctx sdk.Context, params Params)
 }
 
 // Nexus provides nexus functionality
