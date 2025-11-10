@@ -272,11 +272,9 @@ func NewAxelarApp(
 	SetKeeper(keepers, initAxelarIBCKeeper(keepers))
 
 	if IsWasmEnabled() {
-		wasmDir := filepath.Join(homePath, "wasm")
-		if wasmDir == "" {
-			dbDir := cast.ToString(appOpts.Get("db_dir"))
-			wasmDir = filepath.Join(homePath, dbDir, "wasm")
-		}
+		// Get db_dir from config (empty string if not set)
+		dbDir := cast.ToString(appOpts.Get("db_dir"))
+		wasmDir := filepath.Join(homePath, dbDir, "wasm")
 
 		wasmPath, err := filepath.Abs(wasmDir)
 		if err != nil {
