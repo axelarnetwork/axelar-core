@@ -35,7 +35,6 @@ import (
 
 var (
 	minGasPrice = "0.007" + axelarnet.NativeAsset
-	wasmDirFlag = "wasm-dir"
 )
 
 // NewRootCmd creates a new root command for axelard. It is called once in the

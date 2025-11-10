@@ -148,6 +148,8 @@ import (
 // Name is the name of the application
 const Name = "axelar"
 
+const WasmDirFlag = "wasm-dir"
+
 var (
 	// DefaultNodeHome default home directories for the application daemon
 	DefaultNodeHome string
@@ -272,7 +274,7 @@ func NewAxelarApp(
 	SetKeeper(keepers, initAxelarIBCKeeper(keepers))
 
 	if IsWasmEnabled() {
-		wasmDir := filepath.Join(homePath, "wasm")
+		wasmDir := cast.ToString(appOpts.Get(WasmDirFlag))
 		if wasmDir == "" {
 			dbDir := cast.ToString(appOpts.Get("db_dir"))
 			wasmDir = filepath.Join(homePath, dbDir, "wasm")
