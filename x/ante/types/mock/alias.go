@@ -18,9 +18,3 @@ type Msg interface {
 	sdk.Msg
 	descriptor.Message
 }
-
-//// LegacyMsg alias for mocking
-//type LegacyMsg interface {
-//	sdk.LegacyMsg
-//	descriptor.Message
-//}
