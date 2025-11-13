@@ -16,10 +16,7 @@ message Params {
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   uint64 confirmation_height = 2;
   string network = 3;
-  // DEPRECATED: Removed in v0.16, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  bytes gateway_code_deprecated = 4 [ deprecated = true ];
+  reserved 4; // gateway_code was removed in v0.16
   bytes token_code = 5;
   bytes burnable = 6;
   int64 revote_locking_period = 7;
@@ -28,14 +25,7 @@ message Params {
   utils.v1beta1.Threshold voting_threshold = 9 [ (gogoproto.nullable) = false ];
   int64 min_voter_count = 10;
   uint32 commands_gas_limit = 11;
-  // DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  string transaction_fee_rate_deprecated = 12 [
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ];
+  reserved 12; // transaction_fee_rate was removed in v0.15
   int64 voting_grace_period = 13;
   int64 end_blocker_limit = 14;
   uint64 transfer_limit = 15;

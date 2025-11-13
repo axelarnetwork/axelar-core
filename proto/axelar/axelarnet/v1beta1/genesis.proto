@@ -17,21 +17,9 @@ message GenesisState {
       [ (gogoproto.casttype) =
             "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   repeated CosmosChain chains = 3 [ (gogoproto.nullable) = false ];
-  // DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  repeated IBCTransfer pending_transfers_deprecated = 4 [
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ];
+  reserved 4; // pending_transfers was removed in v0.20
   utils.v1beta1.QueueState transfer_queue = 5 [ (gogoproto.nullable) = false ];
-  // DEPRECATED: Removed in v0.22, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  repeated IBCTransfer failed_transfers_deprecated = 6 [
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ];
+  reserved 6; // failed_transfers was removed in v0.22
   repeated IBCTransfer ibc_transfers = 7
       [ (gogoproto.nullable) = false, (gogoproto.customname) = "IBCTransfers" ];
   map<string, uint64> seq_id_mapping = 8

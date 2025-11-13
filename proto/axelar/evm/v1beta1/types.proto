@@ -50,15 +50,10 @@ message Event {
     EventMultisigOwnershipTransferred multisig_ownership_transferred = 10
         [ deprecated = true ];
     EventMultisigOperatorshipTransferred multisig_operatorship_transferred = 11;
-    // DEPRECATED: Removed in v0.23, reinstated in v1.3 for backward compatibility.
-    // This field must remain to allow decoding of historical transactions.
-    // DO NOT use in new code.
-    EventSinglesigOwnershipTransferred singlesig_ownership_transferred_deprecated = 12 [ deprecated = true ];
-    // DEPRECATED: Removed in v0.23, reinstated in v1.3 for backward compatibility.
-    // This field must remain to allow decoding of historical transactions.
-    // DO NOT use in new code.
-    EventSinglesigOperatorshipTransferred singlesig_operatorship_transferred_deprecated = 13 [ deprecated = true ];
   }
+
+  reserved 12; // singlesig_ownership_transferred was removed in v0.23
+  reserved 13; // singlesig_operatorship_transferred was removed in v0.23
 }
 
 message EventTokenSent {
@@ -135,22 +130,7 @@ message EventMultisigOwnershipTransferred {
 }
 
 message EventMultisigOperatorshipTransferred {
-  // DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  repeated bytes pre_operators_deprecated = 1 [
-    (gogoproto.nullable) = false,
-    (gogoproto.customtype) = "Address",
-    deprecated = true
-  ];
-  // DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  bytes prev_threshold_deprecated = 2 [
-    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ];
+  reserved 1, 2; // pre_operators and prev_threshold were removed in v0.20
 
   repeated bytes new_operators = 3
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
@@ -162,22 +142,6 @@ message EventMultisigOperatorshipTransferred {
     (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
-}
-
-message EventSinglesigOwnershipTransferred {
-  option deprecated = true;
-
-  bytes pre_owner = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  bytes new_owner = 2
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-}
-
-message EventSinglesigOperatorshipTransferred {
-  bytes pre_operator = 1
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  bytes new_operator = 2
-      [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
 // NetworkInfo describes information about a network
@@ -238,14 +202,7 @@ message ERC20TokenMetadata {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   string tx_hash = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Hash" ];
-  // DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  bytes min_amount_deprecated = 6 [
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ];
+  reserved 6; // min_amount was removed in v0.15
   Status status = 7;
   bool is_external = 8;
   bytes burner_code = 9;
@@ -353,7 +310,11 @@ enum SigType {
   SIG_TYPE_COMMAND = 2 [ (gogoproto.enumvalue_customname) = "SigCommand" ];
 }
 
+// DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
+// This enum must remain to allow decoding of historical transactions.
+// DO NOT use in new code.
 enum TransferKeyType {
+  option deprecated = true;
   option (gogoproto.goproto_enum_prefix) = false;
 
   TRANSFER_KEY_TYPE_UNSPECIFIED = 0
@@ -366,15 +327,13 @@ enum TransferKeyType {
 
 // TransferKey contains information for a transfer operatorship
 message TransferKey {
+  reserved 2; // type was deleted in v0.20
+
   bytes tx_id = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
   ];
-  // DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  TransferKeyType type_deprecated = 2 [ deprecated = true ];
   string next_key_id = 3 [
     (gogoproto.customname) = "NextKeyID",
     (gogoproto.casttype) =
@@ -411,24 +370,10 @@ message TokenDetails {
 }
 
 message Gateway {
-  enum Status {
-    option (gogoproto.goproto_enum_prefix) = false;
-    option (gogoproto.goproto_enum_stringer) = true;
-
-    STATUS_UNSPECIFIED = 0
-        [ (gogoproto.enumvalue_customname) = "GatewayStatusNone" ];
-    STATUS_PENDING = 1
-        [ (gogoproto.enumvalue_customname) = "GatewayStatusPending" ];
-    STATUS_CONFIRMED = 2
-        [ (gogoproto.enumvalue_customname) = "GatewayStatusConfirmed" ];
-  }
+  reserved 2; // status was removed in v0.27
 
   bytes address = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  // DEPRECATED: Removed in v0.27, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  Status status_deprecated = 2 [ deprecated = true ];
 }
 
 message PollMetadata {

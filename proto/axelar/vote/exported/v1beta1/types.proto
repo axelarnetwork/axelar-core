@@ -11,29 +11,12 @@ import "axelar/utils/v1beta1/threshold.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
-message Voter {
-  bytes validator = 1 [ (gogoproto.casttype) =
-                            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
-  int64 voting_power = 2;
-}
-
-message PollModuleMetadata {
-  string module = 1;
-  google.protobuf.Any metadata = 2
-      [ (cosmos_proto.accepts_interface) =
-            "github.com/cosmos/codec/ProtoMarshaler" ];
-}
-
 // PollMetadata represents a poll with write-in voting, i.e. the result of the
 // vote can have any data type
 message PollMetadata {
-  // DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  vote.exported.v1beta1.PollKey key_deprecated = 1 [
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ];
+  reserved 1, 8, 9, 14; // deleted poll key, total voting power, voters and
+                        // module_metadata in 0.20.x
+
   int64 expires_at = 3;
   google.protobuf.Any result = 4
       [ (cosmos_proto.accepts_interface) =
@@ -41,21 +24,6 @@ message PollMetadata {
   utils.v1beta1.Threshold voting_threshold = 5 [ (gogoproto.nullable) = false ];
   PollState state = 6;
   int64 min_voter_count = 7;
-  // DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  repeated Voter voters_deprecated = 8 [
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ];
-  // DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  bytes total_voting_power_deprecated = 9 [
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ];
   string reward_pool_name = 10;
   int64 grace_period = 11;
   int64 completed_at = 12;
@@ -63,13 +31,6 @@ message PollMetadata {
     (gogoproto.customname) = "ID",
     (gogoproto.customtype) = "PollID",
     (gogoproto.nullable) = false
-  ];
-  // DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  PollModuleMetadata module_metadata_deprecated = 14 [
-    (gogoproto.nullable) = false,
-    deprecated = true
   ];
   snapshot.exported.v1beta1.Snapshot snapshot = 15
       [ (gogoproto.nullable) = false ];
