@@ -18,7 +18,13 @@ message UpdateGovernanceKeyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+  // Removing this field would break decoding of historical transactions.
+  // DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   cosmos.crypto.multisig.LegacyAminoPubKey governance_key = 2
       [ (gogoproto.nullable) = false ];
   string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
@@ -32,7 +38,13 @@ message RegisterControllerRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+  // Removing this field would break decoding of historical transactions.
+  // DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   bytes controller = 2 [ (gogoproto.casttype) =
                              "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
@@ -46,7 +58,13 @@ message DeregisterControllerRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+  // Removing this field would break decoding of historical transactions.
+  // DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   bytes controller = 2 [ (gogoproto.casttype) =
                              "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];

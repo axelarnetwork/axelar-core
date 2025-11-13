@@ -11,6 +11,7 @@ import (
 	_ "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	exported "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	_ "github.com/cosmos/cosmos-proto"
+	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/cosmos/cosmos-sdk/types/msgservice"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
@@ -32,9 +33,13 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type SetGatewayRequest struct {
-	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	Address Address                                                         `protobuf:"bytes,3,opt,name=address,proto3,customtype=Address" json:"address"`
-	Sender  string                                                          `protobuf:"bytes,4,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	Address          Address                                                         `protobuf:"bytes,3,opt,name=address,proto3,customtype=Address" json:"address"`
+	Sender           string                                                          `protobuf:"bytes,4,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *SetGatewayRequest) Reset()         { *m = SetGatewayRequest{} }
@@ -108,9 +113,13 @@ var xxx_messageInfo_SetGatewayResponse proto.InternalMessageInfo
 
 // Deprecated: Do not use.
 type ConfirmGatewayTxRequest struct {
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	TxID   Hash                                                            `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
-	Sender string                                                          `protobuf:"bytes,4,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	TxID             Hash                                                            `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
+	Sender           string                                                          `protobuf:"bytes,4,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *ConfirmGatewayTxRequest) Reset()         { *m = ConfirmGatewayTxRequest{} }
@@ -184,9 +193,13 @@ func (m *ConfirmGatewayTxResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_ConfirmGatewayTxResponse proto.InternalMessageInfo
 
 type ConfirmGatewayTxsRequest struct {
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	TxIDs  []Hash                                                          `protobuf:"bytes,3,rep,name=tx_ids,json=txIds,proto3,customtype=Hash" json:"tx_ids"`
-	Sender string                                                          `protobuf:"bytes,4,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	TxIDs            []Hash                                                          `protobuf:"bytes,3,rep,name=tx_ids,json=txIds,proto3,customtype=Hash" json:"tx_ids"`
+	Sender           string                                                          `protobuf:"bytes,4,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *ConfirmGatewayTxsRequest) Reset()         { *m = ConfirmGatewayTxsRequest{} }
@@ -260,11 +273,15 @@ var xxx_messageInfo_ConfirmGatewayTxsResponse proto.InternalMessageInfo
 
 // MsgConfirmDeposit represents an erc20 deposit confirmation message
 type ConfirmDepositRequest struct {
-	Chain         github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	TxID          Hash                                                            `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
-	Amount        cosmossdk_io_math.Uint                                          `protobuf:"bytes,4,opt,name=amount,proto3,customtype=cosmossdk.io/math.Uint" json:"amount"` // Deprecated: Do not use.
-	BurnerAddress Address                                                         `protobuf:"bytes,5,opt,name=burner_address,json=burnerAddress,proto3,customtype=Address" json:"burner_address"`
-	Sender        string                                                          `protobuf:"bytes,6,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	TxID             Hash                                                            `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
+	Amount           cosmossdk_io_math.Uint                                          `protobuf:"bytes,4,opt,name=amount,proto3,customtype=cosmossdk.io/math.Uint" json:"amount"` // Deprecated: Do not use.
+	BurnerAddress    Address                                                         `protobuf:"bytes,5,opt,name=burner_address,json=burnerAddress,proto3,customtype=Address" json:"burner_address"`
+	Sender           string                                                          `protobuf:"bytes,6,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *ConfirmDepositRequest) Reset()         { *m = ConfirmDepositRequest{} }
@@ -338,10 +355,14 @@ var xxx_messageInfo_ConfirmDepositResponse proto.InternalMessageInfo
 
 // MsgConfirmToken represents a token deploy confirmation message
 type ConfirmTokenRequest struct {
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	TxID   Hash                                                            `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
-	Asset  Asset                                                           `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset"`
-	Sender string                                                          `protobuf:"bytes,5,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	TxID             Hash                                                            `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
+	Asset            Asset                                                           `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset"`
+	Sender           string                                                          `protobuf:"bytes,5,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *ConfirmTokenRequest) Reset()         { *m = ConfirmTokenRequest{} }
@@ -414,9 +435,13 @@ func (m *ConfirmTokenResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_ConfirmTokenResponse proto.InternalMessageInfo
 
 type ConfirmTransferKeyRequest struct {
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	TxID   Hash                                                            `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
-	Sender string                                                          `protobuf:"bytes,6,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	TxID             Hash                                                            `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
+	Sender           string                                                          `protobuf:"bytes,6,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *ConfirmTransferKeyRequest) Reset()         { *m = ConfirmTransferKeyRequest{} }
@@ -491,11 +516,15 @@ var xxx_messageInfo_ConfirmTransferKeyResponse proto.InternalMessageInfo
 // MsgLink represents the message that links a cross chain address to a burner
 // address
 type LinkRequest struct {
-	Chain          github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	RecipientAddr  string                                                          `protobuf:"bytes,3,opt,name=recipient_addr,json=recipientAddr,proto3" json:"recipient_addr,omitempty"`
-	Asset          string                                                          `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
-	RecipientChain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,5,opt,name=recipient_chain,json=recipientChain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"recipient_chain,omitempty"`
-	Sender         string                                                          `protobuf:"bytes,6,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	RecipientAddr    string                                                          `protobuf:"bytes,3,opt,name=recipient_addr,json=recipientAddr,proto3" json:"recipient_addr,omitempty"`
+	Asset            string                                                          `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
+	RecipientChain   github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,5,opt,name=recipient_chain,json=recipientChain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"recipient_chain,omitempty"`
+	Sender           string                                                          `protobuf:"bytes,6,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *LinkRequest) Reset()         { *m = LinkRequest{} }
@@ -571,8 +600,12 @@ var xxx_messageInfo_LinkResponse proto.InternalMessageInfo
 // CreateBurnTokensRequest represents the message to create commands to burn
 // tokens with AxelarGateway
 type CreateBurnTokensRequest struct {
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	Sender string                                                          `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	Sender           string                                                          `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *CreateBurnTokensRequest) Reset()         { *m = CreateBurnTokensRequest{} }
@@ -647,12 +680,16 @@ var xxx_messageInfo_CreateBurnTokensResponse proto.InternalMessageInfo
 // CreateDeployTokenRequest represents the message to create a deploy token
 // command for AxelarGateway
 type CreateDeployTokenRequest struct {
-	Chain          github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	Asset          Asset                                                           `protobuf:"bytes,3,opt,name=asset,proto3" json:"asset"`
-	TokenDetails   TokenDetails                                                    `protobuf:"bytes,4,opt,name=token_details,json=tokenDetails,proto3" json:"token_details"`
-	Address        Address                                                         `protobuf:"bytes,6,opt,name=address,proto3,customtype=Address" json:"address"`
-	DailyMintLimit string                                                          `protobuf:"bytes,7,opt,name=daily_mint_limit,json=dailyMintLimit,proto3" json:"daily_mint_limit,omitempty"`
-	Sender         string                                                          `protobuf:"bytes,8,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	Asset            Asset                                                           `protobuf:"bytes,3,opt,name=asset,proto3" json:"asset"`
+	TokenDetails     TokenDetails                                                    `protobuf:"bytes,4,opt,name=token_details,json=tokenDetails,proto3" json:"token_details"`
+	Address          Address                                                         `protobuf:"bytes,6,opt,name=address,proto3,customtype=Address" json:"address"`
+	DailyMintLimit   string                                                          `protobuf:"bytes,7,opt,name=daily_mint_limit,json=dailyMintLimit,proto3" json:"daily_mint_limit,omitempty"`
+	Sender           string                                                          `protobuf:"bytes,8,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *CreateDeployTokenRequest) Reset()         { *m = CreateDeployTokenRequest{} }
@@ -727,8 +764,12 @@ var xxx_messageInfo_CreateDeployTokenResponse proto.InternalMessageInfo
 // CreatePendingTransfersRequest represents a message to trigger the creation of
 // commands handling all pending transfers
 type CreatePendingTransfersRequest struct {
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	Sender string                                                          `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	Sender           string                                                          `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *CreatePendingTransfersRequest) Reset()         { *m = CreatePendingTransfersRequest{} }
@@ -802,9 +843,13 @@ var xxx_messageInfo_CreatePendingTransfersResponse proto.InternalMessageInfo
 
 // Deprecated: Do not use.
 type CreateTransferOwnershipRequest struct {
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	KeyID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID  `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
-	Sender string                                                          `protobuf:"bytes,4,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	KeyID            github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID  `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
+	Sender           string                                                          `protobuf:"bytes,4,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *CreateTransferOwnershipRequest) Reset()         { *m = CreateTransferOwnershipRequest{} }
@@ -878,9 +923,13 @@ func (m *CreateTransferOwnershipResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_CreateTransferOwnershipResponse proto.InternalMessageInfo
 
 type CreateTransferOperatorshipRequest struct {
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	KeyID  github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID  `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
-	Sender string                                                          `protobuf:"bytes,4,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	KeyID            github_com_axelarnetwork_axelar_core_x_multisig_exported.KeyID  `protobuf:"bytes,3,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID" json:"key_id,omitempty"`
+	Sender           string                                                          `protobuf:"bytes,4,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *CreateTransferOperatorshipRequest) Reset()         { *m = CreateTransferOperatorshipRequest{} }
@@ -953,8 +1002,12 @@ func (m *CreateTransferOperatorshipResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_CreateTransferOperatorshipResponse proto.InternalMessageInfo
 
 type SignCommandsRequest struct {
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	Sender string                                                          `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	Sender           string                                                          `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *SignCommandsRequest) Reset()         { *m = SignCommandsRequest{} }
@@ -1029,10 +1082,14 @@ func (m *SignCommandsResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_SignCommandsResponse proto.InternalMessageInfo
 
 type AddChainRequest struct {
-	Name    github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=name,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"name,omitempty"`
-	KeyType exported.KeyType                                                `protobuf:"varint,4,opt,name=key_type,json=keyType,proto3,enum=axelar.tss.exported.v1beta1.KeyType" json:"key_type,omitempty"` // Deprecated: Do not use.
-	Params  Params                                                          `protobuf:"bytes,5,opt,name=params,proto3,customtype=Params" json:"params"`
-	Sender  string                                                          `protobuf:"bytes,6,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Name             github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=name,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"name,omitempty"`
+	KeyType          exported.KeyType                                                `protobuf:"varint,4,opt,name=key_type,json=keyType,proto3,enum=axelar.tss.exported.v1beta1.KeyType" json:"key_type,omitempty"` // Deprecated: Do not use.
+	Params           Params                                                          `protobuf:"bytes,5,opt,name=params,proto3,customtype=Params" json:"params"`
+	Sender           string                                                          `protobuf:"bytes,6,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *AddChainRequest) Reset()         { *m = AddChainRequest{} }
@@ -1105,9 +1162,13 @@ func (m *AddChainResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_AddChainResponse proto.InternalMessageInfo
 
 type RetryFailedEventRequest struct {
-	Chain   github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
-	EventID EventID                                                         `protobuf:"bytes,3,opt,name=event_id,json=eventId,proto3,casttype=EventID" json:"event_id,omitempty"`
-	Sender  string                                                          `protobuf:"bytes,4,opt,name=sender,proto3" json:"sender,omitempty"`
+	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
+	// Removing this field would break decoding of historical transactions.
+	// DO NOT use in new code.
+	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
+	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
+	EventID          EventID                                                         `protobuf:"bytes,3,opt,name=event_id,json=eventId,proto3,casttype=EventID" json:"event_id,omitempty"`
+	Sender           string                                                          `protobuf:"bytes,4,opt,name=sender,proto3" json:"sender,omitempty"`
 }
 
 func (m *RetryFailedEventRequest) Reset()         { *m = RetryFailedEventRequest{} }
@@ -1291,97 +1352,99 @@ func init() {
 func init() { proto.RegisterFile("axelar/evm/v1beta1/tx.proto", fileDescriptor_43a3259b9722fdab) }
 
 var fileDescriptor_43a3259b9722fdab = []byte{
-	// 1426 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x98, 0xcf, 0x6f, 0x1b, 0xc5,
-	0x17, 0xc0, 0xb3, 0xeb, 0x1f, 0x71, 0xa6, 0x4e, 0xea, 0x6c, 0x9c, 0x64, 0x9b, 0xf6, 0x6b, 0xa7,
-	0xfe, 0xf6, 0x47, 0x5a, 0x51, 0xbb, 0x29, 0xa2, 0x42, 0x3d, 0x80, 0x62, 0xa7, 0x40, 0x92, 0x52,
-	0xaa, 0x6d, 0x2a, 0x04, 0x17, 0x6b, 0xed, 0x9d, 0xda, 0x23, 0x7b, 0x67, 0x97, 0x9d, 0x71, 0x6a,
-	0xdf, 0xaa, 0xde, 0xa8, 0x84, 0x04, 0xff, 0x06, 0xa7, 0x1e, 0xa8, 0xb8, 0x71, 0xee, 0xa9, 0xaa,
-	0x38, 0x20, 0xc4, 0xc1, 0x02, 0xf7, 0x50, 0x71, 0xe2, 0x5e, 0x71, 0x40, 0xf3, 0x63, 0xb3, 0x1b,
-	0x7b, 0x13, 0xd2, 0xa8, 0xb2, 0x22, 0x71, 0x49, 0xbc, 0xef, 0xbd, 0x9d, 0x99, 0xf7, 0x79, 0x6f,
-	0xde, 0xbc, 0x59, 0x70, 0xda, 0xec, 0xc2, 0xb6, 0xe9, 0x95, 0xe0, 0x8e, 0x5d, 0xda, 0x59, 0xad,
-	0x41, 0x6a, 0xae, 0x96, 0x68, 0xb7, 0xe8, 0x7a, 0x0e, 0x75, 0x34, 0x4d, 0x28, 0x8b, 0x70, 0xc7,
-	0x2e, 0x4a, 0xe5, 0x52, 0xb6, 0xe1, 0x34, 0x1c, 0xae, 0x2e, 0xb1, 0x5f, 0xc2, 0x72, 0xe9, 0xa2,
-	0x1c, 0x86, 0x12, 0x52, 0x82, 0x5d, 0xd7, 0xf1, 0x28, 0xb4, 0x82, 0xf1, 0x7a, 0x2e, 0x24, 0xd2,
-	0x30, 0x17, 0x35, 0x5f, 0x48, 0x9f, 0x8f, 0xd0, 0xbb, 0xa6, 0x67, 0xda, 0xbe, 0x41, 0x51, 0x1a,
-	0xb8, 0xd0, 0xb3, 0x11, 0x21, 0xc8, 0xc1, 0x07, 0x4f, 0x78, 0xaa, 0xee, 0x10, 0xdb, 0x21, 0x55,
-	0xb1, 0x64, 0xf1, 0x20, 0x55, 0x8b, 0xe2, 0xa9, 0x64, 0x93, 0x46, 0x69, 0x67, 0x95, 0xfd, 0x93,
-	0x8a, 0x59, 0xd3, 0x46, 0xd8, 0x29, 0xf1, 0xbf, 0x42, 0x54, 0xf8, 0x5b, 0x01, 0xb3, 0x77, 0x21,
-	0xfd, 0xd8, 0xa4, 0xf0, 0x81, 0xd9, 0x33, 0xe0, 0x57, 0x1d, 0x48, 0xa8, 0xf6, 0x05, 0x48, 0xd4,
-	0x9b, 0x26, 0xc2, 0xba, 0xba, 0xac, 0xac, 0x4c, 0x95, 0x2b, 0xaf, 0xfb, 0xf9, 0x0f, 0x1b, 0x88,
-	0x36, 0x3b, 0xb5, 0x62, 0xdd, 0xb1, 0x4b, 0x62, 0xa9, 0x18, 0xd2, 0x07, 0x8e, 0xd7, 0x92, 0x4f,
-	0x57, 0xea, 0x8e, 0x07, 0x4b, 0xdd, 0x12, 0x86, 0xdd, 0x4e, 0xc0, 0xaa, 0x58, 0x61, 0xc3, 0xdc,
-	0x36, 0x6d, 0x68, 0x88, 0x11, 0xb5, 0x4b, 0x60, 0xd2, 0xb4, 0x2c, 0x0f, 0x12, 0xa2, 0xc7, 0x96,
-	0x95, 0x95, 0x74, 0xf9, 0xe4, 0xb3, 0x7e, 0x7e, 0xe2, 0xb7, 0x7e, 0x7e, 0x72, 0x4d, 0x88, 0x0d,
-	0x5f, 0xaf, 0x5d, 0x05, 0x49, 0x02, 0xb1, 0x05, 0x3d, 0x3d, 0xce, 0x97, 0xa1, 0xff, 0xfc, 0xc3,
-	0x95, 0xac, 0xf4, 0x54, 0x1a, 0xdf, 0xa5, 0x1e, 0xc2, 0x0d, 0x43, 0xda, 0xdd, 0xb8, 0xf4, 0xf0,
-	0xa9, 0x1e, 0x7b, 0xf4, 0xea, 0xc9, 0x65, 0x29, 0x78, 0xfc, 0xea, 0xc9, 0xe5, 0x79, 0x86, 0x7c,
-	0xc4, 0xc5, 0xcd, 0x78, 0x4a, 0xc9, 0xa8, 0x85, 0x2c, 0xd0, 0xc2, 0x2a, 0xe2, 0x3a, 0x98, 0xc0,
-	0xc2, 0x63, 0x15, 0x2c, 0x56, 0x1c, 0x7c, 0x1f, 0x79, 0xb6, 0x54, 0x6d, 0x77, 0xc7, 0x82, 0x26,
-	0x41, 0xbb, 0x55, 0x64, 0x49, 0x30, 0x59, 0x09, 0x26, 0xfe, 0x89, 0x49, 0x9a, 0x83, 0x7e, 0x3e,
-	0xbe, 0xdd, 0xdd, 0x58, 0x37, 0xe2, 0xb4, 0xbb, 0x61, 0x1d, 0x01, 0xcd, 0xea, 0xc3, 0xa7, 0xba,
-	0x32, 0x84, 0xe6, 0x34, 0x43, 0xb3, 0x8f, 0xa3, 0xba, 0x22, 0x11, 0xe5, 0x80, 0x3e, 0x6a, 0x22,
-	0x40, 0xdd, 0x50, 0x75, 0xa5, 0xf0, 0x8d, 0x3a, 0x6a, 0x40, 0xc6, 0x40, 0xeb, 0x1d, 0x90, 0xe4,
-	0xb4, 0x58, 0x1e, 0xc5, 0x56, 0xd2, 0xe5, 0xf9, 0x21, 0x5c, 0x09, 0x86, 0x8b, 0x18, 0x09, 0xc6,
-	0xeb, 0x28, 0xb9, 0x74, 0x35, 0x02, 0xd8, 0x99, 0x28, 0x60, 0x64, 0x6f, 0x4a, 0x9d, 0x06, 0xa7,
-	0x22, 0x2c, 0x64, 0x66, 0xfd, 0xa5, 0x82, 0x79, 0xa9, 0x5d, 0x87, 0xae, 0x43, 0x10, 0x3d, 0x5e,
-	0x79, 0xf5, 0x3e, 0x48, 0x9a, 0xb6, 0xd3, 0xc1, 0x94, 0x63, 0x4a, 0x97, 0x97, 0xa5, 0xed, 0x82,
-	0x40, 0x45, 0xac, 0x56, 0x11, 0x39, 0x25, 0xdb, 0xa4, 0xcd, 0xe2, 0x3d, 0x84, 0xa9, 0xae, 0x18,
-	0xd2, 0x5e, 0xbb, 0x0e, 0x66, 0x6a, 0x1d, 0x0f, 0x43, 0xaf, 0xea, 0x6f, 0xef, 0x44, 0xf4, 0xf6,
-	0x9e, 0x16, 0x66, 0x6b, 0x23, 0x9b, 0x3c, 0x79, 0xc8, 0xc0, 0x5c, 0x88, 0x08, 0x8c, 0x16, 0x0a,
-	0x8c, 0x04, 0x2b, 0xc3, 0xa1, 0x83, 0x85, 0x61, 0xe0, 0x32, 0x16, 0x4f, 0x54, 0x30, 0x27, 0x55,
-	0xdb, 0x4e, 0x0b, 0xe2, 0xe3, 0x15, 0x89, 0xf7, 0x40, 0xc2, 0x24, 0x04, 0x8a, 0x40, 0x9c, 0xb8,
-	0x76, 0xaa, 0x38, 0x7a, 0x66, 0x15, 0xd7, 0x98, 0x41, 0x39, 0xce, 0x46, 0x31, 0x84, 0x75, 0x08,
-	0x67, 0xe2, 0x90, 0x38, 0xcf, 0x45, 0xe0, 0xcc, 0x84, 0x70, 0x72, 0x36, 0x12, 0xe6, 0x02, 0xc8,
-	0xee, 0x25, 0x26, 0x51, 0x7e, 0xa7, 0xee, 0x26, 0xfd, 0xb6, 0x67, 0x62, 0x72, 0x1f, 0x7a, 0x5b,
-	0xb0, 0x77, 0x5c, 0x4b, 0xe6, 0x61, 0x13, 0xed, 0x72, 0x04, 0x99, 0x85, 0x30, 0x99, 0xc0, 0xd5,
-	0xcd, 0x78, 0x2a, 0x9e, 0x49, 0x6c, 0xc6, 0x53, 0x89, 0x4c, 0x52, 0xb2, 0x3a, 0x03, 0x96, 0xa2,
-	0x90, 0x48, 0x62, 0x7f, 0xaa, 0xe0, 0xc4, 0x2d, 0x84, 0x5b, 0x63, 0x60, 0x74, 0x1e, 0xcc, 0x78,
-	0xb0, 0x8e, 0x5c, 0x04, 0x31, 0xe5, 0x9b, 0x93, 0xc3, 0x9a, 0x32, 0xa6, 0x77, 0xa5, 0xcc, 0x7d,
-	0x2d, 0x1b, 0x4e, 0xb8, 0x29, 0x3f, 0x9f, 0xda, 0xe0, 0x64, 0xf0, 0xb2, 0x58, 0x61, 0xe2, 0xed,
-	0xad, 0x30, 0x58, 0x18, 0x97, 0x1d, 0x21, 0x46, 0x67, 0x22, 0x62, 0x94, 0x62, 0x31, 0x62, 0x70,
-	0x65, 0x24, 0x56, 0x41, 0x5a, 0xa0, 0x16, 0xec, 0xb5, 0xb3, 0x20, 0x6d, 0x89, 0x5a, 0x20, 0x70,
-	0x28, 0xdc, 0xe1, 0x13, 0x52, 0xc6, 0xe6, 0x29, 0xfc, 0xa2, 0x80, 0xc5, 0x8a, 0x07, 0x4d, 0x0a,
-	0xcb, 0x1d, 0x0f, 0xf3, 0x64, 0x1f, 0xc7, 0x99, 0x16, 0xf8, 0x1f, 0x3b, 0xa4, 0xff, 0x2b, 0x11,
-	0xfe, 0x67, 0x79, 0x8e, 0x0e, 0xad, 0x5e, 0xb2, 0x58, 0x02, 0xfa, 0xa8, 0x5f, 0x32, 0x27, 0x7f,
-	0x8c, 0xf9, 0xca, 0x75, 0xe8, 0xb6, 0x9d, 0xde, 0xb8, 0xaa, 0xe2, 0x6e, 0xa9, 0x8b, 0xbd, 0x51,
-	0xa9, 0xdb, 0x02, 0xd3, 0x94, 0xad, 0xb0, 0x6a, 0x41, 0x6a, 0xa2, 0x36, 0x91, 0x95, 0x72, 0x39,
-	0xea, 0x75, 0xee, 0xca, 0xba, 0xb0, 0x93, 0xa3, 0xa4, 0x69, 0x48, 0x16, 0x6e, 0x4b, 0x93, 0xff,
-	0xd2, 0x96, 0xae, 0x80, 0x8c, 0x65, 0xa2, 0x76, 0xaf, 0x6a, 0x23, 0x4c, 0xab, 0x6d, 0x64, 0x23,
-	0xaa, 0x4f, 0xf2, 0x14, 0x9a, 0xe1, 0xf2, 0x4f, 0x11, 0xa6, 0xb7, 0x98, 0x34, 0x14, 0xce, 0xd4,
-	0x1b, 0x34, 0xb0, 0x6a, 0x54, 0x03, 0x3b, 0x12, 0x17, 0x11, 0x4f, 0x51, 0x71, 0x78, 0xcf, 0x31,
-	0x1a, 0x38, 0x19, 0xd6, 0x81, 0x02, 0xfe, 0x27, 0xb4, 0x77, 0x20, 0xb6, 0x10, 0x6e, 0xf8, 0xf5,
-	0xe8, 0x78, 0x66, 0x74, 0x31, 0x22, 0xa3, 0x97, 0x02, 0x04, 0xc3, 0x3e, 0xc8, 0xbc, 0x5e, 0x06,
-	0xb9, 0xfd, 0x7c, 0x94, 0x18, 0xbe, 0x57, 0x7d, 0x13, 0x5f, 0xf7, 0xd9, 0x03, 0x0c, 0x3d, 0xd2,
-	0x44, 0xee, 0x18, 0x38, 0xd4, 0x40, 0xb2, 0x05, 0x7b, 0xfe, 0x49, 0x35, 0x55, 0xde, 0x62, 0x1d,
-	0xea, 0x16, 0xec, 0x6d, 0xac, 0xbf, 0xee, 0xe7, 0x3f, 0x38, 0xe4, 0x24, 0x76, 0xa7, 0x4d, 0x11,
-	0x41, 0x8d, 0x60, 0x1e, 0x3e, 0x82, 0x91, 0x68, 0xc1, 0xde, 0x91, 0x2e, 0x05, 0xb3, 0x43, 0xe9,
-	0xb6, 0xdb, 0xf4, 0x9f, 0x07, 0xf9, 0x7d, 0x59, 0x85, 0x7a, 0xff, 0xe7, 0x2a, 0x38, 0x3b, 0x64,
-	0xe7, 0x42, 0xcf, 0xa4, 0xce, 0x7f, 0x1b, 0xeb, 0xb5, 0x88, 0x5d, 0x9c, 0x0b, 0x52, 0x38, 0x8a,
-	0x95, 0xe4, 0x7e, 0x0e, 0x14, 0x0e, 0xe2, 0x29, 0x53, 0xf9, 0xb9, 0x02, 0xe6, 0xee, 0xa2, 0x06,
-	0xae, 0x38, 0xb6, 0x6d, 0x62, 0xeb, 0x78, 0xee, 0xe3, 0x7d, 0xfb, 0xca, 0xf0, 0xca, 0xa5, 0xdb,
-	0x8f, 0x14, 0x90, 0xdd, 0xeb, 0x90, 0x3c, 0xaa, 0x6f, 0x82, 0xb9, 0x9a, 0x49, 0xeb, 0x4d, 0x68,
-	0x55, 0xeb, 0x52, 0xc7, 0x82, 0xad, 0xf0, 0x12, 0x3d, 0x3f, 0xe8, 0xe7, 0x67, 0xcb, 0x42, 0xed,
-	0xbf, 0xb9, 0xb1, 0x6e, 0xcc, 0xd6, 0x86, 0x44, 0x96, 0xf6, 0x7f, 0x30, 0x2d, 0x5f, 0xaf, 0xd6,
-	0xf9, 0xed, 0x86, 0x01, 0x9a, 0x36, 0xd2, 0x52, 0x58, 0x61, 0xb2, 0xc2, 0x4f, 0x2a, 0x38, 0xb9,
-	0x66, 0x59, 0xdc, 0x75, 0x9f, 0xe8, 0xe7, 0x20, 0x8e, 0x4d, 0x1b, 0xbe, 0x4d, 0xa0, 0x7c, 0x40,
-	0xad, 0x02, 0x52, 0x2c, 0x71, 0x69, 0xcf, 0x85, 0x3c, 0xad, 0x66, 0xae, 0x9d, 0xf3, 0xcf, 0x2d,
-	0x4a, 0x48, 0x71, 0xf7, 0x3d, 0xff, 0x00, 0xdb, 0x82, 0xbd, 0xed, 0x9e, 0x0b, 0xcb, 0xaa, 0xae,
-	0x18, 0x93, 0x2d, 0xf1, 0xa0, 0x5d, 0x00, 0x49, 0xf1, 0x0d, 0x49, 0xde, 0xb5, 0x66, 0xe4, 0x99,
-	0x95, 0xbc, 0xc3, 0xa5, 0x86, 0xd4, 0x1e, 0xa1, 0xad, 0xba, 0x18, 0xf1, 0x21, 0x65, 0x8e, 0x05,
-	0x6f, 0x08, 0xd0, 0x66, 0x3c, 0x15, 0xcb, 0xc4, 0x65, 0x14, 0x35, 0x90, 0x09, 0xd4, 0x32, 0x55,
-	0xbf, 0x56, 0xc1, 0xa2, 0x01, 0xa9, 0xd7, 0xfb, 0xc8, 0x44, 0x6d, 0x68, 0xdd, 0xdc, 0x81, 0x78,
-	0x1c, 0x57, 0xde, 0x55, 0x90, 0x82, 0x6c, 0xaa, 0xa0, 0x32, 0x2c, 0x0c, 0xfa, 0xf9, 0x49, 0x3e,
-	0x3d, 0xaf, 0x0d, 0xfe, 0x4f, 0x63, 0x92, 0xdb, 0x1d, 0x69, 0x9b, 0xef, 0xdb, 0x7b, 0x0d, 0x3b,
-	0x1c, 0xf4, 0x5e, 0xa3, 0x28, 0xfc, 0xcb, 0xa8, 0x02, 0xe6, 0xee, 0xb9, 0x16, 0x3b, 0xc0, 0x44,
-	0xec, 0x24, 0xa3, 0xeb, 0x60, 0xca, 0xec, 0xd0, 0xa6, 0xe3, 0x21, 0xda, 0x13, 0x8d, 0xea, 0x01,
-	0x0b, 0x0b, 0x4c, 0xd9, 0x45, 0x5e, 0xa6, 0x86, 0xca, 0xbb, 0xa2, 0xa5, 0xa8, 0xae, 0x48, 0x4c,
-	0x25, 0xfb, 0x21, 0x69, 0xcf, 0x43, 0xcf, 0x8b, 0x57, 0x30, 0xda, 0xee, 0xd6, 0x0d, 0xaf, 0x90,
-	0x5d, 0x06, 0xf7, 0xae, 0x58, 0xb8, 0x52, 0xbe, 0xfd, 0xec, 0x8f, 0xdc, 0xc4, 0xb3, 0x41, 0x4e,
-	0x79, 0x31, 0xc8, 0x29, 0xbf, 0x0f, 0x72, 0xca, 0xb7, 0x2f, 0x73, 0x13, 0x2f, 0x5e, 0xe6, 0x26,
-	0x7e, 0x7d, 0x99, 0x9b, 0xf8, 0xf2, 0xea, 0x21, 0x23, 0xcc, 0xa6, 0xe3, 0xdf, 0x3b, 0x6b, 0x49,
-	0xfe, 0xa5, 0xf2, 0xdd, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0x62, 0xe3, 0x7e, 0x5a, 0xd3, 0x15,
-	0x00, 0x00,
+	// 1465 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x59, 0xcd, 0x6f, 0x13, 0xd7,
+	0x16, 0xcf, 0xf8, 0x2b, 0xce, 0xc5, 0x09, 0xce, 0xc4, 0x09, 0x43, 0xe0, 0xd9, 0x61, 0x1e, 0x1f,
+	0x01, 0xbd, 0xd8, 0x04, 0xf4, 0x10, 0x62, 0xd1, 0x2a, 0x8e, 0x69, 0x1b, 0x42, 0x29, 0x1a, 0x82,
+	0xaa, 0x76, 0xe3, 0x8e, 0x3d, 0x17, 0xfb, 0xca, 0x9e, 0x3b, 0xd3, 0xb9, 0xd7, 0xc1, 0xde, 0x21,
+	0x16, 0x5d, 0x54, 0x5d, 0x54, 0xea, 0xae, 0x7f, 0x02, 0x2b, 0x54, 0x95, 0x6d, 0x77, 0x95, 0x90,
+	0xba, 0x41, 0x5d, 0xa1, 0x2e, 0xac, 0x36, 0xa8, 0x45, 0x5d, 0xf4, 0x1f, 0x60, 0x55, 0xdd, 0x8f,
+	0xf1, 0x0c, 0xf6, 0x84, 0x86, 0x88, 0x76, 0xe1, 0x74, 0x13, 0xcf, 0x9c, 0x73, 0xe6, 0xdc, 0x73,
+	0x7f, 0xbf, 0x73, 0xce, 0x9c, 0x3b, 0x01, 0xc7, 0xcc, 0x2e, 0x6c, 0x9b, 0x5e, 0x09, 0x6e, 0xdb,
+	0xa5, 0xed, 0xd5, 0x1a, 0xa4, 0xe6, 0x6a, 0x89, 0x76, 0x8b, 0xae, 0xe7, 0x50, 0x47, 0x55, 0x85,
+	0xb2, 0x08, 0xb7, 0xed, 0xa2, 0x54, 0x2e, 0xe6, 0x1a, 0x4e, 0xc3, 0xe1, 0xea, 0x12, 0xbb, 0x12,
+	0x96, 0x8b, 0x67, 0xa4, 0x1b, 0x4a, 0x48, 0x09, 0x76, 0x5d, 0xc7, 0xa3, 0xd0, 0x0a, 0xfc, 0xf5,
+	0x5c, 0x48, 0xa4, 0x61, 0x3e, 0x6a, 0xbd, 0x90, 0xbe, 0x10, 0xa1, 0x77, 0x4d, 0xcf, 0xb4, 0x7d,
+	0x83, 0xa2, 0x34, 0x70, 0xa1, 0x67, 0x23, 0x42, 0x90, 0x83, 0x5f, 0xbd, 0xe0, 0xd1, 0xba, 0x43,
+	0x6c, 0x87, 0x54, 0x45, 0xc8, 0xe2, 0x46, 0xaa, 0x8e, 0x88, 0xbb, 0x92, 0x4d, 0x1a, 0xa5, 0xed,
+	0x55, 0xf6, 0x23, 0x15, 0xb3, 0xa6, 0x8d, 0xb0, 0x53, 0xe2, 0x7f, 0x85, 0x48, 0x7f, 0x1a, 0x03,
+	0xb3, 0xb7, 0x20, 0x7d, 0xd7, 0xa4, 0xf0, 0xae, 0xd9, 0x33, 0xe0, 0xa7, 0x1d, 0x48, 0xa8, 0xfa,
+	0x09, 0x98, 0x25, 0x10, 0x5b, 0xd0, 0xab, 0x5a, 0xd0, 0xf5, 0x60, 0xdd, 0xa4, 0xd0, 0xd2, 0x94,
+	0x25, 0x65, 0x39, 0x53, 0xbe, 0xf8, 0xa2, 0x5f, 0x58, 0x69, 0x20, 0xda, 0xec, 0xd4, 0x8a, 0x75,
+	0xc7, 0x96, 0x2b, 0xcb, 0x9f, 0x15, 0x62, 0xb5, 0x64, 0x94, 0x6b, 0xf5, 0xfa, 0x9a, 0x65, 0x79,
+	0x90, 0x10, 0x4d, 0x31, 0xb2, 0xc2, 0x5b, 0x65, 0xe0, 0x4c, 0xfd, 0x08, 0x24, 0xeb, 0x4d, 0x13,
+	0x61, 0x2d, 0xb6, 0xa4, 0x2c, 0x4f, 0x95, 0xd7, 0x5f, 0xf4, 0x0b, 0x6f, 0x87, 0xbc, 0x0a, 0x30,
+	0x30, 0xa4, 0x77, 0x1d, 0xaf, 0x25, 0xef, 0x56, 0xea, 0x8e, 0x07, 0x4b, 0xdd, 0x12, 0x86, 0xdd,
+	0x4e, 0xc0, 0x46, 0x71, 0x9d, 0xb9, 0xb9, 0x61, 0xda, 0xd0, 0x10, 0x1e, 0xd5, 0xb3, 0x60, 0xd2,
+	0x94, 0x2b, 0xc7, 0x79, 0xc8, 0x87, 0x1f, 0xf7, 0x0b, 0x13, 0x3f, 0xf5, 0x0b, 0x93, 0x32, 0x20,
+	0xc3, 0xd7, 0xab, 0xe7, 0x41, 0x4a, 0x44, 0xa6, 0x25, 0x78, 0x18, 0xda, 0x8f, 0xdf, 0xae, 0xe4,
+	0x24, 0x96, 0xd2, 0xf8, 0x16, 0xf5, 0x10, 0x6e, 0x18, 0xd2, 0xee, 0xca, 0xd9, 0x7b, 0x8f, 0xb4,
+	0xf8, 0xfd, 0xe7, 0x0f, 0xcf, 0x49, 0xc1, 0xe7, 0xcf, 0x1f, 0x9e, 0x9b, 0x67, 0xa4, 0x8e, 0x80,
+	0xa8, 0xe7, 0x80, 0x1a, 0x16, 0x12, 0xd7, 0xc1, 0x04, 0xea, 0xbf, 0xc5, 0xc0, 0x91, 0x75, 0x07,
+	0xdf, 0x41, 0x9e, 0x2d, 0x55, 0x5b, 0xdd, 0x31, 0x81, 0x3d, 0x49, 0xbb, 0x55, 0x64, 0x49, 0xd0,
+	0x73, 0x12, 0xf4, 0xc4, 0x7b, 0x26, 0x69, 0xee, 0xf4, 0x0b, 0x89, 0xad, 0xee, 0x46, 0xc5, 0x48,
+	0xd0, 0xee, 0x86, 0xb5, 0x0f, 0xd8, 0x57, 0xef, 0x3d, 0xd2, 0x94, 0x21, 0xd8, 0x8f, 0x31, 0xd8,
+	0x77, 0x81, 0x52, 0x53, 0xf4, 0x3c, 0xd0, 0x46, 0x95, 0x82, 0x84, 0x2b, 0x31, 0x4d, 0xd1, 0x7f,
+	0x8f, 0x8d, 0x1a, 0x90, 0xb1, 0x60, 0xe2, 0x7f, 0x20, 0xc5, 0x99, 0x60, 0xf9, 0x1f, 0x5f, 0xce,
+	0x94, 0xe7, 0x87, 0xa8, 0x48, 0x32, 0x2a, 0x88, 0x91, 0x64, 0x5c, 0xec, 0xa7, 0x06, 0xce, 0x47,
+	0x90, 0x71, 0x3c, 0x8a, 0x0c, 0x1f, 0x4e, 0xfd, 0x18, 0x38, 0x1a, 0xa1, 0x93, 0x15, 0xf1, 0x43,
+	0x1c, 0xcc, 0x4b, 0x6d, 0x05, 0xba, 0x0e, 0x41, 0xf4, 0xa0, 0xd5, 0xc3, 0x65, 0x90, 0x32, 0x6d,
+	0xa7, 0x83, 0x29, 0xa7, 0x20, 0x53, 0x5e, 0x92, 0xb6, 0x0b, 0x62, 0x3b, 0xc4, 0x6a, 0x15, 0x91,
+	0x53, 0xb2, 0x4d, 0xda, 0x2c, 0xde, 0x46, 0x98, 0x6a, 0x8a, 0x21, 0xed, 0xd5, 0x4b, 0x60, 0xa6,
+	0xd6, 0xf1, 0x30, 0xf4, 0xaa, 0x7e, 0xcb, 0x4b, 0x46, 0xb7, 0xbc, 0x69, 0x61, 0xb6, 0x36, 0xd2,
+	0xf8, 0x52, 0x7b, 0x24, 0xfd, 0x74, 0x04, 0xe9, 0x6a, 0x88, 0x74, 0x49, 0x9d, 0xae, 0x81, 0x85,
+	0x61, 0x32, 0x25, 0xcf, 0x5f, 0xc4, 0xc1, 0x9c, 0x54, 0x6d, 0x39, 0x2d, 0x88, 0x0f, 0x1a, 0xcb,
+	0xff, 0x07, 0x49, 0x93, 0x10, 0x28, 0x48, 0x3e, 0x74, 0xe1, 0x68, 0x71, 0x74, 0x0a, 0x29, 0xae,
+	0x31, 0x83, 0x72, 0x82, 0x79, 0x31, 0x84, 0x75, 0x88, 0xaa, 0xe4, 0x1e, 0xa9, 0x3a, 0x19, 0x41,
+	0x55, 0x36, 0x44, 0x15, 0x47, 0x5f, 0x5f, 0x00, 0xb9, 0x97, 0xd9, 0x90, 0x34, 0xfd, 0x11, 0x1b,
+	0x14, 0xeb, 0x96, 0x67, 0x62, 0x72, 0x07, 0x7a, 0x9b, 0xb0, 0x77, 0x70, 0x5f, 0x51, 0x7b, 0x2d,
+	0x90, 0x73, 0x11, 0xa8, 0x2f, 0x84, 0x51, 0x0f, 0xc0, 0xbc, 0x96, 0x48, 0x27, 0xb2, 0xc9, 0x6b,
+	0x89, 0x74, 0x32, 0x9b, 0xd2, 0x8f, 0x83, 0xc5, 0x28, 0xb8, 0x25, 0x1b, 0xdf, 0xc7, 0xc1, 0xa1,
+	0xeb, 0x08, 0xb7, 0xc6, 0x02, 0xff, 0x53, 0x60, 0xc6, 0x83, 0x75, 0xe4, 0x22, 0x88, 0x29, 0x6f,
+	0x58, 0x9c, 0x88, 0x29, 0x63, 0x7a, 0x20, 0x65, 0x81, 0xa9, 0xb9, 0x70, 0xa1, 0x4c, 0xf9, 0x75,
+	0xd0, 0x06, 0x87, 0x83, 0x87, 0x45, 0x84, 0xc9, 0x37, 0x17, 0x61, 0x10, 0x18, 0x97, 0xed, 0x83,
+	0xff, 0xe3, 0x11, 0xfc, 0xa7, 0x19, 0xff, 0x8c, 0x3e, 0x7d, 0x15, 0x64, 0x04, 0x8d, 0x82, 0x57,
+	0xf5, 0x04, 0xc8, 0x58, 0xa2, 0x3f, 0x0a, 0x20, 0x14, 0xbe, 0xd5, 0x43, 0x52, 0xc6, 0x56, 0xd0,
+	0xbf, 0x61, 0x93, 0xa2, 0x07, 0x4d, 0x0a, 0xcb, 0x1d, 0x0f, 0xf3, 0x22, 0x1d, 0x8f, 0xf9, 0x24,
+	0xc0, 0x36, 0xbe, 0x47, 0x6c, 0x97, 0x23, 0xb0, 0xcd, 0xf1, 0xda, 0x1a, 0xc2, 0x47, 0x5f, 0x04,
+	0xda, 0x28, 0x66, 0xb2, 0x96, 0xbe, 0x4a, 0xf8, 0xca, 0x0a, 0x74, 0xdb, 0x4e, 0x6f, 0x7c, 0xde,
+	0x42, 0x83, 0x57, 0x4b, 0xfc, 0xb5, 0x5e, 0x2d, 0x9b, 0x60, 0x9a, 0x32, 0x0c, 0xaa, 0x16, 0xa4,
+	0x26, 0x6a, 0x13, 0xf9, 0x66, 0x5a, 0x8a, 0x7a, 0x9c, 0x83, 0x55, 0x11, 0x76, 0xd2, 0x4b, 0x86,
+	0x86, 0x64, 0xe1, 0x63, 0x57, 0xea, 0x2f, 0x8e, 0x5d, 0xcb, 0x20, 0x6b, 0x99, 0xa8, 0xdd, 0xab,
+	0xda, 0x08, 0xd3, 0x6a, 0x1b, 0xd9, 0x88, 0x6a, 0x93, 0xbc, 0x00, 0x66, 0xb8, 0xfc, 0x7d, 0x84,
+	0xe9, 0x75, 0x26, 0x0d, 0xa5, 0x4a, 0xfa, 0x35, 0x0e, 0x68, 0xb1, 0xa8, 0x03, 0xda, 0x08, 0xf3,
+	0xb2, 0xff, 0xb2, 0xd9, 0x74, 0x34, 0x29, 0x64, 0xca, 0x7c, 0x17, 0x03, 0xff, 0x11, 0xda, 0x9b,
+	0x10, 0x5b, 0x08, 0x37, 0xfc, 0x1e, 0x7d, 0x50, 0x2b, 0xb1, 0x18, 0x51, 0x89, 0x8b, 0x01, 0xbc,
+	0xc3, 0x28, 0xe9, 0x4b, 0x20, 0xbf, 0x1b, 0x7e, 0x12, 0xe2, 0xcf, 0xe2, 0xbe, 0x89, 0xaf, 0xfb,
+	0xe0, 0x2e, 0x86, 0x1e, 0x69, 0x22, 0x77, 0x2c, 0x30, 0xae, 0x81, 0x54, 0x0b, 0xf6, 0xfc, 0xa9,
+	0x63, 0xaa, 0xbc, 0xc9, 0x4e, 0x60, 0x9b, 0xb0, 0xb7, 0x51, 0x79, 0xd1, 0x2f, 0xbc, 0xb5, 0xc7,
+	0x45, 0xec, 0x4e, 0x9b, 0x22, 0x82, 0x1a, 0xc1, 0x3a, 0xdc, 0x83, 0x91, 0x6c, 0xc1, 0xde, 0xbe,
+	0x0e, 0xd4, 0xb3, 0x43, 0x65, 0xa2, 0x29, 0xfa, 0x29, 0x50, 0xd8, 0x95, 0x87, 0xd0, 0xb9, 0xf9,
+	0x41, 0x1c, 0x9c, 0x18, 0xb2, 0x73, 0xa1, 0x67, 0x52, 0xe7, 0x5f, 0xca, 0xfe, 0x5e, 0xca, 0x2e,
+	0x44, 0x74, 0xb6, 0x7c, 0x50, 0x7a, 0x51, 0x6c, 0xe8, 0x27, 0x81, 0xfe, 0x2a, 0xae, 0x64, 0x09,
+	0x3e, 0x88, 0x81, 0xb9, 0x5b, 0xa8, 0x81, 0xd7, 0x1d, 0xdb, 0x36, 0xb1, 0x75, 0x50, 0x7b, 0xdb,
+	0xae, 0xe7, 0xa6, 0x30, 0x36, 0xfa, 0x7d, 0x05, 0xe4, 0x5e, 0x06, 0x4b, 0x8e, 0x74, 0x57, 0xc1,
+	0x5c, 0xcd, 0xa4, 0xf5, 0x26, 0xb4, 0xaa, 0x75, 0xa9, 0x63, 0x29, 0x24, 0xf0, 0x9a, 0xdf, 0xe9,
+	0x17, 0x66, 0xcb, 0x42, 0xed, 0x3f, 0xb9, 0x51, 0x31, 0x66, 0x6b, 0x43, 0x22, 0x4b, 0xfd, 0x2f,
+	0x98, 0x96, 0x8f, 0x57, 0xeb, 0xfc, 0x9b, 0x00, 0x83, 0x66, 0xda, 0xc8, 0x48, 0xe1, 0x3a, 0x93,
+	0xe9, 0x5f, 0xc7, 0xc1, 0xe1, 0x35, 0xcb, 0xe2, 0x9b, 0xfe, 0xe7, 0xd8, 0xfa, 0x10, 0x24, 0xb0,
+	0x69, 0xc3, 0x37, 0x49, 0x16, 0x77, 0xa8, 0xae, 0x83, 0x34, 0x2b, 0x38, 0x16, 0x04, 0x2f, 0x87,
+	0x99, 0x0b, 0x27, 0xfd, 0x19, 0x84, 0x12, 0x52, 0x1c, 0x3c, 0xe7, 0x0f, 0x23, 0x9b, 0xb0, 0xb7,
+	0xd5, 0x73, 0x61, 0x39, 0xa6, 0x29, 0xc6, 0x64, 0x4b, 0xdc, 0xa8, 0xa7, 0x41, 0x4a, 0x7c, 0x51,
+	0x97, 0xdf, 0x40, 0x66, 0xe4, 0xfc, 0x91, 0xba, 0xc9, 0xa5, 0x86, 0xd4, 0xee, 0x63, 0xb4, 0x3f,
+	0x13, 0xf1, 0xd1, 0x77, 0x8e, 0x25, 0xc6, 0x10, 0x05, 0xd7, 0x12, 0xe9, 0x78, 0x36, 0xa1, 0xab,
+	0x20, 0x1b, 0x28, 0x64, 0x89, 0xfd, 0x1a, 0x03, 0x47, 0x0c, 0x48, 0xbd, 0xde, 0x3b, 0x26, 0x6a,
+	0x43, 0xeb, 0xea, 0x36, 0xc4, 0xe3, 0xf1, 0x99, 0x6b, 0x15, 0xa4, 0x21, 0xdb, 0x4c, 0xd0, 0x2d,
+	0x17, 0x76, 0xfa, 0x85, 0x49, 0xbe, 0x41, 0xde, 0x2f, 0xfd, 0x4b, 0x63, 0x92, 0xdb, 0xed, 0xab,
+	0xf5, 0xed, 0x3a, 0xff, 0x0f, 0x43, 0xca, 0xe6, 0xff, 0x51, 0x98, 0x25, 0x07, 0x0f, 0x15, 0x30,
+	0x77, 0xdb, 0xb5, 0xd8, 0x30, 0x22, 0x32, 0x42, 0xe2, 0x7f, 0x09, 0x4c, 0x99, 0x1d, 0xda, 0x74,
+	0x3c, 0x44, 0x7b, 0xe2, 0x20, 0xf6, 0x8a, 0x90, 0x02, 0x53, 0xf5, 0xf2, 0x20, 0xe1, 0x62, 0x7c,
+	0x6e, 0x5e, 0x8c, 0x9a, 0x9b, 0xc5, 0x52, 0x72, 0x62, 0x96, 0xf6, 0x3c, 0xa1, 0x78, 0x2b, 0x0f,
+	0xbc, 0x0d, 0x9a, 0x4d, 0x38, 0x42, 0x7d, 0x01, 0xe4, 0x5e, 0x8e, 0x58, 0x6c, 0xa5, 0x7c, 0xe3,
+	0xf1, 0x2f, 0xf9, 0x89, 0xc7, 0x3b, 0x79, 0xe5, 0xc9, 0x4e, 0x5e, 0xf9, 0x79, 0x27, 0xaf, 0x7c,
+	0xf9, 0x2c, 0x3f, 0xf1, 0xe4, 0x59, 0x7e, 0xe2, 0xe9, 0xb3, 0xfc, 0xc4, 0xc7, 0xe7, 0xf7, 0xc8,
+	0x2d, 0x5b, 0x8e, 0xe7, 0x4f, 0x2d, 0xc5, 0xff, 0x1b, 0x74, 0xf1, 0xcf, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0xc3, 0xb3, 0xa2, 0x89, 0x37, 0x1b, 0x00, 0x00,
 }
 
 func (m *SetGatewayRequest) Marshal() (dAtA []byte, err error) {
@@ -1427,6 +1490,13 @@ func (m *SetGatewayRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintTx(dAtA, i, uint64(len(m.Chain)))
 		i--
 		dAtA[i] = 0x12
+	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -1497,6 +1567,13 @@ func (m *ConfirmGatewayTxRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 		i = encodeVarintTx(dAtA, i, uint64(len(m.Chain)))
 		i--
 		dAtA[i] = 0x12
+	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -1571,6 +1648,13 @@ func (m *ConfirmGatewayTxsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 		i = encodeVarintTx(dAtA, i, uint64(len(m.Chain)))
 		i--
 		dAtA[i] = 0x12
+	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -1662,6 +1746,13 @@ func (m *ConfirmDepositRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x12
 	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -1742,6 +1833,13 @@ func (m *ConfirmTokenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x12
 	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -1811,6 +1909,13 @@ func (m *ConfirmTransferKeyRequest) MarshalToSizedBuffer(dAtA []byte) (int, erro
 		i = encodeVarintTx(dAtA, i, uint64(len(m.Chain)))
 		i--
 		dAtA[i] = 0x12
+	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -1893,6 +1998,13 @@ func (m *LinkRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x12
 	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -1959,6 +2071,13 @@ func (m *CreateBurnTokensRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 		i = encodeVarintTx(dAtA, i, uint64(len(m.Chain)))
 		i--
 		dAtA[i] = 0x12
+	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -2057,6 +2176,13 @@ func (m *CreateDeployTokenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error
 		i--
 		dAtA[i] = 0x12
 	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -2116,6 +2242,13 @@ func (m *CreatePendingTransfersRequest) MarshalToSizedBuffer(dAtA []byte) (int, 
 		i = encodeVarintTx(dAtA, i, uint64(len(m.Chain)))
 		i--
 		dAtA[i] = 0x12
+	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -2184,6 +2317,13 @@ func (m *CreateTransferOwnershipRequest) MarshalToSizedBuffer(dAtA []byte) (int,
 		i--
 		dAtA[i] = 0x12
 	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -2251,6 +2391,13 @@ func (m *CreateTransferOperatorshipRequest) MarshalToSizedBuffer(dAtA []byte) (i
 		i--
 		dAtA[i] = 0x12
 	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -2310,6 +2457,13 @@ func (m *SignCommandsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintTx(dAtA, i, uint64(len(m.Chain)))
 		i--
 		dAtA[i] = 0x12
+	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -2398,6 +2552,13 @@ func (m *AddChainRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x12
 	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -2464,6 +2625,13 @@ func (m *RetryFailedEventRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 		i = encodeVarintTx(dAtA, i, uint64(len(m.Chain)))
 		i--
 		dAtA[i] = 0x12
+	}
+	if len(m.SenderDeprecated) > 0 {
+		i -= len(m.SenderDeprecated)
+		copy(dAtA[i:], m.SenderDeprecated)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.SenderDeprecated)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -2571,6 +2739,10 @@ func (m *SetGatewayRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2599,6 +2771,10 @@ func (m *ConfirmGatewayTxRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2627,6 +2803,10 @@ func (m *ConfirmGatewayTxsRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2659,6 +2839,10 @@ func (m *ConfirmDepositRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2691,6 +2875,10 @@ func (m *ConfirmTokenRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2721,6 +2909,10 @@ func (m *ConfirmTransferKeyRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2749,6 +2941,10 @@ func (m *LinkRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2791,6 +2987,10 @@ func (m *CreateBurnTokensRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2817,6 +3017,10 @@ func (m *CreateDeployTokenRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2853,6 +3057,10 @@ func (m *CreatePendingTransfersRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2879,6 +3087,10 @@ func (m *CreateTransferOwnershipRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2909,6 +3121,10 @@ func (m *CreateTransferOperatorshipRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2939,6 +3155,10 @@ func (m *SignCommandsRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -2972,6 +3192,10 @@ func (m *AddChainRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Name)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -3003,6 +3227,10 @@ func (m *RetryFailedEventRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.SenderDeprecated)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovTx(uint64(l))
@@ -3086,6 +3314,40 @@ func (m *SetGatewayRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: SetGatewayRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
@@ -3283,6 +3545,40 @@ func (m *ConfirmGatewayTxRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: ConfirmGatewayTxRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
@@ -3480,6 +3776,40 @@ func (m *ConfirmGatewayTxsRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: ConfirmGatewayTxsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
@@ -3679,6 +4009,40 @@ func (m *ConfirmDepositRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: ConfirmDepositRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
@@ -3942,6 +4306,40 @@ func (m *ConfirmTokenRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: ConfirmTokenRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
@@ -4172,6 +4570,40 @@ func (m *ConfirmTransferKeyRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: ConfirmTransferKeyRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
@@ -4369,6 +4801,40 @@ func (m *LinkRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: LinkRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
@@ -4661,6 +5127,40 @@ func (m *CreateBurnTokensRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: CreateBurnTokensRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
@@ -4825,6 +5325,40 @@ func (m *CreateDeployTokenRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: CreateDeployTokenRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
@@ -5120,6 +5654,40 @@ func (m *CreatePendingTransfersRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: CreatePendingTransfersRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
@@ -5284,6 +5852,40 @@ func (m *CreateTransferOwnershipRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: CreateTransferOwnershipRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
@@ -5480,6 +6082,40 @@ func (m *CreateTransferOperatorshipRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: CreateTransferOperatorshipRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
@@ -5676,6 +6312,40 @@ func (m *SignCommandsRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: SignCommandsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
@@ -5893,6 +6563,40 @@ func (m *AddChainRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: AddChainRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
@@ -6109,6 +6813,40 @@ func (m *RetryFailedEventRequest) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: RetryFailedEventRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SenderDeprecated", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SenderDeprecated = append(m.SenderDeprecated[:0], dAtA[iNdEx:postIndex]...)
+			if m.SenderDeprecated == nil {
+				m.SenderDeprecated = []byte{}
+			}
+			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)

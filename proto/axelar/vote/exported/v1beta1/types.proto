@@ -49,6 +49,13 @@ message PollKey {
   string id = 2 [ (gogoproto.customname) = "ID" ];
 }
 
+// Vote represents a vote result - kept for backward compatibility
+message Vote {
+  option deprecated = true;
+  reserved 1; // results was removed in v0.18
+  google.protobuf.Any result = 2;
+}
+
 enum PollState {
   option (gogoproto.goproto_enum_prefix) = false;
   option (gogoproto.goproto_enum_stringer) = true;
