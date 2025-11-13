@@ -28,8 +28,6 @@ import (
 	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 	ibcconnectiontypes "github.com/cosmos/ibc-go/v8/modules/core/03-connection/types"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
-
-	"github.com/axelarnetwork/utils/funcs"
 )
 
 func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keepers *KeeperCache) {
@@ -42,18 +40,29 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keep
 		upgradeName(app.Version()),
 		func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
 			app.Logger().Info("Running upgrade handler", "version", app.Version())
-			// Migrate Tendermint consensus parameters from x/params module to a
-			// dedicated x/consensus module.
-			sdkCtx := sdk.UnwrapSDKContext(ctx)
-			consensusParams := GetKeeper[consensusparamkeeper.Keeper](keepers)
-			funcs.MustNoErr(baseapp.MigrateParams(sdkCtx, baseAppLegacySS, consensusParams.ParamsStore))
-
+			
+			// Run module migrations FIRST - this creates the new consensus module store
+			app.Logger().Info("Running module migrations...")
 			updatedVM, err := app.mm.RunMigrations(ctx, configurator, fromVM)
 			if err != nil {
+				app.Logger().Error("Module migrations failed", "error", err)
 				return updatedVM, err
 			}
+			app.Logger().Info("Module migrations completed successfully")
+			
+			// AFTER migrations, migrate consensus parameters from x/params to x/consensus
+			// This must happen after RunMigrations so the consensus module store exists
+			sdkCtx := sdk.UnwrapSDKContext(ctx)
+			consensusParamsKeeper := GetKeeper[consensusparamkeeper.Keeper](keepers)
+			
+			app.Logger().Info("Migrating consensus params from x/params to x/consensus...")
+			if err := baseapp.MigrateParams(sdkCtx, baseAppLegacySS, consensusParamsKeeper.ParamsStore); err != nil {
+				app.Logger().Error("Failed to migrate consensus params", "error", err)
+				return nil, err
+			}
+			app.Logger().Info("Consensus params migration completed successfully")
 
-			return updatedVM, err
+			return updatedVM, nil
 		},
 	)
 
