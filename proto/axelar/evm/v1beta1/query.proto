@@ -35,7 +35,10 @@ message BatchedCommandsResponse {
     (gogoproto.casttype) =
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
-  reserved 5; // signature was removed in v0.20.0
+  // DEPRECATED: Removed in v0.20.0, reinstated in v1.3 for backward compatibility.
+  // This field must remain to allow decoding of historical transactions.
+  // DO NOT use in new code.
+  repeated string signature_deprecated = 5 [ deprecated = true ];
   string execute_data = 6;
   string prev_batched_commands_id = 7
       [ (gogoproto.customname) = "PrevBatchedCommandsID" ];
@@ -44,9 +47,24 @@ message BatchedCommandsResponse {
 }
 
 message KeyAddressRequest {
-  reserved 2, 3;
-
   string chain = 1;
+  // DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
+  // This field must remain to allow decoding of historical transactions.
+  // DO NOT use in new code.
+  int32 role_deprecated = 2 [
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/tss/exported.KeyRole",
+    deprecated = true
+  ];
+  // DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
+  // This field must remain to allow decoding of historical transactions.
+  // DO NOT use in new code.
+  string id_deprecated = 3 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID",
+    deprecated = true
+  ];
   string key_id = 4 [
     (gogoproto.customname) = "KeyID",
     (gogoproto.casttype) =

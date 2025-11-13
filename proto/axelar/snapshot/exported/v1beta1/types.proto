@@ -5,8 +5,19 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/snapshot/exported";
 
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+import "cosmos_proto/cosmos.proto";
+import "axelar/tss/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
+
+message Validator {
+  google.protobuf.Any sdk_validator = 1 [
+    (cosmos_proto.accepts_interface) = "exported.SDKValidator",
+    (gogoproto.customname) = "SDKValidator"
+  ];
+  int64 share_count = 2;
+}
 
 message Participant {
   bytes address = 1 [ (gogoproto.casttype) =
@@ -18,14 +29,38 @@ message Participant {
 }
 
 message Snapshot {
-  reserved 1, 4, 5, 6, 7; // validators, total_share_count, counter and
-                          // corruption_threshold were deleted in v0.26
-
   option (gogoproto.stable_marshaler) = true;
 
+  // DEPRECATED: Removed in v0.26, reinstated in v1.3 for backward compatibility.
+  // This field must remain to allow decoding of historical transactions.
+  // DO NOT use in new code.
+  repeated Validator validators_deprecated = 1 [
+    (gogoproto.nullable) = false,
+    deprecated = true
+  ];
   google.protobuf.Timestamp timestamp = 2
       [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
   int64 height = 3;
+  // DEPRECATED: Removed in v0.26, reinstated in v1.3 for backward compatibility.
+  // This field must remain to allow decoding of historical transactions.
+  // DO NOT use in new code.
+  bytes total_share_count_deprecated = 4 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    deprecated = true
+  ];
+  // DEPRECATED: Removed in v0.26, reinstated in v1.3 for backward compatibility.
+  // This field must remain to allow decoding of historical transactions.
+  // DO NOT use in new code.
+  int64 counter_deprecated = 5 [ deprecated = true ];
+  // DEPRECATED: Removed in v0.26, reinstated in v1.3 for backward compatibility.
+  // This field must remain to allow decoding of historical transactions.
+  // DO NOT use in new code.
+  tss.exported.v1beta1.KeyShareDistributionPolicy key_share_distribution_policy_deprecated = 6 [ deprecated = true ];
+  // DEPRECATED: Removed in v0.26, reinstated in v1.3 for backward compatibility.
+  // This field must remain to allow decoding of historical transactions.
+  // DO NOT use in new code.
+  int64 corruption_threshold_deprecated = 7 [ deprecated = true ];
   map<string, Participant> participants = 8 [ (gogoproto.nullable) = false ];
   bytes bonded_weight = 9 [
     (gogoproto.customtype) = "cosmossdk.io/math.Uint",

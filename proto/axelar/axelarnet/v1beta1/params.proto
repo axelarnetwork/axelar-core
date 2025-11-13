@@ -11,7 +11,14 @@ option (gogoproto.goproto_getters_all) = false;
 message Params {
   // IBC packet route timeout window
   uint64 route_timeout_window = 1;
-  reserved 2; // transaction_fee_rate was removed in v0.15
+  // DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward compatibility.
+  // This field must remain to allow decoding of historical transactions.
+  // DO NOT use in new code.
+  string transaction_fee_rate_deprecated = 2 [
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    deprecated = true
+  ];
   uint64 transfer_limit = 3;
   uint64 end_blocker_limit = 4;
   repeated CallContractProposalMinDeposit call_contracts_proposal_min_deposits =

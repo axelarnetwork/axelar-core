@@ -25,12 +25,24 @@ message MaintainerState {
 
 // ChainState represents the state of a registered blockchain
 message ChainState {
-  reserved 4; // total was removed in v0.13
-  reserved 2; // maintainers was removed in v0.24
-
   axelar.nexus.exported.v1beta1.Chain chain = 1
       [ (gogoproto.nullable) = false ];
+  // DEPRECATED: Removed in v0.24, reinstated in v1.3 for backward compatibility.
+  // This field must remain to allow decoding of historical transactions.
+  // DO NOT use in new code.
+  repeated bytes maintainers_deprecated = 2 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ValAddress",
+    deprecated = true
+  ];
   bool activated = 3;
+  // DEPRECATED: Removed in v0.13, reinstated in v1.3 for backward compatibility.
+  // This field must remain to allow decoding of historical transactions.
+  // DO NOT use in new code.
+  repeated cosmos.base.v1beta1.Coin total_deprecated = 4 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    deprecated = true
+  ];
   repeated axelar.nexus.exported.v1beta1.Asset assets = 5
       [ (gogoproto.nullable) = false ];
   repeated MaintainerState maintainer_states = 6

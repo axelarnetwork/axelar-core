@@ -12,13 +12,18 @@ option (gogoproto.goproto_getters_all) = false;
 // TalliedVote represents a vote for a poll with the accumulated stake of all
 // validators voting for the same data
 message TalliedVote {
-  reserved 2; // voters is deleted in version 0.20.x
-
   option (gogoproto.stable_marshaler) = true;
 
   bytes tally = 1 [
     (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
+  ];
+  // DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
+  // This field must remain to allow decoding of historical transactions.
+  // DO NOT use in new code.
+  repeated bytes voters_deprecated = 2 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ValAddress",
+    deprecated = true
   ];
   google.protobuf.Any data = 3 [ (cosmos_proto.accepts_interface) =
                                      "github.com/cosmos/codec/ProtoMarshaler" ];
