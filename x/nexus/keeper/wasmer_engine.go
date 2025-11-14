@@ -32,20 +32,6 @@ func getCtx(querier wasmvm.Querier) sdk.Context {
 }
 
 // Instantiate calls the inner engine and increments the transaction ID
-// func (w *WasmerEngine) Instantiate(
-//
-//	checksum wasmvm.Checksum,
-//	env wasmvmtypes.Env,
-//	info wasmvmtypes.MessageInfo,
-//	initMsg []byte,
-//	store wasmvm.KVStore,
-//	goapi wasmvm.GoAPI,
-//	querier wasmvm.Querier,
-//	gasMeter wasmvm.GasMeter,
-//	gasLimit uint64,
-//	deserCost wasmvmtypes.UFraction,
-//
-// ) (*wasmvmtypes.Response, uint64, error) {
 func (w *WasmerEngine) Instantiate(
 	checksum wasmvm.Checksum,
 	env wasmvmtypes.Env,
