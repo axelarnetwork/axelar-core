@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 
+	"cosmossdk.io/errors"
 	store "cosmossdk.io/store/types"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
@@ -41,28 +42,46 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keep
 		func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
 			app.Logger().Info("Running upgrade handler", "version", app.Version())
 			
-			// Run module migrations FIRST - this creates the new consensus module store
-			app.Logger().Info("Running module migrations...")
+			// Run module migrations FIRST
+			// This initializes the consensus module's ParamsStore before we write to it
 			updatedVM, err := app.mm.RunMigrations(ctx, configurator, fromVM)
 			if err != nil {
-				app.Logger().Error("Module migrations failed", "error", err)
 				return updatedVM, err
 			}
-			app.Logger().Info("Module migrations completed successfully")
 			
 			// AFTER migrations, migrate consensus parameters from x/params to x/consensus
-			// This must happen after RunMigrations so the consensus module store exists
 			sdkCtx := sdk.UnwrapSDKContext(ctx)
 			consensusParamsKeeper := GetKeeper[consensusparamkeeper.Keeper](keepers)
 			
-			app.Logger().Info("Migrating consensus params from x/params to x/consensus...")
+			// DEBUG: Check legacy params before migration
+			legacyParams := baseapp.GetConsensusParams(sdkCtx, baseAppLegacySS)
+			if legacyParams == nil {
+				app.Logger().Error("DEBUG: Legacy consensus params are nil!")
+				return nil, errors.Wrap(err, "legacy consensus params not found")
+			}
+			app.Logger().Info("DEBUG: Legacy params retrieved", 
+				"block_max_bytes", legacyParams.Block.MaxBytes, 
+				"block_max_gas", legacyParams.Block.MaxGas)
+			
+			// Call MigrateParams
+			app.Logger().Info("DEBUG: Calling MigrateParams...")
 			if err := baseapp.MigrateParams(sdkCtx, baseAppLegacySS, consensusParamsKeeper.ParamsStore); err != nil {
-				app.Logger().Error("Failed to migrate consensus params", "error", err)
+				app.Logger().Error("DEBUG: MigrateParams returned error", "error", err)
 				return nil, err
 			}
-			app.Logger().Info("Consensus params migration completed successfully")
+			app.Logger().Info("DEBUG: MigrateParams completed without error")
+			
+			// DEBUG: Verify immediately after Set
+			verifyParams, verifyErr := consensusParamsKeeper.ParamsStore.Get(sdkCtx)
+			if verifyErr != nil {
+				app.Logger().Error("DEBUG: VERIFICATION FAILED - params not found after Set!", "error", verifyErr)
+				return nil, verifyErr
+			}
+			app.Logger().Info("DEBUG: VERIFICATION SUCCESS - params exist after Set",
+				"block_max_bytes", verifyParams.Block.MaxBytes,
+				"block_max_gas", verifyParams.Block.MaxGas)
 
-			return updatedVM, nil
+			return updatedVM, err
 		},
 	)
 
