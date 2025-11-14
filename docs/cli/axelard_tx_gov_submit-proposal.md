@@ -13,32 +13,32 @@ $ axelard tx gov submit-proposal path/to/proposal.json
 Where proposal.json contains:
 
 {
-  // array of proto-JSON-encoded sdk.Msgs
-  "messages": [
-    {
-      "@type": "/cosmos.bank.v1beta1.MsgSend",
-      "from_address": "cosmos1...",
-      "to_address": "cosmos1...",
-      "amount":[{"denom": "stake","amount": "10"}]
-    }
-  ],
-  // metadata can be any of base64 encoded, raw text, stringified json, IPFS link to json
-  // see below for example metadata
-  "metadata": "4pIMOgIGx1vZGU=",
-  "deposit": "10stake",
-  "title": "My proposal",
-  "summary": "A short summary of my proposal",
-  "expedited": false
+// array of proto-JSON-encoded sdk.Msgs
+"messages": \[
+{
+"@type": "/cosmos.bank.v1beta1.MsgSend",
+"from_address": "cosmos1...",
+"to_address": "cosmos1...",
+"amount":[{"denom": "stake","amount": "10"}]
+}
+\],
+// metadata can be any of base64 encoded, raw text, stringified json, IPFS link to json
+// see below for example metadata
+"metadata": "4pIMOgIGx1vZGU=",
+"deposit": "10stake",
+"title": "My proposal",
+"summary": "A short summary of my proposal",
+"expedited": false
 }
 
-metadata example: 
+metadata example:
 {
-	"title": "",
-	"authors": [""],
-	"summary": "",
-	"details": "", 
-	"proposal_forum_url": "",
-	"vote_option_context": "",
+"title": "",
+"authors": [""],
+"summary": "",
+"details": "",
+"proposal_forum_url": "",
+"vote_option_context": "",
 }
 
 ```
@@ -87,5 +87,4 @@ axelard tx gov submit-proposal [path/to/proposal.json] [flags]
 
 ### SEE ALSO
 
-* [axelard tx gov](axelard_tx_gov.md)	 - Governance transactions subcommands
-
+- [axelard tx gov](axelard_tx_gov.md) - Governance transactions subcommands

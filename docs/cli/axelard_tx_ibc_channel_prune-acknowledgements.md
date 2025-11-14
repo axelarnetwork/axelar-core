@@ -4,8 +4,8 @@ Prune expired packet acknowledgements stored in IBC state
 
 ### Synopsis
 
-Prune expired packet acknowledgements and receipts stored in IBC state. Packet ackwnowledgements and 
-		receipts are considered expired if a channel has been upgraded.
+Prune expired packet acknowledgements and receipts stored in IBC state. Packet ackwnowledgements and
+receipts are considered expired if a channel has been upgraded.
 
 ```
 axelard tx ibc channel prune-acknowledgements [port] [channel] [limit] [flags]
@@ -59,5 +59,4 @@ axelard tx ibc channel prune-acknowledgements transfer channel-0 1000
 
 ### SEE ALSO
 
-* [axelard tx ibc channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
-
+- [axelard tx ibc channel](axelard_tx_ibc_channel.md) - IBC channel transaction subcommands

@@ -12,7 +12,6 @@ the signatures were collected in the right order, and if the signature is valid 
 given transaction. If the --offline flag is also set, signature validation over the
 transaction will be not be performed as that will require RPC communication with a full node.
 
-
 ```
 axelard tx validate-signatures [file] [flags]
 ```
@@ -59,5 +58,4 @@ axelard tx validate-signatures [file] [flags]
 
 ### SEE ALSO
 
-* [axelard tx](axelard_tx.md)	 - Transactions subcommands
-
+- [axelard tx](axelard_tx.md) - Transactions subcommands

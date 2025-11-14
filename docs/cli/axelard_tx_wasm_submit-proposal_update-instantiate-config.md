@@ -4,7 +4,7 @@ Submit an update instantiate config proposal.
 
 ### Synopsis
 
-Submit an update instantiate config  proposal for multiple code ids.
+Submit an update instantiate config proposal for multiple code ids.
 
 Example:
 $ axelard tx gov submit-proposal update-instantiate-config 1:nobody 2:everybody 3:axelar1l2rsakp388kuv9k8qzq6lrm9taddae7fpx59wm,axelar1vx8knpllrj7n963p9ttd80w47kpacrhuts497x
@@ -60,5 +60,4 @@ axelard tx wasm submit-proposal update-instantiate-config [code-id:permission] -
 
 ### SEE ALSO
 
-* [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md)	 - Submit a wasm proposal.
-
+- [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md) - Submit a wasm proposal.

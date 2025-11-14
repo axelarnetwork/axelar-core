@@ -40,5 +40,4 @@ axelard query gov votes 1
 
 ### SEE ALSO
 
-* [axelard query gov](axelard_query_gov.md)	 - Querying commands for the gov module
-
+- [axelard query gov](axelard_query_gov.md) - Querying commands for the gov module

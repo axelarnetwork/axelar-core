@@ -54,5 +54,4 @@ axelard tx vesting create-permanent-locked-account [to_address] [amount] [flags]
 
 ### SEE ALSO
 
-* [axelard tx vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
-
+- [axelard tx vesting](axelard_tx_vesting.md) - Vesting transaction subcommands

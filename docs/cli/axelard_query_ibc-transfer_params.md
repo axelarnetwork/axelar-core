@@ -38,5 +38,4 @@ axelard query ibc-transfer params
 
 ### SEE ALSO
 
-* [axelard query ibc-transfer](axelard_query_ibc-transfer.md)	 - IBC fungible token transfer query subcommands
-
+- [axelard query ibc-transfer](axelard_query_ibc-transfer.md) - IBC fungible token transfer query subcommands

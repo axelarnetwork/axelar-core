@@ -57,5 +57,4 @@ axelard tx wasm submit-proposal instantiate-contract [code_id_int64] [json_encod
 
 ### SEE ALSO
 
-* [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md)	 - Submit a wasm proposal.
-
+- [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md) - Submit a wasm proposal.

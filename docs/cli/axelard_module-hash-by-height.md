@@ -38,5 +38,4 @@ axelard module-hash-by-height 16841115
 
 ### SEE ALSO
 
-* [axelard](axelard.md)	 - Axelar App
-
+- [axelard](axelard.md) - Axelar App

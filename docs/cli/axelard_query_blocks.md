@@ -10,7 +10,6 @@ conform to CometBFT's query syntax.
 Please refer to each module's documentation for the full set of events to query
 for. Each module documents its respective events under 'xx_events.md'.
 
-
 ```
 axelard query blocks [flags]
 ```
@@ -47,5 +46,4 @@ $ axelard query blocks --query "message.sender='cosmos1...' AND block.height > 7
 
 ### SEE ALSO
 
-* [axelard query](axelard_query.md)	 - Querying subcommands
-
+- [axelard query](axelard_query.md) - Querying subcommands

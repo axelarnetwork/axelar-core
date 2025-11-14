@@ -6,12 +6,11 @@ Grant authorization to interact with a contract on behalf of you
 
 Grant authorization to an address.
 Examples:
-$ axelard tx grant contract <grantee_addr> execution <contract_addr> --allow-all-messages --max-calls 1 --no-token-transfer --expiration 1667979596
+$ axelard tx grant contract \<grantee_addr> execution \<contract_addr> --allow-all-messages --max-calls 1 --no-token-transfer --expiration 1667979596
 
-$ axelard tx grant contract <grantee_addr> execution <contract_addr> --allow-all-messages --max-funds 100000uwasm --expiration 1667979596
+$ axelard tx grant contract \<grantee_addr> execution \<contract_addr> --allow-all-messages --max-funds 100000uwasm --expiration 1667979596
 
-$ axelard tx grant contract <grantee_addr> execution <contract_addr> --allow-all-messages --max-calls 5 --max-funds 100000uwasm --expiration 1667979596
-
+$ axelard tx grant contract \<grantee_addr> execution \<contract_addr> --allow-all-messages --max-calls 5 --max-funds 100000uwasm --expiration 1667979596
 
 ```
 axelard tx wasm grant contract [grantee] [message_type="execution"|"migration"] [contract_addr_bech32] --allow-raw-msgs [msg1,msg2,...] --allow-msg-keys [key1,key2,...] --allow-all-messages [flags]
@@ -66,5 +65,4 @@ axelard tx wasm grant contract [grantee] [message_type="execution"|"migration"] 
 
 ### SEE ALSO
 
-* [axelard tx wasm grant](axelard_tx_wasm_grant.md)	 - Grant a authz permission
-
+- [axelard tx wasm grant](axelard_tx_wasm_grant.md) - Grant a authz permission

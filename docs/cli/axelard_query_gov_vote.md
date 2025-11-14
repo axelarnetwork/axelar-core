@@ -35,5 +35,4 @@ axelard query gov vote 1 cosmos1...
 
 ### SEE ALSO
 
-* [axelard query gov](axelard_query_gov.md)	 - Querying commands for the gov module
-
+- [axelard query gov](axelard_query_gov.md) - Querying commands for the gov module

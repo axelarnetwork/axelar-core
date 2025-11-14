@@ -24,11 +24,10 @@ axelard genesis [flags]
 
 ### SEE ALSO
 
-* [axelard](axelard.md)	 - Axelar App
-* [axelard genesis add-genesis-account](axelard_genesis_add-genesis-account.md)	 - Add a genesis account to genesis.json
-* [axelard genesis bulk-add-genesis-account](axelard_genesis_bulk-add-genesis-account.md)	 - Bulk add genesis accounts to genesis.json
-* [axelard genesis collect-gentxs](axelard_genesis_collect-gentxs.md)	 - Collect genesis txs and output a genesis.json file
-* [axelard genesis gentx](axelard_genesis_gentx.md)	 - Generate a genesis tx carrying a self delegation
-* [axelard genesis migrate](axelard_genesis_migrate.md)	 - Migrate genesis to a specified target version
-* [axelard genesis validate](axelard_genesis_validate.md)	 - Validates the genesis file at the default location or at the location passed as an arg
-
+- [axelard](axelard.md) - Axelar App
+- [axelard genesis add-genesis-account](axelard_genesis_add-genesis-account.md) - Add a genesis account to genesis.json
+- [axelard genesis bulk-add-genesis-account](axelard_genesis_bulk-add-genesis-account.md) - Bulk add genesis accounts to genesis.json
+- [axelard genesis collect-gentxs](axelard_genesis_collect-gentxs.md) - Collect genesis txs and output a genesis.json file
+- [axelard genesis gentx](axelard_genesis_gentx.md) - Generate a genesis tx carrying a self delegation
+- [axelard genesis migrate](axelard_genesis_migrate.md) - Migrate genesis to a specified target version
+- [axelard genesis validate](axelard_genesis_validate.md) - Validates the genesis file at the default location or at the location passed as an arg

@@ -24,16 +24,15 @@ axelard tx wasm [flags]
 
 ### SEE ALSO
 
-* [axelard tx](axelard_tx.md)	 - Transactions subcommands
-* [axelard tx wasm clear-contract-admin](axelard_tx_wasm_clear-contract-admin.md)	 - Clears admin for a contract to prevent further migrations
-* [axelard tx wasm execute](axelard_tx_wasm_execute.md)	 - Execute a command on a wasm contract
-* [axelard tx wasm grant](axelard_tx_wasm_grant.md)	 - Grant a authz permission
-* [axelard tx wasm instantiate](axelard_tx_wasm_instantiate.md)	 - Instantiate a wasm contract
-* [axelard tx wasm instantiate2](axelard_tx_wasm_instantiate2.md)	 - Instantiate a wasm contract with predictable address
-* [axelard tx wasm migrate](axelard_tx_wasm_migrate.md)	 - Migrate a wasm contract to a new code version
-* [axelard tx wasm set-contract-admin](axelard_tx_wasm_set-contract-admin.md)	 - Set new admin for a contract
-* [axelard tx wasm set-contract-label](axelard_tx_wasm_set-contract-label.md)	 - Set new label for a contract
-* [axelard tx wasm store](axelard_tx_wasm_store.md)	 - Upload a wasm binary
-* [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md)	 - Submit a wasm proposal.
-* [axelard tx wasm update-instantiate-config](axelard_tx_wasm_update-instantiate-config.md)	 - Update instantiate config for a codeID
-
+- [axelard tx](axelard_tx.md) - Transactions subcommands
+- [axelard tx wasm clear-contract-admin](axelard_tx_wasm_clear-contract-admin.md) - Clears admin for a contract to prevent further migrations
+- [axelard tx wasm execute](axelard_tx_wasm_execute.md) - Execute a command on a wasm contract
+- [axelard tx wasm grant](axelard_tx_wasm_grant.md) - Grant a authz permission
+- [axelard tx wasm instantiate](axelard_tx_wasm_instantiate.md) - Instantiate a wasm contract
+- [axelard tx wasm instantiate2](axelard_tx_wasm_instantiate2.md) - Instantiate a wasm contract with predictable address
+- [axelard tx wasm migrate](axelard_tx_wasm_migrate.md) - Migrate a wasm contract to a new code version
+- [axelard tx wasm set-contract-admin](axelard_tx_wasm_set-contract-admin.md) - Set new admin for a contract
+- [axelard tx wasm set-contract-label](axelard_tx_wasm_set-contract-label.md) - Set new label for a contract
+- [axelard tx wasm store](axelard_tx_wasm_store.md) - Upload a wasm binary
+- [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md) - Submit a wasm proposal.
+- [axelard tx wasm update-instantiate-config](axelard_tx_wasm_update-instantiate-config.md) - Update instantiate config for a codeID

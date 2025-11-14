@@ -48,5 +48,4 @@ axelard tx tss heart-beat [flags]
 
 ### SEE ALSO
 
-* [axelard tx tss](axelard_tx_tss.md)	 - Transactions commands for the tss module
-
+- [axelard tx tss](axelard_tx_tss.md) - Transactions commands for the tss module

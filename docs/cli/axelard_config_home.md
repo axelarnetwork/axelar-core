@@ -28,5 +28,4 @@ axelard config home [flags]
 
 ### SEE ALSO
 
-* [axelard config](axelard_config.md)	 - Utilities for managing application configuration
-
+- [axelard config](axelard_config.md) - Utilities for managing application configuration

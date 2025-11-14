@@ -20,9 +20,8 @@ IBC connection query subcommands
 
 ### SEE ALSO
 
-* [axelard query ibc](axelard_query_ibc.md)	 - Querying commands for the IBC module
-* [axelard query ibc connection connections](axelard_query_ibc_connection_connections.md)	 - Query all connections
-* [axelard query ibc connection end](axelard_query_ibc_connection_end.md)	 - Query stored connection end
-* [axelard query ibc connection params](axelard_query_ibc_connection_params.md)	 - Query the current ibc connection parameters
-* [axelard query ibc connection path](axelard_query_ibc_connection_path.md)	 - Query stored client connection paths
-
+- [axelard query ibc](axelard_query_ibc.md) - Querying commands for the IBC module
+- [axelard query ibc connection connections](axelard_query_ibc_connection_connections.md) - Query all connections
+- [axelard query ibc connection end](axelard_query_ibc_connection_end.md) - Query stored connection end
+- [axelard query ibc connection params](axelard_query_ibc_connection_params.md) - Query the current ibc connection parameters
+- [axelard query ibc connection path](axelard_query_ibc_connection_path.md) - Query stored client connection paths

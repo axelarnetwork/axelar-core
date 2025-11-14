@@ -5,14 +5,13 @@ Instantiate a wasm contract with predictable address
 ### Synopsis
 
 Creates a new instance of an uploaded wasm code with the given 'constructor' message.
-Each contract instance has a unique address assigned. They are assigned automatically but in order to have predictable addresses 
+Each contract instance has a unique address assigned. They are assigned automatically but in order to have predictable addresses
 for special use cases, the given 'salt' argument and '--fix-msg' parameters can be used to generate a custom address.
 
 Predictable address example (also see 'axelard query wasm build-address -h'):
 $ axelard tx wasm instantiate2 1 '{"foo":"bar"}' $(echo -n "testing" | xxd -ps) --admin="$(axelard keys show mykey -a)" \
-  --from mykey --amount="100ustake" --label "local0.1.0" \
-   --fix-msg 
-
+--from mykey --amount="100ustake" --label "local0.1.0" \
+--fix-msg
 
 ```
 axelard tx wasm instantiate2 [code_id_int64] [json_encoded_init_args] [salt] --label [text] --admin [address,optional] --amount [coins,optional] --fix-msg [bool,optional] [flags]
@@ -68,5 +67,4 @@ axelard tx wasm instantiate2 [code_id_int64] [json_encoded_init_args] [salt] --l
 
 ### SEE ALSO
 
-* [axelard tx wasm](axelard_tx_wasm.md)	 - Wasm transaction subcommands
-
+- [axelard tx wasm](axelard_tx_wasm.md) - Wasm transaction subcommands

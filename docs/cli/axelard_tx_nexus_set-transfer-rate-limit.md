@@ -48,5 +48,4 @@ axelard tx nexus set-transfer-rate-limit [chain] [limit] [window] [flags]
 
 ### SEE ALSO
 
-* [axelard tx nexus](axelard_tx_nexus.md)	 - nexus transactions subcommands
-
+- [axelard tx nexus](axelard_tx_nexus.md) - nexus transactions subcommands

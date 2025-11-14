@@ -48,5 +48,4 @@ axelard tx vote update-params [flags]
 
 ### SEE ALSO
 
-* [axelard tx vote](axelard_tx_vote.md)	 - Transactions commands for the vote module
-
+- [axelard tx vote](axelard_tx_vote.md) - Transactions commands for the vote module

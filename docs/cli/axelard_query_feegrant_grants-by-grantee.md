@@ -44,5 +44,4 @@ $ axelard query feegrant grants-by-grantee [grantee]
 
 ### SEE ALSO
 
-* [axelard query feegrant](axelard_query_feegrant.md)	 - Querying commands for the feegrant module
-
+- [axelard query feegrant](axelard_query_feegrant.md) - Querying commands for the feegrant module

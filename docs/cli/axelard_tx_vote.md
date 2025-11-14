@@ -24,7 +24,6 @@ axelard tx vote [flags]
 
 ### SEE ALSO
 
-* [axelard tx](axelard_tx.md)	 - Transactions subcommands
-* [axelard tx vote update-params](axelard_tx_vote_update-params.md)	 - Execute the UpdateParams RPC method
-* [axelard tx vote vote](axelard_tx_vote_vote.md)	 - Execute the Vote RPC method
-
+- [axelard tx](axelard_tx.md) - Transactions subcommands
+- [axelard tx vote update-params](axelard_tx_vote_update-params.md) - Execute the UpdateParams RPC method
+- [axelard tx vote vote](axelard_tx_vote_vote.md) - Execute the Vote RPC method

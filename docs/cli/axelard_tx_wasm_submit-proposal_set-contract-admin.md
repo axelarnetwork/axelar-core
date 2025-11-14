@@ -53,5 +53,4 @@ axelard tx wasm submit-proposal set-contract-admin [contract_addr_bech32] [new_a
 
 ### SEE ALSO
 
-* [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md)	 - Submit a wasm proposal.
-
+- [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md) - Submit a wasm proposal.

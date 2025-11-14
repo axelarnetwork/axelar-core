@@ -49,5 +49,4 @@ axelard tx gov draft-proposal [flags]
 
 ### SEE ALSO
 
-* [axelard tx gov](axelard_tx_gov.md)	 - Governance transactions subcommands
-
+- [axelard tx gov](axelard_tx_gov.md) - Governance transactions subcommands

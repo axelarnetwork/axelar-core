@@ -29,5 +29,4 @@ axelard query mint inflation [flags]
 
 ### SEE ALSO
 
-* [axelard query mint](axelard_query_mint.md)	 - Querying commands for the mint module
-
+- [axelard query mint](axelard_query_mint.md) - Querying commands for the mint module

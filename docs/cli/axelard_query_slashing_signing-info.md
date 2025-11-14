@@ -39,5 +39,4 @@ axelard query slashing signing-info '{"@type":"/cosmos.crypto.ed25519.PubKey","k
 
 ### SEE ALSO
 
-* [axelard query slashing](axelard_query_slashing.md)	 - Querying commands for the slashing module
-
+- [axelard query slashing](axelard_query_slashing.md) - Querying commands for the slashing module

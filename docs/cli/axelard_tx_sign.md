@@ -14,10 +14,9 @@ As a result, the account and sequence number queries will not be performed and
 it is required to set such parameters manually. Note, invalid values will cause
 the transaction to fail.
 
-The --multisig=<multisig_key> flag generates a signature on behalf of a multisig account
+The --multisig=\<multisig_key> flag generates a signature on behalf of a multisig account
 key. It implies --signature-only. Full multisig signed transactions may eventually
 be generated via the 'multisign' command.
-
 
 ```
 axelard tx sign [file] [flags]
@@ -69,5 +68,4 @@ axelard tx sign [file] [flags]
 
 ### SEE ALSO
 
-* [axelard tx](axelard_tx.md)	 - Transactions subcommands
-
+- [axelard tx](axelard_tx.md) - Transactions subcommands

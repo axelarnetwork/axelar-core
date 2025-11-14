@@ -35,5 +35,4 @@ Example: $ axelard query distribution validator-distribution-info [validator-add
 
 ### SEE ALSO
 
-* [axelard query distribution](axelard_query_distribution.md)	 - Querying commands for the distribution module
-
+- [axelard query distribution](axelard_query_distribution.md) - Querying commands for the distribution module

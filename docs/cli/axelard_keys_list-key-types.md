@@ -30,5 +30,4 @@ axelard keys list-key-types [flags]
 
 ### SEE ALSO
 
-* [axelard keys](axelard_keys.md)	 - Manage your application's keys
-
+- [axelard keys](axelard_keys.md) - Manage your application's keys

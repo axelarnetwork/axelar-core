@@ -8,7 +8,6 @@ Decode a pubkey from proto JSON and display it's address.
 
 Example:
 $ axelard debug pubkey '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AurroA7jvfPd1AadmmOvWM2rJSwipXfRf8yD6pLbA2DJ"}'
-			
 
 ```
 axelard debug pubkey [pubkey] [flags]
@@ -32,5 +31,4 @@ axelard debug pubkey [pubkey] [flags]
 
 ### SEE ALSO
 
-* [axelard debug](axelard_debug.md)	 - Tool for helping with debugging your application
-
+- [axelard debug](axelard_debug.md) - Tool for helping with debugging your application

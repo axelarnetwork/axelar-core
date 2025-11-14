@@ -37,5 +37,4 @@ axelard genesis migrate v0.47 /path/to/genesis.json --chain-id=cosmoshub-3 --gen
 
 ### SEE ALSO
 
-* [axelard genesis](axelard_genesis.md)	 - Application's genesis-related subcommands
-
+- [axelard genesis](axelard_genesis.md) - Application's genesis-related subcommands

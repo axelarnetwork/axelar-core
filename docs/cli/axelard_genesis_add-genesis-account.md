@@ -9,7 +9,6 @@ the account address or key name and a list of initial coins. If a key name is gi
 the address will be looked up in the local Keybase. The list of initial tokens must
 contain valid denominations. Accounts may optionally be supplied with vesting parameters.
 
-
 ```
 axelard genesis add-genesis-account [address_or_key_name] [coin][,[coin]] [flags]
 ```
@@ -42,5 +41,4 @@ axelard genesis add-genesis-account [address_or_key_name] [coin][,[coin]] [flags
 
 ### SEE ALSO
 
-* [axelard genesis](axelard_genesis.md)	 - Application's genesis-related subcommands
-
+- [axelard genesis](axelard_genesis.md) - Application's genesis-related subcommands

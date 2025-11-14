@@ -28,5 +28,4 @@ axelard query permission governance-key [flags]
 
 ### SEE ALSO
 
-* [axelard query permission](axelard_query_permission.md)	 - Querying commands for the permission module
-
+- [axelard query permission](axelard_query_permission.md) - Querying commands for the permission module

@@ -5,8 +5,8 @@ recover an IBC client
 ### Synopsis
 
 Submit a recover IBC client proposal along with an initial deposit
-		Please specify a subject client identifier you want to recover
-		Please specify the substitute client the subject client will be recovered to.
+Please specify a subject client identifier you want to recover
+Please specify the substitute client the subject client will be recovered to.
 
 ```
 axelard tx ibc client recover-client [subject-client-id] [substitute-client-id] [flags]
@@ -59,5 +59,4 @@ axelard tx ibc client recover-client [subject-client-id] [substitute-client-id] 
 
 ### SEE ALSO
 
-* [axelard tx ibc client](axelard_tx_ibc_client.md)	 - IBC client transaction subcommands
-
+- [axelard tx ibc client](axelard_tx_ibc_client.md) - IBC client transaction subcommands

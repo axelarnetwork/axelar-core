@@ -38,5 +38,4 @@ axelard query staking redelegation [delegator-addr] [src-validator-addr] [dst-va
 
 ### SEE ALSO
 
-* [axelard query staking](axelard_query_staking.md)	 - Querying commands for the staking module
-
+- [axelard query staking](axelard_query_staking.md) - Querying commands for the staking module

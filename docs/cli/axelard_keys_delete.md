@@ -10,7 +10,6 @@ Note that removing offline or ledger keys will remove
 only the public key references stored locally, i.e.
 private keys stored in a ledger device cannot be deleted with the CLI.
 
-
 ```
 axelard keys delete <name>... [flags]
 ```
@@ -37,5 +36,4 @@ axelard keys delete <name>... [flags]
 
 ### SEE ALSO
 
-* [axelard keys](axelard_keys.md)	 - Manage your application's keys
-
+- [axelard keys](axelard_keys.md) - Manage your application's keys

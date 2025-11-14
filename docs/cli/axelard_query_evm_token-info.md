@@ -31,5 +31,4 @@ axelard query evm token-info [chain] [flags]
 
 ### SEE ALSO
 
-* [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
-
+- [axelard query evm](axelard_query_evm.md) - Querying commands for the evm module

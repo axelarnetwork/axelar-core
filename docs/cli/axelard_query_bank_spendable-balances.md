@@ -34,5 +34,4 @@ axelard query bank spendable-balances [address] [flags]
 
 ### SEE ALSO
 
-* [axelard query bank](axelard_query_bank.md)	 - Querying commands for the bank module
-
+- [axelard query bank](axelard_query_bank.md) - Querying commands for the bank module

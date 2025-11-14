@@ -24,5 +24,4 @@ axelard genesis validate [file] [flags]
 
 ### SEE ALSO
 
-* [axelard genesis](axelard_genesis.md)	 - Application's genesis-related subcommands
-
+- [axelard genesis](axelard_genesis.md) - Application's genesis-related subcommands

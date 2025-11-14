@@ -8,8 +8,7 @@ Creates a new instance of an uploaded wasm code with the given 'constructor' mes
 Each contract instance has a unique address assigned.
 Example:
 $ axelard tx wasm instantiate 1 '{"foo":"bar"}' --admin="$(axelard keys show mykey -a)" \
-  --from mykey --amount="100ustake" --label "local0.1.0" 
-
+--from mykey --amount="100ustake" --label "local0.1.0"
 
 ```
 axelard tx wasm instantiate [code_id_int64] [json_encoded_init_args] --label [text] --admin [address,optional] --amount [coins,optional]  [flags]
@@ -61,5 +60,4 @@ axelard tx wasm instantiate [code_id_int64] [json_encoded_init_args] --label [te
 
 ### SEE ALSO
 
-* [axelard tx wasm](axelard_tx_wasm.md)	 - Wasm transaction subcommands
-
+- [axelard tx wasm](axelard_tx_wasm.md) - Wasm transaction subcommands

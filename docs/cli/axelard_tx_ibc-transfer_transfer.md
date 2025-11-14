@@ -7,8 +7,8 @@ Transfer a fungible token through IBC
 Transfer a fungible token through IBC. Timeouts can be specified
 as absolute or relative using the "absolute-timeouts" flag. Timeout height can be set by passing in the height string
 in the form {revision}-{height} using the "packet-timeout-height" flag. Relative timeout height is added to the block
-height queried from the latest consensus state corresponding to the counterparty channel. Relative timeout timestamp 
-is added to the greater value of the local clock time and the block timestamp queried from the latest consensus state 
+height queried from the latest consensus state corresponding to the counterparty channel. Relative timeout timestamp
+is added to the greater value of the local clock time and the block timestamp queried from the latest consensus state
 corresponding to the counterparty channel. Any timeout set to 0 is disabled.
 
 ```
@@ -67,5 +67,4 @@ axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [amount]
 
 ### SEE ALSO
 
-* [axelard tx ibc-transfer](axelard_tx_ibc-transfer.md)	 - IBC fungible token transfer transaction subcommands
-
+- [axelard tx ibc-transfer](axelard_tx_ibc-transfer.md) - IBC fungible token transfer transaction subcommands

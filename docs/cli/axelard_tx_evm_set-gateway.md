@@ -48,5 +48,4 @@ axelard tx evm set-gateway [chain] [address] [flags]
 
 ### SEE ALSO
 
-* [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
-
+- [axelard tx evm](axelard_tx_evm.md) - evm transactions subcommands

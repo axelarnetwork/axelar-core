@@ -24,8 +24,7 @@ axelard query wasm contract-state [flags]
 
 ### SEE ALSO
 
-* [axelard query wasm](axelard_query_wasm.md)	 - Querying commands for the wasm module
-* [axelard query wasm contract-state all](axelard_query_wasm_contract-state_all.md)	 - Prints out all internal state of a contract given its address
-* [axelard query wasm contract-state raw](axelard_query_wasm_contract-state_raw.md)	 - Prints out internal state for key of a contract given its address
-* [axelard query wasm contract-state smart](axelard_query_wasm_contract-state_smart.md)	 - Calls contract with given address with query data and prints the returned result
-
+- [axelard query wasm](axelard_query_wasm.md) - Querying commands for the wasm module
+- [axelard query wasm contract-state all](axelard_query_wasm_contract-state_all.md) - Prints out all internal state of a contract given its address
+- [axelard query wasm contract-state raw](axelard_query_wasm_contract-state_raw.md) - Prints out internal state for key of a contract given its address
+- [axelard query wasm contract-state smart](axelard_query_wasm_contract-state_smart.md) - Calls contract with given address with query data and prints the returned result

@@ -47,5 +47,4 @@ prune custom --pruning-keep-recent 100 --app-db-backend 'goleveldb'
 
 ### SEE ALSO
 
-* [axelard](axelard.md)	 - Axelar App
-
+- [axelard](axelard.md) - Axelar App

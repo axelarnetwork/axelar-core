@@ -8,7 +8,6 @@ Convert an address between hex encoding and bech32.
 
 Example:
 $ axelard debug addr cosmos1e0jnq2sun3dzjh8p2xq95kk0expwmd7shwjpfg
-			
 
 ```
 axelard debug addr [address] [flags]
@@ -32,5 +31,4 @@ axelard debug addr [address] [flags]
 
 ### SEE ALSO
 
-* [axelard debug](axelard_debug.md)	 - Tool for helping with debugging your application
-
+- [axelard debug](axelard_debug.md) - Tool for helping with debugging your application

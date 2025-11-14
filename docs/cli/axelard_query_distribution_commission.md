@@ -35,5 +35,4 @@ $ axelard query distribution commission [validator-address]
 
 ### SEE ALSO
 
-* [axelard query distribution](axelard_query_distribution.md)	 - Querying commands for the distribution module
-
+- [axelard query distribution](axelard_query_distribution.md) - Querying commands for the distribution module

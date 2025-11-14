@@ -28,5 +28,4 @@ axelard query vote params [flags]
 
 ### SEE ALSO
 
-* [axelard query vote](axelard_query_vote.md)	 - Querying commands for the vote module
-
+- [axelard query vote](axelard_query_vote.md) - Querying commands for the vote module

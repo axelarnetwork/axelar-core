@@ -24,5 +24,4 @@ axelard snapshots load <archive-file> [flags]
 
 ### SEE ALSO
 
-* [axelard snapshots](axelard_snapshots.md)	 - Manage local snapshots
-
+- [axelard snapshots](axelard_snapshots.md) - Manage local snapshots

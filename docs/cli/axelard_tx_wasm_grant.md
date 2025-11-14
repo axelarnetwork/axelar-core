@@ -20,7 +20,6 @@ Grant a authz permission
 
 ### SEE ALSO
 
-* [axelard tx wasm](axelard_tx_wasm.md)	 - Wasm transaction subcommands
-* [axelard tx wasm grant contract](axelard_tx_wasm_grant_contract.md)	 - Grant authorization to interact with a contract on behalf of you
-* [axelard tx wasm grant store-code](axelard_tx_wasm_grant_store-code.md)	 - Grant authorization to upload contract code on behalf of you
-
+- [axelard tx wasm](axelard_tx_wasm.md) - Wasm transaction subcommands
+- [axelard tx wasm grant contract](axelard_tx_wasm_grant_contract.md) - Grant authorization to interact with a contract on behalf of you
+- [axelard tx wasm grant store-code](axelard_tx_wasm_grant_store-code.md) - Grant authorization to upload contract code on behalf of you

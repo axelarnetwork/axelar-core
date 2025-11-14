@@ -4,7 +4,7 @@ Upgrade IBC channels
 
 ### Synopsis
 
-Submit a governance proposal to upgrade all open channels whose port matches a specified pattern 
+Submit a governance proposal to upgrade all open channels whose port matches a specified pattern
 (the default is transfer), optionally, an exact list of comma separated channel IDs may be specified.
 
 ```
@@ -67,5 +67,4 @@ axelard tx ibc channel upgrade-channels "{\"fee_version\":\"ics29-1\",\"app_vers
 
 ### SEE ALSO
 
-* [axelard tx ibc channel](axelard_tx_ibc_channel.md)	 - IBC channel transaction subcommands
-
+- [axelard tx ibc channel](axelard_tx_ibc_channel.md) - IBC channel transaction subcommands

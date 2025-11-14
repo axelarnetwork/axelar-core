@@ -61,5 +61,4 @@ $ axelard tx staking cancel-unbond axelarvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9l
 
 ### SEE ALSO
 
-* [axelard tx staking](axelard_tx_staking.md)	 - Staking transaction subcommands
-
+- [axelard tx staking](axelard_tx_staking.md) - Staking transaction subcommands

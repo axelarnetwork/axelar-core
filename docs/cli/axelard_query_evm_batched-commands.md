@@ -28,5 +28,4 @@ axelard query evm batched-commands [chain] [batchedCommandsID] [flags]
 
 ### SEE ALSO
 
-* [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
-
+- [axelard query evm](axelard_query_evm.md) - Querying commands for the evm module

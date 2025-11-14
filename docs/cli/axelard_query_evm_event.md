@@ -28,5 +28,4 @@ axelard query evm event [chain] [event-id] [flags]
 
 ### SEE ALSO
 
-* [axelard query evm](axelard_query_evm.md)	 - Querying commands for the evm module
-
+- [axelard query evm](axelard_query_evm.md) - Querying commands for the evm module

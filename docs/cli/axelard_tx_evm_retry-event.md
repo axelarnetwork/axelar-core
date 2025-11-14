@@ -48,5 +48,4 @@ axelard tx evm retry-event [chain] [event ID] [flags]
 
 ### SEE ALSO
 
-* [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
-
+- [axelard tx evm](axelard_tx_evm.md) - evm transactions subcommands

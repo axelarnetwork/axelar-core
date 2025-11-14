@@ -38,5 +38,4 @@ axelard query ibc-transfer denom-trace 27A6394C3F9FF9C9DCF5DFFADF9BB5FE9A37C7E92
 
 ### SEE ALSO
 
-* [axelard query ibc-transfer](axelard_query_ibc-transfer.md)	 - IBC fungible token transfer query subcommands
-
+- [axelard query ibc-transfer](axelard_query_ibc-transfer.md) - IBC fungible token transfer query subcommands

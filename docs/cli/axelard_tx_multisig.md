@@ -24,7 +24,6 @@ axelard tx multisig [flags]
 
 ### SEE ALSO
 
-* [axelard tx](axelard_tx.md)	 - Transactions subcommands
-* [axelard tx multisig keygen](axelard_tx_multisig_keygen.md)	 - sub-commands for keygen
-* [axelard tx multisig rotate](axelard_tx_multisig_rotate.md)	 - Rotate the given chain to the given key
-
+- [axelard tx](axelard_tx.md) - Transactions subcommands
+- [axelard tx multisig keygen](axelard_tx_multisig_keygen.md) - sub-commands for keygen
+- [axelard tx multisig rotate](axelard_tx_multisig_rotate.md) - Rotate the given chain to the given key

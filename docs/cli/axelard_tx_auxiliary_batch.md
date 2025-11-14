@@ -48,5 +48,4 @@ axelard tx auxiliary batch [flags]
 
 ### SEE ALSO
 
-* [axelard tx auxiliary](axelard_tx_auxiliary.md)	 - Transactions commands for the auxiliary module
-
+- [axelard tx auxiliary](axelard_tx_auxiliary.md) - Transactions commands for the auxiliary module

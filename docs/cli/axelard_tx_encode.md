@@ -53,5 +53,4 @@ axelard tx encode [file] [flags]
 
 ### SEE ALSO
 
-* [axelard tx](axelard_tx.md)	 - Transactions subcommands
-
+- [axelard tx](axelard_tx.md) - Transactions subcommands

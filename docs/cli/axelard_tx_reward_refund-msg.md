@@ -48,5 +48,4 @@ axelard tx reward refund-msg [flags]
 
 ### SEE ALSO
 
-* [axelard tx reward](axelard_tx_reward.md)	 - Transactions commands for the reward module
-
+- [axelard tx reward](axelard_tx_reward.md) - Transactions commands for the reward module

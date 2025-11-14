@@ -24,5 +24,4 @@ axelard comet show-address [flags]
 
 ### SEE ALSO
 
-* [axelard comet](axelard_comet.md)	 - CometBFT subcommands
-
+- [axelard comet](axelard_comet.md) - CometBFT subcommands

@@ -24,7 +24,6 @@ axelard tx reward [flags]
 
 ### SEE ALSO
 
-* [axelard tx](axelard_tx.md)	 - Transactions subcommands
-* [axelard tx reward refund-msg](axelard_tx_reward_refund-msg.md)	 - Execute the RefundMsg RPC method
-* [axelard tx reward update-params](axelard_tx_reward_update-params.md)	 - Execute the UpdateParams RPC method
-
+- [axelard tx](axelard_tx.md) - Transactions subcommands
+- [axelard tx reward refund-msg](axelard_tx_reward_refund-msg.md) - Execute the RefundMsg RPC method
+- [axelard tx reward update-params](axelard_tx_reward_update-params.md) - Execute the UpdateParams RPC method

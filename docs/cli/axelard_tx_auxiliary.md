@@ -24,6 +24,5 @@ axelard tx auxiliary [flags]
 
 ### SEE ALSO
 
-* [axelard tx](axelard_tx.md)	 - Transactions subcommands
-* [axelard tx auxiliary batch](axelard_tx_auxiliary_batch.md)	 - Execute the Batch RPC method
-
+- [axelard tx](axelard_tx.md) - Transactions subcommands
+- [axelard tx auxiliary batch](axelard_tx_auxiliary_batch.md) - Execute the Batch RPC method

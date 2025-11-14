@@ -24,7 +24,6 @@ axelard tx tss [flags]
 
 ### SEE ALSO
 
-* [axelard tx](axelard_tx.md)	 - Transactions subcommands
-* [axelard tx tss heart-beat](axelard_tx_tss_heart-beat.md)	 - Execute the HeartBeat RPC method
-* [axelard tx tss update-params](axelard_tx_tss_update-params.md)	 - Execute the UpdateParams RPC method
-
+- [axelard tx](axelard_tx.md) - Transactions subcommands
+- [axelard tx tss heart-beat](axelard_tx_tss_heart-beat.md) - Execute the HeartBeat RPC method
+- [axelard tx tss update-params](axelard_tx_tss_update-params.md) - Execute the UpdateParams RPC method

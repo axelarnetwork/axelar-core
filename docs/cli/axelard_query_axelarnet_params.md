@@ -28,5 +28,4 @@ axelard query axelarnet params [flags]
 
 ### SEE ALSO
 
-* [axelard query axelarnet](axelard_query_axelarnet.md)	 - Querying commands for the axelarnet module
-
+- [axelard query axelarnet](axelard_query_axelarnet.md) - Querying commands for the axelarnet module

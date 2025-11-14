@@ -48,5 +48,4 @@ axelard tx wasm migrate [contract_addr_bech32] [new_code_id_int64] [json_encoded
 
 ### SEE ALSO
 
-* [axelard tx wasm](axelard_tx_wasm.md)	 - Wasm transaction subcommands
-
+- [axelard tx wasm](axelard_tx_wasm.md) - Wasm transaction subcommands

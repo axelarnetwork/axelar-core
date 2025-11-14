@@ -54,5 +54,4 @@ axelard tx slashing unjail --from [validator]
 
 ### SEE ALSO
 
-* [axelard tx slashing](axelard_tx_slashing.md)	 - Transactions commands for the slashing module
-
+- [axelard tx slashing](axelard_tx_slashing.md) - Transactions commands for the slashing module

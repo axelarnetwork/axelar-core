@@ -24,7 +24,6 @@ axelard query evidence [flags]
 
 ### SEE ALSO
 
-* [axelard query](axelard_query.md)	 - Querying subcommands
-* [axelard query evidence evidence](axelard_query_evidence_evidence.md)	 - Query for evidence by hash
-* [axelard query evidence list](axelard_query_evidence_list.md)	 - Query all (paginated) submitted evidence
-
+- [axelard query](axelard_query.md) - Querying subcommands
+- [axelard query evidence evidence](axelard_query_evidence_evidence.md) - Query for evidence by hash
+- [axelard query evidence list](axelard_query_evidence_list.md) - Query all (paginated) submitted evidence

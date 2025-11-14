@@ -57,5 +57,4 @@ axelard tx broadcast [file_path] [flags]
 
 ### SEE ALSO
 
-* [axelard tx](axelard_tx.md)	 - Transactions subcommands
-
+- [axelard tx](axelard_tx.md) - Transactions subcommands
