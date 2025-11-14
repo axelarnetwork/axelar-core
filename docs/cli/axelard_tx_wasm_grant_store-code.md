@@ -6,9 +6,10 @@ Grant authorization to upload contract code on behalf of you
 
 Grant authorization to an address.
 Examples:
-$ axelard tx grant store-code \<grantee_addr> 13a1fc994cc6d1c81b746ee0c0ff6f90043875e0bf1d9be6b7d779fc978dc2a5:everybody 1wqrtry681b746ee0c0ff6f90043875e0bf1d9be6b7d779fc978dc2a5:nobody --expiration 1667979596
+$ axelard tx grant store-code <grantee_addr> 13a1fc994cc6d1c81b746ee0c0ff6f90043875e0bf1d9be6b7d779fc978dc2a5:everybody  1wqrtry681b746ee0c0ff6f90043875e0bf1d9be6b7d779fc978dc2a5:nobody --expiration 1667979596
 
-$ axelard tx grant store-code \<grantee_addr> \*:axelard1l2rsakp388kuv9k8qzq6lrm9taddae7fpx59wm,axelard1vx8knpllrj7n963p9ttd80w47kpacrhuts497x
+$ axelard tx grant store-code <grantee_addr> *:axelard1l2rsakp388kuv9k8qzq6lrm9taddae7fpx59wm,axelard1vx8knpllrj7n963p9ttd80w47kpacrhuts497x
+
 
 ```
 axelard tx wasm grant store-code [grantee] [code_hash:permission] [flags]
@@ -57,4 +58,5 @@ axelard tx wasm grant store-code [grantee] [code_hash:permission] [flags]
 
 ### SEE ALSO
 
-- [axelard tx wasm grant](axelard_tx_wasm_grant.md) - Grant a authz permission
+* [axelard tx wasm grant](axelard_tx_wasm_grant.md)	 - Grant a authz permission
+

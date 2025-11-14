@@ -28,4 +28,5 @@ axelard query tss params [flags]
 
 ### SEE ALSO
 
-- [axelard query tss](axelard_query_tss.md) - Querying commands for the tss module
+* [axelard query tss](axelard_query_tss.md)	 - Querying commands for the tss module
+

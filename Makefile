@@ -198,7 +198,7 @@ tofnd-client:
 ###                                Protobuf                                 ###
 ###############################################################################
 
-proto-all: proto-format proto-lint proto-gen
+proto-all: proto-format proto-lint proto-gen proto-swagger-gen
 
 protoVer=0.14.0
 protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)

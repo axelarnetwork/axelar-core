@@ -16,36 +16,36 @@ look like below. Note that the "signer_infos" and "signatures" fields are left
 empty; they will be auto-populated by dummy data for simulation purpose.
 
 {
-"body": {
-"messages": \[
-{
-"@type": "/cosmos.bank.v1beta1.MsgSend",
-"from_address": "cosmos1...",
-"to_address": "cosmos1...",
-"amount": \[
-{
-"denom": "utoken",
-"amount": "12345"
-}
-\]
-}
-\],
-"memo": "",
-"timeout_height": "0",
-"extension_options": [],
-"non_critical_extension_options": []
-},
-"auth_info": {
-"signer_infos": [],
-"fee": {
-"amount": [],
-"gas_limit": "200000",
-"payer": "",
-"granter": ""
-},
-"tip": null
-},
-"signatures": []
+  "body": {
+    "messages": [
+      {
+        "@type": "/cosmos.bank.v1beta1.MsgSend",
+        "from_address": "cosmos1...",
+        "to_address": "cosmos1...",
+        "amount": [
+          {
+            "denom": "utoken",
+            "amount": "12345"
+          }
+        ]
+      }
+    ],
+    "memo": "",
+    "timeout_height": "0",
+    "extension_options": [],
+    "non_critical_extension_options": []
+  },
+  "auth_info": {
+    "signer_infos": [],
+    "fee": {
+      "amount": [],
+      "gas_limit": "200000",
+      "payer": "",
+      "granter": ""
+    },
+    "tip": null
+  },
+  "signatures": []
 }
 
 The --from flag is mandatory, as the signer account's correct sequence number is
@@ -97,4 +97,5 @@ axelard tx simulate /path/to/unsigned-tx.json --from keyname [flags]
 
 ### SEE ALSO
 
-- [axelard tx](axelard_tx.md) - Transactions subcommands
+* [axelard tx](axelard_tx.md)	 - Transactions subcommands
+

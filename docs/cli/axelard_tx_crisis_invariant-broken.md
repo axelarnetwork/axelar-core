@@ -48,4 +48,5 @@ axelard tx crisis invariant-broken [module-name] [invariant-route] --from mykey 
 
 ### SEE ALSO
 
-- [axelard tx crisis](axelard_tx_crisis.md) - Transactions commands for the crisis module
+* [axelard tx crisis](axelard_tx_crisis.md)	 - Transactions commands for the crisis module
+

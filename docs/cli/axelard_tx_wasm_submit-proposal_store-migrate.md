@@ -57,4 +57,5 @@ axelard tx wasm submit-proposal store-migrate [wasm file] [contract_addr_bech32]
 
 ### SEE ALSO
 
-- [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md) - Submit a wasm proposal.
+* [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md)	 - Submit a wasm proposal.
+

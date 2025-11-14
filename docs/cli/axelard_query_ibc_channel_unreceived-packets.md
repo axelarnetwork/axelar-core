@@ -7,8 +7,8 @@ Query all the unreceived packets associated with a channel
 Determine if a packet, given a list of packet commitment sequences, is unreceived.
 
 The return value represents:
-
 - Unreceived packet commitments: no acknowledgement exists on receiving chain for the given packet commitment sequence on sending chain.
+
 
 ```
 axelard query ibc channel unreceived-packets [port-id] [channel-id] [flags]
@@ -43,4 +43,5 @@ axelard query ibc channel unreceived-packets [port-id] [channel-id] --sequences=
 
 ### SEE ALSO
 
-- [axelard query ibc channel](axelard_query_ibc_channel.md) - IBC channel query subcommands
+* [axelard query ibc channel](axelard_query_ibc_channel.md)	 - IBC channel query subcommands
+

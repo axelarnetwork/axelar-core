@@ -78,4 +78,5 @@ where we can get the pubkey using "axelard tendermint show-validator"
 
 ### SEE ALSO
 
-- [axelard tx staking](axelard_tx_staking.md) - Staking transaction subcommands
+* [axelard tx staking](axelard_tx_staking.md)	 - Staking transaction subcommands
+

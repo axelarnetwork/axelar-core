@@ -8,6 +8,7 @@ Add genesis accounts in bulk to genesis.json. The provided account must specify
 the account address and a list of initial coins. The list of initial tokens must
 contain valid denominations. Accounts may optionally be supplied with vesting parameters.
 
+
 ```
 axelard genesis bulk-add-genesis-account [/file/path.json] [flags]
 ```
@@ -63,4 +64,5 @@ where accounts.json is:
 
 ### SEE ALSO
 
-- [axelard genesis](axelard_genesis.md) - Application's genesis-related subcommands
+* [axelard genesis](axelard_genesis.md)	 - Application's genesis-related subcommands
+

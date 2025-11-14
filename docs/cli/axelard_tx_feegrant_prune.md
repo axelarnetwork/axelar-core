@@ -58,4 +58,5 @@ $ axelard tx feegrant prune --from [mykey]
 
 ### SEE ALSO
 
-- [axelard tx feegrant](axelard_tx_feegrant.md) - Feegrant transactions sub-commands
+* [axelard tx feegrant](axelard_tx_feegrant.md)	 - Feegrant transactions sub-commands
+

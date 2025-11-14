@@ -6,7 +6,7 @@ Sign transaction batch files
 
 Sign batch files of transactions generated with --generate-only.
 The command processes list of transactions from a file (one StdTx each line), or multiple files.
-Then generates signed transactions or signatures and print their JSON encoding, delimited by '\\n'.
+Then generates signed transactions or signatures and print their JSON encoding, delimited by '\n'.
 As the signatures are generated, the command updates the account and sequence number accordingly.
 
 If the --signature-only flag is set, it will output the signature parts only.
@@ -17,11 +17,12 @@ it is required to set such parameters manually. Note, invalid values will cause
 the transaction to fail. The sequence will be incremented automatically for each
 transaction that is signed.
 
-If --account-number or --sequence flag is used when offline=false, they are ignored and
+If --account-number or --sequence flag is used when offline=false, they are ignored and 
 overwritten by the default flag values.
 
-The --multisig=\<multisig_key> flag generates a signature on behalf of a multisig
+The --multisig=<multisig_key> flag generates a signature on behalf of a multisig
 account key. It implies --signature-only.
+
 
 ```
 axelard tx sign-batch [file] ([file2]...) [flags]
@@ -73,4 +74,5 @@ axelard tx sign-batch [file] ([file2]...) [flags]
 
 ### SEE ALSO
 
-- [axelard tx](axelard_tx.md) - Transactions subcommands
+* [axelard tx](axelard_tx.md)	 - Transactions subcommands
+

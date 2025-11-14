@@ -58,4 +58,5 @@ $ axelard tx feegrant revoke [granter] [grantee]
 
 ### SEE ALSO
 
-- [axelard tx feegrant](axelard_tx_feegrant.md) - Feegrant transactions sub-commands
+* [axelard tx feegrant](axelard_tx_feegrant.md)	 - Feegrant transactions sub-commands
+

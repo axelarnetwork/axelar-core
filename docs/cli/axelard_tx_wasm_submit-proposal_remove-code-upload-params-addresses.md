@@ -53,4 +53,5 @@ axelard tx wasm submit-proposal remove-code-upload-params-addresses [addresses] 
 
 ### SEE ALSO
 
-- [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md) - Submit a wasm proposal.
+* [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md)	 - Submit a wasm proposal.
+

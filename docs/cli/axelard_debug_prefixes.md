@@ -34,4 +34,5 @@ $ axelard debug prefixes
 
 ### SEE ALSO
 
-- [axelard debug](axelard_debug.md) - Tool for helping with debugging your application
+* [axelard debug](axelard_debug.md)	 - Tool for helping with debugging your application
+

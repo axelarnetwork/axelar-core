@@ -64,4 +64,5 @@ axelard tx upgrade software-upgrade [name] (--upgrade-height [height]) (--upgrad
 
 ### SEE ALSO
 
-- [axelard tx upgrade](axelard_tx_upgrade.md) - Upgrade transaction subcommands
+* [axelard tx upgrade](axelard_tx_upgrade.md)	 - Upgrade transaction subcommands
+

@@ -48,4 +48,5 @@ axelard tx evm confirm-erc20-deposit [chain] [txID] [burnerAddr] [flags]
 
 ### SEE ALSO
 
-- [axelard tx evm](axelard_tx_evm.md) - evm transactions subcommands
+* [axelard tx evm](axelard_tx_evm.md)	 - evm transactions subcommands
+

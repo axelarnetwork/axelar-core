@@ -34,4 +34,5 @@ axelard debug raw-bytes '[72 101 108 108 111 44 32 112 108 97 121 103 114 111 11
 
 ### SEE ALSO
 
-- [axelard debug](axelard_debug.md) - Tool for helping with debugging your application
+* [axelard debug](axelard_debug.md)	 - Tool for helping with debugging your application
+

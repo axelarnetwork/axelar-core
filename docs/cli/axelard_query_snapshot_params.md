@@ -28,4 +28,5 @@ axelard query snapshot params [flags]
 
 ### SEE ALSO
 
-- [axelard query snapshot](axelard_query_snapshot.md) - Querying commands for the snapshot module
+* [axelard query snapshot](axelard_query_snapshot.md)	 - Querying commands for the snapshot module
+

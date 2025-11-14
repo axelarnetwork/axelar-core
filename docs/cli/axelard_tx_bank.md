@@ -24,6 +24,7 @@ axelard tx bank [flags]
 
 ### SEE ALSO
 
-- [axelard tx](axelard_tx.md) - Transactions subcommands
-- [axelard tx bank multi-send](axelard_tx_bank_multi-send.md) - Send funds from one account to two or more accounts.
-- [axelard tx bank send](axelard_tx_bank_send.md) - Send funds from one account to another.
+* [axelard tx](axelard_tx.md)	 - Transactions subcommands
+* [axelard tx bank multi-send](axelard_tx_bank_multi-send.md)	 - Send funds from one account to two or more accounts.
+* [axelard tx bank send](axelard_tx_bank_send.md)	 - Send funds from one account to another.
+

@@ -52,4 +52,5 @@ axelard tx wasm update-instantiate-config [code_id_int64] [flags]
 
 ### SEE ALSO
 
-- [axelard tx wasm](axelard_tx_wasm.md) - Wasm transaction subcommands
+* [axelard tx wasm](axelard_tx_wasm.md)	 - Wasm transaction subcommands
+

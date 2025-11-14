@@ -65,4 +65,5 @@ axelard tx wasm submit-proposal store-instantiate [wasm file] [json_encoded_init
 
 ### SEE ALSO
 
-- [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md) - Submit a wasm proposal.
+* [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md)	 - Submit a wasm proposal.
+

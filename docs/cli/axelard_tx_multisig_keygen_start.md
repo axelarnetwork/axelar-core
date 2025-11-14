@@ -49,4 +49,5 @@ axelard tx multisig keygen start [flags]
 
 ### SEE ALSO
 
-- [axelard tx multisig keygen](axelard_tx_multisig_keygen.md) - sub-commands for keygen
+* [axelard tx multisig keygen](axelard_tx_multisig_keygen.md)	 - sub-commands for keygen
+

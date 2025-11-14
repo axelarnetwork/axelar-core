@@ -44,4 +44,5 @@ axelard query ibc connection connections
 
 ### SEE ALSO
 
-- [axelard query ibc connection](axelard_query_ibc_connection.md) - IBC connection query subcommands
+* [axelard query ibc connection](axelard_query_ibc_connection.md)	 - IBC connection query subcommands
+

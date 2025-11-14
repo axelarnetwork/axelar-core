@@ -39,4 +39,5 @@ axelard query  ibc connection path [client-id]
 
 ### SEE ALSO
 
-- [axelard query ibc connection](axelard_query_ibc_connection.md) - IBC connection query subcommands
+* [axelard query ibc connection](axelard_query_ibc_connection.md)	 - IBC connection query subcommands
+

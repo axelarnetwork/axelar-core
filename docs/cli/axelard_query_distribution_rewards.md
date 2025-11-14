@@ -39,4 +39,5 @@ $ axelard query distribution rewards [delegator-address]
 
 ### SEE ALSO
 
-- [axelard query distribution](axelard_query_distribution.md) - Querying commands for the distribution module
+* [axelard query distribution](axelard_query_distribution.md)	 - Querying commands for the distribution module
+

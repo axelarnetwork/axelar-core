@@ -28,4 +28,5 @@ axelard debug codec list-interfaces [flags]
 
 ### SEE ALSO
 
-- [axelard debug codec](axelard_debug_codec.md) - Tool for helping with debugging your application codec
+* [axelard debug codec](axelard_debug_codec.md)	 - Tool for helping with debugging your application codec
+

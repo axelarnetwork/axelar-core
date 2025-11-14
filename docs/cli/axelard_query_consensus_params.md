@@ -29,4 +29,5 @@ axelard query consensus params [flags]
 
 ### SEE ALSO
 
-- [axelard query consensus](axelard_query_consensus.md) - Querying commands for the consensus module
+* [axelard query consensus](axelard_query_consensus.md)	 - Querying commands for the consensus module
+

@@ -25,4 +25,5 @@ axelard genesis collect-gentxs [flags]
 
 ### SEE ALSO
 
-- [axelard genesis](axelard_genesis.md) - Application's genesis-related subcommands
+* [axelard genesis](axelard_genesis.md)	 - Application's genesis-related subcommands
+

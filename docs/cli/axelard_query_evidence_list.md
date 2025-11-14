@@ -40,4 +40,5 @@ axelard query evidence --page=2 --page-limit=50
 
 ### SEE ALSO
 
-- [axelard query evidence](axelard_query_evidence.md) - Querying commands for the evidence module
+* [axelard query evidence](axelard_query_evidence.md)	 - Querying commands for the evidence module
+

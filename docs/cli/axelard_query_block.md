@@ -40,4 +40,5 @@ $ axelard query block --type=hash <hash>
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md) - Querying subcommands
+* [axelard query](axelard_query.md)	 - Querying subcommands
+

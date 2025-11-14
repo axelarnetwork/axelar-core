@@ -48,4 +48,5 @@ axelard tx nexus register-chain-maintainer [chain]... [flags]
 
 ### SEE ALSO
 
-- [axelard tx nexus](axelard_tx_nexus.md) - nexus transactions subcommands
+* [axelard tx nexus](axelard_tx_nexus.md)	 - nexus transactions subcommands
+

@@ -28,4 +28,5 @@ axelard query nexus chain-state [chain] [flags]
 
 ### SEE ALSO
 
-- [axelard query nexus](axelard_query_nexus.md) - Querying commands for the nexus module
+* [axelard query nexus](axelard_query_nexus.md)	 - Querying commands for the nexus module
+

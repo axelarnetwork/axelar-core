@@ -39,4 +39,5 @@ axelard debug pubkey-raw cosmospub1zcjduepq3l9f6mglsz28l40f5pfsjfvhgm6lwf2pzgtkd
 
 ### SEE ALSO
 
-- [axelard debug](axelard_debug.md) - Tool for helping with debugging your application
+* [axelard debug](axelard_debug.md)	 - Tool for helping with debugging your application
+

@@ -24,5 +24,6 @@ axelard query vote [flags]
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md) - Querying subcommands
-- [axelard query vote params](axelard_query_vote_params.md) - Returns the params for the vote module
+* [axelard query](axelard_query.md)	 - Querying subcommands
+* [axelard query vote params](axelard_query_vote_params.md)	 - Returns the params for the vote module
+

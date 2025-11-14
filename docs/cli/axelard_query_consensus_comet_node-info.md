@@ -29,4 +29,5 @@ axelard query consensus comet node-info [flags]
 
 ### SEE ALSO
 
-- [axelard query consensus comet](axelard_query_consensus_comet.md) - Querying commands for the cosmos.base.tendermint.v1beta1.Service service
+* [axelard query consensus comet](axelard_query_consensus_comet.md)	 - Querying commands for the cosmos.base.tendermint.v1beta1.Service service
+

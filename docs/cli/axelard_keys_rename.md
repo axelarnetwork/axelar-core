@@ -10,6 +10,7 @@ Note that renaming offline or ledger keys will rename
 only the public key references stored locally, i.e.
 private keys stored in a ledger device cannot be renamed with the CLI.
 
+
 ```
 axelard keys rename <old_name> <new_name> [flags]
 ```
@@ -35,4 +36,5 @@ axelard keys rename <old_name> <new_name> [flags]
 
 ### SEE ALSO
 
-- [axelard keys](axelard_keys.md) - Manage your application's keys
+* [axelard keys](axelard_keys.md)	 - Manage your application's keys
+

@@ -13,10 +13,10 @@ $ axelard tx gov submit-legacy-proposal --proposal="path/to/proposal.json" --fro
 Where proposal.json contains:
 
 {
-"title": "Test Proposal",
-"description": "My awesome proposal",
-"type": "Text",
-"deposit": "10test"
+  "title": "Test Proposal",
+  "description": "My awesome proposal",
+  "type": "Text",
+  "deposit": "10test"
 }
 
 Which is equivalent to:
@@ -74,4 +74,5 @@ axelard tx gov submit-legacy-proposal [flags]
 
 ### SEE ALSO
 
-- [axelard tx gov](axelard_tx_gov.md) - Governance transactions subcommands
+* [axelard tx gov](axelard_tx_gov.md)	 - Governance transactions subcommands
+

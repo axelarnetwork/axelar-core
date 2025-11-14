@@ -48,4 +48,5 @@ axelard tx wasm set-contract-label [contract_addr_bech32] [new_label] [flags]
 
 ### SEE ALSO
 
-- [axelard tx wasm](axelard_tx_wasm.md) - Wasm transaction subcommands
+* [axelard tx wasm](axelard_tx_wasm.md)	 - Wasm transaction subcommands
+

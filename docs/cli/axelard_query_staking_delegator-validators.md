@@ -34,4 +34,5 @@ axelard query staking delegator-validators [delegator-addr] [flags]
 
 ### SEE ALSO
 
-- [axelard query staking](axelard_query_staking.md) - Querying commands for the staking module
+* [axelard query staking](axelard_query_staking.md)	 - Querying commands for the staking module
+

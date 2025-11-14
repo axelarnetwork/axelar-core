@@ -50,4 +50,5 @@ axelard tx axelarnet call-contract [destination chain] [contract address] [hex e
 
 ### SEE ALSO
 
-- [axelard tx axelarnet](axelard_tx_axelarnet.md) - axelarnet transactions subcommands
+* [axelard tx axelarnet](axelard_tx_axelarnet.md)	 - axelarnet transactions subcommands
+

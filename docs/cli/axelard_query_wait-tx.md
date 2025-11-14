@@ -44,4 +44,5 @@ $ axelard tx [flags] | axelard q wait-tx
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md) - Querying subcommands
+* [axelard query](axelard_query.md)	 - Querying subcommands
+

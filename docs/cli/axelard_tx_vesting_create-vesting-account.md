@@ -57,4 +57,5 @@ axelard tx vesting create-vesting-account [to_address] [amount] [end_time] [flag
 
 ### SEE ALSO
 
-- [axelard tx vesting](axelard_tx_vesting.md) - Vesting transaction subcommands
+* [axelard tx vesting](axelard_tx_vesting.md)	 - Vesting transaction subcommands
+

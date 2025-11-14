@@ -25,4 +25,5 @@ axelard comet bootstrap-state [flags]
 
 ### SEE ALSO
 
-- [axelard comet](axelard_comet.md) - CometBFT subcommands
+* [axelard comet](axelard_comet.md)	 - CometBFT subcommands
+

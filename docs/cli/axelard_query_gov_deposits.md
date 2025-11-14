@@ -34,4 +34,5 @@ axelard query gov deposits [proposal-id] [flags]
 
 ### SEE ALSO
 
-- [axelard query gov](axelard_query_gov.md) - Querying commands for the gov module
+* [axelard query gov](axelard_query_gov.md)	 - Querying commands for the gov module
+

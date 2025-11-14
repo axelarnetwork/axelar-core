@@ -36,4 +36,5 @@ axelard query evidence DF0C23E8634E480F84B9D5674A7CDC9816466DEC28A3358F73260F68D
 
 ### SEE ALSO
 
-- [axelard query evidence](axelard_query_evidence.md) - Querying commands for the evidence module
+* [axelard query evidence](axelard_query_evidence.md)	 - Querying commands for the evidence module
+

@@ -24,7 +24,8 @@ axelard tx permission [flags]
 
 ### SEE ALSO
 
-- [axelard tx](axelard_tx.md) - Transactions subcommands
-- [axelard tx permission deregister-controller](axelard_tx_permission_deregister-controller.md) - Deregister controller account
-- [axelard tx permission register-controller](axelard_tx_permission_register-controller.md) - Register controller account
-- [axelard tx permission update-governance-key](axelard_tx_permission_update-governance-key.md) - Update the multisig governance key for axelar network
+* [axelard tx](axelard_tx.md)	 - Transactions subcommands
+* [axelard tx permission deregister-controller](axelard_tx_permission_deregister-controller.md)	 - Deregister controller account
+* [axelard tx permission register-controller](axelard_tx_permission_register-controller.md)	 - Register controller account
+* [axelard tx permission update-governance-key](axelard_tx_permission_update-governance-key.md)	 - Update the multisig governance key for axelar network
+

@@ -24,6 +24,7 @@ axelard debug codec [flags]
 
 ### SEE ALSO
 
-- [axelard debug](axelard_debug.md) - Tool for helping with debugging your application
-- [axelard debug codec list-implementations](axelard_debug_codec_list-implementations.md) - List the registered type URLs for the provided interface
-- [axelard debug codec list-interfaces](axelard_debug_codec_list-interfaces.md) - List all registered interface type URLs
+* [axelard debug](axelard_debug.md)	 - Tool for helping with debugging your application
+* [axelard debug codec list-implementations](axelard_debug_codec_list-implementations.md)	 - List the registered type URLs for the provided interface
+* [axelard debug codec list-interfaces](axelard_debug_codec_list-interfaces.md)	 - List all registered interface type URLs
+

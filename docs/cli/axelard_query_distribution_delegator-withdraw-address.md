@@ -30,4 +30,5 @@ axelard query distribution delegator-withdraw-address [flags]
 
 ### SEE ALSO
 
-- [axelard query distribution](axelard_query_distribution.md) - Querying commands for the distribution module
+* [axelard query distribution](axelard_query_distribution.md)	 - Querying commands for the distribution module
+

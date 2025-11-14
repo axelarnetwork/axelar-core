@@ -24,6 +24,7 @@ axelard query consensus [flags]
 
 ### SEE ALSO
 
-- [axelard query](axelard_query.md) - Querying subcommands
-- [axelard query consensus comet](axelard_query_consensus_comet.md) - Querying commands for the cosmos.base.tendermint.v1beta1.Service service
-- [axelard query consensus params](axelard_query_consensus_params.md) - Query the current consensus parameters
+* [axelard query](axelard_query.md)	 - Querying subcommands
+* [axelard query consensus comet](axelard_query_consensus_comet.md)	 - Querying commands for the cosmos.base.tendermint.v1beta1.Service service
+* [axelard query consensus params](axelard_query_consensus_params.md)	 - Query the current consensus parameters
+

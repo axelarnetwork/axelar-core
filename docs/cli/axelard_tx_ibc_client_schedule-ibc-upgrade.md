@@ -5,70 +5,69 @@ Submit an IBC software upgrade proposal
 ### Synopsis
 
 Please specify a unique name and height for the upgrade to take effect.
-The client state specified is the upgraded client state representing the upgraded chain
-
-```
-	Example Upgraded Client State JSON: 
-	{
-		"@type":"/ibc.lightclients.tendermint.v1.ClientState",
-		"chain_id":"testchain1",
-		"unbonding_period":"1814400s",
-		"latest_height":{
-		   "revision_number":"0",
-		   "revision_height":"2"
-		},
-		"proof_specs":[
-		   {
-			  "leaf_spec":{
-				 "hash":"SHA256",
-				 "prehash_key":"NO_HASH",
-				 "prehash_value":"SHA256",
-				 "length":"VAR_PROTO",
-				 "prefix":"AA=="
-			  },
-			  "inner_spec":{
-				 "child_order":[
-					0,
-					1
-				 ],
-				 "child_size":33,
-				 "min_prefix_length":4,
-				 "max_prefix_length":12,
-				 "empty_child":null,
-				 "hash":"SHA256"
-			  },
-			  "max_depth":0,
-			  "min_depth":0
-		   },
-		   {
-			  "leaf_spec":{
-				 "hash":"SHA256",
-				 "prehash_key":"NO_HASH",
-				 "prehash_value":"SHA256",
-				 "length":"VAR_PROTO",
-				 "prefix":"AA=="
-			  },
-			  "inner_spec":{
-				 "child_order":[
-					0,
-					1
-				 ],
-				 "child_size":32,
-				 "min_prefix_length":1,
-				 "max_prefix_length":1,
-				 "empty_child":null,
-				 "hash":"SHA256"
-			  },
-			  "max_depth":0,
-			  "min_depth":0
-		   }
-		],
-		"upgrade_path":[
-		   "upgrade",
-		   "upgradedIBCState"
-		]
-	 }
-```
+		The client state specified is the upgraded client state representing the upgraded chain
+		
+		Example Upgraded Client State JSON: 
+		{
+			"@type":"/ibc.lightclients.tendermint.v1.ClientState",
+			"chain_id":"testchain1",
+			"unbonding_period":"1814400s",
+			"latest_height":{
+			   "revision_number":"0",
+			   "revision_height":"2"
+			},
+			"proof_specs":[
+			   {
+				  "leaf_spec":{
+					 "hash":"SHA256",
+					 "prehash_key":"NO_HASH",
+					 "prehash_value":"SHA256",
+					 "length":"VAR_PROTO",
+					 "prefix":"AA=="
+				  },
+				  "inner_spec":{
+					 "child_order":[
+						0,
+						1
+					 ],
+					 "child_size":33,
+					 "min_prefix_length":4,
+					 "max_prefix_length":12,
+					 "empty_child":null,
+					 "hash":"SHA256"
+				  },
+				  "max_depth":0,
+				  "min_depth":0
+			   },
+			   {
+				  "leaf_spec":{
+					 "hash":"SHA256",
+					 "prehash_key":"NO_HASH",
+					 "prehash_value":"SHA256",
+					 "length":"VAR_PROTO",
+					 "prefix":"AA=="
+				  },
+				  "inner_spec":{
+					 "child_order":[
+						0,
+						1
+					 ],
+					 "child_size":32,
+					 "min_prefix_length":1,
+					 "max_prefix_length":1,
+					 "empty_child":null,
+					 "hash":"SHA256"
+				  },
+				  "max_depth":0,
+				  "min_depth":0
+			   }
+			],
+			"upgrade_path":[
+			   "upgrade",
+			   "upgradedIBCState"
+			]
+		 }
+		
 
 ```
 axelard tx ibc client schedule-ibc-upgrade [name] [height] [path/to/upgraded_client_state.json] [flags]
@@ -121,4 +120,5 @@ axelard tx ibc client schedule-ibc-upgrade [name] [height] [path/to/upgraded_cli
 
 ### SEE ALSO
 
-- [axelard tx ibc client](axelard_tx_ibc_client.md) - IBC client transaction subcommands
+* [axelard tx ibc client](axelard_tx_ibc_client.md)	 - IBC client transaction subcommands
+

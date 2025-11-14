@@ -53,4 +53,5 @@ axelard tx wasm submit-proposal unpin-codes [code-ids] --title [text] --summary 
 
 ### SEE ALSO
 
-- [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md) - Submit a wasm proposal.
+* [axelard tx wasm submit-proposal](axelard_tx_wasm_submit-proposal.md)	 - Submit a wasm proposal.
+

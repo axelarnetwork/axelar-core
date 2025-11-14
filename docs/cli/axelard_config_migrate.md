@@ -33,4 +33,5 @@ axelard config migrate [target-version] <app-toml-path> (options) [flags]
 
 ### SEE ALSO
 
-- [axelard config](axelard_config.md) - Utilities for managing application configuration
+* [axelard config](axelard_config.md)	 - Utilities for managing application configuration
+

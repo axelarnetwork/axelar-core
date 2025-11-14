@@ -35,4 +35,5 @@ axelard query wasm contract-state all [bech32_address] [flags]
 
 ### SEE ALSO
 
-- [axelard query wasm contract-state](axelard_query_wasm_contract-state.md) - Querying commands for the wasm module
+* [axelard query wasm contract-state](axelard_query_wasm_contract-state.md)	 - Querying commands for the wasm module
+

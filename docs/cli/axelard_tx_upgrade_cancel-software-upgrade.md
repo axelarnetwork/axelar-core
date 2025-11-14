@@ -57,4 +57,5 @@ axelard tx upgrade cancel-software-upgrade [flags]
 
 ### SEE ALSO
 
-- [axelard tx upgrade](axelard_tx_upgrade.md) - Upgrade transaction subcommands
+* [axelard tx upgrade](axelard_tx_upgrade.md)	 - Upgrade transaction subcommands
+

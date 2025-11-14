@@ -8,6 +8,7 @@ Send funds from one account to another.
 Note, the '--from' flag is ignored as it is implied from [from_key_or_address].
 When using '--dry-run' a key name cannot be used, only a bech32 address.
 
+
 ```
 axelard tx bank send [from_key_or_address] [to_address] [amount] [flags]
 ```
@@ -54,4 +55,5 @@ axelard tx bank send [from_key_or_address] [to_address] [amount] [flags]
 
 ### SEE ALSO
 
-- [axelard tx bank](axelard_tx_bank.md) - Bank transaction subcommands
+* [axelard tx bank](axelard_tx_bank.md)	 - Bank transaction subcommands
+
