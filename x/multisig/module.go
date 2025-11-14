@@ -144,7 +144,7 @@ func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
 func (AppModule) ConsensusVersion() uint64 {
-	return 2
+	return 3
 }
 
 // IsOnePerModuleType implements the depinject.OnePerModuleType interface.
