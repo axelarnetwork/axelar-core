@@ -1,10 +1,11 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
-	"cosmossdk.io/math"
 	"errors"
 	"fmt"
+
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	gethParams "github.com/ethereum/go-ethereum/params"

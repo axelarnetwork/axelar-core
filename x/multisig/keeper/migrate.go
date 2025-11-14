@@ -1,8 +1,9 @@
 package keeper
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 )
 
 // Migrate2To3 returns the handler that performs in-place store migrations

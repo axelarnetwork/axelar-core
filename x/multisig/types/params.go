@@ -2,6 +2,7 @@ package types
 
 import (
 	fmt "fmt"
+
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
