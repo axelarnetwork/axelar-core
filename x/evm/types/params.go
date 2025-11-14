@@ -1,12 +1,10 @@
 package types
 
 import (
-	"errors"
-	"fmt"
-	"github.com/axelarnetwork/axelar-core/app"
-
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
+	"errors"
+	"fmt"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	gethParams "github.com/ethereum/go-ethereum/params"
@@ -23,6 +21,8 @@ const (
 	RinkebyChainId uint64 = 4
 	GoerliChainId  uint64 = 5
 )
+
+const blockTimeSpeedUp = 5
 
 // Parameter keys
 var (
@@ -64,7 +64,7 @@ func DefaultParams() []Params {
 		Network:             Ganache,
 		TokenCode:           bzToken,
 		Burnable:            bzBurnable,
-		RevoteLockingPeriod: 15 * app.BlockTimeSpeedUp,
+		RevoteLockingPeriod: 15 * blockTimeSpeedUp,
 		Networks: []NetworkInfo{
 			{
 				Name: Mainnet,
@@ -88,7 +88,7 @@ func DefaultParams() []Params {
 			},
 		},
 		VotingThreshold:   utils.Threshold{Numerator: 51, Denominator: 100},
-		VotingGracePeriod: 3 * app.BlockTimeSpeedUp,
+		VotingGracePeriod: 3 * blockTimeSpeedUp,
 		MinVoterCount:     1,
 		CommandsGasLimit:  5000000,
 		EndBlockerLimit:   50,
