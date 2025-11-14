@@ -38,9 +38,9 @@ RUN go mod download
 RUN if [[ "${WASM}" == "true" ]]; then \
     WASMVM_VERSION=v2.2.4 && \
     wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/libwasmvm_muslc.${ARCH}.a \
-        -O /lib//libwasmvm_muslc.${ARCH}.a && \
+        -O /lib/libwasmvm_muslc.${ARCH}.a && \
     wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/checksums.txt -O /tmp/checksums.txt && \
-    sha256sum /lib//libwasmvm_muslc.${ARCH}.a | grep $(cat /tmp/checksums.txt | grep libwasmvm_muslc.${ARCH}.a | cut -d ' ' -f 1); \
+    sha256sum /lib/libwasmvm_muslc.${ARCH}.a | grep $(cat /tmp/checksums.txt | grep libwasmvm_muslc.${ARCH}.a | cut -d ' ' -f 1); \
     fi
 
 COPY . .
