@@ -23,9 +23,9 @@ message LinkRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -46,29 +46,25 @@ message ConfirmDepositRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
   ];
 
-  // DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  bytes tx_id_deprecated = 2 [
-    (gogoproto.customname) = "TxID",
-    deprecated = true
-  ];
+  // DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+  // compatibility. This field must remain to allow decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes tx_id_deprecated = 2
+      [ (gogoproto.customname) = "TxID", deprecated = true ];
 
-  // DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  cosmos.base.v1beta1.Coin token_deprecated = 3 [
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ];
+  // DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward
+  // compatibility. This field must remain to allow decoding of historical
+  // transactions. DO NOT use in new code.
+  cosmos.base.v1beta1.Coin token_deprecated = 3
+      [ (gogoproto.nullable) = false, deprecated = true ];
 
   bytes deposit_address = 4
       [ (gogoproto.casttype) =
@@ -87,9 +83,9 @@ message ExecutePendingTransfersRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -107,9 +103,9 @@ message RegisterIBCPathRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -130,9 +126,9 @@ message AddCosmosBasedChainRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -142,14 +138,11 @@ message AddCosmosBasedChainRequest {
     (gogoproto.nullable) = false
   ]; // chain was deprecated in v0.27
   string addr_prefix = 3;
-  // DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  bytes min_amount_deprecated = 4 [
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ];
+  // DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward
+  // compatibility. This field must remain to allow decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes min_amount_deprecated = 4
+      [ (gogoproto.customtype) = "cosmossdk.io/math.Int", deprecated = true ];
   repeated nexus.exported.v1beta1.Asset native_assets = 5 [
     deprecated = true,
     (gogoproto.nullable) = false
@@ -171,9 +164,9 @@ message RegisterAssetRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -200,9 +193,9 @@ message RouteIBCTransfersRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -219,9 +212,9 @@ message RegisterFeeCollectorRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -239,9 +232,9 @@ message RetryIBCTransferRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -266,9 +259,9 @@ message RouteMessageRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -287,9 +280,9 @@ message CallContractRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true

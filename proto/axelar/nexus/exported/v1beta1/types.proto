@@ -12,9 +12,9 @@ option (gogoproto.goproto_getters_all) = false;
 // Chain represents the properties of a registered blockchain
 message Chain {
   string name = 1 [ (gogoproto.casttype) = "ChainName" ];
-  // DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+  // compatibility. This field must remain to allow decoding of historical
+  // transactions. DO NOT use in new code.
   string native_asset_deprecated = 2 [ deprecated = true ];
   bool supports_foreign_assets = 3;
   tss.exported.v1beta1.KeyType key_type = 4;
@@ -77,14 +77,11 @@ message FeeInfo {
 
 message Asset {
   string denom = 1;
-  // DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  bytes min_amount_deprecated = 2 [
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    deprecated = true
-  ];
+  // DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward
+  // compatibility. This field must remain to allow decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes min_amount_deprecated = 2
+      [ (gogoproto.customtype) = "cosmossdk.io/math.Int", deprecated = true ];
   bool is_native_asset = 3;
 }
 

@@ -109,9 +109,9 @@ func (m *StartKeygenResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_StartKeygenResponse proto.InternalMessageInfo
 
 type RotateKeyRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	KeyRole          exported.KeyRole                                                `protobuf:"varint,3,opt,name=key_role,json=keyRole,proto3,enum=axelar.tss.exported.v1beta1.KeyRole" json:"key_role,omitempty"`
@@ -190,9 +190,9 @@ var xxx_messageInfo_RotateKeyResponse proto.InternalMessageInfo
 
 // ProcessKeygenTrafficRequest protocol message
 type ProcessKeygenTrafficRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	SessionID        string                                        `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	Payload          tofnd.TrafficOut                              `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload"`
@@ -270,9 +270,9 @@ var xxx_messageInfo_ProcessKeygenTrafficResponse proto.InternalMessageInfo
 
 // ProcessSignTrafficRequest protocol message
 type ProcessSignTrafficRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	SessionID        string                                        `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	Payload          tofnd.TrafficOut                              `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload"`
@@ -350,9 +350,9 @@ var xxx_messageInfo_ProcessSignTrafficResponse proto.InternalMessageInfo
 
 // VotePubKeyRequest represents the message to vote on a public key
 type VotePubKeyRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	PollKey          exported1.PollKey                             `protobuf:"bytes,2,opt,name=poll_key,json=pollKey,proto3" json:"poll_key"`
 	Result           tofnd.MessageOut_KeygenResult                 `protobuf:"bytes,3,opt,name=result,proto3" json:"result"`
@@ -431,9 +431,9 @@ var xxx_messageInfo_VotePubKeyResponse proto.InternalMessageInfo
 
 // VoteSigRequest represents a message to vote for a signature
 type VoteSigRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	PollKey          exported1.PollKey                             `protobuf:"bytes,2,opt,name=poll_key,json=pollKey,proto3" json:"poll_key"`
 	Result           tofnd.MessageOut_SignResult                   `protobuf:"bytes,3,opt,name=result,proto3" json:"result"`
@@ -511,9 +511,9 @@ func (m *VoteSigResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_VoteSigResponse proto.InternalMessageInfo
 
 type HeartBeatRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	// Deprecated: this field will be removed in the next release
 	KeyIDs []github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID `protobuf:"bytes,2,rep,name=key_ids,json=keyIds,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_ids,omitempty"` // Deprecated: Do not use.
@@ -590,9 +590,9 @@ func (m *HeartBeatResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_HeartBeatResponse proto.InternalMessageInfo
 
 type RegisterExternalKeysRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	ExternalKeys     []RegisterExternalKeysRequest_ExternalKey                       `protobuf:"bytes,3,rep,name=external_keys,json=externalKeys,proto3" json:"external_keys"`
@@ -709,9 +709,9 @@ func (m *RegisterExternalKeysResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_RegisterExternalKeysResponse proto.InternalMessageInfo
 
 type SubmitMultisigPubKeysRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress             `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	KeyID            github_com_axelarnetwork_axelar_core_x_tss_exported.KeyID `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3,casttype=github.com/axelarnetwork/axelar-core/x/tss/exported.KeyID" json:"key_id,omitempty"`
 	SigKeyPairs      []exported.SigKeyPair                                     `protobuf:"bytes,3,rep,name=sig_key_pairs,json=sigKeyPairs,proto3" json:"sig_key_pairs"`
@@ -788,9 +788,9 @@ func (m *SubmitMultisigPubKeysResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_SubmitMultisigPubKeysResponse proto.InternalMessageInfo
 
 type SubmitMultisigSignaturesRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	SigID            string                                        `protobuf:"bytes,2,opt,name=sig_id,json=sigId,proto3" json:"sig_id,omitempty"`
 	Signatures       [][]byte                                      `protobuf:"bytes,3,rep,name=signatures,proto3" json:"signatures,omitempty"`

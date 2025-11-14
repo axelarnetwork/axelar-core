@@ -29,9 +29,9 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type RegisterProxyRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.ValAddress `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.ValAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	ProxyAddr        github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,2,opt,name=proxy_addr,json=proxyAddr,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"proxy_addr,omitempty"`
 	Sender           string                                        `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
@@ -107,9 +107,9 @@ func (m *RegisterProxyResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_RegisterProxyResponse proto.InternalMessageInfo
 
 type DeactivateProxyRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.ValAddress `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.ValAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	Sender           string                                        `protobuf:"bytes,2,opt,name=sender,proto3" json:"sender,omitempty"`
 }

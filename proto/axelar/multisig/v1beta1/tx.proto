@@ -22,9 +22,9 @@ message StartKeygenRequest {
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 3 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -49,9 +49,9 @@ message SubmitPubKeyRequest {
   ];
   bytes signature = 4 [ (gogoproto.casttype) = "Signature" ];
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 5 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -68,9 +68,9 @@ message SubmitSignatureRequest {
   uint64 sig_id = 2 [ (gogoproto.customname) = "SigID" ];
   bytes signature = 3 [ (gogoproto.casttype) = "Signature" ];
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 4 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -93,9 +93,9 @@ message RotateKeyRequest {
         "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
   ];
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 4 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -108,9 +108,9 @@ message KeygenOptOutRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -124,9 +124,9 @@ message KeygenOptInRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true

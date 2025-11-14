@@ -19,27 +19,21 @@ message VoteRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-  // Removing this field would break decoding of historical transactions.
-  // DO NOT use in new code.
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
   ];
-  // DEPRECATED: Removed in v0.21, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  vote.exported.v1beta1.PollKey poll_key = 2 [
-    deprecated = true,
-    (gogoproto.nullable) = false
-  ];
-  // DEPRECATED: Removed in v0.21, reinstated in v1.3 for backward compatibility.
-  // This field must remain to allow decoding of historical transactions.
-  // DO NOT use in new code.
-  vote.exported.v1beta1.Vote vote_deprecated = 3 [
-    deprecated = true,
-    (gogoproto.nullable) = false
-  ];
+  // DEPRECATED: Removed in v0.21, reinstated in v1.3 for backward
+  // compatibility. This field must remain to allow decoding of historical
+  // transactions. DO NOT use in new code.
+  vote.exported.v1beta1.PollKey poll_key = 2 [ deprecated = true ];
+  // DEPRECATED: Removed in v0.21, reinstated in v1.3 for backward
+  // compatibility. This field must remain to allow decoding of historical
+  // transactions. DO NOT use in new code.
+  vote.exported.v1beta1.Vote vote_deprecated = 3 [ deprecated = true ];
 
   uint64 poll_id = 4 [
     (gogoproto.customname) = "PollID",

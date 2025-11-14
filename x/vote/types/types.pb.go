@@ -33,9 +33,9 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // validators voting for the same data
 type TalliedVote struct {
 	Tally cosmossdk_io_math.Uint `protobuf:"bytes,1,opt,name=tally,proto3,customtype=cosmossdk.io/math.Uint" json:"tally"`
-	// DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
-	// This field must remain to allow decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward
+	// compatibility. This field must remain to allow decoding of historical
+	// transactions. DO NOT use in new code.
 	VotersDeprecated []github_com_cosmos_cosmos_sdk_types.ValAddress             `protobuf:"bytes,2,rep,name=voters_deprecated,json=votersDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.ValAddress" json:"voters_deprecated,omitempty"` // Deprecated: Do not use.
 	Data             *types.Any                                                  `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
 	PollID           github_com_axelarnetwork_axelar_core_x_vote_exported.PollID `protobuf:"varint,4,opt,name=poll_id,json=pollId,proto3,customtype=github.com/axelarnetwork/axelar-core/x/vote/exported.PollID" json:"poll_id"`

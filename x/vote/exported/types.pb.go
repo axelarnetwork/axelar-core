@@ -153,9 +153,9 @@ var xxx_messageInfo_PollKey proto.InternalMessageInfo
 //
 // Deprecated: Do not use.
 type Vote struct {
-	// DEPRECATED: Removed in v0.18, reinstated in v1.3 for backward compatibility.
-	// This field must remain to allow decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: Removed in v0.18, reinstated in v1.3 for backward
+	// compatibility. This field must remain to allow decoding of historical
+	// transactions. DO NOT use in new code.
 	ResultsDeprecated []*types.Any `protobuf:"bytes,1,rep,name=results_deprecated,json=resultsDeprecated,proto3" json:"results_deprecated,omitempty"` // Deprecated: Do not use.
 	Result            *types.Any   `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
 }

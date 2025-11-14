@@ -30,9 +30,9 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type UpdateGovernanceKeyRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	GovernanceKey    multisig.LegacyAminoPubKey                    `protobuf:"bytes,2,opt,name=governance_key,json=governanceKey,proto3" json:"governance_key"`
 	Sender           string                                        `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
@@ -109,9 +109,9 @@ var xxx_messageInfo_UpdateGovernanceKeyResponse proto.InternalMessageInfo
 
 // MsgRegisterController represents a message to register a controller account
 type RegisterControllerRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	Controller       github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,2,opt,name=controller,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"controller,omitempty"`
 	Sender           string                                        `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
@@ -188,9 +188,9 @@ var xxx_messageInfo_RegisterControllerResponse proto.InternalMessageInfo
 
 // DeregisterController represents a message to deregister a controller account
 type DeregisterControllerRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	Controller       github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,2,opt,name=controller,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"controller,omitempty"`
 	Sender           string                                        `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`

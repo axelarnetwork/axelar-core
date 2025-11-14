@@ -30,9 +30,9 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type RefundMsgRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	InnerMessage     *types.Any                                    `protobuf:"bytes,2,opt,name=inner_message,json=innerMessage,proto3" json:"inner_message,omitempty"`
 	Sender           string                                        `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`

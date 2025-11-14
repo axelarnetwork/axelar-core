@@ -36,9 +36,9 @@ var _ = time.Kitchen
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type RegisterChainMaintainerRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                     `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	Chains           []github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,rep,name=chains,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chains,omitempty"`
 	Sender           string                                                            `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
@@ -114,9 +114,9 @@ func (m *RegisterChainMaintainerResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_RegisterChainMaintainerResponse proto.InternalMessageInfo
 
 type DeregisterChainMaintainerRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                     `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	Chains           []github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,rep,name=chains,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chains,omitempty"`
 	Sender           string                                                            `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
@@ -193,9 +193,9 @@ var xxx_messageInfo_DeregisterChainMaintainerResponse proto.InternalMessageInfo
 
 // ActivateChainRequest represents a message to activate chains
 type ActivateChainRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                     `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	Chains           []github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,rep,name=chains,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chains,omitempty"`
 	Sender           string                                                            `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
@@ -272,9 +272,9 @@ var xxx_messageInfo_ActivateChainResponse proto.InternalMessageInfo
 
 // DeactivateChainRequest represents a message to deactivate chains
 type DeactivateChainRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                     `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	Chains           []github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,rep,name=chains,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chains,omitempty"`
 	Sender           string                                                            `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
@@ -352,9 +352,9 @@ var xxx_messageInfo_DeactivateChainResponse proto.InternalMessageInfo
 // RegisterAssetFeeRequest represents a message to register the transfer fee
 // info associated to an asset on a chain
 type RegisterAssetFeeRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	FeeInfo          exported.FeeInfo                              `protobuf:"bytes,2,opt,name=fee_info,json=feeInfo,proto3" json:"fee_info"`
 	Sender           string                                        `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
@@ -432,9 +432,9 @@ var xxx_messageInfo_RegisterAssetFeeResponse proto.InternalMessageInfo
 // SetTransferRateLimitRequest represents a message to set rate limits on
 // transfers
 type SetTransferRateLimitRequest struct {
-	// DEPRECATED: This field is deprecated but must remain to ensure backward compatibility.
-	// Removing this field would break decoding of historical transactions.
-	// DO NOT use in new code.
+	// DEPRECATED: This field is deprecated but must remain to ensure backward
+	// compatibility. Removing this field would break decoding of historical
+	// transactions. DO NOT use in new code.
 	SenderDeprecated github_com_cosmos_cosmos_sdk_types.AccAddress                   `protobuf:"bytes,1,opt,name=sender_deprecated,json=senderDeprecated,proto3,casttype=github.com/cosmos/cosmos-sdk/types.AccAddress" json:"sender_deprecated,omitempty"` // Deprecated: Do not use.
 	Chain            github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,2,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
 	Limit            types.Coin                                                      `protobuf:"bytes,3,opt,name=limit,proto3" json:"limit"`
