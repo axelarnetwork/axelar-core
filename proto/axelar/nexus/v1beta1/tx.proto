@@ -20,7 +20,13 @@ message RegisterChainMaintainerRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   repeated string chains = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -34,7 +40,13 @@ message DeregisterChainMaintainerRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   repeated string chains = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -49,7 +61,13 @@ message ActivateChainRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   repeated string chains = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -64,7 +82,13 @@ message DeactivateChainRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   repeated string chains = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -80,7 +104,13 @@ message RegisterAssetFeeRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   nexus.exported.v1beta1.FeeInfo fee_info = 2 [ (gogoproto.nullable) = false ];
   string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
@@ -94,7 +124,13 @@ message SetTransferRateLimitRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];

@@ -17,7 +17,13 @@ message RegisterProxyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with ValAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ValAddress",
+    deprecated = true
+  ];
   bytes proxy_addr = 2 [ (gogoproto.casttype) =
                              "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
   string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
@@ -30,7 +36,10 @@ message DeactivateProxyRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender_bz = 1 [
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.ValAddress",
     deprecated = true
   ];

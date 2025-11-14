@@ -310,6 +310,21 @@ enum SigType {
   SIG_TYPE_COMMAND = 2 [ (gogoproto.enumvalue_customname) = "SigCommand" ];
 }
 
+// DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward compatibility.
+// This enum must remain to allow decoding of historical transactions.
+// DO NOT use in new code.
+enum TransferKeyType {
+  option deprecated = true;
+  option (gogoproto.goproto_enum_prefix) = false;
+
+  TRANSFER_KEY_TYPE_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "UnspecifiedTransferKeyType" ];
+  TRANSFER_KEY_TYPE_OWNERSHIP = 1
+      [ (gogoproto.enumvalue_customname) = "Ownership" ];
+  TRANSFER_KEY_TYPE_OPERATORSHIP = 2
+      [ (gogoproto.enumvalue_customname) = "Operatorship" ];
+}
+
 // TransferKey contains information for a transfer operatorship
 message TransferKey {
   reserved 2; // type was deleted in v0.20

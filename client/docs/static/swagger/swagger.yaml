@@ -41,11 +41,32 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: object
                 properties:
                   name:
                     type: string
+                  native_asset_deprecated:
+                    type: string
+                    description: >-
+                      DEPRECATED: Removed in v0.14, reinstated in v1.3 for
+                      backward
+
+                      compatibility. This field must remain to allow decoding of
+                      historical
+
+                      transactions. DO NOT use in new code.
                   supports_foreign_assets:
                     type: boolean
                   key_type:
@@ -61,6 +82,16 @@ paths:
                 title: Chain represents the properties of a registered blockchain
               addr_prefix:
                 type: string
+              min_amount_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward
+
+                  compatibility. This field must remain to allow decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               native_assets:
                 type: array
                 items:
@@ -68,6 +99,17 @@ paths:
                   properties:
                     denom:
                       type: string
+                    min_amount_deprecated:
+                      type: string
+                      format: byte
+                      description: >-
+                        DEPRECATED: Removed in v0.15, reinstated in v1.3 for
+                        backward
+
+                        compatibility. This field must remain to allow decoding
+                        of historical
+
+                        transactions. DO NOT use in new code.
                     is_native_asset:
                       type: boolean
               cosmos_chain:
@@ -121,6 +163,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               contract_address:
@@ -193,6 +246,42 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
+              tx_id_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+
+                  compatibility. This field must remain to allow decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
+              token_deprecated:
+                type: object
+                properties:
+                  denom:
+                    type: string
+                  amount:
+                    type: string
+                description: >-
+                  Coin defines a token with a denomination and an amount.
+
+
+                  NOTE: The amount field is an Int which implements the custom
+                  method
+
+                  signatures required by gogoproto.
               deposit_address:
                 type: string
                 format: byte
@@ -240,6 +329,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               sender:
                 type: string
             title: >-
@@ -289,6 +389,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               recipient_addr:
                 type: string
               recipient_chain:
@@ -341,6 +452,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               asset:
@@ -348,6 +470,17 @@ paths:
                 properties:
                   denom:
                     type: string
+                  min_amount_deprecated:
+                    type: string
+                    format: byte
+                    description: >-
+                      DEPRECATED: Removed in v0.15, reinstated in v1.3 for
+                      backward
+
+                      compatibility. This field must remain to allow decoding of
+                      historical
+
+                      transactions. DO NOT use in new code.
                   is_native_asset:
                     type: boolean
               limit:
@@ -401,6 +534,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               fee_collector:
                 type: string
                 format: byte
@@ -450,6 +594,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               id:
@@ -496,6 +651,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               sender:
                 type: string
             title: >-
@@ -542,6 +708,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               id:
                 type: string
               payload:
@@ -1037,8 +1214,28 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               name:
                 type: string
+              native_asset_deprecated:
+                type: string
+                description: >-
+                  DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+
+                  compatibility. This field must remain to allow decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               key_type:
                 type: string
                 enum:
@@ -1263,6 +1460,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               tx_id:
@@ -1489,6 +1697,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               tx_id:
@@ -1707,6 +1926,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               tx_ids:
@@ -1927,6 +2157,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               tx_id:
@@ -2153,11 +2394,45 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               tx_id:
                 type: string
                 format: byte
+              transfer_type_deprecated:
+                description: >-
+                  DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward
+
+                  compatibility. This field must remain to allow decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
+                type: string
+                enum:
+                  - TRANSFER_KEY_TYPE_UNSPECIFIED
+                  - TRANSFER_KEY_TYPE_OWNERSHIP
+                  - TRANSFER_KEY_TYPE_OPERATORSHIP
+                default: TRANSFER_KEY_TYPE_UNSPECIFIED
+              key_id_deprecated:
+                type: string
+                description: >-
+                  DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward
+
+                  compatibility. This field must remain to allow decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               sender:
                 type: string
       tags:
@@ -2371,6 +2646,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               sender:
@@ -2591,6 +2877,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               asset:
@@ -2613,6 +2910,16 @@ paths:
                   capacity:
                     type: string
                     format: byte
+              min_amount_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward
+
+                  compatibility. This field must remain to allow decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               address:
                 type: string
                 format: byte
@@ -2836,6 +3143,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               sender:
@@ -3056,6 +3374,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               key_id:
@@ -3276,6 +3605,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               recipient_addr:
@@ -3502,6 +3842,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               event_id:
@@ -3719,6 +4070,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               address:
@@ -3944,6 +4306,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               sender:
@@ -7632,6 +8005,17 @@ paths:
                 type: string
               key_id:
                 type: string
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
       tags:
         - MsgService
   /axelar/multisig/start_keygen:
@@ -7675,6 +8059,17 @@ paths:
                 type: string
               key_id:
                 type: string
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
       tags:
         - MsgService
   /axelar/multisig/submit_pub_key:
@@ -7724,6 +8119,17 @@ paths:
               signature:
                 type: string
                 format: byte
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
       tags:
         - MsgService
   /axelar/multisig/submit_signature:
@@ -7771,6 +8177,17 @@ paths:
               signature:
                 type: string
                 format: byte
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
       tags:
         - MsgService
   /axelar/multisig/v1beta1/key:
@@ -7932,6 +8349,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               sender:
                 type: string
       tags:
@@ -7973,6 +8401,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               sender:
                 type: string
       tags:
@@ -8318,6 +8757,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chains:
                 type: array
                 items:
@@ -8364,6 +8814,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chains:
                 type: array
                 items:
@@ -8410,6 +8871,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chains:
                 type: array
                 items:
@@ -8455,6 +8927,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               fee_info:
                 type: object
                 properties:
@@ -8517,6 +9000,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chains:
                 type: array
                 items:
@@ -8562,6 +9056,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               chain:
                 type: string
               limit:
@@ -8695,6 +9200,16 @@ paths:
                     properties:
                       name:
                         type: string
+                      native_asset_deprecated:
+                        type: string
+                        description: >-
+                          DEPRECATED: Removed in v0.14, reinstated in v1.3 for
+                          backward
+
+                          compatibility. This field must remain to allow
+                          decoding of historical
+
+                          transactions. DO NOT use in new code.
                       supports_foreign_assets:
                         type: boolean
                       key_type:
@@ -8717,6 +9232,17 @@ paths:
                       properties:
                         denom:
                           type: string
+                        min_amount_deprecated:
+                          type: string
+                          format: byte
+                          description: >-
+                            DEPRECATED: Removed in v0.15, reinstated in v1.3 for
+                            backward
+
+                            compatibility. This field must remain to allow
+                            decoding of historical
+
+                            transactions. DO NOT use in new code.
                         is_native_asset:
                           type: boolean
                   maintainer_states:
@@ -9073,6 +9599,16 @@ paths:
                         properties:
                           name:
                             type: string
+                          native_asset_deprecated:
+                            type: string
+                            description: >-
+                              DEPRECATED: Removed in v0.14, reinstated in v1.3
+                              for backward
+
+                              compatibility. This field must remain to allow
+                              decoding of historical
+
+                              transactions. DO NOT use in new code.
                           supports_foreign_assets:
                             type: boolean
                           key_type:
@@ -9101,6 +9637,16 @@ paths:
                         properties:
                           name:
                             type: string
+                          native_asset_deprecated:
+                            type: string
+                            description: >-
+                              DEPRECATED: Removed in v0.14, reinstated in v1.3
+                              for backward
+
+                              compatibility. This field must remain to allow
+                              decoding of historical
+
+                              transactions. DO NOT use in new code.
                           supports_foreign_assets:
                             type: boolean
                           key_type:
@@ -9634,6 +10180,16 @@ paths:
                           properties:
                             name:
                               type: string
+                            native_asset_deprecated:
+                              type: string
+                              description: >-
+                                DEPRECATED: Removed in v0.14, reinstated in v1.3
+                                for backward
+
+                                compatibility. This field must remain to allow
+                                decoding of historical
+
+                                transactions. DO NOT use in new code.
                             supports_foreign_assets:
                               type: boolean
                             key_type:
@@ -10024,6 +10580,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               inner_message:
                 type: object
                 properties:
@@ -11105,9 +11672,17 @@ paths:
           schema:
             type: object
             properties:
-              sender_bz:
+              sender_deprecated:
                 type: string
                 format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               sender:
                 type: string
       tags:
@@ -11154,6 +11729,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               proxy_addr:
                 type: string
                 format: byte
@@ -11544,6 +12130,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               key_ids:
                 type: array
                 items:
@@ -12499,6 +13096,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               controller:
                 type: string
                 format: byte
@@ -12718,6 +13326,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               controller:
                 type: string
                 format: byte
@@ -12937,6 +13556,17 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               governance_key:
                 type: object
                 properties:
@@ -14632,6 +15262,417 @@ paths:
           schema:
             type: object
             properties:
+              sender_deprecated:
+                type: string
+                format: byte
+                description: >-
+                  DEPRECATED: This field is deprecated but must remain to ensure
+                  backward
+
+                  compatibility. Removing this field would break decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
+              poll_key:
+                description: >-
+                  DEPRECATED: Removed in v0.21, reinstated in v1.3 for backward
+
+                  compatibility. This field must remain to allow decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
+                type: object
+                properties:
+                  module:
+                    type: string
+                  id:
+                    type: string
+                title: PollKey represents the key data for a poll
+              vote_deprecated:
+                description: >-
+                  DEPRECATED: Removed in v0.21, reinstated in v1.3 for backward
+
+                  compatibility. This field must remain to allow decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
+                type: object
+                properties:
+                  results_deprecated:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type_url:
+                          type: string
+                          description: >-
+                            A URL/resource name that uniquely identifies the
+                            type of the serialized
+
+                            protocol buffer message. This string must contain at
+                            least
+
+                            one "/" character. The last segment of the URL's
+                            path must represent
+
+                            the fully qualified name of the type (as in
+
+                            `path/google.protobuf.Duration`). The name should be
+                            in a canonical form
+
+                            (e.g., leading "." is not accepted).
+
+
+                            In practice, teams usually precompile into the
+                            binary all types that they
+
+                            expect it to use in the context of Any. However, for
+                            URLs which use the
+
+                            scheme `http`, `https`, or no scheme, one can
+                            optionally set up a type
+
+                            server that maps type URLs to message definitions as
+                            follows:
+
+
+                            * If no scheme is provided, `https` is assumed.
+
+                            * An HTTP GET on the URL must yield a
+                            [google.protobuf.Type][]
+                              value in binary format, or produce an error.
+                            * Applications are allowed to cache lookup results
+                            based on the
+                              URL, or have them precompiled into a binary to avoid any
+                              lookup. Therefore, binary compatibility needs to be preserved
+                              on changes to types. (Use versioned type names to manage
+                              breaking changes.)
+
+                            Note: this functionality is not currently available
+                            in the official
+
+                            protobuf release, and it is not used for type URLs
+                            beginning with
+
+                            type.googleapis.com.
+
+
+                            Schemes other than `http`, `https` (or the empty
+                            scheme) might be
+
+                            used with implementation specific semantics.
+                        value:
+                          type: string
+                          format: byte
+                          description: >-
+                            Must be a valid serialized protocol buffer of the
+                            above specified type.
+                      description: >-
+                        `Any` contains an arbitrary serialized protocol buffer
+                        message along with a
+
+                        URL that describes the type of the serialized message.
+
+
+                        Protobuf library provides support to pack/unpack Any
+                        values in the form
+
+                        of utility functions or additional generated methods of
+                        the Any type.
+
+
+                        Example 1: Pack and unpack a message in C++.
+
+                            Foo foo = ...;
+                            Any any;
+                            any.PackFrom(foo);
+                            ...
+                            if (any.UnpackTo(&foo)) {
+                              ...
+                            }
+
+                        Example 2: Pack and unpack a message in Java.
+
+                            Foo foo = ...;
+                            Any any = Any.pack(foo);
+                            ...
+                            if (any.is(Foo.class)) {
+                              foo = any.unpack(Foo.class);
+                            }
+                            // or ...
+                            if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+                              foo = any.unpack(Foo.getDefaultInstance());
+                            }
+
+                        Example 3: Pack and unpack a message in Python.
+
+                            foo = Foo(...)
+                            any = Any()
+                            any.Pack(foo)
+                            ...
+                            if any.Is(Foo.DESCRIPTOR):
+                              any.Unpack(foo)
+                              ...
+
+                        Example 4: Pack and unpack a message in Go
+
+                             foo := &pb.Foo{...}
+                             any, err := anypb.New(foo)
+                             if err != nil {
+                               ...
+                             }
+                             ...
+                             foo := &pb.Foo{}
+                             if err := any.UnmarshalTo(foo); err != nil {
+                               ...
+                             }
+
+                        The pack methods provided by protobuf library will by
+                        default use
+
+                        'type.googleapis.com/full.type.name' as the type URL and
+                        the unpack
+
+                        methods only use the fully qualified type name after the
+                        last '/'
+
+                        in the type URL, for example "foo.bar.com/x/y.z" will
+                        yield type
+
+                        name "y.z".
+
+
+                        JSON
+
+
+                        The JSON representation of an `Any` value uses the
+                        regular
+
+                        representation of the deserialized, embedded message,
+                        with an
+
+                        additional field `@type` which contains the type URL.
+                        Example:
+
+                            package google.profile;
+                            message Person {
+                              string first_name = 1;
+                              string last_name = 2;
+                            }
+
+                            {
+                              "@type": "type.googleapis.com/google.profile.Person",
+                              "firstName": <string>,
+                              "lastName": <string>
+                            }
+
+                        If the embedded message type is well-known and has a
+                        custom JSON
+
+                        representation, that representation will be embedded
+                        adding a field
+
+                        `value` which holds the custom JSON in addition to the
+                        `@type`
+
+                        field. Example (for message
+                        [google.protobuf.Duration][]):
+
+                            {
+                              "@type": "type.googleapis.com/google.protobuf.Duration",
+                              "value": "1.212s"
+                            }
+                    description: >-
+                      DEPRECATED: Removed in v0.18, reinstated in v1.3 for
+                      backward
+
+                      compatibility. This field must remain to allow decoding of
+                      historical
+
+                      transactions. DO NOT use in new code.
+                  result:
+                    type: object
+                    properties:
+                      type_url:
+                        type: string
+                        description: >-
+                          A URL/resource name that uniquely identifies the type
+                          of the serialized
+
+                          protocol buffer message. This string must contain at
+                          least
+
+                          one "/" character. The last segment of the URL's path
+                          must represent
+
+                          the fully qualified name of the type (as in
+
+                          `path/google.protobuf.Duration`). The name should be
+                          in a canonical form
+
+                          (e.g., leading "." is not accepted).
+
+
+                          In practice, teams usually precompile into the binary
+                          all types that they
+
+                          expect it to use in the context of Any. However, for
+                          URLs which use the
+
+                          scheme `http`, `https`, or no scheme, one can
+                          optionally set up a type
+
+                          server that maps type URLs to message definitions as
+                          follows:
+
+
+                          * If no scheme is provided, `https` is assumed.
+
+                          * An HTTP GET on the URL must yield a
+                          [google.protobuf.Type][]
+                            value in binary format, or produce an error.
+                          * Applications are allowed to cache lookup results
+                          based on the
+                            URL, or have them precompiled into a binary to avoid any
+                            lookup. Therefore, binary compatibility needs to be preserved
+                            on changes to types. (Use versioned type names to manage
+                            breaking changes.)
+
+                          Note: this functionality is not currently available in
+                          the official
+
+                          protobuf release, and it is not used for type URLs
+                          beginning with
+
+                          type.googleapis.com.
+
+
+                          Schemes other than `http`, `https` (or the empty
+                          scheme) might be
+
+                          used with implementation specific semantics.
+                      value:
+                        type: string
+                        format: byte
+                        description: >-
+                          Must be a valid serialized protocol buffer of the
+                          above specified type.
+                    description: >-
+                      `Any` contains an arbitrary serialized protocol buffer
+                      message along with a
+
+                      URL that describes the type of the serialized message.
+
+
+                      Protobuf library provides support to pack/unpack Any
+                      values in the form
+
+                      of utility functions or additional generated methods of
+                      the Any type.
+
+
+                      Example 1: Pack and unpack a message in C++.
+
+                          Foo foo = ...;
+                          Any any;
+                          any.PackFrom(foo);
+                          ...
+                          if (any.UnpackTo(&foo)) {
+                            ...
+                          }
+
+                      Example 2: Pack and unpack a message in Java.
+
+                          Foo foo = ...;
+                          Any any = Any.pack(foo);
+                          ...
+                          if (any.is(Foo.class)) {
+                            foo = any.unpack(Foo.class);
+                          }
+                          // or ...
+                          if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+                            foo = any.unpack(Foo.getDefaultInstance());
+                          }
+
+                      Example 3: Pack and unpack a message in Python.
+
+                          foo = Foo(...)
+                          any = Any()
+                          any.Pack(foo)
+                          ...
+                          if any.Is(Foo.DESCRIPTOR):
+                            any.Unpack(foo)
+                            ...
+
+                      Example 4: Pack and unpack a message in Go
+
+                           foo := &pb.Foo{...}
+                           any, err := anypb.New(foo)
+                           if err != nil {
+                             ...
+                           }
+                           ...
+                           foo := &pb.Foo{}
+                           if err := any.UnmarshalTo(foo); err != nil {
+                             ...
+                           }
+
+                      The pack methods provided by protobuf library will by
+                      default use
+
+                      'type.googleapis.com/full.type.name' as the type URL and
+                      the unpack
+
+                      methods only use the fully qualified type name after the
+                      last '/'
+
+                      in the type URL, for example "foo.bar.com/x/y.z" will
+                      yield type
+
+                      name "y.z".
+
+
+                      JSON
+
+
+                      The JSON representation of an `Any` value uses the regular
+
+                      representation of the deserialized, embedded message, with
+                      an
+
+                      additional field `@type` which contains the type URL.
+                      Example:
+
+                          package google.profile;
+                          message Person {
+                            string first_name = 1;
+                            string last_name = 2;
+                          }
+
+                          {
+                            "@type": "type.googleapis.com/google.profile.Person",
+                            "firstName": <string>,
+                            "lastName": <string>
+                          }
+
+                      If the embedded message type is well-known and has a
+                      custom JSON
+
+                      representation, that representation will be embedded
+                      adding a field
+
+                      `value` which holds the custom JSON in addition to the
+                      `@type`
+
+                      field. Example (for message [google.protobuf.Duration][]):
+
+                          {
+                            "@type": "type.googleapis.com/google.protobuf.Duration",
+                            "value": "1.212s"
+                          }
+                title: >-
+                  Vote represents a vote result - kept for backward
+                  compatibility
               poll_id:
                 type: string
                 format: uint64
@@ -56500,11 +57541,30 @@ definitions:
   axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: object
         properties:
           name:
             type: string
+          native_asset_deprecated:
+            type: string
+            description: >-
+              DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+
+              compatibility. This field must remain to allow decoding of
+              historical
+
+              transactions. DO NOT use in new code.
           supports_foreign_assets:
             type: boolean
           key_type:
@@ -56520,6 +57580,13 @@ definitions:
         title: Chain represents the properties of a registered blockchain
       addr_prefix:
         type: string
+      min_amount_deprecated:
+        type: string
+        format: byte
+        description: |-
+          DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward
+          compatibility. This field must remain to allow decoding of historical
+          transactions. DO NOT use in new code.
       native_assets:
         type: array
         items:
@@ -56527,6 +57594,16 @@ definitions:
           properties:
             denom:
               type: string
+            min_amount_deprecated:
+              type: string
+              format: byte
+              description: >-
+                DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward
+
+                compatibility. This field must remain to allow decoding of
+                historical
+
+                transactions. DO NOT use in new code.
             is_native_asset:
               type: boolean
       cosmos_chain:
@@ -56567,6 +57644,16 @@ definitions:
   axelar.axelarnet.v1beta1.CallContractRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       contract_address:
@@ -56610,6 +57697,35 @@ definitions:
   axelar.axelarnet.v1beta1.ConfirmDepositRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
+      tx_id_deprecated:
+        type: string
+        format: byte
+        description: |-
+          DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+          compatibility. This field must remain to allow decoding of historical
+          transactions. DO NOT use in new code.
+      token_deprecated:
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
       deposit_address:
         type: string
         format: byte
@@ -56623,6 +57739,16 @@ definitions:
   axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       sender:
         type: string
     title: |-
@@ -56659,6 +57785,16 @@ definitions:
   axelar.axelarnet.v1beta1.LinkRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       recipient_addr:
         type: string
       recipient_chain:
@@ -56769,6 +57905,16 @@ definitions:
   axelar.axelarnet.v1beta1.RegisterAssetRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       asset:
@@ -56776,6 +57922,16 @@ definitions:
         properties:
           denom:
             type: string
+          min_amount_deprecated:
+            type: string
+            format: byte
+            description: >-
+              DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward
+
+              compatibility. This field must remain to allow decoding of
+              historical
+
+              transactions. DO NOT use in new code.
           is_native_asset:
             type: boolean
       limit:
@@ -56793,6 +57949,16 @@ definitions:
   axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       fee_collector:
         type: string
         format: byte
@@ -56806,6 +57972,16 @@ definitions:
   axelar.axelarnet.v1beta1.RetryIBCTransferRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       id:
@@ -56818,6 +57994,16 @@ definitions:
   axelar.axelarnet.v1beta1.RouteIBCTransfersRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       sender:
         type: string
     title: >-
@@ -56830,6 +58016,16 @@ definitions:
   axelar.axelarnet.v1beta1.RouteMessageRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       id:
         type: string
       payload:
@@ -56894,6 +58090,13 @@ definitions:
     properties:
       denom:
         type: string
+      min_amount_deprecated:
+        type: string
+        format: byte
+        description: |-
+          DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward
+          compatibility. This field must remain to allow decoding of historical
+          transactions. DO NOT use in new code.
       is_native_asset:
         type: boolean
   axelar.nexus.exported.v1beta1.Chain:
@@ -56901,6 +58104,12 @@ definitions:
     properties:
       name:
         type: string
+      native_asset_deprecated:
+        type: string
+        description: |-
+          DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+          compatibility. This field must remain to allow decoding of historical
+          transactions. DO NOT use in new code.
       supports_foreign_assets:
         type: boolean
       key_type:
@@ -56937,8 +58146,24 @@ definitions:
   axelar.evm.v1beta1.AddChainRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       name:
         type: string
+      native_asset_deprecated:
+        type: string
+        description: |-
+          DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+          compatibility. This field must remain to allow decoding of historical
+          transactions. DO NOT use in new code.
       key_type:
         type: string
         enum:
@@ -57100,6 +58325,16 @@ definitions:
   axelar.evm.v1beta1.ConfirmDepositRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       tx_id:
@@ -57119,6 +58354,16 @@ definitions:
   axelar.evm.v1beta1.ConfirmGatewayTxRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       tx_id:
@@ -57131,6 +58376,16 @@ definitions:
   axelar.evm.v1beta1.ConfirmGatewayTxsRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       tx_ids:
@@ -57145,6 +58400,16 @@ definitions:
   axelar.evm.v1beta1.ConfirmTokenRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       tx_id:
@@ -57165,11 +58430,38 @@ definitions:
   axelar.evm.v1beta1.ConfirmTransferKeyRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       tx_id:
         type: string
         format: byte
+      transfer_type_deprecated:
+        description: |-
+          DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward
+          compatibility. This field must remain to allow decoding of historical
+          transactions. DO NOT use in new code.
+        type: string
+        enum:
+          - TRANSFER_KEY_TYPE_UNSPECIFIED
+          - TRANSFER_KEY_TYPE_OWNERSHIP
+          - TRANSFER_KEY_TYPE_OPERATORSHIP
+        default: TRANSFER_KEY_TYPE_UNSPECIFIED
+      key_id_deprecated:
+        type: string
+        description: |-
+          DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward
+          compatibility. This field must remain to allow decoding of historical
+          transactions. DO NOT use in new code.
       sender:
         type: string
   axelar.evm.v1beta1.ConfirmTransferKeyResponse:
@@ -57183,6 +58475,16 @@ definitions:
   axelar.evm.v1beta1.CreateBurnTokensRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       sender:
@@ -57195,6 +58497,16 @@ definitions:
   axelar.evm.v1beta1.CreateDeployTokenRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       asset:
@@ -57217,6 +58529,13 @@ definitions:
           capacity:
             type: string
             format: byte
+      min_amount_deprecated:
+        type: string
+        format: byte
+        description: |-
+          DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward
+          compatibility. This field must remain to allow decoding of historical
+          transactions. DO NOT use in new code.
       address:
         type: string
         format: byte
@@ -57232,6 +58551,16 @@ definitions:
   axelar.evm.v1beta1.CreatePendingTransfersRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       sender:
@@ -57246,6 +58575,16 @@ definitions:
   axelar.evm.v1beta1.CreateTransferOperatorshipRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       key_id:
@@ -57669,6 +59008,16 @@ definitions:
   axelar.evm.v1beta1.LinkRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       recipient_addr:
@@ -57887,6 +59236,16 @@ definitions:
   axelar.evm.v1beta1.RetryFailedEventRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       event_id:
@@ -57898,6 +59257,16 @@ definitions:
   axelar.evm.v1beta1.SetGatewayRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       address:
@@ -57910,6 +59279,16 @@ definitions:
   axelar.evm.v1beta1.SignCommandsRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       sender:
@@ -57969,6 +59348,20 @@ definitions:
       - TOKEN_TYPE_INTERNAL
       - TOKEN_TYPE_EXTERNAL
     default: TOKEN_TYPE_UNSPECIFIED
+  axelar.evm.v1beta1.TransferKeyType:
+    type: string
+    enum:
+      - TRANSFER_KEY_TYPE_UNSPECIFIED
+      - TRANSFER_KEY_TYPE_OWNERSHIP
+      - TRANSFER_KEY_TYPE_OPERATORSHIP
+    default: TRANSFER_KEY_TYPE_UNSPECIFIED
+    description: >-
+      DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward
+      compatibility.
+
+      This enum must remain to allow decoding of historical transactions.
+
+      DO NOT use in new code.
   axelar.evm.v1beta1.UpdateParamsRequest:
     type: object
     properties:
@@ -58109,6 +59502,16 @@ definitions:
   axelar.multisig.v1beta1.KeygenOptInRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       sender:
         type: string
   axelar.multisig.v1beta1.KeygenOptInResponse:
@@ -58116,6 +59519,16 @@ definitions:
   axelar.multisig.v1beta1.KeygenOptOutRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       sender:
         type: string
   axelar.multisig.v1beta1.KeygenOptOutResponse:
@@ -58292,6 +59705,16 @@ definitions:
         type: string
       key_id:
         type: string
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
   axelar.multisig.v1beta1.RotateKeyResponse:
     type: object
   axelar.multisig.v1beta1.StartKeygenRequest:
@@ -58301,6 +59724,16 @@ definitions:
         type: string
       key_id:
         type: string
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
   axelar.multisig.v1beta1.StartKeygenResponse:
     type: object
   axelar.multisig.v1beta1.SubmitPubKeyRequest:
@@ -58316,6 +59749,16 @@ definitions:
       signature:
         type: string
         format: byte
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
   axelar.multisig.v1beta1.SubmitPubKeyResponse:
     type: object
   axelar.multisig.v1beta1.SubmitSignatureRequest:
@@ -58329,6 +59772,16 @@ definitions:
       signature:
         type: string
         format: byte
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
   axelar.multisig.v1beta1.SubmitSignatureResponse:
     type: object
   axelar.multisig.v1beta1.UpdateParamsRequest:
@@ -58393,6 +59846,15 @@ definitions:
         properties:
           name:
             type: string
+          native_asset_deprecated:
+            type: string
+            description: >-
+              DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+
+              compatibility. This field must remain to allow decoding of
+              historical
+
+              transactions. DO NOT use in new code.
           supports_foreign_assets:
             type: boolean
           key_type:
@@ -58420,6 +59882,15 @@ definitions:
             properties:
               name:
                 type: string
+              native_asset_deprecated:
+                type: string
+                description: >-
+                  DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+
+                  compatibility. This field must remain to allow decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               supports_foreign_assets:
                 type: boolean
               key_type:
@@ -58494,6 +59965,15 @@ definitions:
             properties:
               name:
                 type: string
+              native_asset_deprecated:
+                type: string
+                description: >-
+                  DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+
+                  compatibility. This field must remain to allow decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               supports_foreign_assets:
                 type: boolean
               key_type:
@@ -58520,6 +60000,15 @@ definitions:
             properties:
               name:
                 type: string
+              native_asset_deprecated:
+                type: string
+                description: >-
+                  DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+
+                  compatibility. This field must remain to allow decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               supports_foreign_assets:
                 type: boolean
               key_type:
@@ -58589,6 +60078,16 @@ definitions:
   axelar.nexus.v1beta1.ActivateChainRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chains:
         type: array
         items:
@@ -58621,6 +60120,15 @@ definitions:
         properties:
           name:
             type: string
+          native_asset_deprecated:
+            type: string
+            description: >-
+              DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+
+              compatibility. This field must remain to allow decoding of
+              historical
+
+              transactions. DO NOT use in new code.
           supports_foreign_assets:
             type: boolean
           key_type:
@@ -58643,6 +60151,16 @@ definitions:
           properties:
             denom:
               type: string
+            min_amount_deprecated:
+              type: string
+              format: byte
+              description: >-
+                DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward
+
+                compatibility. This field must remain to allow decoding of
+                historical
+
+                transactions. DO NOT use in new code.
             is_native_asset:
               type: boolean
       maintainer_states:
@@ -58701,6 +60219,15 @@ definitions:
             properties:
               name:
                 type: string
+              native_asset_deprecated:
+                type: string
+                description: >-
+                  DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+
+                  compatibility. This field must remain to allow decoding of
+                  historical
+
+                  transactions. DO NOT use in new code.
               supports_foreign_assets:
                 type: boolean
               key_type:
@@ -58723,6 +60250,17 @@ definitions:
               properties:
                 denom:
                   type: string
+                min_amount_deprecated:
+                  type: string
+                  format: byte
+                  description: >-
+                    DEPRECATED: Removed in v0.15, reinstated in v1.3 for
+                    backward
+
+                    compatibility. This field must remain to allow decoding of
+                    historical
+
+                    transactions. DO NOT use in new code.
                 is_native_asset:
                   type: boolean
           maintainer_states:
@@ -58794,6 +60332,16 @@ definitions:
   axelar.nexus.v1beta1.DeactivateChainRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chains:
         type: array
         items:
@@ -58806,6 +60354,16 @@ definitions:
   axelar.nexus.v1beta1.DeregisterChainMaintainerRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chains:
         type: array
         items:
@@ -58896,6 +60454,16 @@ definitions:
                 properties:
                   name:
                     type: string
+                  native_asset_deprecated:
+                    type: string
+                    description: >-
+                      DEPRECATED: Removed in v0.14, reinstated in v1.3 for
+                      backward
+
+                      compatibility. This field must remain to allow decoding of
+                      historical
+
+                      transactions. DO NOT use in new code.
                   supports_foreign_assets:
                     type: boolean
                   key_type:
@@ -58922,6 +60490,16 @@ definitions:
                 properties:
                   name:
                     type: string
+                  native_asset_deprecated:
+                    type: string
+                    description: >-
+                      DEPRECATED: Removed in v0.14, reinstated in v1.3 for
+                      backward
+
+                      compatibility. This field must remain to allow decoding of
+                      historical
+
+                      transactions. DO NOT use in new code.
                   supports_foreign_assets:
                     type: boolean
                   key_type:
@@ -59096,6 +60674,16 @@ definitions:
   axelar.nexus.v1beta1.RegisterAssetFeeRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       fee_info:
         type: object
         properties:
@@ -59122,6 +60710,16 @@ definitions:
   axelar.nexus.v1beta1.RegisterChainMaintainerRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chains:
         type: array
         items:
@@ -59133,6 +60731,16 @@ definitions:
   axelar.nexus.v1beta1.SetTransferRateLimitRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       chain:
         type: string
       limit:
@@ -59236,6 +60844,16 @@ definitions:
                   properties:
                     name:
                       type: string
+                    native_asset_deprecated:
+                      type: string
+                      description: >-
+                        DEPRECATED: Removed in v0.14, reinstated in v1.3 for
+                        backward
+
+                        compatibility. This field must remain to allow decoding
+                        of historical
+
+                        transactions. DO NOT use in new code.
                     supports_foreign_assets:
                       type: boolean
                     key_type:
@@ -59514,6 +61132,16 @@ definitions:
   axelar.reward.v1beta1.RefundMsgRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       inner_message:
         type: object
         properties:
@@ -59708,9 +61336,16 @@ definitions:
   axelar.snapshot.v1beta1.DeactivateProxyRequest:
     type: object
     properties:
-      sender_bz:
+      sender_deprecated:
         type: string
         format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       sender:
         type: string
   axelar.snapshot.v1beta1.DeactivateProxyResponse:
@@ -59759,6 +61394,16 @@ definitions:
   axelar.snapshot.v1beta1.RegisterProxyRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       proxy_addr:
         type: string
         format: byte
@@ -59893,6 +61538,16 @@ definitions:
   axelar.tss.v1beta1.HeartBeatRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       key_ids:
         type: array
         items:
@@ -60384,6 +62039,16 @@ definitions:
   axelar.permission.v1beta1.DeregisterControllerRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       controller:
         type: string
         format: byte
@@ -60598,6 +62263,16 @@ definitions:
   axelar.permission.v1beta1.RegisterControllerRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       controller:
         type: string
         format: byte
@@ -60611,6 +62286,16 @@ definitions:
   axelar.permission.v1beta1.UpdateGovernanceKeyRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
       governance_key:
         type: object
         properties:
@@ -60990,6 +62675,355 @@ definitions:
       LegacyAminoPubKey specifies a public key type
       which nests multiple public keys and a threshold,
       it uses legacy amino address rules.
+  axelar.vote.exported.v1beta1.PollKey:
+    type: object
+    properties:
+      module:
+        type: string
+      id:
+        type: string
+    title: PollKey represents the key data for a poll
+  axelar.vote.exported.v1beta1.Vote:
+    type: object
+    properties:
+      results_deprecated:
+        type: array
+        items:
+          type: object
+          properties:
+            type_url:
+              type: string
+              description: >-
+                A URL/resource name that uniquely identifies the type of the
+                serialized
+
+                protocol buffer message. This string must contain at least
+
+                one "/" character. The last segment of the URL's path must
+                represent
+
+                the fully qualified name of the type (as in
+
+                `path/google.protobuf.Duration`). The name should be in a
+                canonical form
+
+                (e.g., leading "." is not accepted).
+
+
+                In practice, teams usually precompile into the binary all types
+                that they
+
+                expect it to use in the context of Any. However, for URLs which
+                use the
+
+                scheme `http`, `https`, or no scheme, one can optionally set up
+                a type
+
+                server that maps type URLs to message definitions as follows:
+
+
+                * If no scheme is provided, `https` is assumed.
+
+                * An HTTP GET on the URL must yield a [google.protobuf.Type][]
+                  value in binary format, or produce an error.
+                * Applications are allowed to cache lookup results based on the
+                  URL, or have them precompiled into a binary to avoid any
+                  lookup. Therefore, binary compatibility needs to be preserved
+                  on changes to types. (Use versioned type names to manage
+                  breaking changes.)
+
+                Note: this functionality is not currently available in the
+                official
+
+                protobuf release, and it is not used for type URLs beginning
+                with
+
+                type.googleapis.com.
+
+
+                Schemes other than `http`, `https` (or the empty scheme) might
+                be
+
+                used with implementation specific semantics.
+            value:
+              type: string
+              format: byte
+              description: >-
+                Must be a valid serialized protocol buffer of the above
+                specified type.
+          description: >-
+            `Any` contains an arbitrary serialized protocol buffer message along
+            with a
+
+            URL that describes the type of the serialized message.
+
+
+            Protobuf library provides support to pack/unpack Any values in the
+            form
+
+            of utility functions or additional generated methods of the Any
+            type.
+
+
+            Example 1: Pack and unpack a message in C++.
+
+                Foo foo = ...;
+                Any any;
+                any.PackFrom(foo);
+                ...
+                if (any.UnpackTo(&foo)) {
+                  ...
+                }
+
+            Example 2: Pack and unpack a message in Java.
+
+                Foo foo = ...;
+                Any any = Any.pack(foo);
+                ...
+                if (any.is(Foo.class)) {
+                  foo = any.unpack(Foo.class);
+                }
+                // or ...
+                if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+                  foo = any.unpack(Foo.getDefaultInstance());
+                }
+
+            Example 3: Pack and unpack a message in Python.
+
+                foo = Foo(...)
+                any = Any()
+                any.Pack(foo)
+                ...
+                if any.Is(Foo.DESCRIPTOR):
+                  any.Unpack(foo)
+                  ...
+
+            Example 4: Pack and unpack a message in Go
+
+                 foo := &pb.Foo{...}
+                 any, err := anypb.New(foo)
+                 if err != nil {
+                   ...
+                 }
+                 ...
+                 foo := &pb.Foo{}
+                 if err := any.UnmarshalTo(foo); err != nil {
+                   ...
+                 }
+
+            The pack methods provided by protobuf library will by default use
+
+            'type.googleapis.com/full.type.name' as the type URL and the unpack
+
+            methods only use the fully qualified type name after the last '/'
+
+            in the type URL, for example "foo.bar.com/x/y.z" will yield type
+
+            name "y.z".
+
+
+            JSON
+
+
+            The JSON representation of an `Any` value uses the regular
+
+            representation of the deserialized, embedded message, with an
+
+            additional field `@type` which contains the type URL. Example:
+
+                package google.profile;
+                message Person {
+                  string first_name = 1;
+                  string last_name = 2;
+                }
+
+                {
+                  "@type": "type.googleapis.com/google.profile.Person",
+                  "firstName": <string>,
+                  "lastName": <string>
+                }
+
+            If the embedded message type is well-known and has a custom JSON
+
+            representation, that representation will be embedded adding a field
+
+            `value` which holds the custom JSON in addition to the `@type`
+
+            field. Example (for message [google.protobuf.Duration][]):
+
+                {
+                  "@type": "type.googleapis.com/google.protobuf.Duration",
+                  "value": "1.212s"
+                }
+        description: |-
+          DEPRECATED: Removed in v0.18, reinstated in v1.3 for backward
+          compatibility. This field must remain to allow decoding of historical
+          transactions. DO NOT use in new code.
+      result:
+        type: object
+        properties:
+          type_url:
+            type: string
+            description: >-
+              A URL/resource name that uniquely identifies the type of the
+              serialized
+
+              protocol buffer message. This string must contain at least
+
+              one "/" character. The last segment of the URL's path must
+              represent
+
+              the fully qualified name of the type (as in
+
+              `path/google.protobuf.Duration`). The name should be in a
+              canonical form
+
+              (e.g., leading "." is not accepted).
+
+
+              In practice, teams usually precompile into the binary all types
+              that they
+
+              expect it to use in the context of Any. However, for URLs which
+              use the
+
+              scheme `http`, `https`, or no scheme, one can optionally set up a
+              type
+
+              server that maps type URLs to message definitions as follows:
+
+
+              * If no scheme is provided, `https` is assumed.
+
+              * An HTTP GET on the URL must yield a [google.protobuf.Type][]
+                value in binary format, or produce an error.
+              * Applications are allowed to cache lookup results based on the
+                URL, or have them precompiled into a binary to avoid any
+                lookup. Therefore, binary compatibility needs to be preserved
+                on changes to types. (Use versioned type names to manage
+                breaking changes.)
+
+              Note: this functionality is not currently available in the
+              official
+
+              protobuf release, and it is not used for type URLs beginning with
+
+              type.googleapis.com.
+
+
+              Schemes other than `http`, `https` (or the empty scheme) might be
+
+              used with implementation specific semantics.
+          value:
+            type: string
+            format: byte
+            description: >-
+              Must be a valid serialized protocol buffer of the above specified
+              type.
+        description: >-
+          `Any` contains an arbitrary serialized protocol buffer message along
+          with a
+
+          URL that describes the type of the serialized message.
+
+
+          Protobuf library provides support to pack/unpack Any values in the
+          form
+
+          of utility functions or additional generated methods of the Any type.
+
+
+          Example 1: Pack and unpack a message in C++.
+
+              Foo foo = ...;
+              Any any;
+              any.PackFrom(foo);
+              ...
+              if (any.UnpackTo(&foo)) {
+                ...
+              }
+
+          Example 2: Pack and unpack a message in Java.
+
+              Foo foo = ...;
+              Any any = Any.pack(foo);
+              ...
+              if (any.is(Foo.class)) {
+                foo = any.unpack(Foo.class);
+              }
+              // or ...
+              if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+                foo = any.unpack(Foo.getDefaultInstance());
+              }
+
+          Example 3: Pack and unpack a message in Python.
+
+              foo = Foo(...)
+              any = Any()
+              any.Pack(foo)
+              ...
+              if any.Is(Foo.DESCRIPTOR):
+                any.Unpack(foo)
+                ...
+
+          Example 4: Pack and unpack a message in Go
+
+               foo := &pb.Foo{...}
+               any, err := anypb.New(foo)
+               if err != nil {
+                 ...
+               }
+               ...
+               foo := &pb.Foo{}
+               if err := any.UnmarshalTo(foo); err != nil {
+                 ...
+               }
+
+          The pack methods provided by protobuf library will by default use
+
+          'type.googleapis.com/full.type.name' as the type URL and the unpack
+
+          methods only use the fully qualified type name after the last '/'
+
+          in the type URL, for example "foo.bar.com/x/y.z" will yield type
+
+          name "y.z".
+
+
+          JSON
+
+
+          The JSON representation of an `Any` value uses the regular
+
+          representation of the deserialized, embedded message, with an
+
+          additional field `@type` which contains the type URL. Example:
+
+              package google.profile;
+              message Person {
+                string first_name = 1;
+                string last_name = 2;
+              }
+
+              {
+                "@type": "type.googleapis.com/google.profile.Person",
+                "firstName": <string>,
+                "lastName": <string>
+              }
+
+          If the embedded message type is well-known and has a custom JSON
+
+          representation, that representation will be embedded adding a field
+
+          `value` which holds the custom JSON in addition to the `@type`
+
+          field. Example (for message [google.protobuf.Duration][]):
+
+              {
+                "@type": "type.googleapis.com/google.protobuf.Duration",
+                "value": "1.212s"
+              }
+    title: Vote represents a vote result - kept for backward compatibility
   axelar.vote.v1beta1.Params:
     type: object
     properties:
@@ -61066,6 +63100,389 @@ definitions:
   axelar.vote.v1beta1.VoteRequest:
     type: object
     properties:
+      sender_deprecated:
+        type: string
+        format: byte
+        description: >-
+          DEPRECATED: This field is deprecated but must remain to ensure
+          backward
+
+          compatibility. Removing this field would break decoding of historical
+
+          transactions. DO NOT use in new code.
+      poll_key:
+        description: |-
+          DEPRECATED: Removed in v0.21, reinstated in v1.3 for backward
+          compatibility. This field must remain to allow decoding of historical
+          transactions. DO NOT use in new code.
+        type: object
+        properties:
+          module:
+            type: string
+          id:
+            type: string
+        title: PollKey represents the key data for a poll
+      vote_deprecated:
+        description: |-
+          DEPRECATED: Removed in v0.21, reinstated in v1.3 for backward
+          compatibility. This field must remain to allow decoding of historical
+          transactions. DO NOT use in new code.
+        type: object
+        properties:
+          results_deprecated:
+            type: array
+            items:
+              type: object
+              properties:
+                type_url:
+                  type: string
+                  description: >-
+                    A URL/resource name that uniquely identifies the type of the
+                    serialized
+
+                    protocol buffer message. This string must contain at least
+
+                    one "/" character. The last segment of the URL's path must
+                    represent
+
+                    the fully qualified name of the type (as in
+
+                    `path/google.protobuf.Duration`). The name should be in a
+                    canonical form
+
+                    (e.g., leading "." is not accepted).
+
+
+                    In practice, teams usually precompile into the binary all
+                    types that they
+
+                    expect it to use in the context of Any. However, for URLs
+                    which use the
+
+                    scheme `http`, `https`, or no scheme, one can optionally set
+                    up a type
+
+                    server that maps type URLs to message definitions as
+                    follows:
+
+
+                    * If no scheme is provided, `https` is assumed.
+
+                    * An HTTP GET on the URL must yield a
+                    [google.protobuf.Type][]
+                      value in binary format, or produce an error.
+                    * Applications are allowed to cache lookup results based on
+                    the
+                      URL, or have them precompiled into a binary to avoid any
+                      lookup. Therefore, binary compatibility needs to be preserved
+                      on changes to types. (Use versioned type names to manage
+                      breaking changes.)
+
+                    Note: this functionality is not currently available in the
+                    official
+
+                    protobuf release, and it is not used for type URLs beginning
+                    with
+
+                    type.googleapis.com.
+
+
+                    Schemes other than `http`, `https` (or the empty scheme)
+                    might be
+
+                    used with implementation specific semantics.
+                value:
+                  type: string
+                  format: byte
+                  description: >-
+                    Must be a valid serialized protocol buffer of the above
+                    specified type.
+              description: >-
+                `Any` contains an arbitrary serialized protocol buffer message
+                along with a
+
+                URL that describes the type of the serialized message.
+
+
+                Protobuf library provides support to pack/unpack Any values in
+                the form
+
+                of utility functions or additional generated methods of the Any
+                type.
+
+
+                Example 1: Pack and unpack a message in C++.
+
+                    Foo foo = ...;
+                    Any any;
+                    any.PackFrom(foo);
+                    ...
+                    if (any.UnpackTo(&foo)) {
+                      ...
+                    }
+
+                Example 2: Pack and unpack a message in Java.
+
+                    Foo foo = ...;
+                    Any any = Any.pack(foo);
+                    ...
+                    if (any.is(Foo.class)) {
+                      foo = any.unpack(Foo.class);
+                    }
+                    // or ...
+                    if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+                      foo = any.unpack(Foo.getDefaultInstance());
+                    }
+
+                Example 3: Pack and unpack a message in Python.
+
+                    foo = Foo(...)
+                    any = Any()
+                    any.Pack(foo)
+                    ...
+                    if any.Is(Foo.DESCRIPTOR):
+                      any.Unpack(foo)
+                      ...
+
+                Example 4: Pack and unpack a message in Go
+
+                     foo := &pb.Foo{...}
+                     any, err := anypb.New(foo)
+                     if err != nil {
+                       ...
+                     }
+                     ...
+                     foo := &pb.Foo{}
+                     if err := any.UnmarshalTo(foo); err != nil {
+                       ...
+                     }
+
+                The pack methods provided by protobuf library will by default
+                use
+
+                'type.googleapis.com/full.type.name' as the type URL and the
+                unpack
+
+                methods only use the fully qualified type name after the last
+                '/'
+
+                in the type URL, for example "foo.bar.com/x/y.z" will yield type
+
+                name "y.z".
+
+
+                JSON
+
+
+                The JSON representation of an `Any` value uses the regular
+
+                representation of the deserialized, embedded message, with an
+
+                additional field `@type` which contains the type URL. Example:
+
+                    package google.profile;
+                    message Person {
+                      string first_name = 1;
+                      string last_name = 2;
+                    }
+
+                    {
+                      "@type": "type.googleapis.com/google.profile.Person",
+                      "firstName": <string>,
+                      "lastName": <string>
+                    }
+
+                If the embedded message type is well-known and has a custom JSON
+
+                representation, that representation will be embedded adding a
+                field
+
+                `value` which holds the custom JSON in addition to the `@type`
+
+                field. Example (for message [google.protobuf.Duration][]):
+
+                    {
+                      "@type": "type.googleapis.com/google.protobuf.Duration",
+                      "value": "1.212s"
+                    }
+            description: >-
+              DEPRECATED: Removed in v0.18, reinstated in v1.3 for backward
+
+              compatibility. This field must remain to allow decoding of
+              historical
+
+              transactions. DO NOT use in new code.
+          result:
+            type: object
+            properties:
+              type_url:
+                type: string
+                description: >-
+                  A URL/resource name that uniquely identifies the type of the
+                  serialized
+
+                  protocol buffer message. This string must contain at least
+
+                  one "/" character. The last segment of the URL's path must
+                  represent
+
+                  the fully qualified name of the type (as in
+
+                  `path/google.protobuf.Duration`). The name should be in a
+                  canonical form
+
+                  (e.g., leading "." is not accepted).
+
+
+                  In practice, teams usually precompile into the binary all
+                  types that they
+
+                  expect it to use in the context of Any. However, for URLs
+                  which use the
+
+                  scheme `http`, `https`, or no scheme, one can optionally set
+                  up a type
+
+                  server that maps type URLs to message definitions as follows:
+
+
+                  * If no scheme is provided, `https` is assumed.
+
+                  * An HTTP GET on the URL must yield a [google.protobuf.Type][]
+                    value in binary format, or produce an error.
+                  * Applications are allowed to cache lookup results based on
+                  the
+                    URL, or have them precompiled into a binary to avoid any
+                    lookup. Therefore, binary compatibility needs to be preserved
+                    on changes to types. (Use versioned type names to manage
+                    breaking changes.)
+
+                  Note: this functionality is not currently available in the
+                  official
+
+                  protobuf release, and it is not used for type URLs beginning
+                  with
+
+                  type.googleapis.com.
+
+
+                  Schemes other than `http`, `https` (or the empty scheme) might
+                  be
+
+                  used with implementation specific semantics.
+              value:
+                type: string
+                format: byte
+                description: >-
+                  Must be a valid serialized protocol buffer of the above
+                  specified type.
+            description: >-
+              `Any` contains an arbitrary serialized protocol buffer message
+              along with a
+
+              URL that describes the type of the serialized message.
+
+
+              Protobuf library provides support to pack/unpack Any values in the
+              form
+
+              of utility functions or additional generated methods of the Any
+              type.
+
+
+              Example 1: Pack and unpack a message in C++.
+
+                  Foo foo = ...;
+                  Any any;
+                  any.PackFrom(foo);
+                  ...
+                  if (any.UnpackTo(&foo)) {
+                    ...
+                  }
+
+              Example 2: Pack and unpack a message in Java.
+
+                  Foo foo = ...;
+                  Any any = Any.pack(foo);
+                  ...
+                  if (any.is(Foo.class)) {
+                    foo = any.unpack(Foo.class);
+                  }
+                  // or ...
+                  if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+                    foo = any.unpack(Foo.getDefaultInstance());
+                  }
+
+              Example 3: Pack and unpack a message in Python.
+
+                  foo = Foo(...)
+                  any = Any()
+                  any.Pack(foo)
+                  ...
+                  if any.Is(Foo.DESCRIPTOR):
+                    any.Unpack(foo)
+                    ...
+
+              Example 4: Pack and unpack a message in Go
+
+                   foo := &pb.Foo{...}
+                   any, err := anypb.New(foo)
+                   if err != nil {
+                     ...
+                   }
+                   ...
+                   foo := &pb.Foo{}
+                   if err := any.UnmarshalTo(foo); err != nil {
+                     ...
+                   }
+
+              The pack methods provided by protobuf library will by default use
+
+              'type.googleapis.com/full.type.name' as the type URL and the
+              unpack
+
+              methods only use the fully qualified type name after the last '/'
+
+              in the type URL, for example "foo.bar.com/x/y.z" will yield type
+
+              name "y.z".
+
+
+              JSON
+
+
+              The JSON representation of an `Any` value uses the regular
+
+              representation of the deserialized, embedded message, with an
+
+              additional field `@type` which contains the type URL. Example:
+
+                  package google.profile;
+                  message Person {
+                    string first_name = 1;
+                    string last_name = 2;
+                  }
+
+                  {
+                    "@type": "type.googleapis.com/google.profile.Person",
+                    "firstName": <string>,
+                    "lastName": <string>
+                  }
+
+              If the embedded message type is well-known and has a custom JSON
+
+              representation, that representation will be embedded adding a
+              field
+
+              `value` which holds the custom JSON in addition to the `@type`
+
+              field. Example (for message [google.protobuf.Duration][]):
+
+                  {
+                    "@type": "type.googleapis.com/google.protobuf.Duration",
+                    "value": "1.212s"
+                  }
+        title: Vote represents a vote result - kept for backward compatibility
       poll_id:
         type: string
         format: uint64

@@ -19,7 +19,13 @@ message SetGatewayRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -37,7 +43,13 @@ message ConfirmGatewayTxRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -56,7 +68,13 @@ message ConfirmGatewayTxsRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -76,7 +94,13 @@ message ConfirmDepositRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -103,7 +127,13 @@ message ConfirmTokenRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -120,12 +150,17 @@ message ConfirmTokenResponse {}
 
 message ConfirmTransferKeyRequest {
   option (amino.name) = "evm/ConfirmTransferKey";
-  reserved 4, 5; // transfer_type and key_id were deleted in v0.20
 
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -133,6 +168,20 @@ message ConfirmTransferKeyRequest {
     (gogoproto.nullable) = false,
     (gogoproto.customtype) = "Hash",
     (gogoproto.customname) = "TxID"
+  ];
+  // DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward
+  // compatibility. This field must remain to allow decoding of historical
+  // transactions. DO NOT use in new code.
+  evm.v1beta1.TransferKeyType transfer_type_deprecated = 4
+      [ deprecated = true ];
+  // DEPRECATED: Removed in v0.20, reinstated in v1.3 for backward
+  // compatibility. This field must remain to allow decoding of historical
+  // transactions. DO NOT use in new code.
+  string key_id_deprecated = 5 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID",
+    deprecated = true
   ];
   string sender = 6 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
@@ -146,7 +195,13 @@ message LinkRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -167,7 +222,13 @@ message CreateBurnTokensRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -183,13 +244,23 @@ message CreateDeployTokenRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   Asset asset = 3 [ (gogoproto.nullable) = false ];
   TokenDetails token_details = 4 [ (gogoproto.nullable) = false ];
-  reserved 5; // min_amount was removed in v0.15
+  // DEPRECATED: Removed in v0.15, reinstated in v1.3 for backward
+  // compatibility. This field must remain to allow decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes min_amount_deprecated = 5
+      [ (gogoproto.customtype) = "cosmossdk.io/math.Int", deprecated = true ];
   bytes address = 6
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   string daily_mint_limit = 7;
@@ -205,7 +276,13 @@ message CreatePendingTransfersRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -220,7 +297,13 @@ message CreateTransferOwnershipRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -239,7 +322,13 @@ message CreateTransferOperatorshipRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -258,7 +347,13 @@ message SignCommandsRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -276,12 +371,20 @@ message AddChainRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 3; // native_asset was removed in v0.14
-
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string name = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  // DEPRECATED: Removed in v0.14, reinstated in v1.3 for backward
+  // compatibility. This field must remain to allow decoding of historical
+  // transactions. DO NOT use in new code.
+  string native_asset_deprecated = 3 [ deprecated = true ];
   tss.exported.v1beta1.KeyType key_type = 4 [ deprecated = true ];
   bytes params = 5
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Params" ];
@@ -295,7 +398,13 @@ message RetryFailedEventRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  reserved 1; // used to be sender bytes with AccAddress cast
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
   string chain = 2
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
