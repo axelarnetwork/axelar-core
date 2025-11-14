@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"github.com/axelarnetwork/axelar-core/app"
 
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -63,7 +64,7 @@ func DefaultParams() []Params {
 		Network:             Ganache,
 		TokenCode:           bzToken,
 		Burnable:            bzBurnable,
-		RevoteLockingPeriod: 50,
+		RevoteLockingPeriod: 15 * app.BlockTimeSpeedUp,
 		Networks: []NetworkInfo{
 			{
 				Name: Mainnet,
@@ -87,7 +88,7 @@ func DefaultParams() []Params {
 			},
 		},
 		VotingThreshold:   utils.Threshold{Numerator: 51, Denominator: 100},
-		VotingGracePeriod: 3,
+		VotingGracePeriod: 3 * app.BlockTimeSpeedUp,
 		MinVoterCount:     1,
 		CommandsGasLimit:  5000000,
 		EndBlockerLimit:   50,

@@ -2,6 +2,7 @@ package types
 
 import (
 	fmt "fmt"
+	"github.com/axelarnetwork/axelar-core/app"
 
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
@@ -29,10 +30,10 @@ func DefaultParams() Params {
 	return Params{
 		KeygenThreshold:    utils.NewThreshold(80, 100),
 		SigningThreshold:   utils.NewThreshold(60, 100),
-		KeygenTimeout:      10,
-		KeygenGracePeriod:  5,
-		SigningTimeout:     10,
-		SigningGracePeriod: 1,
+		KeygenTimeout:      10 * app.BlockTimeSpeedUp,
+		KeygenGracePeriod:  10 * app.BlockTimeSpeedUp,
+		SigningTimeout:     10 * app.BlockTimeSpeedUp,
+		SigningGracePeriod: 10 * app.BlockTimeSpeedUp,
 		ActiveEpochCount:   5,
 	}
 }
