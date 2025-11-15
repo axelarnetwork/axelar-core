@@ -70,6 +70,7 @@ func TestInitExportGenesis(t *testing.T) {
 		}
 		pool := rewardmock.RewardPoolMock{
 			ReleaseRewardsFunc: func(valAddress sdk.ValAddress) error { return nil },
+			ClearRewardsFunc:   func(valAddress sdk.ValAddress) {},
 		}
 		rewardK = &mock.RewarderMock{
 			GetPoolFunc: func(ctx sdk.Context, name string) reward.RewardPool { return &pool },
@@ -95,7 +96,10 @@ func TestInitExportGenesis(t *testing.T) {
 			msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), types.NewSubmitPubKeyRequest(rand.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize()))
 		}
 
-		multisig.EndBlocker(ctx.WithBlockHeight(ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod), k, rewardK)
+		// Call EndBlocker for every block until timeout
+		for i := int64(0); i <= types.DefaultParams().KeygenTimeout; i++ {
+			funcs.Must(multisig.EndBlocker(ctx.WithBlockHeight(ctx.BlockHeight()+i), k, rewardK))
+		}
 	})
 
 	whenSigningSessionExists := When("some signing session exists", func() {
