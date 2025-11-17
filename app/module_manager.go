@@ -32,7 +32,7 @@ func (f *FilteredModuleManager) RegisterServices(cfg module.Configurator) {
 		if m, ok := m.(module.HasServices); ok {
 			m.RegisterServices(cfg)
 		}
-		
+
 		// Handle new Core API module interface (e.g., consensus module)
 		if m, ok := m.(appmodule.HasServices); ok {
 			if err := m.RegisterServices(cfg); err != nil {
