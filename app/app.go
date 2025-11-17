@@ -1056,6 +1056,7 @@ func GetModuleBasics() module.BasicManager {
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
 		vesting.AppModuleBasic{},
+		consensus.AppModuleBasic{},
 		ibc.AppModuleBasic{},
 		ibctendermint.AppModuleBasic{},
 		transfer.AppModuleBasic{},
