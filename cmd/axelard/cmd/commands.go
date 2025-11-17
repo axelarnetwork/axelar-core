@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"io"
 
 	"cosmossdk.io/log"
@@ -156,6 +157,9 @@ func addModuleInitFlags(startCmd *cobra.Command) {
 
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
 	baseappOptions := server.DefaultBaseappOptions(appOpts)
+
+	// this allows for faster block times, because nodes can start optimistic execution of blocks while they are being voted on
+	baseappOptions = append(baseappOptions, baseapp.SetOptimisticExecution())
 
 	var wasmOpts []wasm.Option
 	if app.IsWasmEnabled() && cast.ToBool(appOpts.Get("telemetry.enabled")) {
