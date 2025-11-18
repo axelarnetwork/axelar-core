@@ -665,6 +665,8 @@ func InitCustomAnteDecorators(
 		wasmAnteDecorators := []sdk.AnteDecorator{
 			ante.NewLimitSimulationGasDecorator(wasmConfig.SimulationGasLimit),
 			wasmkeeper.NewCountTXDecorator(runtime.NewKVStoreService(keys[wasmtypes.StoreKey])),
+			wasmkeeper.NewGasRegisterDecorator(GetKeeper[wasmkeeper.Keeper](keepers).GetGasRegister()),
+			wasmkeeper.NewTxContractsDecorator(),
 		}
 
 		anteDecorators = append(anteDecorators, wasmAnteDecorators...)
@@ -1060,6 +1062,7 @@ func GetModuleBasics() module.BasicManager {
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
 		vesting.AppModuleBasic{},
+		consensus.AppModuleBasic{},
 		ibc.AppModuleBasic{},
 		ibctendermint.AppModuleBasic{},
 		transfer.AppModuleBasic{},
