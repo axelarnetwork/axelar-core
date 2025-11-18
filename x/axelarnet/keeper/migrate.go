@@ -1,8 +1,9 @@
 package keeper
 
 import (
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 )
 
 // Migrate7to8 returns the handler that performs in-place store migrations
