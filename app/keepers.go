@@ -81,8 +81,6 @@ import (
 	"github.com/axelarnetwork/utils/maps"
 )
 
-var GovModuleAddress = authtypes.NewModuleAddress(govtypes.ModuleName)
-
 type KeeperCache struct {
 	repository map[string]any
 }
