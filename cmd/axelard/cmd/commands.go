@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"github.com/cosmos/cosmos-sdk/baseapp"
 	"io"
 
 	"cosmossdk.io/log"
@@ -12,6 +11,7 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 	dbm "github.com/cosmos/cosmos-db"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/debug"
 	"github.com/cosmos/cosmos-sdk/client/flags"
