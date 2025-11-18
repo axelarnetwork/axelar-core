@@ -1,6 +1,7 @@
 package app
 
 import (
+	"cosmossdk.io/core/appmodule"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/axelarnetwork/utils/slices"
@@ -27,8 +28,16 @@ func (f *FilteredModuleManager) RegisterServices(cfg module.Configurator) {
 			continue
 		}
 
+		// Handle old SDK module interface
 		if m, ok := m.(module.HasServices); ok {
 			m.RegisterServices(cfg)
+		}
+
+		// Handle new Core API module interface (e.g., consensus module)
+		if m, ok := m.(appmodule.HasServices); ok {
+			if err := m.RegisterServices(cfg); err != nil {
+				panic(err)
+			}
 		}
 	}
 }
