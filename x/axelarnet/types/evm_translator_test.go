@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -620,7 +621,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 			SourceAddress: strings.ToUpper(msg.GetSourceAddress()),
 			Asset: sdk.NewCoin(
 				rand.Denom(3, 20),
-				rand.IntBetween(sdk.ZeroInt(), sdk.NewIntFromUint64(10000000)),
+				rand.IntBetween(sdkmath.ZeroInt(), sdkmath.NewIntFromUint64(10000000)),
 			),
 			Ints:   []int64{0, math.MaxInt64, math.MinInt64, rand.I64Between(math.MinInt64/2, math.MaxInt64/2)},
 			Floats: []float64{math.Pi, math.MaxFloat64, math.SmallestNonzeroFloat64},

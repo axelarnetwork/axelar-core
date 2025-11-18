@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/log"
 	"cosmossdk.io/math"
-	"github.com/cometbft/cometbft/libs/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -33,8 +33,8 @@ import (
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func setup() (sdk.Context, *mock.BaseKeeperMock, *mock.NexusMock, *mock.MultisigKeeperMock, *mock.ChainKeeperMock, *mock.ChainKeeperMock) {
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+func setup(t log.TestingT) (sdk.Context, *mock.BaseKeeperMock, *mock.NexusMock, *mock.MultisigKeeperMock, *mock.ChainKeeperMock, *mock.ChainKeeperMock) {
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 
 	bk := &mock.BaseKeeperMock{}
 	n := &mock.NexusMock{}
@@ -69,7 +69,7 @@ func TestHandleGeneralMessage(t *testing.T) {
 	givenMessage := Given("a message", func() {
 		msg = nexus.NewGeneralMessage(evmTestUtils.RandomHash().Hex(), sender, receiver, evmCrypto.Keccak256(payload), evmTestUtils.RandomHash().Bytes()[:], uint64(rand.I64Between(0, 10000)), nil)
 
-		ctx, _, n, multisigKeeper, _, destinationCk = setup()
+		ctx, _, n, multisigKeeper, _, destinationCk = setup(t)
 		n.SetMessageFailedFunc = func(ctx sdk.Context, id string) error {
 			return nil
 		}
@@ -90,7 +90,7 @@ func TestHandleGeneralMessage(t *testing.T) {
 	panicWith := func(errMsg string) func(t *testing.T) {
 		return func(t *testing.T) {
 			assert.PanicsWithError(t, errMsg, func() {
-				handleMessage(ctx, destinationCk, rand.IntBetween(sdk.ZeroInt(), sdk.NewInt(10000)), multisigTestUtils.KeyID(), msg)
+				handleMessage(ctx, destinationCk, rand.IntBetween(math.ZeroInt(), math.NewInt(10000)), multisigTestUtils.KeyID(), msg)
 			})
 		}
 	}
@@ -226,7 +226,7 @@ func TestHandleGeneralMessage(t *testing.T) {
 		Given2(withToken).
 		When("enqueue command succeeds", enqueueCommandSucceed(true)).
 		Then("should succeed", func(t *testing.T) {
-			handleMessage(ctx, destinationCk, rand.IntBetween(sdk.ZeroInt(), sdk.NewInt(10000)), multisigTestUtils.KeyID(), msg)
+			handleMessage(ctx, destinationCk, rand.IntBetween(math.ZeroInt(), math.NewInt(10000)), multisigTestUtils.KeyID(), msg)
 			assert.Len(t, destinationCk.EnqueueCommandCalls(), 1)
 		}).
 		Run(t)
@@ -245,7 +245,7 @@ func TestHandleGeneralMessages(t *testing.T) {
 	chain2 := nexus.ChainName(rand.Str(5))
 
 	givenGeneralMessagesEnqueued := Given("general messages queued", func() {
-		ctx, bk, n, multisigKeeper, ck1, ck2 = setup()
+		ctx, bk, n, multisigKeeper, ck1, ck2 = setup(t)
 		n.GetChainsFunc = func(_ sdk.Context) []nexus.Chain {
 			return []nexus.Chain{{Name: chain1, Module: types.ModuleName}, {Name: chain2, Module: types.ModuleName}}
 		}
@@ -263,9 +263,9 @@ func TestHandleGeneralMessages(t *testing.T) {
 			}
 		}
 
-		ck1.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), true }
+		ck1.GetChainIDFunc = func(ctx sdk.Context) (math.Int, bool) { return math.ZeroInt(), true }
 		ck1.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
-		ck2.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), true }
+		ck2.GetChainIDFunc = func(ctx sdk.Context) (math.Int, bool) { return math.ZeroInt(), true }
 		ck2.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
 		ck1.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) { return evmTestUtils.RandomAddress(), true }
 		ck2.GetGatewayAddressFunc = func(ctx sdk.Context) (types.Address, bool) { return evmTestUtils.RandomAddress(), true }
@@ -463,7 +463,7 @@ func TestHandleContractCall(t *testing.T) {
 				},
 			},
 		}
-		ctx, bk, n, multisigKeeper, sourceCk, destinationCk = setup()
+		ctx, bk, n, multisigKeeper, sourceCk, destinationCk = setup(t)
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			switch chain {
@@ -529,7 +529,7 @@ func TestHandleContractCall(t *testing.T) {
 
 	isDestinationChainIDSet := func(isSet bool) func() {
 		return func() {
-			destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), isSet }
+			destinationCk.GetChainIDFunc = func(ctx sdk.Context) (math.Int, bool) { return math.ZeroInt(), isSet }
 		}
 	}
 
@@ -658,11 +658,11 @@ func TestHandleTokenSent(t *testing.T) {
 					DestinationChain:   destinationChainName,
 					DestinationAddress: evmTestUtils.RandomAddress().Hex(),
 					Symbol:             rand.Denom(3, 5),
-					Amount:             sdk.NewUint(uint64(rand.I64Between(1, 10000))),
+					Amount:             math.NewUint(uint64(rand.I64Between(1, 10000))),
 				},
 			},
 		}
-		ctx, bk, n, _, sourceCk, destinationCk = setup()
+		ctx, bk, n, _, sourceCk, destinationCk = setup(t)
 	})
 
 	whenChainsAreRegistered := givenTokenSentEvent.
@@ -830,13 +830,13 @@ func TestHandleContractCallWithToken(t *testing.T) {
 				ContractAddress:  evmTestUtils.RandomAddress().Hex(),
 				PayloadHash:      types.Hash(evmCrypto.Keccak256Hash(payload)),
 				Symbol:           rand.Denom(3, 5),
-				Amount:           sdk.NewUint(uint64(rand.I64Between(1, 10000))),
+				Amount:           math.NewUint(uint64(rand.I64Between(1, 10000))),
 			},
 		},
 	}
 
 	t.Run("should panic if the source chain is not registered", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, s, sourceCk, destinationCk := setup()
+		ctx, bk, n, s, sourceCk, destinationCk := setup(t)
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			switch chain {
@@ -858,7 +858,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 	}))
 
 	t.Run("should panic if the destination chain is not registered", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, s, sourceCk, destinationCk := setup()
+		ctx, bk, n, s, sourceCk, destinationCk := setup(t)
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			switch chain {
@@ -880,7 +880,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 	}))
 
 	t.Run("should fail if the token is not confirmed on the source chain", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, s, sourceCk, destinationCk := setup()
+		ctx, bk, n, s, sourceCk, destinationCk := setup(t)
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			switch chain {
@@ -911,7 +911,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 	}))
 
 	t.Run("should fail if the token is not confirmed on the destination chain", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, s, sourceCk, destinationCk := setup()
+		ctx, bk, n, s, sourceCk, destinationCk := setup(t)
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			switch chain {
@@ -949,7 +949,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 	}))
 
 	t.Run("should fail if the contract address is invalid", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, s, sourceCk, destinationCk := setup()
+		ctx, bk, n, s, sourceCk, destinationCk := setup(t)
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			switch chain {
@@ -993,8 +993,8 @@ func TestHandleContractCallWithToken(t *testing.T) {
 	}))
 
 	t.Run("should panic if the destination chain ID is not found", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, s, sourceCk, destinationCk := setup()
-		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
+		ctx, bk, n, s, sourceCk, destinationCk := setup(t)
+		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, math.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			switch chain {
@@ -1034,7 +1034,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
 			return nil
 		}
-		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), false }
+		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (math.Int, bool) { return math.ZeroInt(), false }
 
 		assert.PanicsWithError(t, "result is not found", func() {
 			handleContractCallWithToken(ctx, event, bk, n, s)
@@ -1042,8 +1042,8 @@ func TestHandleContractCallWithToken(t *testing.T) {
 	}))
 
 	t.Run("should panic if the destination chain does not have the key set", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, multisigKeeper, sourceCk, destinationCk := setup()
-		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
+		ctx, bk, n, multisigKeeper, sourceCk, destinationCk := setup(t)
+		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, math.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			switch chain {
@@ -1083,7 +1083,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
 			return nil
 		}
-		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(1), true }
+		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (math.Int, bool) { return math.NewInt(1), true }
 		multisigKeeper.GetCurrentKeyIDFunc = func(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool) {
 			return multisigTestUtils.KeyID(), false
 		}
@@ -1093,9 +1093,9 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		})
 	}))
 
-	t.Run("should fail if rate limit is exceeded", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, multisigKeeper, sourceCk, destinationCk := setup()
-		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, sdk.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
+	t.Run("should fail if rate limit is exceeded", func(t *testing.T) {
+		ctx, bk, n, multisigKeeper, sourceCk, destinationCk := setup(t)
+		fee := sdk.NewCoin(event.GetContractCallWithToken().Symbol, math.NewInt(rand.I64Between(1, event.GetContractCallWithToken().Amount.BigInt().Int64())))
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			switch chain {
@@ -1152,10 +1152,10 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		}
 		err = handleContractCallWithToken(ctx, event, bk, n, multisigKeeper)
 		assert.ErrorContains(t, err, fmt.Sprintf("rate limit exceeded %s", sourceChainName))
-	}))
+	})
 
 	t.Run("should succeed if successfully created the command", testutils.Func(func(t *testing.T) {
-		ctx, bk, n, multisigKeeper, sourceCk, destinationCk := setup()
+		ctx, bk, n, multisigKeeper, sourceCk, destinationCk := setup(t)
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			switch chain {
@@ -1192,7 +1192,7 @@ func TestHandleContractCallWithToken(t *testing.T) {
 		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
 			return nil
 		}
-		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(1), true }
+		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (math.Int, bool) { return math.NewInt(1), true }
 		multisigKeeper.GetCurrentKeyIDFunc = func(sdk.Context, nexus.ChainName) (multisig.KeyID, bool) {
 			return multisigTestUtils.KeyID(), true
 		}
@@ -1225,11 +1225,11 @@ func TestHandleConfirmDeposit(t *testing.T) {
 			Event: &types.Event_Transfer{
 				Transfer: &types.EventTransfer{
 					To:     evmTestUtils.RandomAddress(),
-					Amount: sdk.NewUint(uint64(rand.I64Between(1, 10000))),
+					Amount: math.NewUint(uint64(rand.I64Between(1, 10000))),
 				},
 			},
 		}
-		ctx, bk, n, _, sourceCk, _ = setup()
+		ctx, bk, n, _, sourceCk, _ = setup(t)
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			return sourceCk, nil
@@ -1372,7 +1372,7 @@ func TestHandleConfirmToken(t *testing.T) {
 				},
 			},
 		}
-		ctx, bk, n, _, sourceCk, _ = setup()
+		ctx, bk, n, _, sourceCk, _ = setup(t)
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			return sourceCk, nil
@@ -1444,7 +1444,7 @@ func TestHandleTransferKey(t *testing.T) {
 
 	givenMultisigTransferKeyEvent := Given("a MultisigTransferKey event", func() {
 		event = randTransferKeyEvent(sourceChainName)
-		ctx, bk, n, multisigKeeper, sourceCk, _ = setup()
+		ctx, bk, n, multisigKeeper, sourceCk, _ = setup(t)
 
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			return sourceCk, nil
@@ -1489,7 +1489,7 @@ func TestHandleTransferKey(t *testing.T) {
 		addressWeights, newThreshold := types.ParseMultisigKey(&key)
 		addresses := maps.Keys(addressWeights)
 		newOperators := slices.Map(addresses, func(a string) types.Address { return types.Address(common.HexToAddress(a)) })
-		newWeights := slices.Map(addresses, func(a string) sdk.Uint { return addressWeights[a] })
+		newWeights := slices.Map(addresses, func(a string) math.Uint { return addressWeights[a] })
 
 		operatorshipTransferred := types.EventMultisigOperatorshipTransferred{
 			NewOperators: newOperators,
@@ -1558,7 +1558,7 @@ func TestHandleConfirmedEvent(t *testing.T) {
 	destinationChainName := nexus.ChainName(rand.Str(5))
 
 	givenConfirmedEventQueue := Given("confirmedEvent queue", func() {
-		ctx, bk, n, multisigKeeper, sourceCk, destinationCk = setup()
+		ctx, bk, n, multisigKeeper, sourceCk, destinationCk = setup(t)
 		confirmedEventQueue = &utilsMock.KVQueueMock{}
 		bk.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
 			switch chain {
@@ -1584,7 +1584,7 @@ func TestHandleConfirmedEvent(t *testing.T) {
 			return []nexus.Chain{{Name: sourceChainName, Module: types.ModuleName}}
 		}
 
-		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.ZeroInt(), true }
+		destinationCk.GetChainIDFunc = func(ctx sdk.Context) (math.Int, bool) { return math.ZeroInt(), true }
 		destinationCk.EnqueueCommandFunc = func(ctx sdk.Context, cmd types.Command) error { return nil }
 		destinationCk.GetGatewayAddressFunc = func(sdk.Context) (types.Address, bool) {
 			return types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))), true
@@ -1733,8 +1733,8 @@ func randTransferKeyEvent(chain nexus.ChainName) types.Event {
 	}, int(rand.I64Between(10, 50)))
 
 	totalWeight := math.ZeroUint()
-	newWeights := slices.Expand(func(_ int) sdk.Uint {
-		newWeight := sdk.NewUint(uint64(rand.I64Between(1, 20)))
+	newWeights := slices.Expand(func(_ int) math.Uint {
+		newWeight := math.NewUint(uint64(rand.I64Between(1, 20)))
 		totalWeight = totalWeight.Add(newWeight)
 
 		return newWeight
@@ -1743,7 +1743,7 @@ func randTransferKeyEvent(chain nexus.ChainName) types.Event {
 	operatorshipTransferred := types.EventMultisigOperatorshipTransferred{
 		NewOperators: newAddresses,
 		NewWeights:   newWeights,
-		NewThreshold: sdk.NewUint(uint64(rand.I64Between(1, totalWeight.BigInt().Int64()+1))),
+		NewThreshold: math.NewUint(uint64(rand.I64Between(1, totalWeight.BigInt().Int64()+1))),
 	}
 	event.Event = &types.Event_MultisigOperatorshipTransferred{
 		MultisigOperatorshipTransferred: &operatorshipTransferred,

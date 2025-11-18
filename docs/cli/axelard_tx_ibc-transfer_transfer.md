@@ -43,14 +43,14 @@ axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [amount]
       --keyring-dir string              The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                          Use a connected Ledger device
       --memo string                     Memo to be sent along with the packet.
-      --node string                     <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --node string                     <host>:<port> to CometBFT rpc interface for this chain (default "tcp://localhost:26657")
       --note string                     Note to add a description to the transaction (previously --memo)
       --offline                         Offline mode (does not allow any online functionality)
   -o, --output string                   Output format (text|json) (default "json")
       --packet-timeout-height string    Packet timeout block height. The timeout is disabled when set to 0-0. (default "0-1000")
       --packet-timeout-timestamp uint   Packet timeout timestamp in nanoseconds from now. Default is 10 minutes. The timeout is disabled when set to 0. (default 600000000000)
   -s, --sequence uint                   The sequence number of the signing account (offline mode only)
-      --sign-mode string                Choose sign mode (direct|amino-json|direct-aux), this is an advanced feature
+      --sign-mode string                Choose sign mode (direct|amino-json|direct-aux|textual), this is an advanced feature
       --timeout-height uint             Set a block timeout height to prevent the tx from being committed past a certain height
       --tip string                      Tip is the amount that is going to be transferred to the fee payer on the target chain. This flag is only valid when used with --aux, and is ignored if the target chain didn't enable the TipDecorator
   -y, --yes                             Skip tx broadcasting prompt confirmation (default true)

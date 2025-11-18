@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"cosmossdk.io/math"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
@@ -21,8 +21,8 @@ func KeyTable() paramtypes.KeyTable {
 // DefaultParams - the module's default parameters
 func DefaultParams() Params {
 	return Params{
-		ExternalChainVotingInflationRate: sdk.ZeroDec(),
-		KeyMgmtRelativeInflationRate:     sdk.ZeroDec(),
+		ExternalChainVotingInflationRate: math.LegacyZeroDec(),
+		KeyMgmtRelativeInflationRate:     math.LegacyZeroDec(),
 	}
 }
 
@@ -55,7 +55,7 @@ func (m Params) Validate() error {
 }
 
 func validateExternalChainVotingInflationRate(i interface{}) error {
-	v, ok := i.(sdk.Dec)
+	v, ok := i.(math.LegacyDec)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
@@ -63,7 +63,7 @@ func validateExternalChainVotingInflationRate(i interface{}) error {
 	if v.IsNegative() {
 		return fmt.Errorf("external chain voting inflation rate cannot be negative: %s", v)
 	}
-	if v.GT(sdk.OneDec()) {
+	if v.GT(math.LegacyOneDec()) {
 		return fmt.Errorf("external chain voting inflation rate too large: %s", v)
 	}
 
@@ -71,7 +71,7 @@ func validateExternalChainVotingInflationRate(i interface{}) error {
 }
 
 func validateKeyMgmtRelativeInflationRate(i interface{}) error {
-	v, ok := i.(sdk.Dec)
+	v, ok := i.(math.LegacyDec)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
@@ -79,7 +79,7 @@ func validateKeyMgmtRelativeInflationRate(i interface{}) error {
 	if v.IsNegative() {
 		return fmt.Errorf("key management inflation rate cannot be negative: %s", v)
 	}
-	if v.GT(sdk.OneDec()) {
+	if v.GT(math.LegacyOneDec()) {
 		return fmt.Errorf("key management inflation rate too large: %s", v)
 	}
 

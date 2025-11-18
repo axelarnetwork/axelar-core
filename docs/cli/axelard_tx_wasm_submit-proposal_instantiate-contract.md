@@ -18,6 +18,7 @@ axelard tx wasm submit-proposal instantiate-contract [code_id_int64] [json_encod
       --chain-id string          The network chain ID (default "axelar")
       --deposit string           Deposit of proposal
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it (when enabled, the local Keybase is not accessible)
+      --expedite                 Expedite proposals have shorter voting period but require higher voting threshold
       --fee-granter string       Fee granter grants fees for the transaction
       --fee-payer string         Fee payer pays fees for the transaction instead of deducting from the signer
       --fees string              Fees to pay along with transaction; eg: 10uatom
@@ -32,12 +33,12 @@ axelard tx wasm submit-proposal instantiate-contract [code_id_int64] [json_encod
       --label string             A human-readable name for this contract in lists
       --ledger                   Use a connected Ledger device
       --no-admin                 You must set this explicitly if you don't want an admin
-      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --node string              <host>:<port> to CometBFT rpc interface for this chain (default "tcp://localhost:26657")
       --note string              Note to add a description to the transaction (previously --memo)
       --offline                  Offline mode (does not allow any online functionality)
   -o, --output string            Output format (text|json) (default "json")
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
-      --sign-mode string         Choose sign mode (direct|amino-json|direct-aux), this is an advanced feature
+      --sign-mode string         Choose sign mode (direct|amino-json|direct-aux|textual), this is an advanced feature
       --summary string           Summary of proposal
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
       --tip string               Tip is the amount that is going to be transferred to the fee payer on the target chain. This flag is only valid when used with --aux, and is ignored if the target chain didn't enable the TipDecorator

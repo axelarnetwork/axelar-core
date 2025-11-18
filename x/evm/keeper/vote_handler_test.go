@@ -6,11 +6,12 @@ import (
 	"strings"
 	"testing"
 
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
+	sdkstore "cosmossdk.io/store/types"
 	"github.com/CosmWasm/wasmd/x/wasm"
-	"github.com/cometbft/cometbft/libs/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdkstore "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
@@ -45,11 +46,11 @@ func TestHandleExpiredPoll(t *testing.T) {
 	)
 
 	givenVoteHandler := Given("the vote handler", func() {
-		ctx = sdk.NewContext(&fakemock.MultiStoreMock{}, tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(&fakemock.MultiStoreMock{}, tmproto.Header{}, false, log.NewTestLogger(t))
 		encCfg := params.MakeEncodingConfig()
 
 		k := &mock.BaseKeeperMock{
-			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.NewTestLogger(t) },
 		}
 		n = &mock.NexusMock{
 			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -242,13 +243,13 @@ func TestHandleResult(t *testing.T) {
 	setup := func() {
 		multiStore := fakemock.MultiStoreMock{}
 		multiStore.CacheMultiStoreFunc = func() sdkstore.CacheMultiStore { return &fakemock.CacheMultiStoreMock{} }
-		ctx = sdk.NewContext(&multiStore, tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(&multiStore, tmproto.Header{}, false, log.NewTestLogger(t))
 
 		basek = &mock.BaseKeeperMock{
-			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.NewTestLogger(t) },
 		}
 		chaink = &mock.ChainKeeperMock{
-			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.NewTestLogger(t) },
 		}
 		nexusK = &mock.NexusMock{}
 
@@ -417,7 +418,7 @@ func randTransferEvents(chain nexus.ChainName, n int64) []types.Event {
 	for i := int64(0); i < n; i++ {
 		transfer := types.EventTransfer{
 			To:     burnerAddress,
-			Amount: sdk.NewUint(mathRand.Uint64()),
+			Amount: math.NewUint(mathRand.Uint64()),
 		}
 		events[i] = types.Event{
 			Chain: chain,

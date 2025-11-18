@@ -21,7 +21,7 @@ axelard keys list [flags]
 ### Options inherited from parent commands
 
 ```
-      --home string              The application home directory (default "$HOME/.axelar")
+      --home string              directory for config and data (default "$HOME/.axelar")
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --log_format string        The logging format (json|plain) (default "plain")

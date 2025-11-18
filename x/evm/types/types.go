@@ -12,12 +12,12 @@ import (
 	"strings"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -165,7 +165,7 @@ func (t ERC20Token) GetBurnerCodeHash() (Hash, bool) {
 }
 
 // CreateDeployCommand returns a token deployment command for the token
-func (t *ERC20Token) CreateDeployCommand(keyID multisig.KeyID, dailyMintLimit sdk.Uint) (Command, error) {
+func (t *ERC20Token) CreateDeployCommand(keyID multisig.KeyID, dailyMintLimit math.Uint) (Command, error) {
 	switch {
 	case t.Is(NonExistent):
 		return Command{}, fmt.Errorf("token %s non-existent", t.GetAsset())
@@ -467,7 +467,7 @@ func KeysToAddresses(keys ...ecdsa.PublicKey) []common.Address {
 
 // CreateExecuteDataMultisig wraps the specific command data and includes the command signatures.
 // Returns the data that goes into the data field of an EVM transaction
-func CreateExecuteDataMultisig(data []byte, addresses []common.Address, weights []sdk.Uint, threshold sdk.Uint, signatures [][]byte) ([]byte, error) {
+func CreateExecuteDataMultisig(data []byte, addresses []common.Address, weights []math.Uint, threshold math.Uint, signatures [][]byte) ([]byte, error) {
 	abiEncoder, err := abi.JSON(strings.NewReader(axelarGatewayABI))
 	if err != nil {
 		return nil, err
@@ -597,7 +597,7 @@ func (b *CommandBatch) SetSigned(signature utils.ValidatedProtoMarshaler) error 
 }
 
 // NewCommandBatchMetadata assembles a CommandBatchMetadata struct from the provided arguments
-func NewCommandBatchMetadata(blockHeight int64, chainID sdk.Int, keyID multisig.KeyID, cmds []Command) (CommandBatchMetadata, error) {
+func NewCommandBatchMetadata(blockHeight int64, chainID math.Int, keyID multisig.KeyID, cmds []Command) (CommandBatchMetadata, error) {
 	var commandIDs []CommandID
 	var commands []CommandType
 	var commandParams [][]byte
@@ -685,7 +685,7 @@ const commandIDSize = 32
 type CommandID [commandIDSize]byte
 
 // NewCommandID is the constructor for CommandID
-func NewCommandID(data []byte, chainID sdk.Int) CommandID {
+func NewCommandID(data []byte, chainID math.Int) CommandID {
 	var commandID CommandID
 	copy(commandID[:], crypto.Keccak256(append(data, chainID.BigInt().Bytes()...))[:commandIDSize])
 
@@ -766,18 +766,18 @@ func NewAsset(chain, name string) Asset {
 // Validate ensures that all fields are filled with sensible values
 func (m Asset) Validate() error {
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
+		return errorsmod.Wrap(err, "invalid chain")
 	}
 
 	if err := utils.ValidateString(m.Name); err != nil {
-		return sdkerrors.Wrap(err, "invalid name")
+		return errorsmod.Wrap(err, "invalid name")
 	}
 
 	return nil
 }
 
 // NewTokenDetails returns a new TokenDetails instance
-func NewTokenDetails(tokenName, symbol string, decimals uint8, capacity sdk.Int) TokenDetails {
+func NewTokenDetails(tokenName, symbol string, decimals uint8, capacity math.Int) TokenDetails {
 	return TokenDetails{
 		TokenName: utils.NormalizeString(tokenName),
 		Symbol:    utils.NormalizeString(symbol),
@@ -789,11 +789,11 @@ func NewTokenDetails(tokenName, symbol string, decimals uint8, capacity sdk.Int)
 // Validate ensures that all fields are filled with sensible values
 func (m TokenDetails) Validate() error {
 	if err := utils.ValidateString(m.TokenName); err != nil {
-		return sdkerrors.Wrap(err, "invalid token name")
+		return errorsmod.Wrap(err, "invalid token name")
 	}
 
 	if err := utils.ValidateString(m.Symbol); err != nil {
-		return sdkerrors.Wrap(err, "invalid token symbol")
+		return errorsmod.Wrap(err, "invalid token symbol")
 	}
 
 	if m.Capacity.IsNil() || m.Capacity.IsNegative() {
@@ -803,7 +803,7 @@ func (m TokenDetails) Validate() error {
 	return nil
 }
 
-func packArguments(chainID sdk.Int, commandIDs []CommandID, commands []CommandType, commandParams [][]byte) ([]byte, error) {
+func packArguments(chainID math.Int, commandIDs []CommandID, commands []CommandType, commandParams [][]byte) ([]byte, error) {
 	if len(commandIDs) != len(commands) || len(commandIDs) != len(commandParams) {
 		return nil, fmt.Errorf("length mismatch for command arguments")
 	}
@@ -845,15 +845,15 @@ func packArguments(chainID sdk.Int, commandIDs []CommandID, commands []CommandTy
 // ValidateBasic does stateless validation of the object
 func (m *BurnerInfo) ValidateBasic() error {
 	if err := m.DestinationChain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination chain")
+		return errorsmod.Wrap(err, "invalid destination chain")
 	}
 
 	if err := sdk.ValidateDenom(m.Asset); err != nil {
-		return sdkerrors.Wrap(err, "invalid asset")
+		return errorsmod.Wrap(err, "invalid asset")
 	}
 
 	if err := utils.ValidateString(m.Symbol); err != nil {
-		return sdkerrors.Wrap(err, "invalid symbol")
+		return errorsmod.Wrap(err, "invalid symbol")
 	}
 
 	return nil
@@ -866,7 +866,7 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 	}
 
 	if err := sdk.ValidateDenom(m.Asset); err != nil {
-		return sdkerrors.Wrap(err, "invalid asset")
+		return errorsmod.Wrap(err, "invalid asset")
 	}
 
 	if m.ChainID.IsNil() || !m.ChainID.IsPositive() {
@@ -894,11 +894,11 @@ func (m *ERC20TokenMetadata) ValidateBasic() error {
 // ValidateBasic does stateless validation of the object
 func (m *ERC20Deposit) ValidateBasic() error {
 	if err := sdk.ValidateDenom(m.Asset); err != nil {
-		return sdkerrors.Wrap(err, "invalid asset")
+		return errorsmod.Wrap(err, "invalid asset")
 	}
 
 	if err := m.DestinationChain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination chain")
+		return errorsmod.Wrap(err, "invalid destination chain")
 	}
 
 	if m.Amount.IsZero() {
@@ -926,7 +926,7 @@ func (m Event) GetID() EventID {
 // ValidateBasic returns an error if the event is invalid
 func (m Event) ValidateBasic() error {
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid source chain")
+		return errorsmod.Wrap(err, "invalid source chain")
 	}
 
 	if m.TxID.IsZero() {
@@ -940,7 +940,7 @@ func (m Event) ValidateBasic() error {
 		}
 
 		if err := event.ContractCall.ValidateBasic(); err != nil {
-			return sdkerrors.Wrap(err, "invalid event ContractCall")
+			return errorsmod.Wrap(err, "invalid event ContractCall")
 		}
 	case *Event_ContractCallWithToken:
 		if event.ContractCallWithToken == nil {
@@ -948,7 +948,7 @@ func (m Event) ValidateBasic() error {
 		}
 
 		if err := event.ContractCallWithToken.ValidateBasic(); err != nil {
-			return sdkerrors.Wrap(err, "invalid event ContractCallWithToken")
+			return errorsmod.Wrap(err, "invalid event ContractCallWithToken")
 		}
 	case *Event_TokenSent:
 		if event.TokenSent == nil {
@@ -956,28 +956,28 @@ func (m Event) ValidateBasic() error {
 		}
 
 		if err := event.TokenSent.ValidateBasic(); err != nil {
-			return sdkerrors.Wrap(err, "invalid event TokenSent")
+			return errorsmod.Wrap(err, "invalid event TokenSent")
 		}
 	case *Event_Transfer:
 		if event.Transfer == nil {
 			return fmt.Errorf("missing event Transfer")
 		}
 		if err := event.Transfer.ValidateBasic(); err != nil {
-			return sdkerrors.Wrap(err, "invalid event Transfer")
+			return errorsmod.Wrap(err, "invalid event Transfer")
 		}
 	case *Event_TokenDeployed:
 		if event.TokenDeployed == nil {
 			return fmt.Errorf("missing event TokenDeployed")
 		}
 		if err := event.TokenDeployed.ValidateBasic(); err != nil {
-			return sdkerrors.Wrap(err, "invalid event TokenDeployed")
+			return errorsmod.Wrap(err, "invalid event TokenDeployed")
 		}
 	case *Event_MultisigOperatorshipTransferred:
 		if event.MultisigOperatorshipTransferred == nil {
 			return fmt.Errorf("missing event MultisigOperatorshipTransferred")
 		}
 		if err := event.MultisigOperatorshipTransferred.ValidateBasic(); err != nil {
-			return sdkerrors.Wrap(err, "invalid event MultisigOperatorshipTransferred")
+			return errorsmod.Wrap(err, "invalid event MultisigOperatorshipTransferred")
 		}
 	default:
 		return fmt.Errorf("unknown type of event")
@@ -1000,11 +1000,11 @@ func (m EventTokenSent) ValidateBasic() error {
 	}
 
 	if err := m.DestinationChain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination chain")
+		return errorsmod.Wrap(err, "invalid destination chain")
 	}
 
 	if err := utils.ValidateString(m.DestinationAddress); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination address")
+		return errorsmod.Wrap(err, "invalid destination address")
 	}
 
 	if len(m.DestinationAddress) > maxReceiverLength {
@@ -1012,7 +1012,7 @@ func (m EventTokenSent) ValidateBasic() error {
 	}
 
 	if err := utils.ValidateString(m.Symbol); err != nil {
-		return sdkerrors.Wrap(err, "invalid symbol")
+		return errorsmod.Wrap(err, "invalid symbol")
 	}
 
 	if m.Amount.IsZero() {
@@ -1029,11 +1029,11 @@ func (m EventContractCall) ValidateBasic() error {
 	}
 
 	if err := m.DestinationChain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination chain")
+		return errorsmod.Wrap(err, "invalid destination chain")
 	}
 
 	if err := utils.ValidateString(m.ContractAddress); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination address")
+		return errorsmod.Wrap(err, "invalid destination address")
 	}
 
 	if len(m.ContractAddress) > maxReceiverLength {
@@ -1054,11 +1054,11 @@ func (m EventContractCallWithToken) ValidateBasic() error {
 	}
 
 	if err := m.DestinationChain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination chain")
+		return errorsmod.Wrap(err, "invalid destination chain")
 	}
 
 	if err := utils.ValidateString(m.ContractAddress); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination address")
+		return errorsmod.Wrap(err, "invalid destination address")
 	}
 
 	if len(m.ContractAddress) > maxReceiverLength {
@@ -1070,7 +1070,7 @@ func (m EventContractCallWithToken) ValidateBasic() error {
 	}
 
 	if err := utils.ValidateString(m.Symbol); err != nil {
-		return sdkerrors.Wrap(err, "invalid symbol")
+		return errorsmod.Wrap(err, "invalid symbol")
 	}
 
 	if m.Amount.IsZero() {
@@ -1100,7 +1100,7 @@ func (m EventTokenDeployed) ValidateBasic() error {
 	}
 
 	if err := utils.ValidateString(m.Symbol); err != nil {
-		return sdkerrors.Wrap(err, "invalid symbol")
+		return errorsmod.Wrap(err, "invalid symbol")
 	}
 
 	return nil
@@ -1117,7 +1117,7 @@ func (m EventMultisigOperatorshipTransferred) ValidateBasic() error {
 	}
 
 	totalWeight := math.ZeroUint()
-	slices.ForEach(m.NewWeights, func(w sdk.Uint) { totalWeight = totalWeight.Add(w) })
+	slices.ForEach(m.NewWeights, func(w math.Uint) { totalWeight = totalWeight.Add(w) })
 
 	if m.NewThreshold.IsZero() || m.NewThreshold.GT(totalWeight) {
 		return fmt.Errorf("invalid new threshold")
@@ -1168,13 +1168,13 @@ func (m VoteEvents) ValidateBasic() error {
 }
 
 // GetMultisigAddressesAndWeights coverts a multisig key to sorted addresses, weights and threshold
-func GetMultisigAddressesAndWeights(key multisig.Key) ([]common.Address, []sdk.Uint, sdk.Uint) {
+func GetMultisigAddressesAndWeights(key multisig.Key) ([]common.Address, []math.Uint, math.Uint) {
 	addressWeights, threshold := ParseMultisigKey(key)
 	addresses := slices.Map(maps.Keys(addressWeights), common.HexToAddress)
 	sort.SliceStable(addresses, func(i, j int) bool {
 		return bytes.Compare(addresses[i].Bytes(), addresses[j].Bytes()) < 0
 	})
-	weights := slices.Map(addresses, func(address common.Address) sdk.Uint {
+	weights := slices.Map(addresses, func(address common.Address) math.Uint {
 		return addressWeights[address.Hex()]
 	})
 
@@ -1210,7 +1210,7 @@ func (id EventID) Validate() error {
 
 	bz, err := hexutil.Decode(arr[0])
 	if err != nil {
-		return sdkerrors.Wrap(err, "invalid tx hash hex encoding")
+		return errorsmod.Wrap(err, "invalid tx hash hex encoding")
 	}
 
 	if len(bz) != common.HashLength {
@@ -1219,7 +1219,7 @@ func (id EventID) Validate() error {
 
 	_, err = strconv.ParseInt(arr[1], 10, 64)
 	if err != nil {
-		return sdkerrors.Wrap(err, "invalid index")
+		return errorsmod.Wrap(err, "invalid index")
 	}
 
 	return nil
@@ -1227,9 +1227,9 @@ func (id EventID) Validate() error {
 
 // ParseMultisigKey parses the given multisig key and returns the weight for
 // each particpant evm address and the threshold
-func ParseMultisigKey(key multisig.Key) (map[string]sdk.Uint, sdk.Uint) {
+func ParseMultisigKey(key multisig.Key) (map[string]math.Uint, math.Uint) {
 	participants := key.GetParticipants()
-	addressWeights := make(map[string]sdk.Uint, len(participants))
+	addressWeights := make(map[string]math.Uint, len(participants))
 
 	for _, p := range participants {
 		pubKey := funcs.MustOk(key.GetPubKey(p))
@@ -1251,7 +1251,7 @@ func NewSigMetadata(sigType SigType, chain nexus.ChainName, commandBatchID []byt
 	}
 }
 
-func getWeightedSignaturesProof(addresses []common.Address, weights []sdk.Uint, threshold sdk.Uint, signatures [][]byte) ([]byte, error) {
+func getWeightedSignaturesProof(addresses []common.Address, weights []math.Uint, threshold math.Uint, signatures [][]byte) ([]byte, error) {
 	addressesType, err := abi.NewType("address[]", "address[]", nil)
 	if err != nil {
 		return nil, err
@@ -1278,7 +1278,7 @@ func getWeightedSignaturesProof(addresses []common.Address, weights []sdk.Uint, 
 		{Type: thresholdType},
 		{Type: signaturesType}}.Pack(
 		addresses,
-		slices.Map(weights, sdk.Uint.BigInt),
+		slices.Map(weights, math.Uint.BigInt),
 		threshold.BigInt(),
 		signatures,
 	)
@@ -1293,7 +1293,7 @@ func getWeightedSignaturesProof(addresses []common.Address, weights []sdk.Uint, 
 type Operator struct {
 	Address   common.Address
 	Signature []byte
-	Weight    sdk.Uint
+	Weight    math.Uint
 }
 
 // ValidateBasic returns an error if the Gateway address is invalid

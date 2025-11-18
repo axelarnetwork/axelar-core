@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"google.golang.org/grpc"
 
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
@@ -66,17 +66,17 @@ func (mgr *Mgr) ProcessHeartBeatEvent(_ tmEvents.Event) error {
 
 	response, err := mgr.multiSigClient.KeyPresence(grpcCtx, request)
 	if err != nil {
-		return sdkerrors.Wrapf(err, "failed to invoke KeyPresence grpc")
+		return errorsmod.Wrapf(err, "failed to invoke KeyPresence grpc")
 	}
 
 	switch response.Response {
 	case tofnd.RESPONSE_UNSPECIFIED, tofnd.RESPONSE_FAIL:
-		return sdkerrors.Wrap(err, "tofnd not set up correctly")
+		return errorsmod.Wrap(err, "tofnd not set up correctly")
 	case tofnd.RESPONSE_PRESENT, tofnd.RESPONSE_ABSENT:
 		// tofnd is working properly
 		break
 	default:
-		return sdkerrors.Wrap(err, "unknown tofnd response")
+		return errorsmod.Wrap(err, "unknown tofnd response")
 	}
 
 	tssMsg := tss.NewHeartBeatRequest(mgr.cliCtx.FromAddress)
@@ -84,7 +84,7 @@ func (mgr *Mgr) ProcessHeartBeatEvent(_ tmEvents.Event) error {
 	logger := log.With("listener", "tss")
 	logger.Info(fmt.Sprintf("operator %s sending heartbeat", mgr.principalAddr))
 	if _, err := mgr.broadcaster.Broadcast(context.TODO(), tssMsg); err != nil {
-		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing heartbeat msg")
+		return errorsmod.Wrap(err, "handler goroutine: failure to broadcast outgoing heartbeat msg")
 	}
 
 	logger.Info(fmt.Sprintf("no keygen/signing issues reported for operator %s", mgr.principalAddr))

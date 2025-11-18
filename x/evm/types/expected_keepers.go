@@ -1,9 +1,11 @@
 package types
 
 import (
+	"context"
 	"time"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -12,12 +14,13 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper MultisigKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . Voter Nexus Snapshotter BaseKeeper ChainKeeper Rewarder StakingKeeper SlashingKeeper MultisigKeeper Permission
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -34,9 +37,10 @@ type ChainKeeper interface {
 	GetName() nexus.ChainName
 
 	GetParams(ctx sdk.Context) Params
+	SetParams(ctx sdk.Context, params Params)
 
 	GetNetwork(ctx sdk.Context) string
-	GetChainID(ctx sdk.Context) (sdk.Int, bool)
+	GetChainID(ctx sdk.Context) (math.Int, bool)
 	GetRequiredConfirmationHeight(ctx sdk.Context) uint64
 	GetRevoteLockingPeriod(ctx sdk.Context) int64
 	GetBurnerByteCode(ctx sdk.Context) []byte
@@ -53,8 +57,8 @@ type ChainKeeper interface {
 	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
 	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositStatus)
 	GetConfirmedDepositsPaginated(ctx sdk.Context, pageRequest *query.PageRequest) ([]ERC20Deposit, *query.PageResponse, error)
-	GetNetworkByID(ctx sdk.Context, id sdk.Int) (string, bool)
-	GetChainIDByNetwork(ctx sdk.Context, network string) (sdk.Int, bool)
+	GetNetworkByID(ctx sdk.Context, id math.Int) (string, bool)
+	GetChainIDByNetwork(ctx sdk.Context, network string) (math.Int, bool)
 	GetVotingThreshold(ctx sdk.Context) utils.Threshold
 	GetMinVoterCount(ctx sdk.Context) int64
 
@@ -106,7 +110,7 @@ type Nexus interface {
 	GetChains(ctx sdk.Context) []nexus.Chain
 	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
 	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
-	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Uint, window time.Duration) error
+	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit math.Uint, window time.Duration) error
 	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain nexus.Chain, ok bool)
@@ -131,7 +135,7 @@ type InitPoller = interface {
 
 // Snapshotter provides access to the snapshot functionality
 type Snapshotter interface {
-	CreateSnapshot(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower sdk.Uint) sdk.Uint, threshold utils.Threshold) (snapshot.Snapshot, error)
+	CreateSnapshot(ctx sdk.Context, candidates []sdk.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower math.Uint) math.Uint, threshold utils.Threshold) (snapshot.Snapshot, error)
 	GetProxy(ctx sdk.Context, principal sdk.ValAddress) (addr sdk.AccAddress, active bool)
 }
 
@@ -143,12 +147,12 @@ type Rewarder interface {
 // StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
 // actually used by this module
 type StakingKeeper interface {
-	PowerReduction(ctx sdk.Context) sdk.Int
+	PowerReduction(ctx context.Context) math.Int
 }
 
 // SlashingKeeper provides functionality to manage slashing info for a validator
 type SlashingKeeper interface {
-	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
+	IsTombstoned(ctx context.Context, consAddr sdk.ConsAddress) bool
 }
 
 // MultisigKeeper provides functionality to the multisig module
@@ -159,4 +163,9 @@ type MultisigKeeper interface {
 	AssignKey(ctx sdk.Context, chainName nexus.ChainName, keyID multisig.KeyID) error
 	RotateKey(ctx sdk.Context, chainName nexus.ChainName) error
 	Sign(ctx sdk.Context, keyID multisig.KeyID, payloadHash multisig.Hash, module string, moduleMetadata ...codec.ProtoMarshaler) error
+}
+
+// Permission provides access to the permission functionality
+type Permission interface {
+	GetRole(ctx sdk.Context, address sdk.AccAddress) permission.Role
 }

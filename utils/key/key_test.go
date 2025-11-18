@@ -2,9 +2,9 @@ package key_test
 
 import (
 	"bytes"
+	"math"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/utils/key"

@@ -13,12 +13,8 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 )
 
-// BeginBlocker check for infraction evidence or downtime of validators
-// on every begin block
-func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock) {}
-
 // EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, ibcKeeper keeper.IBCKeeper) ([]abci.ValidatorUpdate, error) {
+func EndBlocker(ctx sdk.Context, bk types.BaseKeeper, ibcKeeper keeper.IBCKeeper) ([]abci.ValidatorUpdate, error) {
 	queue := bk.GetIBCTransferQueue(ctx)
 	endBlockerLimit := bk.GetEndBlockerLimit(ctx)
 

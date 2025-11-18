@@ -1,9 +1,9 @@
 package multisig
 
 import (
+	"cosmossdk.io/errors"
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -13,11 +13,8 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-// BeginBlocker is called at the beginning of every block
-func BeginBlocker(sdk.Context, abci.RequestBeginBlock) {}
-
 // EndBlocker is called at the end of every block, process external chain voting inflation
-func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.Keeper, rewarder types.Rewarder) ([]abci.ValidatorUpdate, error) {
+func EndBlocker(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) ([]abci.ValidatorUpdate, error) {
 	handleKeygens(ctx, k, rewarder)
 	handleSignings(ctx, k, rewarder)
 
@@ -74,7 +71,7 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 
 			slices.ForEach(sig.GetParticipants(), func(p sdk.ValAddress) { funcs.MustNoErr(pool.ReleaseRewards(p)) })
 			if err := k.GetSigRouter().GetHandler(module).HandleCompleted(cachedCtx, &sig, signing.GetMetadata()); err != nil {
-				return nil, sdkerrors.Wrap(err, "failed to handle completed signature")
+				return nil, errors.Wrap(err, "failed to handle completed signature")
 			}
 
 			events.Emit(cachedCtx, types.NewSigningCompleted(signing.GetID()))

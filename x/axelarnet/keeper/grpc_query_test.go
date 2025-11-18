@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -57,7 +57,7 @@ func TestQuerier_PendingIBCTransferCount(t *testing.T) {
 			querier = keeper.NewGRPCQuerier(k, n)
 		}).
 		When("IBC transfer counts are queried", func() {
-			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 			var err error
 			response, err = querier.PendingIBCTransferCount(sdk.WrapSDKContext(ctx), &types.PendingIBCTransferCountRequest{})
 			assert.NoError(t, err)
@@ -94,7 +94,7 @@ func TestIBCPath(t *testing.T) {
 		q = keeper.NewGRPCQuerier(baseK, nexusK)
 	}).
 		When("a correct context", func() {
-			ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+			ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 		}).
 		Branch(
 			Then("query IBC path", func(t *testing.T) {
@@ -136,7 +136,7 @@ func TestChainByIBCPath(t *testing.T) {
 		q = keeper.NewGRPCQuerier(baseK, nexusK)
 	}).
 		When("a correct context", func() {
-			ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+			ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 		}).
 		Branch(
 			Then("query chain by IBC path", func(t *testing.T) {

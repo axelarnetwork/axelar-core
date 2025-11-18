@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -13,7 +14,7 @@ var _ sdk.Msg = &RotateKeyRequest{}
 // NewRotateKeyRequest constructor for RotateKeyRequest
 func NewRotateKeyRequest(sender sdk.AccAddress, chain nexus.ChainName, keyID exported.KeyID) *RotateKeyRequest {
 	return &RotateKeyRequest{
-		Sender: sender,
+		Sender: sender.String(),
 		Chain:  chain,
 		KeyID:  keyID,
 	}
@@ -21,22 +22,17 @@ func NewRotateKeyRequest(sender sdk.AccAddress, chain nexus.ChainName, keyID exp
 
 // ValidateBasic implements the sdk.Msg interface.
 func (m RotateKeyRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 	}
 
 	if err := m.KeyID.ValidateBasic(); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 	}
 
 	return nil
-}
-
-// GetSigners implements the sdk.Msg interface
-func (m RotateKeyRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

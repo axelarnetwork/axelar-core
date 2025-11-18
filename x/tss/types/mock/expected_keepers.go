@@ -4,6 +4,7 @@
 package mock
 
 import (
+	context "context"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -22,7 +23,7 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 //
 //		// make and configure a mocked types.StakingKeeper
 //		mockedStakingKeeper := &StakingKeeperMock{
-//			ValidatorFunc: func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI {
+//			ValidatorFunc: func(ctx context.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) (stakingtypes.ValidatorI, error) {
 //				panic("mock out the Validator method")
 //			},
 //		}
@@ -33,14 +34,14 @@ var _ types.StakingKeeper = &StakingKeeperMock{}
 //	}
 type StakingKeeperMock struct {
 	// ValidatorFunc mocks the Validator method.
-	ValidatorFunc func(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI
+	ValidatorFunc func(ctx context.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) (stakingtypes.ValidatorI, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// Validator holds details about calls to the Validator method.
 		Validator []struct {
 			// Ctx is the ctx argument value.
-			Ctx github_com_cosmos_cosmos_sdk_types.Context
+			Ctx context.Context
 			// Addr is the addr argument value.
 			Addr github_com_cosmos_cosmos_sdk_types.ValAddress
 		}
@@ -49,12 +50,12 @@ type StakingKeeperMock struct {
 }
 
 // Validator calls ValidatorFunc.
-func (mock *StakingKeeperMock) Validator(ctx github_com_cosmos_cosmos_sdk_types.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) stakingtypes.ValidatorI {
+func (mock *StakingKeeperMock) Validator(ctx context.Context, addr github_com_cosmos_cosmos_sdk_types.ValAddress) (stakingtypes.ValidatorI, error) {
 	if mock.ValidatorFunc == nil {
 		panic("StakingKeeperMock.ValidatorFunc: method is nil but StakingKeeper.Validator was just called")
 	}
 	callInfo := struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Ctx  context.Context
 		Addr github_com_cosmos_cosmos_sdk_types.ValAddress
 	}{
 		Ctx:  ctx,
@@ -71,11 +72,11 @@ func (mock *StakingKeeperMock) Validator(ctx github_com_cosmos_cosmos_sdk_types.
 //
 //	len(mockedStakingKeeper.ValidatorCalls())
 func (mock *StakingKeeperMock) ValidatorCalls() []struct {
-	Ctx  github_com_cosmos_cosmos_sdk_types.Context
+	Ctx  context.Context
 	Addr github_com_cosmos_cosmos_sdk_types.ValAddress
 } {
 	var calls []struct {
-		Ctx  github_com_cosmos_cosmos_sdk_types.Context
+		Ctx  context.Context
 		Addr github_com_cosmos_cosmos_sdk_types.ValAddress
 	}
 	mock.lockValidator.RLock()

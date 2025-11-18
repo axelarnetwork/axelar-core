@@ -3,9 +3,15 @@ package keeper_test
 import (
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
+	storetypes "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +23,7 @@ import (
 	rewardKeeper "github.com/axelarnetwork/axelar-core/x/reward/keeper"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types/mock"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 )
@@ -24,16 +31,16 @@ import (
 func TestKeeper_Inflation(t *testing.T) {
 	var (
 		k                      rewardKeeper.Keeper
-		mintK                  *mock.MinterMock
+		mintK                  mintkeeper.Keeper
 		nexusK                 *mock.NexusMock
 		q                      rewardKeeper.Querier
 		ctx                    sdk.Context
 		response               *types.InflationRateResponse
 		err                    error
 		paramsSubspace         paramstypes.Subspace
-		tmInflation            sdk.Dec
-		keyRelativeInflation   sdk.Dec
-		externalChainInflation sdk.Dec
+		tmInflation            math.LegacyDec
+		keyRelativeInflation   math.LegacyDec
+		externalChainInflation math.LegacyDec
 		chains                 []nexus.Chain
 		activeStatus           map[nexus.ChainName]bool
 		val                    sdk.ValAddress
@@ -41,13 +48,17 @@ func TestKeeper_Inflation(t *testing.T) {
 
 	given := Given("a reward keeper", func() {
 		encCfg := app.MakeEncodingConfig()
-		mintK = &mock.MinterMock{}
+		accK := &mock.AccountKeeperMock{
+			GetModuleAddressFunc: func(string) sdk.AccAddress { return authtypes.NewModuleAddress(minttypes.ModuleName) },
+		}
+		mintK = mintkeeper.NewKeeper(encCfg.Codec, runtime.NewKVStoreService(storetypes.NewKVStoreKey("mint")), nil, accK, nil, authtypes.FeeCollectorName,
+			authtypes.NewModuleAddress(govtypes.ModuleName).String())
 		nexusK = &mock.NexusMock{}
 		store := fake.NewMultiStore()
-		ctx = sdk.NewContext(store, tmproto.Header{}, false, log.TestingLogger())
-		paramsSubspace = paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("rewardKey"), sdk.NewKVStoreKey("trewardKey"), "reward")
+		ctx = sdk.NewContext(store, tmproto.Header{}, false, log.NewTestLogger(t))
+		paramsSubspace = paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, storetypes.NewKVStoreKey("rewardKey"), storetypes.NewKVStoreKey("trewardKey"), "reward")
 
-		k = rewardKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("reward"), paramsSubspace, nil, nil, nil)
+		k = rewardKeeper.NewKeeper(encCfg.Codec, storetypes.NewKVStoreKey("reward"), paramsSubspace, nil, nil, nil)
 		q = rewardKeeper.NewGRPCQuerier(k, mintK, nexusK)
 	})
 
@@ -61,11 +72,9 @@ func TestKeeper_Inflation(t *testing.T) {
 		})
 
 		tmInflation = rand.ThresholdDec()
-		mintK.GetMinterFunc = func(ctx sdk.Context) minttypes.Minter {
-			return minttypes.Minter{
-				Inflation: tmInflation,
-			}
-		}
+		funcs.MustNoErr(mintK.Minter.Set(ctx, minttypes.Minter{
+			Inflation: tmInflation,
+		}))
 	})
 
 	given.

@@ -1,6 +1,7 @@
 package axelarnet_test
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -10,12 +11,13 @@ import (
 	"strings"
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	tmbytes "github.com/cometbft/cometbft/libs/bytes"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	captypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
-	ibcchanneltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/assert"
 
@@ -70,13 +72,13 @@ func TestHandleMessage(t *testing.T) {
 			Type:               nexus.TypeGeneralMessage,
 		}
 
-		ctx, k, channelK = setup()
+		ctx, k, channelK = setup(t)
 		funcs.MustNoErr(k.SetCosmosChain(ctx, types.CosmosChain{
 			Name:       srcChain.Name,
 			IBCPath:    axelartestutils.RandomIBCPath(),
 			AddrPrefix: "cosmos",
 		}))
-		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+		channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
 			return mathrand.Uint64(), nil
 		}
 		n = &mock.NexusMock{
@@ -132,13 +134,13 @@ func TestHandleMessage(t *testing.T) {
 
 		r = axelarnet.NewRateLimiter(&k, n)
 		b = &mock.BankKeeperMock{
-			SendCoinsFunc: func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil },
+			SendCoinsFunc: func(context.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil },
 		}
 	})
 
 	whenRateLimitIsSet := func(randDenom bool) func() {
 		return func() {
-			token := sdk.NewCoin(ics20Packet.GetDenom(), funcs.MustOk(sdk.NewIntFromString(ics20Packet.Amount)))
+			token := sdk.NewCoin(ics20Packet.GetDenom(), funcs.MustOk(sdkmath.NewIntFromString(ics20Packet.Amount)))
 			if randDenom {
 				token.Denom = rand.Denom(10, 20)
 			}
@@ -327,7 +329,7 @@ func TestHandleMessage(t *testing.T) {
 			}).
 			Run(t)
 
-		setFee := func(amount sdk.Int, recipient sdk.AccAddress) {
+		setFee := func(amount sdkmath.Int, recipient sdk.AccAddress) {
 			fee := axelarnet.Fee{
 				Amount:    amount.String(),
 				Recipient: recipient.String(),
@@ -339,21 +341,21 @@ func TestHandleMessage(t *testing.T) {
 
 		whenMessageIsValid.
 			When("fee is negative", func() {
-				setFee(sdk.NewInt(-1000), rand.AccAddr())
+				setFee(sdkmath.NewInt(-1000), rand.AccAddr())
 			}).
 			Then("should return ack error", ackError()).
 			Run(t)
 
 		whenMessageIsValid.
 			When("fee is zero", func() {
-				setFee(sdk.ZeroInt(), rand.AccAddr())
+				setFee(sdkmath.ZeroInt(), rand.AccAddr())
 			}).
 			Then("should return ack error", ackError()).
 			Run(t)
 
 		whenMessageIsValid.
 			When("fee is greater than transfer amount", func() {
-				feeAmount := funcs.MustOk(sdk.NewIntFromString(ics20Packet.Amount)).Add(sdk.OneInt())
+				feeAmount := funcs.MustOk(sdkmath.NewIntFromString(ics20Packet.Amount)).Add(sdkmath.OneInt())
 				setFee(feeAmount, rand.AccAddr())
 			}).
 			Then("should return ack error", ackError()).
@@ -385,7 +387,7 @@ func TestHandleMessage(t *testing.T) {
 		whenMessageIsValid.
 			When("fee denom is not registered", isAssetRegistered(false)).
 			When("message with fee", func() {
-				setFee(funcs.MustOk(sdk.NewIntFromString(ics20Packet.Amount)), rand.AccAddr())
+				setFee(funcs.MustOk(sdkmath.NewIntFromString(ics20Packet.Amount)), rand.AccAddr())
 			}).
 			Then("should return ack error", ackError()).
 			Run(t)
@@ -393,7 +395,7 @@ func TestHandleMessage(t *testing.T) {
 		whenMessageIsValid.
 			When("fee denom is registered", isAssetRegistered(true)).
 			When("message with fee", func() {
-				setFee(funcs.MustOk(sdk.NewIntFromString(ics20Packet.Amount)), rand.AccAddr())
+				setFee(funcs.MustOk(sdkmath.NewIntFromString(ics20Packet.Amount)), rand.AccAddr())
 			}).
 			Then("should return ack success", func(t *testing.T) {
 				assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
@@ -425,7 +427,7 @@ func TestHandleMessage(t *testing.T) {
 			}).
 			When("fee denom is registered", isAssetRegistered(true)).
 			When("message with fee", func() {
-				setFee(funcs.MustOk(sdk.NewIntFromString(ics20Packet.Amount)), rand.AccAddr())
+				setFee(funcs.MustOk(sdkmath.NewIntFromString(ics20Packet.Amount)), rand.AccAddr())
 			}).
 			Then("should return ack success", func(t *testing.T) {
 				assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
@@ -452,7 +454,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 		ics20Packet ibctransfertypes.FungibleTokenPacketData
 		message     axelarnet.Message
 		genMsg      nexus.GeneralMessage
-		feeAmount   sdk.Int
+		feeAmount   sdkmath.Int
 	)
 
 	sourceChannel := axelartestutils.RandomChannel()
@@ -463,7 +465,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 	destChain.Module = evmtypes.ModuleName
 	destAddress := evmtestutils.RandomAddress().Hex()
 	payload := rand.BytesBetween(100, 500)
-	feeAmount = sdk.ZeroInt()
+	feeAmount = sdkmath.ZeroInt()
 
 	givenPacketWithMessageWithToken := Given("a packet with message with token", func() {
 		message = axelarnet.Message{
@@ -482,7 +484,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 		ics20Packet.Memo = string(funcs.Must(json.Marshal(message)))
 		packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
 
-		ctx, k, channelK = setup()
+		ctx, k, channelK = setup(t)
 
 		// path registered
 		path := types.NewIBCPath(ibctransfertypes.PortID, receiverChannel)
@@ -492,12 +494,14 @@ func TestHandleMessageWithToken(t *testing.T) {
 			IBCPath:    path,
 			AddrPrefix: rand.StrBetween(5, 10),
 		}))
-		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+		channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
 			return mathrand.Uint64(), nil
 		}
 		lockableAsset = &nexusmock.LockableAssetMock{
-			GetAssetFunc: func() sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
-			GetCoinFunc:  func(_ sdk.Context) sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
+			GetAssetFunc: func() sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdkmath.NewIntFromString(amount))) },
+			GetCoinFunc: func(_ sdk.Context) sdk.Coin {
+				return sdk.NewCoin(denom, funcs.MustOk(sdkmath.NewIntFromString(amount)))
+			},
 		}
 		n = &mock.NexusMock{
 			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
@@ -549,13 +553,13 @@ func TestHandleMessageWithToken(t *testing.T) {
 			},
 		})
 		b = &mock.BankKeeperMock{
-			SpendableBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, d string) sdk.Coin {
+			SpendableBalanceFunc: func(ctx context.Context, addr sdk.AccAddress, d string) sdk.Coin {
 				if addr.Equals(types.AxelarIBCAccount) {
-					return sdk.NewCoin(d, funcs.MustOk(sdk.NewIntFromString(amount)).Sub(feeAmount))
+					return sdk.NewCoin(d, funcs.MustOk(sdkmath.NewIntFromString(amount)).Sub(feeAmount))
 				}
-				return sdk.NewCoin(d, sdk.ZeroInt())
+				return sdk.NewCoin(d, sdkmath.ZeroInt())
 			},
-			SendCoinsFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
+			SendCoinsFunc: func(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
 				return nil
 			},
 		}
@@ -586,7 +590,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 
 	whenRateLimitIsSet := func(randDenom bool) func() {
 		return func() {
-			token := sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount)))
+			token := sdk.NewCoin(denom, funcs.MustOk(sdkmath.NewIntFromString(amount)))
 			if randDenom {
 				token.Denom = rand.Denom(10, 20)
 			}
@@ -650,7 +654,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 		}).
 		Run(t)
 
-	setFee := func(amount sdk.Int, recipient sdk.AccAddress) {
+	setFee := func(amount sdkmath.Int, recipient sdk.AccAddress) {
 		fee := axelarnet.Fee{
 			Amount:    amount.String(),
 			Recipient: recipient.String(),
@@ -664,7 +668,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
 		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
 		When("fee is equal to transfer amount", func() {
-			feeAmount = funcs.MustOk(sdk.NewIntFromString(ics20Packet.Amount))
+			feeAmount = funcs.MustOk(sdkmath.NewIntFromString(ics20Packet.Amount))
 			setFee(feeAmount, rand.AccAddr())
 		}).
 		Then("should return ack error", ackError()).
@@ -674,7 +678,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
 		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
 		When("fee is valid", func() {
-			feeAmount = funcs.MustOk(sdk.NewIntFromString(ics20Packet.Amount)).Sub(sdk.OneInt())
+			feeAmount = funcs.MustOk(sdkmath.NewIntFromString(ics20Packet.Amount)).Sub(sdkmath.OneInt())
 			setFee(feeAmount, rand.AccAddr())
 		}).
 		When("lock coin succeeds", lockCoin(true)).
@@ -682,8 +686,8 @@ func TestHandleMessageWithToken(t *testing.T) {
 			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
 			assert.Equal(t, genMsg.Status, nexus.Approved)
 			assert.Len(t, n.NewLockableAssetCalls(), 2)
-			assert.Equal(t, n.NewLockableAssetCalls()[0].Coin.Amount, funcs.MustOk(sdk.NewIntFromString(amount)))
-			assert.Equal(t, n.NewLockableAssetCalls()[1].Coin.Amount, sdk.OneInt())
+			assert.Equal(t, n.NewLockableAssetCalls()[0].Coin.Amount, funcs.MustOk(sdkmath.NewIntFromString(amount)))
+			assert.Equal(t, n.NewLockableAssetCalls()[1].Coin.Amount, sdkmath.OneInt())
 		}).
 		Run(t)
 }
@@ -731,7 +735,7 @@ func TestHandleSendToken(t *testing.T) {
 		ics20Packet.Memo = string(funcs.Must(json.Marshal(message)))
 		packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
 
-		ctx, k, channelK = setup()
+		ctx, k, channelK = setup(t)
 
 		// path registered
 		path := types.NewIBCPath(ibctransfertypes.PortID, receiverChannel)
@@ -742,12 +746,14 @@ func TestHandleSendToken(t *testing.T) {
 			AddrPrefix: rand.StrBetween(5, 10),
 		}))
 
-		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+		channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
 			return mathrand.Uint64(), nil
 		}
 		lockableAsset = &nexusmock.LockableAssetMock{
-			GetAssetFunc: func() sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
-			GetCoinFunc:  func(_ sdk.Context) sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdk.NewIntFromString(amount))) },
+			GetAssetFunc: func() sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdkmath.NewIntFromString(amount))) },
+			GetCoinFunc: func(_ sdk.Context) sdk.Coin {
+				return sdk.NewCoin(denom, funcs.MustOk(sdkmath.NewIntFromString(amount)))
+			},
 		}
 		n = &mock.NexusMock{
 			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
@@ -797,13 +803,13 @@ func TestHandleSendToken(t *testing.T) {
 			},
 		})
 		b = &mock.BankKeeperMock{
-			SpendableBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, d string) sdk.Coin {
+			SpendableBalanceFunc: func(ctx context.Context, addr sdk.AccAddress, d string) sdk.Coin {
 				if addr.Equals(types.AxelarIBCAccount) {
-					return sdk.NewCoin(d, funcs.MustOk(sdk.NewIntFromString(amount)))
+					return sdk.NewCoin(d, funcs.MustOk(sdkmath.NewIntFromString(amount)))
 				}
-				return sdk.NewCoin(d, sdk.ZeroInt())
+				return sdk.NewCoin(d, sdkmath.ZeroInt())
 			},
-			SendCoinsFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
+			SendCoinsFunc: func(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
 				return nil
 			},
 		}
@@ -926,13 +932,13 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 			Type:               nexus.TypeSendToken,
 		}
 
-		ctx, k, channelK = setup()
+		ctx, k, channelK = setup(t)
 		funcs.MustNoErr(k.SetCosmosChain(ctx, types.CosmosChain{
 			Name:       srcChain.Name,
 			IBCPath:    axelartestutils.RandomIBCPath(),
 			AddrPrefix: "cosmos",
 		}))
-		channelK.SendPacketFunc = func(sdk.Context, *captypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+		channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
 			return mathrand.Uint64(), nil
 		}
 		lockableAsset = &nexusmock.LockableAssetMock{}
@@ -986,7 +992,7 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 
 		r = axelarnet.NewRateLimiter(&k, n)
 		b = &mock.BankKeeperMock{
-			SendCoinsFunc: func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil },
+			SendCoinsFunc: func(context.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil },
 		}
 	})
 

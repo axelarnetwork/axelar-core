@@ -3,10 +3,10 @@ package cli
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
@@ -47,7 +47,7 @@ func GetCmdInflationRate() *cobra.Command {
 		}
 
 		if _, err := sdk.ValAddressFromBech32(*validator); *validator != "" && err != nil {
-			return sdkerrors.Wrap(err, "invalid validator address")
+			return errorsmod.Wrap(err, "invalid validator address")
 		}
 
 		queryClient := types.NewQueryServiceClient(clientCtx)

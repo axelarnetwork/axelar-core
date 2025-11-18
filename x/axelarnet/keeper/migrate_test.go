@@ -1,9 +1,11 @@
 package keeper_test
 
 import (
+	"context"
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -36,14 +38,14 @@ func TestMigrate6to7(t *testing.T) {
 	)
 
 	encCfg := app.MakeEncodingConfig()
-	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("axelarnetKey"), sdk.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
-	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("axelarnet"), subspace, &mock.ChannelKeeperMock{}, &mock.FeegrantKeeperMock{})
+	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("axelarnetKey"), store.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), subspace, &mock.ChannelKeeperMock{}, &mock.FeegrantKeeperMock{})
 	ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 
 	Given("keeper setup before migration", func() {
 		bank = &mock.BankKeeperMock{
-			SendCoinsFromModuleToModuleFunc: func(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error {
+			SendCoinsFromModuleToModuleFunc: func(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error {
 				return nil
 			},
 		}
@@ -77,7 +79,7 @@ func TestMigrate6to7(t *testing.T) {
 	}).
 		When("there are some failed transfers and Axelarnet module account has balances", func() {
 			balances = sdk.NewCoins(rand.Coin(), rand.Coin(), rand.Coin())
-			bank.SpendableCoinsFunc = func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+			bank.SpendableCoinsFunc = func(ctx context.Context, addr sdk.AccAddress) sdk.Coins {
 				return balances
 			}
 

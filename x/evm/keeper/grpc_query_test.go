@@ -7,7 +7,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -39,19 +40,19 @@ func TestQueryPendingCommands(t *testing.T) {
 		evmChain       nexus.ChainName
 		asset          string
 		symbol         string
-		chainID        sdk.Int
+		chainID        math.Int
 		keyID          multisig.KeyID
 		cmds           []types.Command
 	)
 
 	setup := func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 		evmChain = nexus.ChainName(rand.StrBetween(5, 10))
 		asset = rand.Str(5)
 		symbol = rand.Str(5)
-		chainID = sdk.NewInt(1)
+		chainID = math.NewInt(1)
 		keyID = multisigTestutils.KeyID()
-		dailyMintLimit := sdk.NewUint(uint64(rand.PosI64()))
+		dailyMintLimit := math.NewUint(uint64(rand.PosI64()))
 		cmdDeploy := types.NewDeployTokenCommand(chainID, keyID, asset, createDetails(asset, symbol), types.ZeroAddress, dailyMintLimit)
 		cmdMint := types.NewMintTokenCommand(keyID, nexustestutils.RandomTransferID(), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
 		cmdBurn := types.NewBurnTokenCommand(chainID, keyID, ctx.BlockHeight(), types.BurnerInfo{
@@ -135,7 +136,7 @@ func TestChains(t *testing.T) {
 		q = evmKeeper.NewGRPCQuerier(baseKeeper, nexusKeeper, multisig)
 	}).
 		When("a correct context", func() {
-			ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+			ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 		}).
 		Branch(
 			Then("query all chains", func(t *testing.T) {
@@ -174,7 +175,7 @@ func TestGateway(t *testing.T) {
 	)
 
 	setup := func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 		address = types.Address(common.BytesToAddress([]byte{0}))
 
 		chainKeeper = &mock.ChainKeeperMock{
@@ -263,7 +264,7 @@ func TestBytecode(t *testing.T) {
 		existingChain = "existing"
 		contracts = []string{"token", "burner"}
 
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -303,7 +304,7 @@ func TestBytecode(t *testing.T) {
 	t.Run("chain exists", testutils.Func(func(t *testing.T) {
 		setup()
 		for _, bytecode := range contracts {
-			hexBytecode := fmt.Sprintf("0x" + common.Bytes2Hex([]byte(bytecode)))
+			hexBytecode := "0x" + common.Bytes2Hex([]byte(bytecode))
 			expectedRes = types.BytecodeResponse{
 				Bytecode: hexBytecode,
 			}
@@ -345,7 +346,7 @@ func TestEvent(t *testing.T) {
 		existingEventID = fmt.Sprintf("%s-%d", existingTxID, rand.PosI64())
 		nonExistingEventID = fmt.Sprintf("%s-%d", evmTest.RandomHash().Hex(), rand.PosI64())
 
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 
 		chainKeeper = &mock.ChainKeeperMock{
 			GetEventFunc: func(ctx sdk.Context, eventID types.EventID) (types.Event, bool) {
@@ -450,7 +451,7 @@ func TestERC20Tokens(t *testing.T) {
 	setup := func() {
 		existingChain = nexus.ChainName("chain")
 
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -554,7 +555,7 @@ func TestDepositState(t *testing.T) {
 	)
 
 	givenQuerier := Given("querier", func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 		chainKeeper = &mock.ChainKeeperMock{}
 		baseKeeper = &mock.BaseKeeperMock{
 			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
@@ -654,7 +655,7 @@ func TestTokenInfo(t *testing.T) {
 	burnerCodeHash := types.Hash(crypto.Keccak256Hash(burnerCode)).Hex()
 	token := types.CreateERC20Token(func(meta types.ERC20TokenMetadata) {}, types.ERC20TokenMetadata{
 		Asset:        "token",
-		Details:      types.NewTokenDetails("Token", "TOKEN", 10, sdk.NewInt(0)),
+		Details:      types.NewTokenDetails("Token", "TOKEN", 10, math.NewInt(0)),
 		TokenAddress: types.ZeroAddress,
 		Status:       types.Confirmed,
 		IsExternal:   true,
@@ -664,7 +665,7 @@ func TestTokenInfo(t *testing.T) {
 	setup := func() {
 		existingChain = nexus.ChainName("chain")
 
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 
 		nexusKeeper = &mock.NexusMock{
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {

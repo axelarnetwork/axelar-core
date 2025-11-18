@@ -5,12 +5,19 @@ Decode a ED25519 or secp256k1 pubkey from hex, base64, or bech32
 ### Synopsis
 
 Decode a pubkey from hex, base64, or bech32.
-Example:
-$ axelard debug pubkey-raw TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlz
-$ axelard debug pubkey-raw cosmos1e0jnq2sun3dzjh8p2xq95kk0expwmd7shwjpfg
 
 ```
 axelard debug pubkey-raw [pubkey] -t [{ed25519, secp256k1}] [flags]
+```
+
+### Examples
+
+```
+
+axelard debug pubkey-raw 8FCA9D6D1F80947FD5E9A05309259746F5F72541121766D5F921339DD061174A
+axelard debug pubkey-raw j8qdbR+AlH/V6aBTCSWXRvX3JUESF2bV+SEzndBhF0o=
+axelard debug pubkey-raw cosmospub1zcjduepq3l9f6mglsz28l40f5pfsjfvhgm6lwf2pzgtkd40eyyeem5rpza9q47axrz
+			
 ```
 
 ### Options

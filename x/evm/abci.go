@@ -3,9 +3,10 @@ package evm
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -42,10 +43,10 @@ func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n 
 	}
 
 	recipient := nexus.CrossChainAddress{Chain: destinationChain, Address: e.DestinationAddress}
-	amount := sdk.NewCoin(asset, sdk.Int(e.Amount))
+	amount := sdk.NewCoin(asset, math.Int(e.Amount))
 	transferID, err := n.EnqueueTransfer(ctx, sourceChain, recipient, amount)
 	if err != nil {
-		return sdkerrors.Wrap(err, "failed enqueuing transfer for event")
+		return errorsmod.Wrap(err, "failed enqueuing transfer for event")
 	}
 	bk.Logger(ctx).Debug(fmt.Sprintf("enqueued transfer for event from chain %s", sourceChain.Name),
 		"chain", destinationChain.Name,
@@ -132,7 +133,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 	}
 	asset := token.GetAsset()
 
-	if err := n.RateLimitTransfer(ctx, sourceChain.Name, sdk.NewCoin(asset, sdk.Int(e.Amount)), nexus.TransferDirectionFrom); err != nil {
+	if err := n.RateLimitTransfer(ctx, sourceChain.Name, sdk.NewCoin(asset, math.Int(e.Amount)), nexus.TransferDirectionFrom); err != nil {
 		return err
 	}
 
@@ -140,7 +141,7 @@ func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Ba
 	case types.ModuleName:
 		return handleContractCallWithTokenToEVM(ctx, event, bk, n, multisig, sourceChain.Name, destinationChain.Name, asset)
 	default:
-		coin := sdk.NewCoin(asset, sdk.Int(e.Amount))
+		coin := sdk.NewCoin(asset, math.Int(e.Amount))
 		// set as general message in nexus, so the dest module can handle the message
 		return setMessageToNexus(ctx, n, event, &coin)
 	}
@@ -163,7 +164,7 @@ func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk typ
 		return fmt.Errorf("invalid contract address %s", e.ContractAddress)
 	}
 
-	coin := sdk.NewCoin(asset, sdk.Int(e.Amount))
+	coin := sdk.NewCoin(asset, math.Int(e.Amount))
 
 	if err := n.RateLimitTransfer(ctx, destinationChain, coin, nexus.TransferDirectionTo); err != nil {
 		return err
@@ -287,7 +288,7 @@ func handleConfirmDeposit(ctx sdk.Context, event types.Event, bk types.BaseKeepe
 		return fmt.Errorf("%s deposit %s-%s already exists", chain.Name.String(), event.TxID.Hex(), burnerInfo.BurnerAddress.Hex())
 	}
 
-	amount := sdk.NewCoin(burnerInfo.Asset, sdk.NewIntFromBigInt(e.Amount.BigInt()))
+	amount := sdk.NewCoin(burnerInfo.Asset, math.NewIntFromBigInt(e.Amount.BigInt()))
 	transferID, err := n.EnqueueForTransfer(ctx, depositAddr, amount)
 	if err != nil {
 		return err
@@ -604,7 +605,7 @@ func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m typ
 	}
 }
 
-func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
+func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID math.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
 	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), common.BytesToHash(msg.SourceTxID), msg.GetSourceChain(), msg.GetSourceAddress(), msg.SourceTxIndex, msg.ID)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
@@ -625,7 +626,7 @@ func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID sdk.Int, keyID
 	)
 }
 
-func handleMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, chainID sdk.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) error {
+func handleMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, chainID math.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) error {
 	token := ck.GetERC20TokenByAsset(ctx, msg.Asset.GetDenom())
 
 	if err := n.RateLimitTransfer(ctx, msg.GetDestinationChain(), *msg.Asset, nexus.TransferDirectionTo); err != nil {
@@ -713,12 +714,8 @@ func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types
 	}
 }
 
-// BeginBlocker check for infraction evidence or downtime of validators
-// on every begin block
-func BeginBlocker(sdk.Context, abci.RequestBeginBlock, types.BaseKeeper) {}
-
 // EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) ([]abci.ValidatorUpdate, error) {
+func EndBlocker(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) ([]abci.ValidatorUpdate, error) {
 	handleConfirmedEvents(ctx, bk, n, m)
 	handleMessages(ctx, bk, n, m)
 

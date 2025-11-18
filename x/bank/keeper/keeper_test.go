@@ -1,10 +1,12 @@
 package keeper_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -22,13 +24,13 @@ func TestSendCoins(t *testing.T) {
 		bankKeeper *mock.BankKeeperMock
 	)
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	fromAddr := rand.AccAddr()
 	toAddr := rand.AccAddr()
 	amt := sdk.NewCoins(
-		sdk.NewCoin("aaa", sdk.NewInt(rand.PosI64())),
-		sdk.NewCoin("bbb", sdk.NewInt(rand.PosI64())),
-		sdk.NewCoin("ccc", sdk.NewInt(rand.PosI64())),
+		sdk.NewCoin("aaa", math.NewInt(rand.PosI64())),
+		sdk.NewCoin("bbb", math.NewInt(rand.PosI64())),
+		sdk.NewCoin("ccc", math.NewInt(rand.PosI64())),
 	)
 
 	Given("a bank keeper", func() {
@@ -64,7 +66,7 @@ func TestSendCoins(t *testing.T) {
 				}
 			}).
 				When("send coins fails", func() {
-					bankKeeper.SendCoinsFunc = func(_ sdk.Context, _, _ sdk.AccAddress, _ sdk.Coins) error {
+					bankKeeper.SendCoinsFunc = func(_ context.Context, _, _ sdk.AccAddress, _ sdk.Coins) error {
 						return fmt.Errorf("send error")
 					}
 				}).
@@ -80,7 +82,7 @@ func TestSendCoins(t *testing.T) {
 				}
 			}).
 				When("send coins succeeds", func() {
-					bankKeeper.SendCoinsFunc = func(_ sdk.Context, _, _ sdk.AccAddress, _ sdk.Coins) error {
+					bankKeeper.SendCoinsFunc = func(_ context.Context, _, _ sdk.AccAddress, _ sdk.Coins) error {
 						return nil
 					}
 				}).
@@ -99,12 +101,12 @@ func TestSpendableBalance(t *testing.T) {
 		bankKeeper *mock.BankKeeperMock
 	)
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	addr := rand.AccAddr()
 	spendableCoins := sdk.NewCoins(
-		sdk.NewCoin("aaa", sdk.NewInt(rand.PosI64())),
-		sdk.NewCoin("bbb", sdk.NewInt(rand.PosI64())),
-		sdk.NewCoin("ccc", sdk.NewInt(rand.PosI64())),
+		sdk.NewCoin("aaa", math.NewInt(rand.PosI64())),
+		sdk.NewCoin("bbb", math.NewInt(rand.PosI64())),
+		sdk.NewCoin("ccc", math.NewInt(rand.PosI64())),
 	)
 
 	Given("a bank keeper", func() {
@@ -113,17 +115,17 @@ func TestSpendableBalance(t *testing.T) {
 	}).
 		Branch(
 			When("denom not in spendable coins", func() {
-				bankKeeper.SpendableCoinsFunc = func(sdk.Context, sdk.AccAddress) sdk.Coins {
+				bankKeeper.SpendableCoinsFunc = func(context.Context, sdk.AccAddress) sdk.Coins {
 					return spendableCoins
 				}
 			}).
 				Then("should return zero", func(t *testing.T) {
 					coin := k.SpendableBalance(ctx, addr, "ddd")
-					assert.Equal(t, sdk.NewCoin("ddd", sdk.ZeroInt()), coin)
+					assert.Equal(t, sdk.NewCoin("ddd", math.ZeroInt()), coin)
 				}),
 
 			When("denom in spendable coins", func() {
-				bankKeeper.SpendableCoinsFunc = func(sdk.Context, sdk.AccAddress) sdk.Coins {
+				bankKeeper.SpendableCoinsFunc = func(context.Context, sdk.AccAddress) sdk.Coins {
 					return spendableCoins
 				}
 			}).

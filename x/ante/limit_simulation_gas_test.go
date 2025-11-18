@@ -3,7 +3,8 @@ package ante_test
 import (
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
 	abciproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -15,9 +16,9 @@ import (
 func TestLimitSimulationGasDecorator_AnteHandle_WithBlockGasLimit(t *testing.T) {
 	anteHandler := sdk.ChainAnteDecorators(ante.NewLimitSimulationGasDecorator(nil))
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), abciproto.Header{}, true, log.TestingLogger()).
-		WithConsensusParams(&abciproto.ConsensusParams{Block: &abciproto.BlockParams{MaxGas: 1000}}).
-		WithGasMeter(sdk.NewInfiniteGasMeter())
+	ctx := sdk.NewContext(fake.NewMultiStore(), abciproto.Header{}, true, log.NewTestLogger(t)).
+		WithConsensusParams(abciproto.ConsensusParams{Block: &abciproto.BlockParams{MaxGas: 1000}}).
+		WithGasMeter(store.NewInfiniteGasMeter())
 
 	ctx.GasMeter().ConsumeGas(100, "test")
 
@@ -30,7 +31,7 @@ func TestLimitSimulationGasDecorator_AnteHandle_WithBlockGasLimit(t *testing.T) 
 		ctx.GasMeter().ConsumeGas(2000, "test")
 	})
 
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	ctx = ctx.WithGasMeter(store.NewInfiniteGasMeter())
 	ctx.GasMeter().ConsumeGas(100, "test")
 
 	ctx, err = anteHandler(ctx, nil, true)
@@ -48,9 +49,9 @@ func TestLimitSimulationGasDecorator_AnteHandle_WithBlockGasLimit(t *testing.T) 
 func TestLimitSimulationGasDecorator_AnteHandle_WithoutBlockGasLimit(t *testing.T) {
 	anteHandler := sdk.ChainAnteDecorators(ante.NewLimitSimulationGasDecorator(nil))
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), abciproto.Header{}, true, log.TestingLogger()).
-		WithConsensusParams(&abciproto.ConsensusParams{Block: &abciproto.BlockParams{MaxGas: 0}}).
-		WithGasMeter(sdk.NewInfiniteGasMeter())
+	ctx := sdk.NewContext(fake.NewMultiStore(), abciproto.Header{}, true, log.NewTestLogger(t)).
+		WithConsensusParams(abciproto.ConsensusParams{Block: &abciproto.BlockParams{MaxGas: 0}}).
+		WithGasMeter(store.NewInfiniteGasMeter())
 
 	ctx.GasMeter().ConsumeGas(100, "test")
 
@@ -63,7 +64,7 @@ func TestLimitSimulationGasDecorator_AnteHandle_WithoutBlockGasLimit(t *testing.
 		ctx.GasMeter().ConsumeGas(2000, "test")
 	})
 
-	ctx = ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	ctx = ctx.WithGasMeter(store.NewInfiniteGasMeter())
 	ctx.GasMeter().ConsumeGas(100, "test")
 
 	ctx, err = anteHandler(ctx, nil, true)

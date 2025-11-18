@@ -6,10 +6,10 @@ import (
 	"io/ioutil"
 	"strconv"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
@@ -274,7 +274,7 @@ func GetCmdCreateDeployToken() *cobra.Command {
 		if err != nil {
 			return fmt.Errorf("could not parse decimals")
 		}
-		capacity, ok := sdk.NewIntFromString(args[6])
+		capacity, ok := math.NewIntFromString(args[6])
 		if !ok {
 			return fmt.Errorf("could not parse capacity")
 		}

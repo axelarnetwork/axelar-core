@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -60,7 +59,7 @@ var (
 )
 
 // NewBurnTokenCommand creates a command to burn tokens with the given burner's information
-func NewBurnTokenCommand(chainID sdk.Int, keyID multisig.KeyID, height int64, burnerInfo BurnerInfo, isTokenExternal bool) Command {
+func NewBurnTokenCommand(chainID math.Int, keyID multisig.KeyID, height int64, burnerInfo BurnerInfo, isTokenExternal bool) Command {
 	heightBytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(heightBytes, uint64(height))
 
@@ -79,7 +78,7 @@ func NewBurnTokenCommand(chainID sdk.Int, keyID multisig.KeyID, height int64, bu
 }
 
 // NewDeployTokenCommand creates a command to deploy a token
-func NewDeployTokenCommand(chainID sdk.Int, keyID multisig.KeyID, asset string, tokenDetails TokenDetails, address Address, dailyMintLimit sdk.Uint) Command {
+func NewDeployTokenCommand(chainID math.Int, keyID multisig.KeyID, asset string, tokenDetails TokenDetails, address Address, dailyMintLimit math.Uint) Command {
 	return Command{
 		ID:         NewCommandID([]byte(fmt.Sprintf("%s_%s", asset, tokenDetails.Symbol)), chainID),
 		Type:       COMMAND_TYPE_DEPLOY_TOKEN,
@@ -101,7 +100,7 @@ func NewMintTokenCommand(keyID multisig.KeyID, id nexus.TransferID, symbol strin
 }
 
 // NewMultisigTransferCommand creates a command to transfer operator of the multisig contract
-func NewMultisigTransferCommand(chainID sdk.Int, keyID multisig.KeyID, nextKey multisig.Key) Command {
+func NewMultisigTransferCommand(chainID math.Int, keyID multisig.KeyID, nextKey multisig.Key) Command {
 	addresses, weights, threshold := GetMultisigAddressesAndWeights(nextKey)
 
 	var concat []byte
@@ -112,7 +111,7 @@ func NewMultisigTransferCommand(chainID sdk.Int, keyID multisig.KeyID, nextKey m
 	return Command{
 		ID:         NewCommandID(concat, chainID),
 		Type:       COMMAND_TYPE_TRANSFER_OPERATORSHIP,
-		Params:     createTransferMultisigParams(addresses, slices.Map(weights, sdk.Uint.BigInt), threshold.BigInt()),
+		Params:     createTransferMultisigParams(addresses, slices.Map(weights, math.Uint.BigInt), threshold.BigInt()),
 		KeyID:      keyID,
 		MaxGasCost: transferOperatorshipMaxGasCost,
 	}
@@ -120,7 +119,7 @@ func NewMultisigTransferCommand(chainID sdk.Int, keyID multisig.KeyID, nextKey m
 
 // NewApproveContractCallCommand creates a command to approve contract call
 func NewApproveContractCallCommand(
-	chainID sdk.Int,
+	chainID math.Int,
 	keyID multisig.KeyID,
 	sourceChain nexus.ChainName,
 	sourceTxID Hash,
@@ -141,7 +140,7 @@ func NewApproveContractCallCommand(
 
 // NewApproveContractCallCommandGeneric creates a command to approve contract call
 func NewApproveContractCallCommandGeneric(
-	chainID sdk.Int,
+	chainID math.Int,
 	keyID multisig.KeyID,
 	contractAddress common.Address,
 	payloadHash common.Hash,
@@ -163,13 +162,13 @@ func NewApproveContractCallCommandGeneric(
 
 // NewApproveContractCallWithMintCommand creates a command to approve contract call with token being minted
 func NewApproveContractCallWithMintCommand(
-	chainID sdk.Int,
+	chainID math.Int,
 	keyID multisig.KeyID,
 	sourceChain nexus.ChainName,
 	sourceTxID Hash,
 	sourceEventIndex uint64,
 	event EventContractCallWithToken,
-	amount sdk.Uint,
+	amount math.Uint,
 	symbol string,
 ) Command {
 	sourceEventIndexBz := make([]byte, 8)
@@ -186,7 +185,7 @@ func NewApproveContractCallWithMintCommand(
 
 // NewApproveContractCallWithMintGeneric creates a command to approve contract call with mint
 func NewApproveContractCallWithMintGeneric(
-	chainID sdk.Int,
+	chainID math.Int,
 	keyID multisig.KeyID,
 	sourceTxID common.Hash,
 	sourceEventIndex uint64,
@@ -282,7 +281,7 @@ func createBurnTokenParams(symbol string, salt common.Hash) []byte {
 	return funcs.Must(burnTokenArguments.Pack(symbol, salt))
 }
 
-func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity sdk.Int, address Address, dailyMintLimit sdk.Uint) []byte {
+func createDeployTokenParams(tokenName string, symbol string, decimals uint8, capacity math.Int, address Address, dailyMintLimit math.Uint) []byte {
 	return funcs.Must(deployTokenArguments.Pack(
 		tokenName,
 		symbol,
@@ -339,7 +338,7 @@ func createApproveContractCallWithMintParams(
 	sourceTxID Hash,
 	sourceEventIndex uint64,
 	event EventContractCallWithToken,
-	amount sdk.Uint,
+	amount math.Uint,
 	symbol string) []byte {
 	return funcs.Must(approveContractCallWithMintArguments.Pack(
 		sourceChain,
@@ -414,7 +413,7 @@ func DecodeMintTokenParams(bz []byte) (string, common.Address, *big.Int) {
 }
 
 // DecodeDeployTokenParams decodes the call arguments from the given contract call
-func DecodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, common.Address, sdk.Uint) {
+func DecodeDeployTokenParams(bz []byte) (string, string, uint8, *big.Int, common.Address, math.Uint) {
 	params := funcs.Must(StrictDecode(deployTokenArguments, bz))
 
 	return params[0].(string), params[1].(string), params[2].(uint8), params[3].(*big.Int), params[4].(common.Address), math.NewUintFromBigInt(params[5].(*big.Int))

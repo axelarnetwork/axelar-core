@@ -1,12 +1,16 @@
 package keeper_test
 
 import (
+	"context"
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
+	store "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	distribution "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
@@ -35,9 +39,9 @@ func TestAllocateTokens(t *testing.T) {
 		fees        sdk.Coins
 	)
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 
-	fees = sdk.NewCoins(sdk.NewCoin(axelarnettypes.NativeAsset, sdk.NewInt(rand.PosI64())))
+	fees = sdk.NewCoins(sdk.NewCoin(axelarnettypes.NativeAsset, math.NewInt(rand.PosI64())))
 	accBalances = map[string]sdk.Coins{
 		authtypes.NewModuleAddress(authtypes.FeeCollectorName).String(): fees,
 	}
@@ -45,7 +49,7 @@ func TestAllocateTokens(t *testing.T) {
 	Given("an axelar distribution keeper", func() {
 		encCfg := params.MakeEncodingConfig()
 		ak := &mock.AccountKeeperMock{
-			GetModuleAccountFunc: func(ctx sdk.Context, name string) authtypes.ModuleAccountI {
+			GetModuleAccountFunc: func(ctx context.Context, name string) sdk.ModuleAccountI {
 				return authtypes.NewEmptyModuleAccount(name)
 			},
 			GetModuleAddressFunc: func(name string) sdk.AccAddress {
@@ -53,10 +57,10 @@ func TestAllocateTokens(t *testing.T) {
 			},
 		}
 		bk = &mock.BankKeeperMock{
-			GetAllBalancesFunc: func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+			GetAllBalancesFunc: func(ctx context.Context, addr sdk.AccAddress) sdk.Coins {
 				return accBalances[addr.String()]
 			},
-			SendCoinsFromModuleToModuleFunc: func(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error {
+			SendCoinsFromModuleToModuleFunc: func(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error {
 				senderModule = authtypes.NewModuleAddress(senderModule).String()
 				recipientModule = authtypes.NewModuleAddress(recipientModule).String()
 
@@ -65,7 +69,7 @@ func TestAllocateTokens(t *testing.T) {
 
 				return nil
 			},
-			SendCoinsFromModuleToAccountFunc: func(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
+			SendCoinsFromModuleToAccountFunc: func(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
 				senderModule = authtypes.NewModuleAddress(senderModule).String()
 
 				accBalances[senderModule] = accBalances[senderModule].Sub(amt...)
@@ -73,13 +77,13 @@ func TestAllocateTokens(t *testing.T) {
 
 				return nil
 			},
-			BurnCoinsFunc: func(ctx sdk.Context, name string, amt sdk.Coins) error {
+			BurnCoinsFunc: func(ctx context.Context, name string, amt sdk.Coins) error {
 				acc := authtypes.NewModuleAddress(name).String()
 				accBalances[acc] = accBalances[acc].Sub(amt...)
 
 				return nil
 			},
-			MintCoinsFunc: func(ctx sdk.Context, name string, amt sdk.Coins) error {
+			MintCoinsFunc: func(ctx context.Context, name string, amt sdk.Coins) error {
 				acc := authtypes.NewModuleAddress(name).String()
 				accBalances[acc] = accBalances[acc].Add(amt...)
 
@@ -87,19 +91,19 @@ func TestAllocateTokens(t *testing.T) {
 			},
 		}
 		sk := &mock.StakingKeeperMock{
-			ValidatorByConsAddrFunc: func(ctx sdk.Context, addr sdk.ConsAddress) stakingtypes.ValidatorI {
+			ValidatorByConsAddrFunc: func(ctx context.Context, addr sdk.ConsAddress) (stakingtypes.ValidatorI, error) {
 				seed := []byte("key")
 				consKey := ed25519.GenPrivKeyFromSecret(seed).PubKey()
 				pk := secp256k1.GenPrivKeyFromSecret(seed)
 				valAddr := sdk.ValAddress(pk.PubKey().Address().Bytes())
-				return funcs.Must(stakingtypes.NewValidator(valAddr, consKey, stakingtypes.Description{}))
+				return funcs.Must(stakingtypes.NewValidator(valAddr.String(), consKey, stakingtypes.Description{})), nil
 			},
 		}
 
-		distriK := distribution.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(distributiontypes.StoreKey), ak, bk, sk, authtypes.FeeCollectorName, "")
+		distriK := distribution.NewKeeper(encCfg.Codec, runtime.NewKVStoreService(store.NewKVStoreKey(distributiontypes.StoreKey)), ak, bk, sk, authtypes.FeeCollectorName, "")
 		k = keeper.NewKeeper(distriK, ak, bk, sk, authtypes.FeeCollectorName)
-		k.SetFeePool(ctx, distributiontypes.FeePool{CommunityPool: sdk.DecCoins{}})
-		funcs.MustNoErr(k.SetParams(ctx, distributiontypes.DefaultParams()))
+		funcs.MustNoErr(k.FeePool.Set(ctx, distributiontypes.FeePool{CommunityPool: sdk.DecCoins{}}))
+		funcs.MustNoErr(k.Params.Set(ctx, distributiontypes.DefaultParams()))
 	}).
 		When("allocate tokens", func() {
 			k.AllocateTokens(ctx, 0, nil)
@@ -116,14 +120,14 @@ func TestAllocateTokens(t *testing.T) {
 			expectedBurnedFees := sdk.NewCoins(slices.Map(burned, types.WithBurnedPrefix)...)
 
 			assert.Equal(t, expectedBurnedFees, accBalances[types.ZeroAddress.String()])
-			assert.Equal(t, k.GetFeePool(ctx).CommunityPool, tax)
+			assert.Equal(t, funcs.Must(k.FeePool.Get(ctx)).CommunityPool, tax)
 		}).
 		Run(t)
 }
 
 func expectedBurnAndTax(ctx sdk.Context, k keeper.Keeper, fee sdk.Coins) (sdk.Coins, sdk.DecCoins) {
 	feesDec := sdk.NewDecCoinsFromCoins(fee...)
-	tax := feesDec.MulDecTruncate(k.GetCommunityTax(ctx))
+	tax := feesDec.MulDecTruncate(funcs.Must(k.GetCommunityTax(ctx)))
 	burnAmt, remainder := feesDec.Sub(tax).TruncateDecimal()
 
 	return burnAmt, tax.Add(remainder...)

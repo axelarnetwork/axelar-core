@@ -11,17 +11,13 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-// BeginBlocker check for infraction evidence or downtime of validators
-// on every begin block
-func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ keeper.Keeper) {}
-
 // EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, req abci.RequestEndBlock, keeper keeper.Keeper, m types.MultiSigKeeper, n types.Nexus) []abci.ValidatorUpdate {
+func EndBlocker(ctx sdk.Context, keeper keeper.Keeper, m types.MultiSigKeeper, n types.Nexus) ([]abci.ValidatorUpdate, error) {
 	if ctx.BlockHeight() > 0 && (ctx.BlockHeight()%keeper.GetParams(ctx).HeartbeatPeriodInBlocks) == 0 {
 		emitHeartbeatEvent(ctx, m, n)
 	}
 
-	return nil
+	return nil, nil
 }
 
 func emitHeartbeatEvent(ctx sdk.Context, m types.MultiSigKeeper, n types.Nexus) {

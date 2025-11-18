@@ -30,7 +30,7 @@ func TestOptimizeSignatureSet(t *testing.T) {
 		operators []types.Operator
 
 		// For testing
-		addressWeights map[string]sdk.Uint
+		addressWeights map[string]math.Uint
 		sigAddresses   map[string]string
 		participants   []sdk.ValAddress
 	)
@@ -44,7 +44,7 @@ func TestOptimizeSignatureSet(t *testing.T) {
 	}
 
 	// Calculate cumulative weights from sig set
-	f := func(c sdk.Uint, sig []byte) sdk.Uint {
+	f := func(c math.Uint, sig []byte) math.Uint {
 		addr, ok := sigAddresses[common.Bytes2Hex(sig)]
 		if !ok {
 			panic("failed to get address")
@@ -57,7 +57,7 @@ func TestOptimizeSignatureSet(t *testing.T) {
 		key = multisig.Key(&k)
 		participants = key.GetParticipants()
 
-		addressWeights = make(map[string]sdk.Uint, len(participants))
+		addressWeights = make(map[string]math.Uint, len(participants))
 		sigAddresses = make(map[string]string, len(participants))
 
 		signature = &multisigtypes.MultiSig{
@@ -116,13 +116,13 @@ func TestOptimizeSignatureSet(t *testing.T) {
 	givenWeightsAndSigs.
 		When("missing some signatures", func() {
 			currWeight := slices.Reduce(participants, math.ZeroUint(),
-				func(c sdk.Uint, p sdk.ValAddress) sdk.Uint {
+				func(c math.Uint, p sdk.ValAddress) math.Uint {
 					return c.Add(key.GetWeight(p))
 				},
 			)
 
 			slices.Reduce(participants, currWeight,
-				func(c sdk.Uint, p sdk.ValAddress) sdk.Uint {
+				func(c math.Uint, p sdk.ValAddress) math.Uint {
 					if currWeight.Sub(key.GetWeight(p)).GTE(key.GetMinPassingWeight()) {
 						delete(signature.Sigs, p.String())
 						currWeight = currWeight.Sub(key.GetWeight(p))

@@ -11,6 +11,7 @@ import (
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	permissiontypes "github.com/axelarnetwork/axelar-core/x/permission/types"
+	rewardexported "github.com/axelarnetwork/axelar-core/x/reward/exported"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	snapshottypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
@@ -94,4 +95,18 @@ func RegisterLegacyMsgInterfaces(registry cdctypes.InterfaceRegistry) {
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.SubmitMultisigSignaturesRequest", &tsstypes.SubmitMultisigSignaturesRequest{})
 
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/vote.v1beta1.VoteRequest", &votetypes.VoteRequest{})
+
+	// Register Refundable interface implementations for legacy type URLs
+	// These are needed because when transactions are queried, the codec needs to resolve
+	// the concrete type against ALL interfaces the type implements, not just sdk.Msg
+	// These messages used to implement Refundable but were later changed
+	r.RegisterCustomTypeURL((*rewardexported.Refundable)(nil), "/tss.v1beta1.HeartBeatRequest", &tsstypes.HeartBeatRequest{})
+	r.RegisterCustomTypeURL((*rewardexported.Refundable)(nil), "/tss.v1beta1.ProcessKeygenTrafficRequest", &tsstypes.ProcessKeygenTrafficRequest{})
+	r.RegisterCustomTypeURL((*rewardexported.Refundable)(nil), "/tss.v1beta1.VotePubKeyRequest", &tsstypes.VotePubKeyRequest{})
+	r.RegisterCustomTypeURL((*rewardexported.Refundable)(nil), "/tss.v1beta1.ProcessSignTrafficRequest", &tsstypes.ProcessSignTrafficRequest{})
+	r.RegisterCustomTypeURL((*rewardexported.Refundable)(nil), "/tss.v1beta1.VoteSigRequest", &tsstypes.VoteSigRequest{})
+	r.RegisterCustomTypeURL((*rewardexported.Refundable)(nil), "/tss.v1beta1.SubmitMultisigPubKeysRequest", &tsstypes.SubmitMultisigPubKeysRequest{})
+	r.RegisterCustomTypeURL((*rewardexported.Refundable)(nil), "/tss.v1beta1.SubmitMultisigSignaturesRequest", &tsstypes.SubmitMultisigSignaturesRequest{})
+
+	r.RegisterCustomTypeURL((*rewardexported.Refundable)(nil), "/vote.v1beta1.VoteRequest", &votetypes.VoteRequest{})
 }

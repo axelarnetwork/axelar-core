@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	mintTypes "github.com/cosmos/cosmos-sdk/x/mint/types"
@@ -59,7 +59,7 @@ func SetGenesisMintCmd(defaultNodeHome string) *cobra.Command {
 			}
 
 			if inflationMin != "" {
-				min, err := sdk.NewDecFromStr(inflationMin)
+				min, err := math.LegacyNewDecFromStr(inflationMin)
 				if err != nil {
 					return err
 				}
@@ -68,7 +68,7 @@ func SetGenesisMintCmd(defaultNodeHome string) *cobra.Command {
 			}
 
 			if inflationMax != "" {
-				max, err := sdk.NewDecFromStr(inflationMax)
+				max, err := math.LegacyNewDecFromStr(inflationMax)
 				if err != nil {
 					return err
 				}
@@ -77,7 +77,7 @@ func SetGenesisMintCmd(defaultNodeHome string) *cobra.Command {
 			}
 
 			if inflationMaxRateChange != "" {
-				max, err := sdk.NewDecFromStr(inflationMaxRateChange)
+				max, err := math.LegacyNewDecFromStr(inflationMaxRateChange)
 				if err != nil {
 					return err
 				}
@@ -86,7 +86,7 @@ func SetGenesisMintCmd(defaultNodeHome string) *cobra.Command {
 			}
 
 			if goalBonded != "" {
-				bondedRatio, err := sdk.NewDecFromStr(goalBonded)
+				bondedRatio, err := math.LegacyNewDecFromStr(goalBonded)
 				if err != nil {
 					return err
 				}

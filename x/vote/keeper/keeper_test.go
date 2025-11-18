@@ -3,9 +3,9 @@ package keeper_test
 import (
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
@@ -24,20 +24,20 @@ import (
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func setup() (sdk.Context, keeper.Keeper, *mock.SnapshotterMock, *mock.StakingKeeperMock, *mock.RewarderMock) {
+func setup(t log.TestingT) (sdk.Context, keeper.Keeper, *mock.SnapshotterMock, *mock.StakingKeeperMock, *mock.RewarderMock) {
 	snapshotter := mock.SnapshotterMock{}
 	staking := mock.StakingKeeperMock{}
 	rewarder := mock.RewarderMock{}
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	encodingConfig := params.MakeEncodingConfig()
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "vote")
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "vote")
 
 	keeper := keeper.NewKeeper(
 		encodingConfig.Codec,
-		sdk.NewKVStoreKey(types.StoreKey),
+		store.NewKVStoreKey(types.StoreKey),
 		subspace,
 		&snapshotter,
 		&staking,
@@ -57,7 +57,7 @@ func TestKeeper(t *testing.T) {
 	)
 
 	givenKeeper := Given("vote keeper", func() {
-		ctx, k, _, _, _ = setup()
+		ctx, k, _, _, _ = setup(t)
 	})
 
 	t.Run("InitializePoll", testutils.Func(func(t *testing.T) {
@@ -103,7 +103,7 @@ func TestKeeper(t *testing.T) {
 				gasAfter := ctx.GasMeter().GasConsumed()
 				assert.NoError(t, err)
 
-				voteCostPerMaintainer := storetypes.Gas(20000)
+				voteCostPerMaintainer := store.Gas(20000)
 				gasBump := uint64(len(snapshot.GetParticipantAddresses())) * voteCostPerMaintainer
 				assert.True(t, gasAfter-gasBefore > gasBump)
 

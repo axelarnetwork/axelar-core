@@ -1,9 +1,14 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -17,14 +22,16 @@ type msgServer struct {
 	types.Refunder
 	msgSvcRouter *baseapp.MsgServiceRouter
 	bank         types.Banker
+	cdc          codec.Codec
 }
 
 // NewMsgServerImpl returns a new msg server instance
-func NewMsgServerImpl(k types.Refunder, b types.Banker, m *baseapp.MsgServiceRouter) types.MsgServiceServer {
+func NewMsgServerImpl(k types.Refunder, b types.Banker, m *baseapp.MsgServiceRouter, cdc codec.Codec) types.MsgServiceServer {
 	return msgServer{
 		Refunder:     k,
 		bank:         b,
 		msgSvcRouter: m,
+		cdc:          cdc,
 	}
 }
 
@@ -34,12 +41,17 @@ func (s msgServer) RefundMsg(c context.Context, req *types.RefundMsgRequest) (*t
 
 	msg := req.GetInnerMessage()
 	if msg == nil {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "invalid inner message")
+		return nil, errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "invalid inner message")
+	}
+
+	err := s.validateSigners(req.Sender, msg)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
 	}
 
 	result, err := s.routeInnerMsg(ctx, msg)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed to execute message")
+		return nil, errorsmod.Wrapf(err, "failed to execute message")
 	}
 
 	refund, found := s.Refunder.GetPendingRefund(ctx, *req)
@@ -47,7 +59,7 @@ func (s msgServer) RefundMsg(c context.Context, req *types.RefundMsgRequest) (*t
 		// refund tx fee to the given account.
 		err = s.bank.SendCoinsFromModuleToAccount(ctx, authtypes.FeeCollectorName, refund.Payer, refund.Fees)
 		if err != nil {
-			return nil, sdkerrors.Wrapf(err, "failed to refund tx fee")
+			return nil, errorsmod.Wrapf(err, "failed to refund tx fee")
 		}
 
 		s.Refunder.DeletePendingRefund(ctx, *req)
@@ -66,8 +78,41 @@ func (s msgServer) routeInnerMsg(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, err
 		// ADR 031 request type routing
 		msgResult, err = handler(ctx, msg)
 	} else {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "can't route message %+v", msg)
+		return nil, errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "can't route message %+v", msg)
 	}
 
 	return msgResult, err
+}
+
+func (s msgServer) validateSigners(signer string, innerMsg sdk.Msg) error {
+	signers, _, err := s.cdc.GetMsgV1Signers(innerMsg)
+	if err != nil {
+		return err
+	}
+
+	if len(signers) != 1 {
+		return fmt.Errorf("invalid number of signers for inner message")
+	}
+
+	addr, err := sdk.AccAddressFromBech32(signer)
+	if err != nil {
+		return err
+	}
+
+	if !bytes.Equal(addr, signers[0]) {
+		return errors.New("signers mismatch")
+
+	}
+	return nil
+}
+
+func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsRequest) (*types.UpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := req.Params.Validate(); err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+	}
+
+	s.Refunder.SetParams(ctx, req.Params)
+	return &types.UpdateParamsResponse{}, nil
 }

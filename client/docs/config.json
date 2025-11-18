@@ -15,7 +15,8 @@
         "rename": {
           "Link": "AxelarnetLink",
           "ConfirmDeposit": "AxelarnetConfirmDeposit",
-          "Params": "AxelarnetParams"
+          "Params": "AxelarnetParams",
+          "UpdateParams": "AxelarnetUpdateParams"
         }
       }
     },
@@ -29,7 +30,8 @@
           "Link": "EvmLink",
           "ConfirmDeposit": "EvmConfirmDeposit",
           "Chains": "EvmChains",
-          "Params": "EVMParams"
+          "Params": "EVMParams",
+          "UpdateParams": "EVMUpdateParams"
         }
       }
     },
@@ -40,7 +42,8 @@
       "url": "./tmp-swagger-gen/axelar/multisig/v1beta1/service.swagger.json",
       "operationIds": {
         "rename": {
-          "Params": "MultisigParams"
+          "Params": "MultisigParams",
+          "UpdateParams": "MultisigUpdateParams"
         }
       }
     },
@@ -51,7 +54,8 @@
       "url": "./tmp-swagger-gen/axelar/nexus/v1beta1/service.swagger.json",
       "operationIds": {
         "rename": {
-          "Params": "NexusParams"
+          "Params": "NexusParams",
+          "UpdateParams": "NexusUpdateParams"
         }
       }
     },
@@ -62,7 +66,8 @@
       "url": "./tmp-swagger-gen/axelar/reward/v1beta1/service.swagger.json",
       "operationIds": {
         "rename": {
-          "Params": "RewardParams"
+          "Params": "RewardParams",
+          "UpdateParams": "RewardUpdateParams"
         }
       }
     },
@@ -73,7 +78,8 @@
       "url": "./tmp-swagger-gen/axelar/snapshot/v1beta1/service.swagger.json",
       "operationIds": {
         "rename": {
-          "Params": "SnapshotParams"
+          "Params": "SnapshotParams",
+          "UpdateParams": "SnapshotUpdateParams"
         }
       }
     },
@@ -84,7 +90,8 @@
       "url": "./tmp-swagger-gen/axelar/tss/v1beta1/service.swagger.json",
       "operationIds": {
         "rename": {
-          "Params": "TSSParams"
+          "Params": "TSSParams",
+          "UpdateParams": "TSSUpdateParams"
         }
       }
     },
@@ -95,7 +102,8 @@
       "url": "./tmp-swagger-gen/axelar/permission/v1beta1/service.swagger.json",
       "operationIds": {
         "rename": {
-          "Params": "PermissionParams"
+          "Params": "PermissionParams",
+          "UpdateParams": "PermissionUpdateParams"
         }
       }
     },
@@ -107,7 +115,8 @@
       "operationIds": {
         "rename": {
           "Params": "VoteParams",
-          "Vote": "AxelarVote"
+          "Vote": "AxelarVote",
+          "UpdateParams": "VoteUpdateParams"
         }
       }
     },

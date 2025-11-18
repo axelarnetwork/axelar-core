@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/hex"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/btcsuite/btcd/btcec/v2"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -15,7 +16,7 @@ import (
 // NewRegisterExternalKeysRequest is the constructor for RegisterExternalKeysRequest
 func NewRegisterExternalKeysRequest(sender sdk.AccAddress, chain string, externalKeys ...RegisterExternalKeysRequest_ExternalKey) *RegisterExternalKeysRequest {
 	return &RegisterExternalKeysRequest{
-		Sender:       sender,
+		Sender:       sender.String(),
 		Chain:        nexus.ChainName(utils.NormalizeString(chain)),
 		ExternalKeys: externalKeys,
 	}
@@ -33,16 +34,16 @@ func (m RegisterExternalKeysRequest) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m RegisterExternalKeysRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
+		return errorsmod.Wrap(err, "invalid chain")
 	}
 
 	if len(m.ExternalKeys) == 0 {
-		return sdkerrors.Wrap(ErrTss, "no external key is given")
+		return errorsmod.Wrap(ErrTss, "no external key is given")
 	}
 
 	idMap := make(map[tss.KeyID]bool)
@@ -54,16 +55,16 @@ func (m RegisterExternalKeysRequest) ValidateBasic() error {
 		}
 
 		if _, err := btcec.ParsePubKey(externalKey.PubKey); err != nil {
-			return sdkerrors.Wrap(ErrTss, err.Error())
+			return errorsmod.Wrap(ErrTss, err.Error())
 		}
 
 		if idMap[externalKey.ID] {
-			return sdkerrors.Wrapf(ErrTss, "duplicate external key id %s found", externalKey.ID)
+			return errorsmod.Wrapf(ErrTss, "duplicate external key id %s found", externalKey.ID)
 		}
 
 		pubKeyHex := hex.EncodeToString(externalKey.PubKey)
 		if pubKeyMap[pubKeyHex] {
-			return sdkerrors.Wrapf(ErrTss, "duplicate external public key %s found", pubKeyHex)
+			return errorsmod.Wrapf(ErrTss, "duplicate external public key %s found", pubKeyHex)
 		}
 
 		idMap[externalKey.ID] = true
@@ -76,9 +77,4 @@ func (m RegisterExternalKeysRequest) ValidateBasic() error {
 // GetSignBytes returns the message bytes that need to be signed
 func (m RegisterExternalKeysRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
-}
-
-// GetSigners returns the set of signers for this message
-func (m RegisterExternalKeysRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

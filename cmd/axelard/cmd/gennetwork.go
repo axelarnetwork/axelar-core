@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/spf13/cobra"
@@ -110,7 +110,7 @@ func SetGenesisChainParamsCmd(defaultNodeHome string) *cobra.Command {
 
 				// add new, or update existing network
 				if evmNetworkName != "" && evmChainID != "" {
-					id, ok := sdk.NewIntFromString(evmChainID)
+					id, ok := math.NewIntFromString(evmChainID)
 					if !ok {
 						return fmt.Errorf("chain ID must be an integer")
 					}

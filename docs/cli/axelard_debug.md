@@ -26,6 +26,7 @@ axelard debug [flags]
 
 - [axelard](axelard.md) - Axelar App
 - [axelard debug addr](axelard_debug_addr.md) - Convert an address between hex and bech32
+- [axelard debug codec](axelard_debug_codec.md) - Tool for helping with debugging your application codec
 - [axelard debug prefixes](axelard_debug_prefixes.md) - List prefixes used for Human-Readable Part (HRP) in Bech32
 - [axelard debug pubkey](axelard_debug_pubkey.md) - Decode a pubkey from proto JSON
 - [axelard debug pubkey-raw](axelard_debug_pubkey-raw.md) - Decode a ED25519 or secp256k1 pubkey from hex, base64, or bech32

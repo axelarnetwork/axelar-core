@@ -20,10 +20,10 @@ axelard query ibc channel packet-commitment [port-id] [channel-id] [sequence]
 
 ```
       --grpc-addr string   the gRPC endpoint to use for this chain
-      --grpc-insecure      allow gRPC over insecure channels, if not TLS the server must use TLS
+      --grpc-insecure      allow gRPC over insecure channels, if not the server must use TLS
       --height int         Use a specific height to query state at (this can error if the node is pruning state)
   -h, --help               help for packet-commitment
-      --node string        <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --node string        <host>:<port> to CometBFT RPC interface for this chain (default "tcp://localhost:26657")
   -o, --output string      Output format (text|json) (default "text")
       --prove              show proofs for the query results (default true)
 ```
@@ -31,7 +31,6 @@ axelard query ibc channel packet-commitment [port-id] [channel-id] [sequence]
 ### Options inherited from parent commands
 
 ```
-      --chain-id string     The network chain ID (default "axelar")
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")

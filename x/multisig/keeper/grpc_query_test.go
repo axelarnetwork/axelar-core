@@ -3,8 +3,8 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/log"
 	"cosmossdk.io/math"
-	"github.com/cometbft/cometbft/libs/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +35,7 @@ func TestKeyID(t *testing.T) {
 	)
 
 	setup := func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 
 		existingChain = "existing"
 		existingKeyID = multisig.KeyID("keyID")
@@ -99,7 +99,7 @@ func TestNextKeyID(t *testing.T) {
 	)
 
 	setup := func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 
 		existingChain = "existing"
 		existingKeyID = multisig.KeyID("keyID")
@@ -162,7 +162,7 @@ func TestKey(t *testing.T) {
 	)
 
 	givenQuerier := Given("multisig querier", func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 		multisigKeeper = &mock.KeeperMock{}
 		stakingKeeper = &mock.StakerMock{}
 
@@ -243,7 +243,7 @@ func TestKeygenSession(t *testing.T) {
 	)
 
 	givenQuerier := Given("multisig querier", func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 		multisigKeeper = &mock.KeeperMock{}
 		stakingKeeper = &mock.StakerMock{}
 

@@ -10,11 +10,12 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/math"
 	tmbytes "github.com/cometbft/cometbft/libs/bytes"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	ibctypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
-	ibcclient "github.com/cosmos/ibc-go/v7/modules/core/exported"
+	ibctypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	ibcclient "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 
@@ -46,7 +47,7 @@ func TestHandleMsgLink(t *testing.T) {
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _, _ = setup()
+		ctx, k, _, _ = setup(t)
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{}
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
@@ -133,7 +134,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 
 	chain := nexustestutils.RandomChain()
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _, _ = setup()
+		ctx, k, _, _ = setup(t)
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		funcs.MustNoErr(k.SetCosmosChain(ctx, types.CosmosChain{
 			Name:       chain.Name,
@@ -166,9 +167,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	})
 
 	whenDepositAddressHasBalance := When("deposit address has balance", func() {
-		bankK.SpendableBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
+		bankK.SpendableBalanceFunc = func(_ context.Context, _ sdk.AccAddress, denom string) sdk.Coin {
 			// need to compare the balance so cannot make it random
-			return sdk.NewCoin(denom, sdk.NewInt(1e18))
+			return sdk.NewCoin(denom, math.NewInt(1e18))
 		}
 	})
 
@@ -195,8 +196,8 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		givenMsgServer.
 			Branch(
 				When("deposit address holds no funds", func() {
-					bankK.SpendableBalanceFunc = func(_ sdk.Context, _ sdk.AccAddress, denom string) sdk.Coin {
-						return sdk.NewCoin(denom, sdk.ZeroInt())
+					bankK.SpendableBalanceFunc = func(_ context.Context, _ sdk.AccAddress, denom string) sdk.Coin {
+						return sdk.NewCoin(denom, math.ZeroInt())
 					}
 				}).
 					When2(confirmToken).
@@ -257,7 +258,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 									return nil
 								},
 								GetAssetFunc: func() sdk.Coin {
-									return sdk.NewCoin(req.Denom, sdk.NewInt(1e18))
+									return sdk.NewCoin(req.Denom, math.NewInt(1e18))
 								},
 							}
 
@@ -287,7 +288,7 @@ func TestHandleMsgExecutePendingTransfers(t *testing.T) {
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _, _ = setup()
+		ctx, k, _, _ = setup(t)
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		funcs.MustNoErr(k.SetFeeCollector(ctx, rand.AccAddr()))
 		nexusK = &mock.NexusMock{
@@ -414,7 +415,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _, _ = setup()
+		ctx, k, _, _ = setup(t)
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		transfersNum = 0
 		cosmosChains = slices.Expand(func(i int) types.CosmosChain {
@@ -502,7 +503,7 @@ func TestHandleMsgRouteIBCTransfers(t *testing.T) {
 								return nil
 							},
 							GetCoinFunc: func(ctx sdk.Context) sdk.Coin {
-								return sdk.NewCoin(rand.Denom(3, 10), sdk.NewInt(1e18))
+								return sdk.NewCoin(rand.Denom(3, 10), math.NewInt(1e18))
 							},
 						}
 
@@ -537,7 +538,7 @@ func TestRetryIBCTransfer(t *testing.T) {
 	)
 
 	givenMessageServer := Given("a message server", func() {
-		ctx, k, channelK, _ = setup()
+		ctx, k, channelK, _ = setup(t)
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		cosmosChain := axelartestutils.RandomCosmosChain()
 		chain = nexus.Chain{
@@ -657,13 +658,13 @@ func TestAddCosmosBasedChain(t *testing.T) {
 	repeats := 20
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _, _ = setup()
+		ctx, k, _, _ = setup(t)
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{
 			GetChainFunc:              func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false },
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) { return nexus.Chain{}, false },
 			SetChainFunc:              func(ctx sdk.Context, chain nexus.Chain) {},
-			RegisterAssetFunc: func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Uint, window time.Duration) error {
+			RegisterAssetFunc: func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit math.Uint, window time.Duration) error {
 				return nil
 			},
 		}
@@ -746,7 +747,7 @@ func TestAddCosmosBasedChain(t *testing.T) {
 
 			When("asset is already registered", func() {
 				req.NativeAssets = []nexus.Asset{{Denom: rand.Denom(3, 10), IsNativeAsset: true}}
-				nexusK.RegisterAssetFunc = func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Uint, window time.Duration) error {
+				nexusK.RegisterAssetFunc = func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit math.Uint, window time.Duration) error {
 					return fmt.Errorf("asset already registered")
 				}
 			}).
@@ -777,13 +778,13 @@ func TestRouteMessage(t *testing.T) {
 
 	req := types.RouteMessageRequest{
 		ID:         rand.Str(10),
-		Sender:     rand.AccAddr(),
+		Sender:     rand.AccAddr().String(),
 		Feegranter: rand.AccAddr(),
 		Payload:    rand.BytesBetween(5, 100),
 	}
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		c, k, _, _ := setup()
+		c, k, _, _ := setup(t)
 		ctx = c
 
 		nexusK = &mock.NexusMock{}
@@ -801,12 +802,28 @@ func TestRouteMessage(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.Len(t, nexusK.RouteMessageCalls(), 1)
-			assert.Equal(t, nexusK.RouteMessageCalls()[0].RoutingCtx[0].Sender, req.Sender)
+			assert.Equal(t, nexusK.RouteMessageCalls()[0].RoutingCtx[0].Sender.String(), req.Sender)
 			assert.Equal(t, nexusK.RouteMessageCalls()[0].RoutingCtx[0].FeeGranter, req.Feegranter)
 			assert.Equal(t, nexusK.RouteMessageCalls()[0].RoutingCtx[0].Payload, req.Payload)
 			assert.Equal(t, nexusK.RouteMessageCalls()[0].ID, req.ID)
 		}).
 		Run(t)
+}
+
+func TestUpdateParams(t *testing.T) {
+	ctx, k, _, _ := setup(t)
+	k.InitGenesis(ctx, types.DefaultGenesisState())
+	ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
+	server := keeper.NewMsgServerImpl(k, &mock.NexusMock{}, &mock.BankKeeperMock{}, ibcK)
+
+	params := types.DefaultParams()
+	params.TransferLimit = params.TransferLimit + 1
+	params.EndBlockerLimit = params.EndBlockerLimit + 1
+
+	_, err := server.UpdateParams(ctx, &types.UpdateParamsRequest{Authority: rand.AccAddr().String(), Params: params})
+	assert.NoError(t, err)
+	got := k.GetParams(ctx)
+	assert.Equal(t, params, got)
 }
 
 func TestHandleCallContract(t *testing.T) {
@@ -821,7 +838,7 @@ func TestHandleCallContract(t *testing.T) {
 	)
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _, _ = setup()
+		ctx, k, _, _ = setup(t)
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		nexusK = &mock.NexusMock{
 			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
@@ -841,7 +858,7 @@ func TestHandleCallContract(t *testing.T) {
 			hash := sha256.Sum256(ctx.TxBytes())
 			return fmt.Sprintf("%s-%x", hex.EncodeToString(hash[:]), count), hash[:], uint64(count)
 		}
-		b.SendCoinsFunc = func(sdk.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil }
+		b.SendCoinsFunc = func(context.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil }
 		nexusK.GetChainByNativeAssetFunc = func(_ sdk.Context, asset string) (nexus.Chain, bool) { return exported.Axelarnet, true }
 	})
 
@@ -908,8 +925,8 @@ func TestHandleCallContract(t *testing.T) {
 						_, err = server.CallContract(sdk.WrapSDKContext(ctx), req)
 						assert.NoError(t, err)
 						assert.Equal(t, msg.Status, nexus.Approved)
-						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
-						assert.Equal(t, msg.GetSourceAddress(), req.Sender.String())
+						assert.Equal(t, msg.GetSourceChain(), exported.Axelarnet.Name)
+						assert.Equal(t, msg.GetSourceAddress(), req.Sender)
 						assert.Equal(t, msg.GetDestinationAddress(), req.ContractAddress)
 						assert.Equal(t, msg.GetDestinationChain(), req.Chain)
 
@@ -939,8 +956,8 @@ func TestHandleCallContract(t *testing.T) {
 						_, err = server.CallContract(sdk.WrapSDKContext(ctx), req)
 						assert.NoError(t, err)
 						assert.Equal(t, msg.Status, nexus.Approved)
-						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
-						assert.Equal(t, msg.GetSourceAddress(), req.Sender.String())
+						assert.Equal(t, msg.GetSourceChain(), exported.Axelarnet.Name)
+						assert.Equal(t, msg.GetSourceAddress(), req.Sender)
 						assert.Equal(t, msg.GetDestinationAddress(), req.ContractAddress)
 						assert.Equal(t, msg.GetDestinationChain(), req.Chain)
 
@@ -962,8 +979,8 @@ func TestHandleCallContract(t *testing.T) {
 						_, err = server.CallContract(sdk.WrapSDKContext(ctx), req)
 						assert.NoError(t, err)
 						assert.Equal(t, msg.Status, nexus.Approved)
-						assert.Equal(t, msg.GetSourceChain(), nexus.ChainName(exported.Axelarnet.Name))
-						assert.Equal(t, msg.GetSourceAddress(), req.Sender.String())
+						assert.Equal(t, msg.GetSourceChain(), exported.Axelarnet.Name)
+						assert.Equal(t, msg.GetSourceAddress(), req.Sender)
 						assert.Equal(t, msg.GetDestinationAddress(), req.ContractAddress)
 						assert.Equal(t, msg.GetDestinationChain(), req.Chain)
 
@@ -976,7 +993,7 @@ func TestHandleCallContract(t *testing.T) {
 					When2(whenAddressIsValid).
 					When2(requestIsMade).
 					When("fee is zero", func() {
-						req.Fee.Amount.Amount = sdk.NewInt(0)
+						req.Fee.Amount.Amount = math.NewInt(0)
 					}).
 					Then2(validationFails),
 

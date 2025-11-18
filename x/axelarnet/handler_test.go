@@ -41,7 +41,7 @@ func TestProposalHandler(t *testing.T) {
 	)
 
 	givenProposal := Given("a CallContractsProposal", func() {
-		ctx, k, _ = setup()
+		ctx, k, _ = setup(t)
 
 		destChain = nexustestutils.RandomChain()
 		destChain.Module = evmtypes.ModuleName

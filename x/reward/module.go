@@ -12,9 +12,11 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/grpc"
 	"github.com/axelarnetwork/axelar-core/x/reward/client/cli"
 	"github.com/axelarnetwork/axelar-core/x/reward/keeper"
@@ -23,8 +25,9 @@ import (
 )
 
 var (
-	_ module.AppModule      = AppModule{}
-	_ module.AppModuleBasic = AppModuleBasic{}
+	_ module.AppModule       = AppModule{}
+	_ module.AppModuleBasic  = AppModuleBasic{}
+	_ module.HasABCIEndBlock = AppModule{}
 )
 
 // AppModuleBasic implements module.AppModuleBasic
@@ -81,26 +84,28 @@ type AppModule struct {
 	AppModuleBasic
 	keeper       keeper.Keeper
 	nexus        types.Nexus
-	minter       types.Minter
+	minter       mintkeeper.Keeper
 	staker       types.Staker
 	slasher      types.Slasher
 	multiSig     types.MultiSig
 	snapshotter  types.Snapshotter
 	msgSvcRouter *baseapp.MsgServiceRouter
 	bank         types.Banker
+	cdc          codec.Codec
 }
 
 // NewAppModule creates a new AppModule object
 func NewAppModule(
 	k keeper.Keeper,
 	nexus types.Nexus,
-	minter types.Minter,
+	minter mintkeeper.Keeper,
 	staker types.Staker,
 	slasher types.Slasher,
 	multiSig types.MultiSig,
 	snapshotter types.Snapshotter,
 	bank types.Banker,
 	msgSvcRouter *baseapp.MsgServiceRouter,
+	cdc codec.Codec,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -113,6 +118,7 @@ func NewAppModule(
 		snapshotter:    snapshotter,
 		msgSvcRouter:   msgSvcRouter,
 		bank:           bank,
+		cdc:            cdc,
 	}
 }
 
@@ -143,7 +149,7 @@ func (AppModule) QuerierRoute() string {
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	msgServer := keeper.NewMsgServerImpl(am.keeper, am.bank, am.msgSvcRouter)
+	msgServer := keeper.NewMsgServerImpl(am.keeper, am.bank, am.msgSvcRouter, am.cdc)
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrReward, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.minter, am.nexus))
 
@@ -153,15 +159,19 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	}
 }
 
-// BeginBlock executes all state transitions this module requires at the beginning of each new block
-func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	BeginBlocker(ctx, req, am.keeper)
-}
-
 // EndBlock executes all state transitions this module requires at the end of each new block
-func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, req, am.keeper, am.nexus, am.minter, am.staker, am.slasher, am.multiSig, am.snapshotter)
+func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
+	return utils.RunCached(sdk.UnwrapSDKContext(ctx), am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
+		return EndBlocker(ctx, am.keeper, am.nexus, am.minter, am.staker, am.slasher, am.multiSig, am.snapshotter)
+	}), nil
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
 func (AppModule) ConsensusVersion() uint64 { return 2 }
+
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() { // marker
+}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}

@@ -9,30 +9,46 @@ import (
 	"os"
 	"path/filepath"
 
+	"cosmossdk.io/client/v2/autocli"
+	"cosmossdk.io/core/appmodule"
+	sdklogger "cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
+	"cosmossdk.io/x/evidence"
+	evidencekeeper "cosmossdk.io/x/evidence/keeper"
+	evidencetypes "cosmossdk.io/x/evidence/types"
+	"cosmossdk.io/x/feegrant"
+	feegrantkeeper "cosmossdk.io/x/feegrant/keeper"
+	feegrantmodule "cosmossdk.io/x/feegrant/module"
+	"cosmossdk.io/x/upgrade"
+	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
+	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	dbm "github.com/cometbft/cometbft-db"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmjson "github.com/cometbft/cometbft/libs/json"
-	"github.com/cometbft/cometbft/libs/log"
 	tmos "github.com/cometbft/cometbft/libs/os"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	dbm "github.com/cosmos/cosmos-db"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	nodeservice "github.com/cosmos/cosmos-sdk/client/grpc/node"
-	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
+	runtimeservices "github.com/cosmos/cosmos-sdk/runtime/services"
+	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authAnte "github.com/cosmos/cosmos-sdk/x/auth/ante"
+	authcodec "github.com/cosmos/cosmos-sdk/x/auth/codec"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -41,9 +57,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/cosmos/cosmos-sdk/x/capability"
-	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
-	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
+	"github.com/cosmos/cosmos-sdk/x/consensus"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
@@ -52,12 +66,6 @@ import (
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	"github.com/cosmos/cosmos-sdk/x/evidence"
-	evidencekeeper "github.com/cosmos/cosmos-sdk/x/evidence/keeper"
-	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
-	"github.com/cosmos/cosmos-sdk/x/feegrant"
-	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
-	feegrantmodule "github.com/cosmos/cosmos-sdk/x/feegrant/module"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
@@ -77,22 +85,21 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/cosmos/cosmos-sdk/x/upgrade"
-	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
-	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
-	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7"
-	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/keeper"
-	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/types"
-	"github.com/cosmos/ibc-go/v7/modules/apps/transfer"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v7/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
-	ibc "github.com/cosmos/ibc-go/v7/modules/core"
-	ibcclientclient "github.com/cosmos/ibc-go/v7/modules/core/02-client/client"
-	porttypes "github.com/cosmos/ibc-go/v7/modules/core/05-port/types"
-	ibcante "github.com/cosmos/ibc-go/v7/modules/core/ante"
-	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
-	ibckeeper "github.com/cosmos/ibc-go/v7/modules/core/keeper"
+	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v8"
+	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v8/keeper"
+	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v8/types"
+	"github.com/cosmos/ibc-go/modules/capability"
+	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
+	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
+	"github.com/cosmos/ibc-go/v8/modules/apps/transfer"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v8/modules/core"
+	porttypes "github.com/cosmos/ibc-go/v8/modules/core/05-port/types"
+	ibcante "github.com/cosmos/ibc-go/v8/modules/core/ante"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
+	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
+	ibctendermint "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
 	"github.com/gorilla/mux"
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cast"
@@ -102,7 +109,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/auxiliary"
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
-	axelarnetclient "github.com/axelarnetwork/axelar-core/x/axelarnet/client/cli"
+	axelarnetclient "github.com/axelarnetwork/axelar-core/x/axelarnet/client"
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	axelarbankkeeper "github.com/axelarnetwork/axelar-core/x/bank/keeper"
@@ -140,6 +147,8 @@ import (
 
 // Name is the name of the application
 const Name = "axelar"
+
+const WasmDirFlag = "wasm-dir"
 
 var (
 	// DefaultNodeHome default home directories for the application daemon
@@ -198,26 +207,21 @@ type AxelarApp struct {
 
 // NewAxelarApp is a constructor function for axelar
 func NewAxelarApp(
-	logger log.Logger,
+	logger sdklogger.Logger,
 	db dbm.DB,
 	traceStore io.Writer,
 	loadLatest bool,
-	skipUpgradeHeights map[int64]bool,
-	homePath string,
-	wasmDir string,
-	invCheckPeriod uint,
 	encodingConfig axelarParams.EncodingConfig,
 	appOpts servertypes.AppOptions,
 	wasmOpts []wasm.Option,
 	baseAppOptions ...func(*bam.BaseApp),
 ) *AxelarApp {
-
 	keys := CreateStoreKeys()
-	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
-	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
+	tkeys := store.NewTransientStoreKeys(paramstypes.TStoreKey)
+	memKeys := store.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
 	keepers := NewKeeperCache()
-	appCodec := encodingConfig.Codec
+	appCodec := codec.NewProtoCodec(encodingConfig.InterfaceRegistry)
 
 	SetKeeper(keepers, initParamsKeeper(encodingConfig, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey]))
 	SetKeeper(keepers, initConsensusParamsKeeper(appCodec, keys))
@@ -229,12 +233,21 @@ func NewAxelarApp(
 
 	// set up predefined keepers
 	SetKeeper(keepers, initAccountKeeper(appCodec, keys, moduleAccountPermissions))
-	SetKeeper(keepers, initBankKeeper(appCodec, keys, keepers, moduleAccountPermissions))
+	SetKeeper(keepers, initBankKeeper(logger, appCodec, keys, keepers, moduleAccountPermissions))
 	SetKeeper(keepers, initStakingKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initMintKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initDistributionKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initSlashingKeeper(appCodec, encodingConfig.Amino, keys, keepers))
+
+	invCheckPeriod := cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod))
 	SetKeeper(keepers, initCrisisKeeper(appCodec, keys, keepers, invCheckPeriod))
+
+	// get skipUpgradeHeights from the app options
+	skipUpgradeHeights := map[int64]bool{}
+	for _, h := range cast.ToIntSlice(appOpts.Get(server.FlagUnsafeSkipUpgrades)) {
+		skipUpgradeHeights[int64(h)] = true
+	}
+	homePath := cast.ToString(appOpts.Get(flags.FlagHome))
 	SetKeeper(keepers, initUpgradeKeeper(appCodec, keys, skipUpgradeHeights, homePath, bApp))
 	SetKeeper(keepers, initEvidenceKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initFeegrantKeeper(appCodec, keys, keepers))
@@ -261,6 +274,7 @@ func NewAxelarApp(
 	SetKeeper(keepers, initAxelarIBCKeeper(keepers))
 
 	if IsWasmEnabled() {
+		wasmDir := cast.ToString(appOpts.Get(WasmDirFlag))
 		if wasmDir == "" {
 			dbDir := cast.ToString(appOpts.Get("db_dir"))
 			wasmDir = filepath.Join(homePath, dbDir, "wasm")
@@ -343,6 +357,7 @@ func NewAxelarApp(
 
 	// The initChainer handles translating the genesis.json file into initial state for the network
 	app.SetInitChainer(app.InitChainer)
+	app.SetPreBlocker(app.PreBlocker)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
 
@@ -371,7 +386,7 @@ func NewAxelarApp(
 
 	// we need to ensure that all chain subspaces are loaded at start-up to prevent unexpected consensus failures
 	// when the params keeper is used outside the evm module's context
-	GetKeeper[evmKeeper.BaseKeeper](keepers).InitChains(app.NewContext(true, tmproto.Header{}))
+	GetKeeper[evmKeeper.BaseKeeper](keepers).InitChains(app.NewContext(true))
 
 	return app
 }
@@ -476,39 +491,14 @@ func (app *AxelarApp) registerWasmSnapshotExtension(keepers *KeeperCache) {
 	}
 }
 
-func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keepers *KeeperCache) {
-	upgradeKeeper := GetKeeper[upgradekeeper.Keeper](keepers)
-	upgradeKeeper.SetUpgradeHandler(
-		upgradeName(app.Version()),
-		func(ctx sdk.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-			updatedVM, err := app.mm.RunMigrations(ctx, configurator, fromVM)
-			if err != nil {
-				return updatedVM, err
-			}
-
-			return updatedVM, err
-		},
-	)
-
-	upgradeInfo, err := upgradeKeeper.ReadUpgradeInfoFromDisk()
-	if err != nil {
-		panic(err)
-	}
-
-	if upgradeInfo.Name == upgradeName(app.Version()) && !upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{}
-
-		// configure store loader that checks if version == upgradeHeight and applies store upgrades
-		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
-	}
-}
-
-func initBaseApp(db dbm.DB, traceStore io.Writer, encodingConfig axelarParams.EncodingConfig, keepers *KeeperCache, baseAppOptions []func(*bam.BaseApp), logger log.Logger) *bam.BaseApp {
+func initBaseApp(db dbm.DB, traceStore io.Writer, encodingConfig axelarParams.EncodingConfig, keepers *KeeperCache, baseAppOptions []func(*bam.BaseApp), logger sdklogger.Logger) *bam.BaseApp {
 	bApp := bam.NewBaseApp(Name, logger, db, encodingConfig.TxConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(encodingConfig.InterfaceRegistry)
-	bApp.SetParamStore(GetKeeper[consensusparamkeeper.Keeper](keepers))
+	bApp.SetParamStore(GetKeeper[consensusparamkeeper.Keeper](keepers).ParamsStore)
+	bApp.SetTxEncoder(encodingConfig.TxConfig.TxEncoder())
+
 	return bApp
 }
 
@@ -523,7 +513,7 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 	distrAppModule := distr.NewAppModule(appCodec, *GetKeeper[distrkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(distrtypes.ModuleName)))
 
 	appModules := []module.AppModule{
-		genutil.NewAppModule(GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers), bApp.DeliverTx, encodingConfig.TxConfig),
+		genutil.NewAppModule(GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers), bApp, encodingConfig.TxConfig),
 		auth.NewAppModule(appCodec, *GetKeeper[authkeeper.AccountKeeper](keepers), nil, funcs.MustOk(paramsKeeper.GetSubspace(authtypes.ModuleName))),
 		vesting.NewAppModule(*GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers)),
 
@@ -531,14 +521,15 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 		bank.NewAppModule(appCodec, *GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(banktypes.ModuleName))),
 		crisis.NewAppModule(GetKeeper[crisiskeeper.Keeper](keepers), skipGenesisInvariants, funcs.MustOk(paramsKeeper.GetSubspace(crisistypes.ModuleName))),
 		gov.NewAppModule(appCodec, GetKeeper[govkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(govtypes.ModuleName))),
-		mint.NewAppModule(appCodec, *GetKeeper[mintkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), nil, funcs.MustOk(paramsKeeper.GetSubspace(govtypes.ModuleName))),
-		slashing.NewAppModule(appCodec, *GetKeeper[slashingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(slashingtypes.ModuleName))),
+		mint.NewAppModule(appCodec, *GetKeeper[mintkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), nil, funcs.MustOk(paramsKeeper.GetSubspace(minttypes.ModuleName))),
+		slashing.NewAppModule(appCodec, *GetKeeper[slashingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(slashingtypes.ModuleName)), encodingConfig.InterfaceRegistry),
 		axelardistr.NewAppModule(distrAppModule, *GetKeeper[axelardistrkeeper.Keeper](keepers)),
 		staking.NewAppModule(appCodec, GetKeeper[stakingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(stakingtypes.ModuleName))),
-		upgrade.NewAppModule(GetKeeper[upgradekeeper.Keeper](keepers)),
+		upgrade.NewAppModule(GetKeeper[upgradekeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers).AddressCodec()),
 		evidence.NewAppModule(*GetKeeper[evidencekeeper.Keeper](keepers)),
 		params.NewAppModule(*GetKeeper[paramskeeper.Keeper](keepers)),
 		capability.NewAppModule(appCodec, *GetKeeper[capabilitykeeper.Keeper](keepers), false),
+		consensus.NewAppModule(appCodec, *GetKeeper[consensusparamkeeper.Keeper](keepers)),
 	}
 
 	// wasm module needs to be added in a specific order, so we cannot just append it at the end
@@ -607,18 +598,20 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 			GetKeeper[stakingkeeper.Keeper](keepers),
 			GetKeeper[slashingkeeper.Keeper](keepers),
 			GetKeeper[multisigKeeper.Keeper](keepers),
+			GetKeeper[permissionKeeper.Keeper](keepers),
 		),
 		axelarnetModule,
 		reward.NewAppModule(
 			*GetKeeper[rewardKeeper.Keeper](keepers),
 			GetKeeper[nexusKeeper.Keeper](keepers),
-			GetKeeper[mintkeeper.Keeper](keepers),
+			*GetKeeper[mintkeeper.Keeper](keepers),
 			GetKeeper[stakingkeeper.Keeper](keepers),
 			GetKeeper[slashingkeeper.Keeper](keepers),
 			GetKeeper[multisigKeeper.Keeper](keepers),
 			GetKeeper[snapKeeper.Keeper](keepers),
 			GetKeeper[bankkeeper.BaseKeeper](keepers),
 			bApp.MsgServiceRouter(),
+			encodingConfig.Codec,
 		),
 		permission.NewAppModule(*GetKeeper[permissionKeeper.Keeper](keepers)),
 		auxiliary.NewAppModule(encodingConfig.Codec, bApp.MsgServiceRouter()),
@@ -626,8 +619,8 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 	return appModules
 }
 
-func mustReadWasmConfig(appOpts servertypes.AppOptions) wasmtypes.WasmConfig {
-	wasmConfig, err := wasm.ReadWasmConfig(appOpts)
+func mustReadWasmConfig(appOpts servertypes.AppOptions) wasmtypes.NodeConfig {
+	wasmConfig, err := wasm.ReadNodeConfig(appOpts)
 	if err != nil {
 		panic(fmt.Sprintf("error while reading wasm config: %s", err))
 	}
@@ -671,7 +664,7 @@ func InitCustomAnteDecorators(
 		wasmConfig := mustReadWasmConfig(appOpts)
 		wasmAnteDecorators := []sdk.AnteDecorator{
 			ante.NewLimitSimulationGasDecorator(wasmConfig.SimulationGasLimit),
-			wasmkeeper.NewCountTXDecorator(keys[wasm.StoreKey]),
+			wasmkeeper.NewCountTXDecorator(runtime.NewKVStoreService(keys[wasmtypes.StoreKey])),
 		}
 
 		anteDecorators = append(anteDecorators, wasmAnteDecorators...)
@@ -680,7 +673,7 @@ func InitCustomAnteDecorators(
 	anteDecorators = append(anteDecorators,
 		ibcante.NewRedundantRelayDecorator(GetKeeper[ibckeeper.Keeper](keepers)),
 		ante.NewCheckRefundFeeDecorator(
-			encodingConfig.InterfaceRegistry,
+			encodingConfig.Codec,
 			GetKeeper[authkeeper.AccountKeeper](keepers),
 			GetKeeper[stakingkeeper.Keeper](keepers),
 			GetKeeper[snapKeeper.Keeper](keepers),
@@ -703,7 +696,7 @@ func initMessageAnteDecorators(encodingConfig axelarParams.EncodingConfig, keepe
 		),
 
 		ante.NewCheckProxy(GetKeeper[snapKeeper.Keeper](keepers)),
-		ante.NewRestrictedTx(GetKeeper[permissionKeeper.Keeper](keepers)),
+		ante.NewRestrictedTx(GetKeeper[permissionKeeper.Keeper](keepers), encodingConfig.Codec),
 	)
 }
 
@@ -808,19 +801,6 @@ func orderBeginBlockers() []string {
 		beginBlockerOrder = append(beginBlockerOrder, ibchookstypes.ModuleName)
 	}
 
-	// axelar custom modules
-	beginBlockerOrder = append(beginBlockerOrder,
-		rewardTypes.ModuleName,
-		nexusTypes.ModuleName,
-		permissionTypes.ModuleName,
-		multisigTypes.ModuleName,
-		tssTypes.ModuleName,
-		evmTypes.ModuleName,
-		snapTypes.ModuleName,
-		axelarnetTypes.ModuleName,
-		voteTypes.ModuleName,
-		auxiliarytypes.ModuleName,
-	)
 	return beginBlockerOrder
 }
 
@@ -857,17 +837,15 @@ func orderEndBlockers() []string {
 
 	// axelar custom modules
 	endBlockerOrder = append(endBlockerOrder,
+		axelarnetTypes.ModuleName,
 		multisigTypes.ModuleName,
 		tssTypes.ModuleName,
 		evmTypes.ModuleName,
 		nexusTypes.ModuleName,
 		rewardTypes.ModuleName,
-		snapTypes.ModuleName,
-		axelarnetTypes.ModuleName,
-		permissionTypes.ModuleName,
 		voteTypes.ModuleName,
-		auxiliarytypes.ModuleName,
 	)
+
 	return endBlockerOrder
 }
 
@@ -922,7 +900,8 @@ func orderModulesForGenesis() []string {
 }
 
 func CreateStoreKeys() map[string]*store.KVStoreKey {
-	keys := []string{authtypes.StoreKey,
+	keys := []string{
+		authtypes.StoreKey,
 		banktypes.StoreKey,
 		stakingtypes.StoreKey,
 		minttypes.StoreKey,
@@ -937,6 +916,8 @@ func CreateStoreKeys() map[string]*store.KVStoreKey {
 		capabilitytypes.StoreKey,
 		feegrant.StoreKey,
 		consensusparamtypes.StoreKey,
+		crisistypes.StoreKey,
+
 		voteTypes.StoreKey,
 		evmTypes.StoreKey,
 		snapTypes.StoreKey,
@@ -945,7 +926,8 @@ func CreateStoreKeys() map[string]*store.KVStoreKey {
 		nexusTypes.StoreKey,
 		axelarnetTypes.StoreKey,
 		rewardTypes.StoreKey,
-		permissionTypes.StoreKey}
+		permissionTypes.StoreKey,
+	}
 
 	if IsWasmEnabled() {
 		keys = append(keys, wasm.StoreKey)
@@ -955,32 +937,40 @@ func CreateStoreKeys() map[string]*store.KVStoreKey {
 		keys = append(keys, ibchookstypes.StoreKey)
 	}
 
-	return sdk.NewKVStoreKeys(keys...)
+	return store.NewKVStoreKeys(keys...)
 }
 
 // GenesisState represents chain state at the start of the chain. Any initial state (account balances) are stored here.
 type GenesisState map[string]json.RawMessage
 
 // InitChainer handles the chain initialization from a genesis file
-func (app *AxelarApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *AxelarApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 	var genesisState GenesisState
 	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
 
-	GetKeeper[upgradekeeper.Keeper](app.Keepers).SetModuleVersionMap(ctx, app.mm.GetVersionMap())
+	err := GetKeeper[upgradekeeper.Keeper](app.Keepers).SetModuleVersionMap(ctx, app.mm.GetVersionMap())
+	if err != nil {
+		panic(err)
+	}
 
 	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
+// PreBlocker checks if there is a scheduled upgrade and executes it if it is ready
+func (app *AxelarApp) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
+	return app.mm.PreBlock(ctx)
+}
+
 // BeginBlocker calls the BeginBlock() function of every module at the beginning of a new block
-func (app *AxelarApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-	return app.mm.BeginBlock(ctx, req)
+func (app *AxelarApp) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
+	return app.mm.BeginBlock(ctx)
 }
 
 // EndBlocker calls the EndBlock() function of every module at the end of a block
-func (app *AxelarApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
-	return app.mm.EndBlock(ctx, req)
+func (app *AxelarApp) EndBlocker(ctx sdk.Context) (sdk.EndBlock, error) {
+	return app.mm.EndBlock(ctx)
 }
 
 // LoadHeight loads the application version at a given height. It will panic if called
@@ -1006,7 +996,7 @@ func (app *AxelarApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.API
 	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register new tendermint queries routes from grpc-gateway.
-	tmservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+	cmtservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register node gRPC service for grpc-gateway.
 	nodeservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
@@ -1038,11 +1028,11 @@ func (app *AxelarApp) RegisterTxService(clientCtx client.Context) {
 
 // RegisterTendermintService implements the Application.RegisterTendermintService method.
 func (app *AxelarApp) RegisterTendermintService(clientCtx client.Context) {
-	tmservice.RegisterTendermintService(clientCtx, app.BaseApp.GRPCQueryRouter(), app.interfaceRegistry, app.Query)
+	cmtservice.RegisterTendermintService(clientCtx, app.BaseApp.GRPCQueryRouter(), app.interfaceRegistry, app.Query)
 }
 
-func (app *AxelarApp) RegisterNodeService(clientCtx client.Context) {
-	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter())
+func (app *AxelarApp) RegisterNodeService(clientCtx client.Context, cfg config.Config) {
+	nodeservice.RegisterNodeService(clientCtx, app.GRPCQueryRouter(), cfg)
 }
 
 // GetModuleBasics initializes the module BasicManager is in charge of setting up basic,
@@ -1060,11 +1050,7 @@ func GetModuleBasics() module.BasicManager {
 		gov.NewAppModuleBasic(
 			[]govclient.ProposalHandler{
 				paramsclient.ProposalHandler,
-				upgradeclient.LegacyProposalHandler,
-				upgradeclient.LegacyCancelProposalHandler,
-				ibcclientclient.UpdateClientProposalHandler,
-				ibcclientclient.UpgradeProposalHandler,
-				govclient.NewProposalHandler(axelarnetclient.NewSubmitCallContractsProposalTxCmd),
+				axelarnetclient.ProposalHandler,
 			},
 		),
 		params.AppModuleBasic{},
@@ -1074,7 +1060,9 @@ func GetModuleBasics() module.BasicManager {
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
 		vesting.AppModuleBasic{},
+		consensus.AppModuleBasic{},
 		ibc.AppModuleBasic{},
+		ibctendermint.AppModuleBasic{},
 		transfer.AppModuleBasic{},
 
 		multisig.AppModuleBasic{},
@@ -1108,4 +1096,25 @@ func IsWasmEnabled() bool {
 // IsIBCWasmHooksEnabled returns whether ibc wasm hooks are enabled
 func IsIBCWasmHooksEnabled() bool {
 	return IBCWasmHooksEnabled == "true"
+}
+
+// AutoCliOpts returns the autocli options for the app.
+func (app *AxelarApp) AutoCliOpts() autocli.AppOptions {
+	modules := make(map[string]appmodule.AppModule, 0)
+	for _, m := range app.mm.Modules {
+		if moduleWithName, ok := m.(module.HasName); ok {
+			moduleName := moduleWithName.Name()
+			if appModule, ok := moduleWithName.(appmodule.AppModule); ok {
+				modules[moduleName] = appModule
+			}
+		}
+	}
+
+	return autocli.AppOptions{
+		Modules:               modules,
+		ModuleOptions:         runtimeservices.ExtractAutoCLIOptions(app.mm.Modules),
+		AddressCodec:          authcodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
+		ValidatorAddressCodec: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ValidatorAddrPrefix()),
+		ConsensusAddressCodec: authcodec.NewBech32Codec(sdk.GetConfig().GetBech32ConsensusAddrPrefix()),
+	}
 }

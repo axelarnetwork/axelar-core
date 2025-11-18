@@ -163,8 +163,8 @@ func (m SigningSession) Result() (MultiSig, error) {
 }
 
 // GetParticipantsWeight returns the total weights of the participants
-func (m SigningSession) GetParticipantsWeight() sdk.Uint {
-	return slices.Reduce(m.MultiSig.GetParticipants(), math.ZeroUint(), func(total sdk.Uint, p sdk.ValAddress) sdk.Uint {
+func (m SigningSession) GetParticipantsWeight() math.Uint {
+	return slices.Reduce(m.MultiSig.GetParticipants(), math.ZeroUint(), func(total math.Uint, p sdk.ValAddress) math.Uint {
 		return total.Add(m.Key.Snapshot.GetParticipantWeight(p))
 	})
 }

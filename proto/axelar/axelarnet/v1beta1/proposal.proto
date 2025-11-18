@@ -3,6 +3,7 @@ syntax = "proto3";
 package axelar.axelarnet.v1beta1;
 
 import "gogoproto/gogo.proto";
+import "amino/amino.proto";
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
 option (gogoproto.goproto_getters_all) = false;
@@ -10,6 +11,7 @@ option (gogoproto.goproto_getters_all) = false;
 // CallContractsProposal is a gov Content type for calling contracts on other
 // chains
 message CallContractsProposal {
+  option (amino.name) = "axelarnet/CallContractsProposal";
   option (gogoproto.goproto_stringer) = false;
 
   string title = 1;

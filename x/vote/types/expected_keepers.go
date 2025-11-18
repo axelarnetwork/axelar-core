@@ -1,7 +1,10 @@
 package types
 
 import (
-	"github.com/cometbft/cometbft/libs/log"
+	"context"
+
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -29,9 +32,9 @@ type Snapshotter interface {
 
 // StakingKeeper provides functionality of the staking module
 type StakingKeeper interface {
-	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
-	PowerReduction(sdk.Context) sdk.Int
-	GetLastTotalPower(sdk.Context) sdk.Int
+	Validator(ctx context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error)
+	PowerReduction(context.Context) math.Int
+	GetLastTotalPower(context.Context) (math.Int, error)
 }
 
 // Rewarder provides reward functionality

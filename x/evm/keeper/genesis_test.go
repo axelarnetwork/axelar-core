@@ -4,7 +4,8 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -36,9 +37,9 @@ func TestGenesis(t *testing.T) {
 
 	cfg := params.MakeEncodingConfig()
 
-	paramsK := paramskeeper.NewKeeper(cfg.Codec, cfg.Amino, sdk.NewKVStoreKey(paramstypes.StoreKey), sdk.NewKVStoreKey(paramstypes.TStoreKey))
+	paramsK := paramskeeper.NewKeeper(cfg.Codec, cfg.Amino, store.NewKVStoreKey(paramstypes.StoreKey), store.NewKVStoreKey(paramstypes.TStoreKey))
 	Given("a keeper", func() {
-		k = keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), paramsK)
+		k = keeper.NewKeeper(cfg.Codec, store.NewKVStoreKey(types.StoreKey), paramsK)
 	}).
 		Given("a genesis state", func() {
 			cfg.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &multisig.MultiSig{})
@@ -48,7 +49,7 @@ func TestGenesis(t *testing.T) {
 		assert.NoError(t, initialState.Validate())
 	}).
 		When("importing and exporting the state", func() {
-			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 			k.InitChains(ctx)
 			k.InitGenesis(ctx, initialState)
 			exportedState = k.ExportGenesis(ctx)
@@ -62,7 +63,7 @@ func TestGenesis(t *testing.T) {
 	}).When("it is valid", func() {
 		assert.NoError(t, initialState.Validate())
 	}).Then("the keeper can be initialized", func(t *testing.T) {
-		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 		assert.NotPanics(t, func() { k.InitGenesis(ctx, initialState) })
 	}).Run(t)
 

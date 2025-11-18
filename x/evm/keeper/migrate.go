@@ -3,6 +3,7 @@ package keeper
 import (
 	"fmt"
 
+	store "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -96,7 +97,7 @@ func migrateDeposits(ctx sdk.Context, ck chainKeeper, status types.DepositStatus
 }
 
 func getTransferEventsByTxIDAndAddress(ctx sdk.Context, ck chainKeeper, txID types.Hash, address types.Address) (events []types.Event) {
-	iter := sdk.KVStorePrefixIterator(ck.getStore(ctx).KVStore, eventPrefix.Append(utils.LowerCaseKey(fmt.Sprintf("%s-", txID.Hex()))).AsKey())
+	iter := store.KVStorePrefixIterator(ck.getStore(ctx).KVStore, eventPrefix.Append(utils.LowerCaseKey(fmt.Sprintf("%s-", txID.Hex()))).AsKey())
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {

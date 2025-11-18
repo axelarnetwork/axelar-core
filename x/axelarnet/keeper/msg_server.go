@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -60,7 +61,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 		return nil, err
 	}
 
-	sender := nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: req.Sender.String()}
+	sender := nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: req.Sender}
 
 	// axelar gateway expects keccak256 hashes for payloads
 	payloadHash := crypto.Keccak256(req.Payload)
@@ -81,12 +82,17 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	if req.Fee != nil {
 		lockableAsset, err := s.nexus.NewLockableAsset(ctx, s.ibcK, s.bank, req.Fee.Amount)
 		if err != nil {
-			return nil, sdkerrors.Wrap(err, "unrecognized fee denom")
+			return nil, errorsmod.Wrap(err, "unrecognized fee denom")
 		}
 
-		err = s.bank.SendCoins(ctx, req.Sender, req.Fee.Recipient, sdk.NewCoins(req.Fee.Amount))
+		sender, err := sdk.AccAddressFromBech32(req.Sender)
 		if err != nil {
-			return nil, sdkerrors.Wrap(err, "failed to transfer fee")
+			return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender: %s", err)
+		}
+
+		err = s.bank.SendCoins(ctx, sender, req.Fee.Recipient, sdk.NewCoins(req.Fee.Amount))
+		if err != nil {
+			return nil, errorsmod.Wrap(err, "failed to transfer fee")
 		}
 
 		feePaidEvent := types.FeePaid{
@@ -104,7 +110,7 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 	}
 
 	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to add general message")
+		return nil, errorsmod.Wrap(err, "failed to add general message")
 	}
 
 	s.Logger(ctx).Debug(fmt.Sprintf("successfully enqueued contract call for contract address %s on chain %s from sender %s with message id %s", req.ContractAddress, req.Chain.String(), req.Sender, msg.ID),
@@ -512,8 +518,13 @@ func (s msgServer) RetryIBCTransfer(c context.Context, req *types.RetryIBCTransf
 func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageRequest) (*types.RouteMessageResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender: %s", err)
+	}
+
 	routingCtx := nexus.RoutingContext{
-		Sender:     req.Sender,
+		Sender:     sender,
 		FeeGranter: req.Feegranter,
 		Payload:    req.Payload,
 	}
@@ -522,6 +533,17 @@ func (s msgServer) RouteMessage(c context.Context, req *types.RouteMessageReques
 	}
 
 	return &types.RouteMessageResponse{}, nil
+}
+
+func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsRequest) (*types.UpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := req.Params.Validate(); err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+	}
+
+	s.SetParams(ctx, req.Params)
+	return &types.UpdateParamsResponse{}, nil
 }
 
 func transfer(ctx sdk.Context, k Keeper, n types.Nexus, b types.BankKeeper, ibc types.IBCKeeper, recipient sdk.AccAddress, coin sdk.Coin) error {

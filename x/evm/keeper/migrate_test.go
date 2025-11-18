@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -29,20 +30,20 @@ func TestGetMigrationHandler(t *testing.T) {
 	var (
 		ctx      sdk.Context
 		cdc      codec.Codec
-		storeKey = sdk.NewKVStoreKey(types.StoreKey)
+		storeKey = store.NewKVStoreKey(types.StoreKey)
 		bk       *keeper.BaseKeeper
 		chain    nexus.ChainName
 		handler  func(ctx sdk.Context) error
 	)
 
 	Given("a context", func() {
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	}).
 		Given("a keeper", func() {
 			encCfg := params.MakeEncodingConfig()
 			cdc = encCfg.Codec
 			chain = types.DefaultParams()[0].Chain
-			pk := paramsKeeper.NewKeeper(cdc, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
+			pk := paramsKeeper.NewKeeper(cdc, encCfg.Amino, store.NewKVStoreKey("params"), store.NewKVStoreKey("tparams"))
 
 			bk = keeper.NewKeeper(cdc, storeKey, pk)
 			bk.InitChains(ctx)
@@ -209,7 +210,7 @@ func getChainState(ctx sdk.Context, bk *keeper.BaseKeeper, chain nexus.ChainName
 	panic(fmt.Errorf("chain state %s not found", chain))
 }
 
-func setDepositLegacy(store sdk.KVStore, cdc codec.Codec, chain nexus.ChainName, deposit types.ERC20Deposit, status types.DepositStatus) {
+func setDepositLegacy(store store.KVStore, cdc codec.Codec, chain nexus.ChainName, deposit types.ERC20Deposit, status types.DepositStatus) {
 	var prefix key.Key
 
 	switch status {
@@ -227,7 +228,7 @@ func setDepositLegacy(store sdk.KVStore, cdc codec.Codec, chain nexus.ChainName,
 	)
 }
 
-func setDeposit(store sdk.KVStore, cdc codec.Codec, chain nexus.ChainName, deposit types.ERC20Deposit, status types.DepositStatus) {
+func setDeposit(store store.KVStore, cdc codec.Codec, chain nexus.ChainName, deposit types.ERC20Deposit, status types.DepositStatus) {
 	var prefix key.Key
 
 	switch status {

@@ -8,9 +8,9 @@ import (
 	"sort"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"google.golang.org/grpc/codes"
@@ -65,7 +65,7 @@ func getEVMChains(ctx sdk.Context, n types.Nexus) []nexustypes.Chain {
 	return slices.Filter(n.GetChains(ctx), types.IsEVMChain)
 }
 
-// Params returns the reward module params
+// Params returns the evm module params
 func (q Querier) Params(c context.Context, req *types.ParamsRequest) (*types.ParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -105,22 +105,22 @@ func (q Querier) Command(c context.Context, req *types.CommandRequest) (*types.C
 
 	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
 	if err != nil {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
 
 	cmdID, err := types.HexToCommandID(req.ID)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+		return nil, errorsmod.Wrap(types.ErrEVM, err.Error())
 	}
 
 	cmd, ok := ck.GetCommand(ctx, cmdID)
 	if !ok {
-		return nil, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not find command '%s'", req.ID))
+		return nil, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("could not find command '%s'", req.ID))
 	}
 
 	resp, err := GetCommandResponse(cmd)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrEVM, err.Error())
+		return nil, errorsmod.Wrap(types.ErrEVM, err.Error())
 	}
 
 	return &types.CommandResponse{
@@ -154,7 +154,7 @@ func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*t
 }
 
 // optimizeSignatureSet returns optimized signature set, sorted in ascending order by corresponding evm address
-func optimizeSignatureSet(operators []types.Operator, minPassingWeight sdk.Uint) [][]byte {
+func optimizeSignatureSet(operators []types.Operator, minPassingWeight math.Uint) [][]byte {
 	sort.SliceStable(operators, func(i, j int) bool {
 		return operators[i].Weight.GT(operators[j].Weight)
 	})
@@ -176,7 +176,7 @@ func optimizeSignatureSet(operators []types.Operator, minPassingWeight sdk.Uint)
 	return slices.Map(operators, func(operator types.Operator) []byte { return operator.Signature })
 }
 
-func getProof(key multisig.Key, signature multisig.MultiSig) ([]common.Address, []sdk.Uint, sdk.Uint, [][]byte) {
+func getProof(key multisig.Key, signature multisig.MultiSig) ([]common.Address, []math.Uint, math.Uint, [][]byte) {
 	participantsWithSigs := slices.Filter(key.GetParticipants(), func(v sdk.ValAddress) bool {
 		_, ok := signature.GetSignature(v)
 		return ok
@@ -211,7 +211,7 @@ func getExecuteDataAndSigs(ctx sdk.Context, multisigK types.MultisigKeeper, comm
 
 	proof := types.Proof{
 		Addresses:  slices.Map(addresses, common.Address.Hex),
-		Weights:    slices.Map(weights, sdk.Uint.String),
+		Weights:    slices.Map(weights, math.Uint.String),
 		Threshold:  threshold.String(),
 		Signatures: slices.Map(signatures, hex.EncodeToString),
 	}
@@ -234,7 +234,7 @@ func commandBatchToResp(ctx sdk.Context, commandBatch types.CommandBatch, multis
 		signature := commandBatch.GetSignature().(multisig.MultiSig)
 		executeData, proof, err := getExecuteDataAndSigs(ctx, multisigK, commandBatch, signature)
 		if err != nil {
-			return types.BatchedCommandsResponse{}, sdkerrors.Wrap(types.ErrEVM, err.Error())
+			return types.BatchedCommandsResponse{}, errorsmod.Wrap(types.ErrEVM, err.Error())
 		}
 
 		return types.BatchedCommandsResponse{
@@ -269,7 +269,7 @@ func (q Querier) BatchedCommands(c context.Context, req *types.BatchedCommandsRe
 
 	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
 	if err != nil {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
 
 	var commandBatch types.CommandBatch
@@ -277,17 +277,17 @@ func (q Querier) BatchedCommands(c context.Context, req *types.BatchedCommandsRe
 	case "":
 		commandBatch = ck.GetLatestCommandBatch(ctx)
 		if commandBatch.Is(types.BatchNonExistent) {
-			return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not get the latest batched commands for chain %s", req.Chain)).Error())
+			return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("could not get the latest batched commands for chain %s", req.Chain)).Error())
 		}
 	default:
 		commandBatchID, err := utils.HexDecode(req.Id)
 		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("invalid batched commands ID: %v", err)).Error())
+			return nil, status.Error(codes.InvalidArgument, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("invalid batched commands ID: %v", err)).Error())
 		}
 
 		commandBatch = ck.GetBatchByID(ctx, commandBatchID)
 		if commandBatch.Is(types.BatchNonExistent) {
-			return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("batched commands with ID %s not found", req.Id)).Error())
+			return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("batched commands with ID %s not found", req.Id)).Error())
 		}
 	}
 
@@ -323,12 +323,12 @@ func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.Event
 	ctx := sdk.UnwrapSDKContext(c)
 	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
 	if err != nil {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("[%s] is not a registered chain", req.Chain)).Error())
+		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("[%s] is not a registered chain", req.Chain)).Error())
 	}
 
 	event, ok := ck.GetEvent(ctx, types.EventID(req.EventId))
 	if !ok {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("no event with ID [%s] was found", req.EventId)).Error())
+		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("no event with ID [%s] was found", req.EventId)).Error())
 	}
 
 	return &types.EventResponse{Event: &event}, nil
@@ -402,7 +402,7 @@ func (q Querier) PendingCommands(c context.Context, req *types.PendingCommandsRe
 func queryAddressByKeyID(ctx sdk.Context, multisig types.MultisigKeeper, chain nexustypes.Chain, keyID multisig.KeyID) (types.KeyAddressResponse, error) {
 	key, ok := multisig.GetKey(ctx, keyID)
 	if !ok {
-		return types.KeyAddressResponse{}, sdkerrors.Wrapf(types.ErrEVM, "key %s not found for chain %s", keyID, chain.Name)
+		return types.KeyAddressResponse{}, errorsmod.Wrapf(types.ErrEVM, "key %s not found for chain %s", keyID, chain.Name)
 	}
 
 	addresses, weights, threshold := types.GetMultisigAddressesAndWeights(key)
@@ -427,14 +427,14 @@ func (q Querier) KeyAddress(c context.Context, req *types.KeyAddressRequest) (*t
 
 	chain, ok := q.nexus.GetChain(ctx, nexustypes.ChainName(req.Chain))
 	if !ok {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
 
 	keyID := req.KeyID
 	if keyID == "" {
 		keyID, ok = q.multisig.GetCurrentKeyID(ctx, chain.Name)
 		if !ok {
-			return nil, status.Error(codes.NotFound, sdkerrors.Wrapf(types.ErrEVM, "current key not found for chain %s", req.Chain).Error())
+			return nil, status.Error(codes.NotFound, errorsmod.Wrapf(types.ErrEVM, "current key not found for chain %s", req.Chain).Error())
 		}
 	}
 
@@ -452,12 +452,12 @@ func (q Querier) GatewayAddress(c context.Context, req *types.GatewayAddressRequ
 
 	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
 	if err != nil {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
 
 	address, ok := ck.GetGatewayAddress(ctx)
 	if !ok {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("axelar gateway not set for chain [%s]", req.Chain)).Error())
+		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("axelar gateway not set for chain [%s]", req.Chain)).Error())
 	}
 
 	return &types.GatewayAddressResponse{Address: address.Hex()}, nil
@@ -469,7 +469,7 @@ func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types
 
 	ck, err := q.keeper.ForChain(ctx, nexustypes.ChainName(req.Chain))
 	if err != nil {
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
+		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
 
 	var bytecode []byte
@@ -479,7 +479,7 @@ func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types
 	case BCBurner:
 		bytecode = ck.GetBurnerByteCode(ctx)
 	default:
-		return nil, status.Error(codes.NotFound, sdkerrors.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecode for chain %s", req.Chain)).Error())
+		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecode for chain %s", req.Chain)).Error())
 	}
 
 	return &types.BytecodeResponse{Bytecode: "0x" + common.Bytes2Hex(bytecode)}, nil

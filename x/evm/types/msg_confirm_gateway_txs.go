@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -15,7 +16,7 @@ const TxLimit = 10
 // NewConfirmGatewayTxsRequest creates a message of type ConfirmGatewayTxsRequest
 func NewConfirmGatewayTxsRequest(sender sdk.AccAddress, chain nexus.ChainName, txIDs []Hash) *ConfirmGatewayTxsRequest {
 	return &ConfirmGatewayTxsRequest{
-		Sender: sender,
+		Sender: sender.String(),
 		Chain:  chain,
 		TxIDs:  txIDs,
 	}
@@ -33,12 +34,12 @@ func (m ConfirmGatewayTxsRequest) Type() string {
 
 // ValidateBasic implements sdk.Msg
 func (m ConfirmGatewayTxsRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
+		return errorsmod.Wrap(err, "invalid chain")
 	}
 
 	if len(m.TxIDs) == 0 {
@@ -64,9 +65,4 @@ func (m ConfirmGatewayTxsRequest) ValidateBasic() error {
 func (m ConfirmGatewayTxsRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners implements sdk.Msg
-func (m ConfirmGatewayTxsRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

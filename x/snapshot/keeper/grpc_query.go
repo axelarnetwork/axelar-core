@@ -3,8 +3,8 @@ package keeper
 import (
 	"context"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
@@ -39,12 +39,12 @@ func (q Querier) OperatorByProxy(c context.Context, req *types.OperatorByProxyRe
 
 	proxyAddr, err := sdk.AccAddressFromBech32(req.ProxyAddress)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrSnapshot, "invalid proxy address")
+		return nil, errorsmod.Wrap(types.ErrSnapshot, "invalid proxy address")
 	}
 
 	operator := q.keeper.GetOperator(ctx, proxyAddr)
 	if operator == nil {
-		return nil, sdkerrors.Wrap(types.ErrSnapshot, "no operator associated to the proxy address")
+		return nil, errorsmod.Wrap(types.ErrSnapshot, "no operator associated to the proxy address")
 	}
 
 	return &types.OperatorByProxyResponse{
@@ -57,12 +57,12 @@ func (q Querier) ProxyByOperator(c context.Context, req *types.ProxyByOperatorRe
 
 	operatorAddr, err := sdk.ValAddressFromBech32(req.OperatorAddress)
 	if err != nil {
-		return nil, sdkerrors.Wrap(types.ErrSnapshot, "invalid operator address")
+		return nil, errorsmod.Wrap(types.ErrSnapshot, "invalid operator address")
 	}
 
 	proxy, active := q.keeper.GetProxy(ctx, operatorAddr)
 	if proxy == nil {
-		return nil, sdkerrors.Wrap(types.ErrSnapshot, "no proxy set for operator address")
+		return nil, errorsmod.Wrap(types.ErrSnapshot, "no proxy set for operator address")
 	}
 
 	status := types.Inactive

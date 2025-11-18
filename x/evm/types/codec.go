@@ -24,6 +24,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&ConfirmGatewayTxRequest{}, "evm/ConfirmGatewayTxRequest", nil)
 	cdc.RegisterConcrete(&ConfirmGatewayTxsRequest{}, "evm/ConfirmGatewayTxsRequest", nil)
 	cdc.RegisterConcrete(&RetryFailedEventRequest{}, "evm/RetryFailedEvent", nil)
+	cdc.RegisterConcrete(&UpdateParamsRequest{}, "evm/UpdateParams", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -43,6 +44,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&ConfirmGatewayTxRequest{},
 		&ConfirmGatewayTxsRequest{},
 		&RetryFailedEventRequest{},
+		&UpdateParamsRequest{},
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&gogoprototypes.BoolValue{},

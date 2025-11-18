@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/log"
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
-	dbm "github.com/cometbft/cometbft-db"
-	"github.com/cometbft/cometbft/libs/log"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	dbm "github.com/cosmos/cosmos-db"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ibcclient "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	ibcclient "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -46,10 +47,10 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 			IBC: func(_ sdk.Context, _ sdk.AccAddress, _ string, _ *wasmvmtypes.IBCMsg) ([]sdk.Msg, error) {
 				return nil, nil
 			},
-			Staking:  func(_ sdk.AccAddress, _ *wasmvmtypes.StakingMsg) ([]sdk.Msg, error) { return nil, nil },
-			Stargate: func(_ sdk.AccAddress, _ *wasmvmtypes.StargateMsg) ([]sdk.Msg, error) { return nil, nil },
-			Wasm:     func(_ sdk.AccAddress, _ *wasmvmtypes.WasmMsg) ([]sdk.Msg, error) { return nil, nil },
-			Gov:      func(_ sdk.AccAddress, _ *wasmvmtypes.GovMsg) ([]sdk.Msg, error) { return nil, nil },
+			Staking: func(_ sdk.AccAddress, _ *wasmvmtypes.StakingMsg) ([]sdk.Msg, error) { return nil, nil },
+			Any:     func(_ sdk.AccAddress, _ *wasmvmtypes.AnyMsg) ([]sdk.Msg, error) { return nil, nil },
+			Wasm:    func(_ sdk.AccAddress, _ *wasmvmtypes.WasmMsg) ([]sdk.Msg, error) { return nil, nil },
+			Gov:     func(_ sdk.AccAddress, _ *wasmvmtypes.GovMsg) ([]sdk.Msg, error) { return nil, nil },
 		}
 
 		anteHandler := func(ctx sdk.Context, msgs []sdk.Msg, simulate bool) (sdk.Context, error) {
@@ -57,24 +58,24 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 			return ctx, nil
 		}
 		messageHandler := wasmkeeper.MessageHandlerFunc(
-			func(_ sdk.Context, _ sdk.AccAddress, _ string, _ wasmvmtypes.CosmosMsg) ([]sdk.Event, [][]byte, error) {
+			func(_ sdk.Context, _ sdk.AccAddress, _ string, _ wasmvmtypes.CosmosMsg) ([]sdk.Event, [][]byte, [][]*codectypes.Any, error) {
 				messagehandlerCalled = true
-				return nil, nil, nil
+				return nil, nil, nil, nil
 			})
 		messenger = app.WithAnteHandlers(encoder, anteHandler, messageHandler)
 	}).Branch(
 		When("it dispatches an empty message", func() {
-			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{})
+			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{})
 		}).
 			Then("it should return an error", func(t *testing.T) {
 				assert.Error(t, err)
 			}),
 
 		When("it dispatches multiple messages of different types", func() {
-			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{
+			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{
 				Bank: &wasmvmtypes.BankMsg{
 					Burn: &wasmvmtypes.BurnMsg{
-						Amount: wasmvmtypes.Coins{{Denom: "foo", Amount: "1"}},
+						Amount: wasmvmtypes.Array[wasmvmtypes.Coin]{wasmvmtypes.NewCoin(1, "foo")},
 					},
 				},
 				Staking: &wasmvmtypes.StakingMsg{
@@ -90,14 +91,14 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 			}),
 
 		When("it dispatches multiple messages of the same type", func() {
-			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{
+			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{
 				Bank: &wasmvmtypes.BankMsg{
 					Burn: &wasmvmtypes.BurnMsg{
-						Amount: wasmvmtypes.Coins{{Denom: "foo", Amount: "1"}},
+						Amount: wasmvmtypes.Array[wasmvmtypes.Coin]{wasmvmtypes.NewCoin(1, "foo")},
 					},
 					Send: &wasmvmtypes.SendMsg{
 						ToAddress: "recipient",
-						Amount:    wasmvmtypes.Coins{{Denom: "foo", Amount: "1"}},
+						Amount:    wasmvmtypes.Array[wasmvmtypes.Coin]{wasmvmtypes.NewCoin(1, "foo")},
 					},
 				},
 			})
@@ -107,11 +108,11 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 			}),
 
 		When("it dispatches a single message that is neither burn nor ibc send", func() {
-			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{
+			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{
 				Bank: &wasmvmtypes.BankMsg{
 					Send: &wasmvmtypes.SendMsg{
 						ToAddress: "recipient",
-						Amount:    wasmvmtypes.Coins{{Denom: "foo", Amount: "1"}},
+						Amount:    wasmvmtypes.Array[wasmvmtypes.Coin]{wasmvmtypes.NewCoin(1, "foo")},
 					},
 				},
 			})
@@ -127,10 +128,10 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 			}),
 
 		When("it dispatches a single burn message", func() {
-			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{
+			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{
 				Bank: &wasmvmtypes.BankMsg{
 					Burn: &wasmvmtypes.BurnMsg{
-						Amount: wasmvmtypes.Coins{{Denom: "foo", Amount: "1"}},
+						Amount: wasmvmtypes.Array[wasmvmtypes.Coin]{wasmvmtypes.NewCoin(1, "foo")},
 					},
 				},
 			})
@@ -146,7 +147,7 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 			}),
 
 		When("it dispatches a single ibc send message", func() {
-			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{
+			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{
 				IBC: &wasmvmtypes.IBCMsg{
 					SendPacket: &wasmvmtypes.SendPacketMsg{
 						ChannelID: "channel",
@@ -167,7 +168,7 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 			}),
 
 		When("it dispatches a single custom message", func() {
-			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{
+			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "", wasmvmtypes.CosmosMsg{
 				Custom: json.RawMessage(`{"foo":"bar", "baz":1}`),
 			})
 		}).
@@ -180,10 +181,9 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 			Then("the message should get dispatched without error", func(t *testing.T) {
 				assert.NoError(t, err)
 			}),
-
-		When("it dispatches a single stargate message", func() {
-			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
-				wasmvmtypes.CosmosMsg{Stargate: &wasmvmtypes.StargateMsg{
+		When("it dispatches a single any message", func() {
+			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
+				wasmvmtypes.CosmosMsg{Any: &wasmvmtypes.AnyMsg{
 					TypeURL: "type",
 					Value:   []byte("value"),
 				}},
@@ -210,9 +210,9 @@ func TestMsgTypeBlacklistMessenger_DispatchMsg(t *testing.T) {
 	Given("a message handler with blacklisted message types", func() {
 		messenger = app.NewMsgTypeBlacklistMessenger()
 	}).Branch(
-		When("it dispatches a stargate message", func() {
-			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
-				wasmvmtypes.CosmosMsg{Stargate: &wasmvmtypes.StargateMsg{
+		When("it dispatches an any message", func() {
+			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
+				wasmvmtypes.CosmosMsg{Any: &wasmvmtypes.AnyMsg{
 					TypeURL: "type",
 					Value:   []byte("value"),
 				}},
@@ -222,9 +222,8 @@ func TestMsgTypeBlacklistMessenger_DispatchMsg(t *testing.T) {
 				assert.Error(t, err)
 				assert.NotEqual(t, err, wasmtypes.ErrUnknownMsg)
 			}),
-
-		When("it dispatches a stargate message", func() {
-			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
+		When("it dispatches an IBC  message", func() {
+			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
 				wasmvmtypes.CosmosMsg{IBC: &wasmvmtypes.IBCMsg{SendPacket: &wasmvmtypes.SendPacketMsg{
 					ChannelID: "channel",
 					Data:      []byte("data"),
@@ -237,7 +236,7 @@ func TestMsgTypeBlacklistMessenger_DispatchMsg(t *testing.T) {
 				assert.NotEqual(t, err, wasmtypes.ErrUnknownMsg)
 			}),
 		When("it dispatches a custom message", func() {
-			_, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
+			_, _, _, err = messenger.DispatchMsg(sdk.Context{}, nil, "",
 				wasmvmtypes.CosmosMsg{Custom: json.RawMessage(`{"foo":"bar", "baz":1}`)},
 			)
 		}).
@@ -275,16 +274,13 @@ func TestICSMiddleWare(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run("wasm_enabled:"+testCase.wasm+"-hooks_enabled:"+testCase.hooks, func(t *testing.T) {
 			app.WasmEnabled, app.IBCWasmHooksEnabled = testCase.wasm, testCase.hooks
+			t.Cleanup(cleanup)
 
 			axelarApp := app.NewAxelarApp(
-				log.TestingLogger(),
+				log.NewTestLogger(t),
 				dbm.NewMemDB(),
 				nil,
 				true,
-				nil,
-				"",
-				"",
-				0,
 				app.MakeEncodingConfig(),
 				simtestutil.EmptyAppOptions{},
 				[]wasm.Option{},
@@ -294,7 +290,7 @@ func TestICSMiddleWare(t *testing.T) {
 			wasmHooks := app.InitWasmHooks(keys)
 			ics4Wrapper := app.InitICS4Wrapper(axelarApp.Keepers, wasmHooks)
 
-			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 			packet := &mock.PacketIMock{
 				ValidateBasicFunc:    func() error { return nil },
 				GetSourcePortFunc:    func() string { return "source port" },
@@ -319,7 +315,6 @@ func TestMaxSizeOverrideForClient(t *testing.T) {
 		WASMByteCode:          rand.Bytes(5000000),
 		InstantiatePermission: nil,
 	}
-
 	assert.Error(t, msg.ValidateBasic())
 
 	app.MaxWasmSize = "10000000"
@@ -343,7 +338,7 @@ func TestQueryPlugins(t *testing.T) {
 	)
 
 	Given("the nexus keeper", func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.NewTestLogger(t))
 		nexusK = &nexusmock.NexusMock{}
 	}).
 		Branch(

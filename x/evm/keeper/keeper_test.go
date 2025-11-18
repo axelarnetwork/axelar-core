@@ -4,10 +4,11 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
+	store "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	store "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
@@ -43,9 +44,9 @@ func TestCommands(t *testing.T) {
 	setup := func() {
 		encCfg := params.MakeEncodingConfig()
 		encCfg.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &types2.MultiSig{})
-		paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		k = evmKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("evm"), paramsK)
+		paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("params"), store.NewKVStoreKey("tparams"))
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+		k = evmKeeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("evm"), paramsK)
 		k.InitChains(ctx)
 		chain = "Ethereum"
 	}
@@ -64,7 +65,7 @@ func TestCommands(t *testing.T) {
 
 		for i := 0; i < numCmds; i++ {
 			tokenDetails := createDetails(rand.NormalizedStr(10), rand.NormalizedStr(10))
-			cmd := types.NewDeployTokenCommand(chainID, multisigTestUtils.KeyID(), rand.Str(5), tokenDetails, types.ZeroAddress, sdk.NewUint(uint64(rand.PosI64())))
+			cmd := types.NewDeployTokenCommand(chainID, multisigTestUtils.KeyID(), rand.Str(5), tokenDetails, types.ZeroAddress, math.NewUint(uint64(rand.PosI64())))
 
 			err := chainKeeper.EnqueueCommand(ctx, cmd)
 			assert.NoError(t, err)
@@ -105,9 +106,9 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 
 	setup := func() {
 		encCfg := params.MakeEncodingConfig()
-		paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		k = evmKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("evm"), paramsK)
+		paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("params"), store.NewKVStoreKey("tparams"))
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+		k = evmKeeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("evm"), paramsK)
 		k.InitChains(ctx)
 		funcs.MustNoErr(k.CreateChain(ctx, types.DefaultParams()[0]))
 		chain = "Ethereum"
@@ -137,9 +138,9 @@ func TestSetBurnerInfoGetBurnerInfo(t *testing.T) {
 
 func TestGetTokenAddress(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
-	k := evmKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("subspace"), store.NewKVStoreKey("tsubspace"))
+	k := evmKeeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("testKey"), paramsK)
 	k.InitChains(ctx)
 
 	chain := nexus.ChainName("Ethereum")
@@ -147,7 +148,7 @@ func TestGetTokenAddress(t *testing.T) {
 	tokenName := "axelar token"
 	tokenSymbol := "at"
 	decimals := uint8(18)
-	capacity := sdk.NewIntFromUint64(uint64(10000))
+	capacity := math.NewIntFromUint64(uint64(10000))
 
 	axelarGateway := types.Address(common.HexToAddress("0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA"))
 	expected := "0x7779c3e9a8b1856b4E3Ab40da37200dbd007d594"
@@ -163,12 +164,12 @@ func TestGetTokenAddress(t *testing.T) {
 
 func TestGetBurnerAddress(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 	ctx = ctx.WithHeaderHash(common.Hex2Bytes("CA36CA3751A5B6E8B8ED4072BFA5E6E5BAC8B6E06E02DE029E1BD86AB141F2F1"))
-	ctx = ctx.WithBlockGasMeter(sdk.NewGasMeter(1000000))
+	ctx = ctx.WithBlockGasMeter(store.NewGasMeter(1000000))
 	ctx.GasMeter().ConsumeGas(1000, "test")
-	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
-	k := evmKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
+	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("subspace"), store.NewKVStoreKey("tsubspace"))
+	k := evmKeeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("testKey"), paramsK)
 	k.InitChains(ctx)
 	funcs.MustNoErr(k.CreateChain(ctx, types.DefaultParams()[0]))
 
@@ -231,9 +232,9 @@ func TestGetConfirmedDepositsPaginated(t *testing.T) {
 
 	setup := func() {
 		encCfg := params.MakeEncodingConfig()
-		paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("params"), sdk.NewKVStoreKey("tparams"))
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		k = evmKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("evm"), paramsK)
+		paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("params"), store.NewKVStoreKey("tparams"))
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+		k = evmKeeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("evm"), paramsK)
 		k.InitChains(ctx)
 		chain = "Ethereum"
 	}
@@ -250,7 +251,7 @@ func TestGetConfirmedDepositsPaginated(t *testing.T) {
 		for i := 0; i < depositCount; i++ {
 			deposit := types.ERC20Deposit{
 				TxID:             types.Hash(common.HexToHash(rand.HexStr(common.HashLength))),
-				Amount:           sdk.NewUint(uint64(rand.I64Between(1000, 1000000))),
+				Amount:           math.NewUint(uint64(rand.I64Between(1000, 1000000))),
 				Asset:            "asset",
 				DestinationChain: axelarnet.Axelarnet.Name,
 				BurnerAddress:    types.Address(common.HexToAddress(rand.HexStr(common.AddressLength))),
@@ -334,18 +335,18 @@ func TestBaseKeeper(t *testing.T) {
 		keeper            *evmKeeper.BaseKeeper
 		ctx               sdk.Context
 		expectedChainName nexus.ChainName
-		paramstoreKey     = sdk.NewKVStoreKey(paramstypes.StoreKey)
-		paramTStoreKey    = sdk.NewKVStoreKey(paramstypes.TStoreKey)
+		paramstoreKey     = store.NewKVStoreKey(paramstypes.StoreKey)
+		paramTStoreKey    = store.NewKVStoreKey(paramstypes.TStoreKey)
 	)
 	givenBaseKeeper := Given("a base keeper", func() {
 		encodingConfig := app.MakeEncodingConfig()
 		pKeeper := paramsKeeper.NewKeeper(encodingConfig.Codec, encodingConfig.Amino, paramstoreKey, paramTStoreKey)
-		evmStoreKey = sdk.NewKVStoreKey(types.StoreKey)
+		evmStoreKey = store.NewKVStoreKey(types.StoreKey)
 		keeper = evmKeeper.NewKeeper(encodingConfig.Codec, evmStoreKey, pKeeper)
 	})
 
 	givenCtx := Given("a context", func() {
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	})
 
 	givenNoChainsExist := Given("no chains exist", func() {})
