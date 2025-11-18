@@ -11,6 +11,7 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 	dbm "github.com/cosmos/cosmos-db"
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/debug"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -156,6 +157,9 @@ func addModuleInitFlags(startCmd *cobra.Command) {
 
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
 	baseappOptions := server.DefaultBaseappOptions(appOpts)
+
+	// this allows for faster block times, because nodes can start optimistic execution of blocks while they are being voted on
+	baseappOptions = append(baseappOptions, baseapp.SetOptimisticExecution())
 
 	var wasmOpts []wasm.Option
 	if app.IsWasmEnabled() && cast.ToBool(appOpts.Get("telemetry.enabled")) {
