@@ -23,6 +23,8 @@ const (
 	GoerliChainId  uint64 = 5
 )
 
+const blockTimeSpeedUp = 5
+
 // Parameter keys
 var (
 	KeyChain               = []byte("chain")
@@ -63,7 +65,7 @@ func DefaultParams() []Params {
 		Network:             Ganache,
 		TokenCode:           bzToken,
 		Burnable:            bzBurnable,
-		RevoteLockingPeriod: 50,
+		RevoteLockingPeriod: 15 * blockTimeSpeedUp,
 		Networks: []NetworkInfo{
 			{
 				Name: Mainnet,
@@ -87,7 +89,7 @@ func DefaultParams() []Params {
 			},
 		},
 		VotingThreshold:   utils.Threshold{Numerator: 51, Denominator: 100},
-		VotingGracePeriod: 3,
+		VotingGracePeriod: 3 * blockTimeSpeedUp,
 		MinVoterCount:     1,
 		CommandsGasLimit:  5000000,
 		EndBlockerLimit:   50,

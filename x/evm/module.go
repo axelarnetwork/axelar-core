@@ -139,7 +139,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrEVM, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus, am.multisig))
 
-	err := cfg.RegisterMigration(types.ModuleName, 8, keeper.AlwaysMigrateBytecode(am.keeper, am.nexus, keeper.Migrate8to9(am.keeper, am.nexus)))
+	err := cfg.RegisterMigration(types.ModuleName, 9, keeper.AlwaysMigrateBytecode(am.keeper, am.nexus, keeper.Migrate9to10(am.keeper, am.nexus)))
 	if err != nil {
 		panic(err)
 	}
@@ -153,7 +153,7 @@ func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 9 }
+func (AppModule) ConsensusVersion() uint64 { return 10 }
 
 // IsOnePerModuleType implements the depinject.OnePerModuleType interface.
 func (am AppModule) IsOnePerModuleType() { // marker

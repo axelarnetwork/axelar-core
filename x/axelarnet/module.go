@@ -149,7 +149,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus))
 
-	err := cfg.RegisterMigration(types.ModuleName, 6, keeper.Migrate6to7(am.keeper, am.bank, am.account, am.nexus, am.ibcK))
+	err := cfg.RegisterMigration(types.ModuleName, 7, keeper.Migrate7to8(am.keeper))
 	if err != nil {
 		panic(err)
 	}
@@ -163,7 +163,7 @@ func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 7 }
+func (AppModule) ConsensusVersion() uint64 { return 8 }
 
 // AxelarnetIBCModule is an IBCModule that adds rate limiting and gmp processing to the ibc middleware
 type AxelarnetIBCModule struct {

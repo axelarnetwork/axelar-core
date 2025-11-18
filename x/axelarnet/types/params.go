@@ -10,6 +10,7 @@ import (
 // DefaultParamspace - default parameter namespace
 const (
 	DefaultParamspace = ModuleName
+	blockTimeSpeedUp  = 5
 )
 
 // Parameter keys
@@ -29,7 +30,7 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		RouteTimeoutWindow:               17000,
+		RouteTimeoutWindow:               17000 * blockTimeSpeedUp,
 		TransferLimit:                    20,
 		EndBlockerLimit:                  50,
 		CallContractsProposalMinDeposits: nil,
