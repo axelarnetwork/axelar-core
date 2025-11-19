@@ -96,7 +96,7 @@ func TestRestrictedTx(t *testing.T) {
 	Given("a restricted tx ante handler", func() {
 		permission = &mock.PermissionMock{}
 		handler = ante.NewAnteHandlerDecorator(
-			ante.ChainMessageAnteDecorators(ante.NewRestrictedTx(permission, encodingConfig.Codec, govAccount)).ToAnteHandler())
+			ante.ChainMessageAnteDecorators(ante.NewRestrictedTx(permission, encodingConfig.Codec)).ToAnteHandler())
 	}).Branch(
 		When("signer has any role", signerHasAnyRole).Branch(
 			When("msg role is unrestricted", msgRoleIsUnrestricted).
@@ -124,11 +124,13 @@ func TestRestrictedTx(t *testing.T) {
 				Then("stop tx", stopTx),
 		),
 
+		// governance proposals bypass ante handlers, so the governance address should behave just like an account
+		//without special permissions to prevent unintended permission check bypasses
 		When("signer is gov account", signerIsGovAccount).Branch(
 			When("msg role is chain management", msgRoleIsChainManagement).
-				Then("let the msg through", letTxThrough),
+				Then("stop tx", stopTx),
 			When("msg role is access control", msgRoleIsAccessControl).
-				Then("let the msg through", letTxThrough),
+				Then("stop tx", stopTx),
 		),
 	).Run(t, 20)
 }

@@ -698,7 +698,7 @@ func initMessageAnteDecorators(encodingConfig axelarParams.EncodingConfig, keepe
 		),
 
 		ante.NewCheckProxy(GetKeeper[snapKeeper.Keeper](keepers)),
-		ante.NewRestrictedTx(GetKeeper[permissionKeeper.Keeper](keepers), encodingConfig.Codec, authtypes.NewModuleAddress(govtypes.ModuleName)),
+		ante.NewRestrictedTx(GetKeeper[permissionKeeper.Keeper](keepers), encodingConfig.Codec),
 	)
 }
 

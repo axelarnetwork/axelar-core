@@ -15,15 +15,13 @@ import (
 type RestrictedTx struct {
 	permission types.Permission
 	cdc        codec.Codec
-	govAccount sdk.AccAddress
 }
 
 // NewRestrictedTx constructor for RestrictedTx
-func NewRestrictedTx(permission types.Permission, cdc codec.Codec, govAccount sdk.AccAddress) RestrictedTx {
+func NewRestrictedTx(permission types.Permission, cdc codec.Codec) RestrictedTx {
 	return RestrictedTx{
 		permission,
 		cdc,
-		govAccount,
 	}
 }
 
@@ -38,12 +36,6 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool,
 		}
 		if len(signers) != 0 {
 			signer = signers[0]
-		}
-
-		// bypass the permission check if the signer is the governance account. This means the message was sent as a governance proposal,
-		// which is the most restrictive check it can pass.
-		if d.govAccount.Equals(signer) {
-			continue
 		}
 
 		signerRole := d.permission.GetRole(ctx, signer)
