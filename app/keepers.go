@@ -176,6 +176,10 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 
 	// The last arguments can contain custom message handlers, and custom query handlers,
 	// if we want to allow any custom callbacks
+	gasRegisterConfig := wasmtypes.DefaultGasRegisterConfig()
+	// 1 SDK gas = 2500 CWgas
+	// given our block gas limit of 400000000, this means ~1 second of execution time.
+	gasRegisterConfig.GasMultiplier = 2500
 	wasmOpts = append(
 		wasmOpts,
 		wasmkeeper.WithMessageHandlerDecorator(
@@ -193,6 +197,7 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 			return nexusKeeper.NewWasmerEngine(old, nexusK)
 		}),
 		wasmkeeper.WithQueryPlugins(NewQueryPlugins(nexusK)),
+		wasmkeeper.WithGasRegister(wasmtypes.NewWasmGasRegister(gasRegisterConfig)),
 	)
 
 	scopedWasmK := GetKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(wasm.ModuleName)
