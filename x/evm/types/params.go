@@ -307,9 +307,10 @@ func (m Params) Validate() error {
 		return err
 	}
 
-	if m.VotingGracePeriod >= m.RevoteLockingPeriod {
-		return errors.New("voting grace period must be < revote locking period")
-	}
+	// temporarily disabled
+	// if m.VotingGracePeriod >= m.RevoteLockingPeriod {
+	// 	return errors.New("voting grace period must be < revote locking period")
+	// }
 
 	if err := validateVotingThreshold(m.VotingThreshold); err != nil {
 		return err
