@@ -21,6 +21,7 @@ jobs:
         run: |
           go get github.com/axelarnetwork/utils@latest
           go get github.com/axelarnetwork/tm-events@latest
+          go mod tidy
 
       - name: Check for changes
         run: |
