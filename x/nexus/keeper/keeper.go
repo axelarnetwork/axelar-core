@@ -3,10 +3,11 @@ package keeper
 import (
 	"fmt"
 
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
@@ -40,7 +41,7 @@ var (
 
 // Keeper represents a nexus keeper
 type Keeper struct {
-	storeKey sdk.StoreKey
+	storeKey store.StoreKey
 	cdc      codec.BinaryCodec
 	params   params.Subspace
 
@@ -49,7 +50,7 @@ type Keeper struct {
 }
 
 // NewKeeper returns a new nexus keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey store.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable())}
 }
 

@@ -1,9 +1,11 @@
 package reward
 
 import (
+	"cosmossdk.io/math"
+	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
@@ -13,15 +15,12 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-// BeginBlocker is called at the beginning of every block
-func BeginBlocker(ctx sdk.Context, _ abci.RequestBeginBlock, _ types.Rewarder) {}
-
 // EndBlocker is called at the end of every block, process external chain voting inflation
-func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, k types.Rewarder, n types.Nexus, m types.Minter, s types.Staker, slasher types.Slasher, msig types.MultiSig, ss types.Snapshotter) []abci.ValidatorUpdate {
+func EndBlocker(ctx sdk.Context, k types.Rewarder, n types.Nexus, m mintkeeper.Keeper, s types.Staker, slasher types.Slasher, msig types.MultiSig, ss types.Snapshotter) ([]abci.ValidatorUpdate, error) {
 	handleExternalChainVotingInflation(ctx, k, n, m, s, slasher, ss)
-	handleKeyMgmtInflation(ctx, k, m, s, slasher, msig, ss)
+	err := handleKeyMgmtInflation(ctx, k, m, s, slasher, msig, ss)
 
-	return nil
+	return nil, err
 }
 
 func addRewardsByConsensusPower(ctx sdk.Context, s types.Staker, rewardPool exported.RewardPool, validators []snapshot.ValidatorI, totalReward sdk.DecCoin) {
@@ -31,7 +30,7 @@ func addRewardsByConsensusPower(ctx sdk.Context, s types.Staker, rewardPool expo
 	validatorsWithConsensusPower := slices.Filter(validators, func(v snapshot.ValidatorI) bool {
 		return v.GetConsensusPower(s.PowerReduction(ctx)) > 0
 	})
-	totalConsensusPower := slices.Reduce(validatorsWithConsensusPower, sdk.ZeroInt(), func(total sdk.Int, v snapshot.ValidatorI) sdk.Int {
+	totalConsensusPower := slices.Reduce(validatorsWithConsensusPower, math.ZeroInt(), func(total math.Int, v snapshot.ValidatorI) math.Int {
 		return total.AddRaw(v.GetConsensusPower(s.PowerReduction(ctx)))
 	})
 
@@ -39,7 +38,7 @@ func addRewardsByConsensusPower(ctx sdk.Context, s types.Staker, rewardPool expo
 		// Each validator receives reward weighted by consensus power
 		amount := totalAmount.MulInt64(v.GetConsensusPower(s.PowerReduction(ctx))).QuoInt(totalConsensusPower).RoundInt()
 		rewardPool.AddReward(
-			v.GetOperator(),
+			toValAddress(v.GetOperator()),
 			sdk.NewCoin(denom, amount),
 		)
 	})
@@ -63,14 +62,14 @@ func excludeJailedOrTombstoned(ctx sdk.Context, slasher types.Slasher, v snapsho
 	return filter(v)
 }
 
-func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s types.Staker, slasher types.Slasher, mSig types.MultiSig, ss types.Snapshotter) {
+func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m mintkeeper.Keeper, s types.Staker, slasher types.Slasher, mSig types.MultiSig, ss types.Snapshotter) error {
 	rewardPool := k.GetPool(ctx, multisigTypes.ModuleName)
-	minter := m.GetMinter(ctx)
-	mintParams := m.GetParams(ctx)
-	totalAmount := minter.BlockProvision(mintParams).Amount.ToDec().Mul(k.GetParams(ctx).KeyMgmtRelativeInflationRate)
+	minter := funcs.Must(m.Minter.Get(ctx))
+	mintParams := funcs.Must(m.Params.Get(ctx))
+	totalAmount := minter.BlockProvision(mintParams).Amount.ToLegacyDec().Mul(k.GetParams(ctx).KeyMgmtRelativeInflationRate)
 
 	isKeygenParticipant := func(v snapshot.ValidatorI) bool {
-		proxy, isActive := ss.GetProxy(ctx, v.GetOperator())
+		proxy, isActive := ss.GetProxy(ctx, toValAddress(v.GetOperator()))
 
 		return isActive && !mSig.HasOptedOut(ctx, proxy)
 	}
@@ -90,17 +89,23 @@ func handleKeyMgmtInflation(ctx sdk.Context, k types.Rewarder, m types.Minter, s
 
 		return false
 	}
-	s.IterateBondedValidatorsByPower(ctx, validatorIterFn)
+
+	err := s.IterateBondedValidatorsByPower(ctx, validatorIterFn)
+	if err != nil {
+		return err
+	}
 
 	addRewardsByConsensusPower(ctx, s, rewardPool, validators, sdk.NewDecCoinFromDec(mintParams.MintDenom, totalAmount))
+
+	return nil
 }
 
-func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n types.Nexus, m types.Minter, s types.Staker, slasher types.Slasher, ss types.Snapshotter) {
-	totalStakingSupply := m.StakingTokenSupply(ctx)
-	blocksPerYear := m.GetParams(ctx).BlocksPerYear
+func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n types.Nexus, m mintkeeper.Keeper, s types.Staker, slasher types.Slasher, ss types.Snapshotter) {
+	totalStakingSupply := funcs.Must(m.StakingTokenSupply(ctx))
+	blocksPerYear := funcs.Must(m.Params.Get(ctx)).BlocksPerYear
 	inflationRate := k.GetParams(ctx).ExternalChainVotingInflationRate
-	denom := m.GetParams(ctx).MintDenom
-	amountPerChain := totalStakingSupply.ToDec().Mul(inflationRate).QuoInt64(int64(blocksPerYear))
+	denom := funcs.Must(m.Params.Get(ctx)).MintDenom
+	amountPerChain := totalStakingSupply.ToLegacyDec().Mul(inflationRate).QuoInt64(int64(blocksPerYear))
 
 	for _, chain := range n.GetChains(ctx) {
 		// ignore inactive chain
@@ -116,8 +121,8 @@ func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n typ
 
 		var validators []snapshot.ValidatorI
 		for _, maintainer := range maintainers {
-			v := s.Validator(ctx, maintainer)
-			if v == nil {
+			v, err := s.Validator(ctx, maintainer)
+			if err == nil {
 				continue
 			}
 
@@ -129,7 +134,7 @@ func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n typ
 				continue
 			}
 
-			if _, isProxyActive := ss.GetProxy(ctx, v.GetOperator()); !isProxyActive {
+			if _, isProxyActive := ss.GetProxy(ctx, toValAddress(v.GetOperator())); !isProxyActive {
 				continue
 			}
 
@@ -138,4 +143,8 @@ func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n typ
 
 		addRewardsByConsensusPower(ctx, s, rewardPool, validators, sdk.NewDecCoinFromDec(denom, amountPerChain))
 	}
+}
+
+func toValAddress(addr string) sdk.ValAddress {
+	return funcs.Must(sdk.ValAddressFromBech32(addr))
 }

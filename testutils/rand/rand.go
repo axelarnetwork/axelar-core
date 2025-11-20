@@ -6,12 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/store/types"
+	"cosmossdk.io/log"
+	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/store/types"
+	storetypes "cosmossdk.io/store/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
 	gethmath "github.com/ethereum/go-ethereum/common/math"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"golang.org/x/text/unicode/norm"
 
 	rand2 "github.com/axelarnetwork/utils/test/rand"
@@ -41,14 +43,14 @@ func Duration() time.Duration {
 
 // IntBetween returns a random integer between lower (inclusive) and upper (exclusive).
 // It panics if upper <= lower or if (upper - lower) doesn't fit int64.
-func IntBetween(lower sdk.Int, upper sdk.Int) sdk.Int {
-	return sdk.NewInt(rand.Int63n(upper.Sub(lower).BigInt().Int64())).Add(lower)
+func IntBetween(lower sdkmath.Int, upper sdkmath.Int) sdkmath.Int {
+	return sdkmath.NewInt(rand.Int63n(upper.Sub(lower).BigInt().Int64())).Add(lower)
 }
 
 // UintBetween returns a random integer between lower (inclusive) and upper (exclusive).
 // It panics if upper <= loweror or if (upper - lower) doesn't fit int64.
-func UintBetween(lower sdk.Uint, upper sdk.Uint) sdk.Uint {
-	return sdk.NewUint(uint64(rand.Int63n(upper.Sub(lower).BigInt().Int64()))).Add(lower)
+func UintBetween(lower sdkmath.Uint, upper sdkmath.Uint) sdkmath.Uint {
+	return sdkmath.NewUint(uint64(rand.Int63n(upper.Sub(lower).BigInt().Int64()))).Add(lower)
 }
 
 // I64Between returns a random integer between lower (inclusive) and upper (exclusive).
@@ -57,8 +59,8 @@ func I64Between(lower int64, upper int64) int64 {
 	return rand.Int63n(upper-lower) + lower
 }
 
-func ThresholdDec() sdk.Dec {
-	return sdk.NewDecWithPrec(I64Between(0, gethmath.BigPow(10, 18).Int64()), 18)
+func ThresholdDec() sdkmath.LegacyDec {
+	return sdkmath.LegacyNewDecWithPrec(I64Between(0, gethmath.BigPow(10, 18).Int64()), 18)
 }
 
 // NormalizeString normalizes a string as NFKC
@@ -251,7 +253,7 @@ func Denom(min, max int) string {
 
 // Coin returns a random sdk.Coin
 func Coin() sdk.Coin {
-	return sdk.NewCoin(Denom(3, 20), sdk.NewInt(rand.Int63()))
+	return sdk.NewCoin(Denom(3, 20), sdkmath.NewInt(rand.Int63()))
 }
 
 // HexStrings returns a random hex string generator that produces hex strings with given length
@@ -352,10 +354,10 @@ func AccAddr() sdk.AccAddress {
 }
 
 // Context generates a random Context data structure
-func Context(store types.MultiStore) sdk.Context {
-	ctx := sdk.NewContext(store, tmproto.Header{Height: PosI64(), Time: rand2.Time()}, false, log.TestingLogger()).
+func Context(store types.MultiStore, t log.TestingT) sdk.Context {
+	ctx := sdk.NewContext(store, tmproto.Header{Height: PosI64(), Time: rand2.Time()}, false, log.NewTestLogger(t)).
 		WithHeaderHash(BytesBetween(1024, 101240)).
-		WithBlockGasMeter(sdk.NewGasMeter(1000000))
+		WithBlockGasMeter(storetypes.NewGasMeter(1000000))
 	ctx.GasMeter().ConsumeGas(uint64(I64Between(1000, 1000000)), "test")
 	return ctx
 }

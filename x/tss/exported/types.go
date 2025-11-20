@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	"github.com/btcsuite/btcd/btcec/v2"
 	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 )
@@ -26,7 +26,7 @@ type KeyID string
 // Validate returns an error, if the key ID is too short or too long
 func (id KeyID) Validate() error {
 	if err := utils.ValidateString(string(id)); err != nil {
-		return sdkerrors.Wrap(err, "invalid key id")
+		return errorsmod.Wrap(err, "invalid key id")
 	}
 
 	if len(id) < KeyIDLengthMin || len(id) > KeyIDLengthMax {
@@ -151,7 +151,7 @@ func (m KeyRequirement) Validate() error {
 	}
 
 	for totalShareCount := m.MinTotalShareCount; totalShareCount <= m.MaxTotalShareCount; totalShareCount++ {
-		corruptionThreshold := ComputeAbsCorruptionThreshold(m.SafetyThreshold, sdk.NewInt(totalShareCount))
+		corruptionThreshold := ComputeAbsCorruptionThreshold(m.SafetyThreshold, math.NewInt(totalShareCount))
 		if corruptionThreshold < 0 || corruptionThreshold >= totalShareCount {
 			return fmt.Errorf("invalid safety threshold [%s], and corruption threshold [%d] when total share count is [%d]",
 				m.SafetyThreshold.String(),
@@ -186,8 +186,8 @@ func (m KeyRequirement) Validate() error {
 
 // ComputeAbsCorruptionThreshold returns absolute corruption threshold to be used by tss.
 // (threshold + 1) shares are required to sign
-func ComputeAbsCorruptionThreshold(safetyThreshold utils.Threshold, totalShareCount sdk.Int) int64 {
-	return sdk.NewDec(totalShareCount.Int64()).MulInt64(safetyThreshold.Numerator).QuoInt64(safetyThreshold.Denominator).Ceil().TruncateInt().Int64() - 1
+func ComputeAbsCorruptionThreshold(safetyThreshold utils.Threshold, totalShareCount math.Int) int64 {
+	return math.LegacyNewDec(totalShareCount.Int64()).MulInt64(safetyThreshold.Numerator).QuoInt64(safetyThreshold.Denominator).Ceil().TruncateInt().Int64() - 1
 }
 
 // SimpleString returns a human-readable string

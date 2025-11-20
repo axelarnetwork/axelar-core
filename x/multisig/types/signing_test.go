@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/math"
 	"github.com/btcsuite/btcd/btcec/v2"
 	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -101,9 +102,9 @@ func TestSigningSession(t *testing.T) {
 	givenNewSignSession := Given("new signing session", func() {
 		validators = slices.Expand(func(int) sdk.ValAddress { return rand.ValAddr() }, 3)
 		participants := map[string]snapshot.Participant{
-			validators[0].String(): snapshot.NewParticipant(validators[0], sdk.NewUint(1)),
-			validators[1].String(): snapshot.NewParticipant(validators[1], sdk.NewUint(2)),
-			validators[2].String(): snapshot.NewParticipant(validators[2], sdk.NewUint(3)),
+			validators[0].String(): snapshot.NewParticipant(validators[0], math.NewUint(1)),
+			validators[1].String(): snapshot.NewParticipant(validators[1], math.NewUint(2)),
+			validators[2].String(): snapshot.NewParticipant(validators[2], math.NewUint(3)),
 		}
 		publicKeys := make(map[string]exported.PublicKey, len(validators))
 		privateKeys = make(map[string]*btcec.PrivateKey, len(validators))
@@ -120,7 +121,7 @@ func TestSigningSession(t *testing.T) {
 				Timestamp:    time.Now(),
 				Height:       rand.PosI64(),
 				Participants: participants,
-				BondedWeight: sdk.NewUint(6),
+				BondedWeight: math.NewUint(6),
 			},
 			PubKeys:          publicKeys,
 			SigningThreshold: utils.NewThreshold(2, 3),
@@ -438,7 +439,7 @@ func TestSigningSession(t *testing.T) {
 				assert.NoError(t, actual.ValidateBasic())
 				assert.Equal(t, signingSession.Key.ID, actual.KeyID)
 
-				participantsWeight := sdk.ZeroUint()
+				participantsWeight := math.ZeroUint()
 				for p, sig := range actual.Sigs {
 					participantsWeight = participantsWeight.Add(signingSession.Key.Snapshot.GetParticipantWeight(funcs.Must(sdk.ValAddressFromBech32(p))))
 

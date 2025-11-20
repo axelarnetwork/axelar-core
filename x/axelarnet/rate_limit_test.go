@@ -2,18 +2,20 @@ package axelarnet_test
 
 import (
 	"fmt"
+	mathrand "math/rand"
 	"strconv"
 	"testing"
 
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	captypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	ibcchanneltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -49,7 +51,7 @@ func TestRateLimitPacket(t *testing.T) {
 	ibcPath = types.NewIBCPath(port, channel)
 
 	givenKeeper := Given("a keeper", func() {
-		ctx, k, _ = setup()
+		ctx, k, _ = setup(t)
 		n = &mock.NexusMock{}
 		rateLimiter = axelarnet.NewRateLimiter(&k, n)
 	})
@@ -82,7 +84,7 @@ func TestRateLimitPacket(t *testing.T) {
 		}
 
 		transfer = ibctransfertypes.NewFungibleTokenPacketData(
-			denom, strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), rand.AccAddr().String(),
+			denom, strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), rand.AccAddr().String(), "",
 		)
 		packet = axelartestutils.RandomPacket(transfer, sourcePort, sourceChannel, receiverPort, receiverChannel)
 		chain = nexustestutils.RandomChainName()
@@ -199,7 +201,7 @@ func TestRateLimitPacket(t *testing.T) {
 			// the prefix shouldn't be removed and rate limit shouldn't be triggered
 			denom = fmt.Sprintf("%s/%s/%s", receiverPort, receiverChannel, rand.Denom(3, 20))
 			transfer = ibctransfertypes.NewFungibleTokenPacketData(
-				denom, strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), rand.AccAddr().String(),
+				denom, strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), rand.AccAddr().String(), "",
 			)
 			packet = axelartestutils.RandomPacket(transfer, port, channel, receiverPort, receiverChannel)
 		}).
@@ -257,7 +259,7 @@ func TestSendPacket(t *testing.T) {
 	channel := rand.StrBetween(1, 20)
 
 	givenKeeper := Given("a keeper", func() {
-		ctx, k, channelK = setup()
+		ctx, k, channelK = setup(t)
 		n = &mock.NexusMock{}
 		rateLimiter = axelarnet.NewRateLimitedICS4Wrapper(channelK, axelarnet.NewRateLimiter(&k, n), &k)
 	})
@@ -265,7 +267,7 @@ func TestSendPacket(t *testing.T) {
 	givenPacket := Given("a random ICS-20 packet", func() {
 		denom = axelartestutils.RandomFullDenom()
 		transfer = ibctransfertypes.NewFungibleTokenPacketData(
-			denom, strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), rand.AccAddr().String(),
+			denom, strconv.FormatInt(rand.PosI64(), 10), rand.AccAddr().String(), rand.AccAddr().String(), "",
 		)
 		packet = axelartestutils.RandomPacket(transfer, port, channel, rand.StrBetween(1, 20), rand.StrBetween(1, 20))
 		chain = nexustestutils.RandomChainName()
@@ -274,12 +276,12 @@ func TestSendPacket(t *testing.T) {
 	givenKeeper.
 		Given2(givenPacket).
 		When("channel send packet fails", func() {
-			channelK.SendPacketFunc = func(ctx sdk.Context, channelCap *captypes.Capability, packet ibcexported.PacketI) error {
-				return fmt.Errorf("send packet failed")
+			channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+				return 0, fmt.Errorf("send packet failed")
 			}
 		}).
 		Then("send packet fails", func(t *testing.T) {
-			err := rateLimiter.SendPacket(ctx, &captypes.Capability{}, packet)
+			_, err := rateLimiter.SendPacket(ctx, &capabilitytypes.Capability{}, packet.SourcePort, packet.SourceChannel, packet.TimeoutHeight, packet.TimeoutTimestamp, packet.Data)
 			assert.ErrorContains(t, err, "send packet failed")
 		}).
 		Run(t, repeats)
@@ -287,8 +289,8 @@ func TestSendPacket(t *testing.T) {
 	givenKeeper.
 		Given2(givenPacket).
 		When("channel send packet succeeds", func() {
-			channelK.SendPacketFunc = func(ctx sdk.Context, channelCap *captypes.Capability, packet ibcexported.PacketI) error {
-				return nil
+			channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+				return mathrand.Uint64(), nil
 			}
 		}).
 		When("cross-chain transfer", func() {
@@ -304,7 +306,7 @@ func TestSendPacket(t *testing.T) {
 			assert.NoError(t, err)
 		}).
 		Then("send packet succeeds", func(t *testing.T) {
-			err := rateLimiter.SendPacket(ctx, &captypes.Capability{}, packet)
+			_, err := rateLimiter.SendPacket(ctx, &capabilitytypes.Capability{}, packet.SourcePort, packet.SourceChannel, packet.TimeoutHeight, packet.TimeoutTimestamp, packet.Data)
 			assert.NoError(t, err)
 		}).
 		Run(t, repeats)
@@ -312,8 +314,8 @@ func TestSendPacket(t *testing.T) {
 	givenKeeper.
 		Given2(givenPacket).
 		When("channel send packet succeeds", func() {
-			channelK.SendPacketFunc = func(ctx sdk.Context, channelCap *captypes.Capability, packet ibcexported.PacketI) error {
-				return nil
+			channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+				return mathrand.Uint64(), nil
 			}
 		}).
 		When("cross-chain transfer", func() {
@@ -341,19 +343,23 @@ func TestSendPacket(t *testing.T) {
 			}
 		}).
 		Then("send packet fails", func(t *testing.T) {
-			err := rateLimiter.SendPacket(ctx, &captypes.Capability{}, packet)
+			_, err := rateLimiter.SendPacket(ctx, &capabilitytypes.Capability{}, packet.SourcePort, packet.SourceChannel, packet.TimeoutHeight, packet.TimeoutTimestamp, packet.Data)
 			assert.ErrorContains(t, err, "deactivated")
 		}).
 		Run(t, repeats)
 }
 
-func setup() (sdk.Context, keeper.Keeper, *mock.ChannelKeeperMock) {
+func setup(t log.TestingT) (sdk.Context, keeper.Keeper, *mock.ChannelKeeperMock) {
 	encCfg := appParams.MakeEncodingConfig()
-	axelarnetSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("axelarnetKey"), sdk.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	axelarnetSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("axelarnetKey"), store.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 
-	channelK := &mock.ChannelKeeperMock{}
+	channelK := &mock.ChannelKeeperMock{
+		GetChannelFunc: func(ctx sdk.Context, portID, channelID string) (ibcchanneltypes.Channel, bool) {
+			return ibcchanneltypes.Channel{}, true
+		},
+	}
 
-	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.FeegrantKeeperMock{})
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.FeegrantKeeperMock{})
 	return ctx, k, channelK
 }

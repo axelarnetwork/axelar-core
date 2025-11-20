@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/math"
 	"github.com/CosmWasm/wasmd/x/wasm"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -60,7 +61,7 @@ func TestRouteMessageQueue(t *testing.T) {
 
 	cfg := app.MakeEncodingConfig()
 	givenKeeper := Given("the keeper", func() {
-		keeper, ctx = setup(cfg)
+		keeper, ctx = setup(cfg, t)
 		keeper.SetMessageRouter(
 			types.NewMessageRouter().
 				AddRoute(evm.Ethereum.Module, func(_ sdk.Context, rCtx exported.RoutingContext, _ exported.GeneralMessage) error { return nil }),
@@ -132,7 +133,7 @@ func TestSetNewMessage(t *testing.T) {
 
 	cfg := app.MakeEncodingConfig()
 	givenKeeper := Given("the keeper", func() {
-		keeper, ctx = setup(cfg)
+		keeper, ctx = setup(cfg, t)
 	})
 
 	givenKeeper.
@@ -180,7 +181,7 @@ func TestRouteMessage(t *testing.T) {
 
 	cfg := app.MakeEncodingConfig()
 	givenKeeper := Given("the keeper", func() {
-		keeper, ctx = setup(cfg)
+		keeper, ctx = setup(cfg, t)
 	})
 
 	givenKeeper.
@@ -273,7 +274,7 @@ func TestRouteMessage(t *testing.T) {
 					Chain:   evm.Ethereum,
 					Address: evmtestutils.RandomAddress().Hex(),
 				}
-				msg.Asset = &sdk.Coin{Denom: "external-erc-20", Amount: sdk.NewInt(100)}
+				msg.Asset = &sdk.Coin{Denom: "external-erc-20", Amount: math.NewInt(100)}
 
 				keeper.SetNewMessage(ctx, msg)
 			}).
@@ -346,7 +347,7 @@ func TestRouteMessage(t *testing.T) {
 					Chain:   evm.Ethereum,
 					Address: evmtestutils.RandomAddress().Hex(),
 				}
-				msg.Asset = &sdk.Coin{Denom: "external-erc-20", Amount: sdk.NewInt(100)}
+				msg.Asset = &sdk.Coin{Denom: "external-erc-20", Amount: math.NewInt(100)}
 
 				keeper.SetNewMessage(ctx, msg)
 			}).
@@ -428,7 +429,7 @@ func TestGenerateMessageID(t *testing.T) {
 
 	Given("a keeper", func() {
 		cfg := app.MakeEncodingConfig()
-		k, ctx = setup(cfg)
+		k, ctx = setup(cfg, t)
 	}).
 		When("tx bytes are set", func() {
 			tx := rand.Bytes(int(rand.I64Between(1, 100)))
@@ -448,7 +449,7 @@ func TestGenerateMessageID(t *testing.T) {
 
 func TestStatusTransitions(t *testing.T) {
 	cfg := app.MakeEncodingConfig()
-	k, ctx := setup(cfg)
+	k, ctx := setup(cfg, t)
 	sourceChain := nexustestutils.RandomChain()
 	sourceChain.Module = axelarnet.ModuleName
 	destinationChain := nexustestutils.RandomChain()
@@ -519,7 +520,7 @@ func TestStatusTransitions(t *testing.T) {
 
 func TestGetMessage(t *testing.T) {
 	cfg := app.MakeEncodingConfig()
-	k, ctx := setup(cfg)
+	k, ctx := setup(cfg, t)
 	sourceChain := nexustestutils.RandomChain()
 	sourceChain.Module = axelarnet.ModuleName
 	destinationChain := nexustestutils.RandomChain()
@@ -546,7 +547,7 @@ func TestGetMessage(t *testing.T) {
 
 func TestGetSentMessages(t *testing.T) {
 	cfg := app.MakeEncodingConfig()
-	k, ctx := setup(cfg)
+	k, ctx := setup(cfg, t)
 	sourceChain := nexustestutils.RandomChain()
 	sourceChain.Module = axelarnet.ModuleName
 	destinationChain := nexustestutils.RandomChain()

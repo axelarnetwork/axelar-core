@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
+	store "cosmossdk.io/store/types"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
 	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -40,9 +41,9 @@ func TestEndBlocker(t *testing.T) {
 	)
 
 	givenKeepersAndCtx := Given("keepers", func() {
-		ctx = rand.Context(fake.NewMultiStore())
+		ctx = rand.Context(fake.NewMultiStore(), t)
 		k = &mock.KeeperMock{
-			LoggerFunc:                     func(sdk.Context) log.Logger { return log.TestingLogger() },
+			LoggerFunc:                     func(sdk.Context) log.Logger { return log.NewTestLogger(t) },
 			GetKeygenSessionsByExpiryFunc:  func(sdk.Context, int64) []types.KeygenSession { return nil },
 			GetSigningSessionsByExpiryFunc: func(sdk.Context, int64) []types.SigningSession { return nil },
 		}
@@ -74,7 +75,7 @@ func TestEndBlocker(t *testing.T) {
 				k.DeleteKeygenSessionFunc = func(sdk.Context, exported.KeyID) {}
 				rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
 
-				_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+				_, err := multisig.EndBlocker(ctx, k, rewarder)
 
 				assert.NoError(t, err)
 				assert.Len(t, k.DeleteKeygenSessionCalls(), 1)
@@ -104,7 +105,7 @@ func TestEndBlocker(t *testing.T) {
 				k.DeleteKeygenSessionFunc = func(sdk.Context, exported.KeyID) {}
 				k.SetKeyFunc = func(sdk.Context, types.Key) {}
 
-				_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+				_, err := multisig.EndBlocker(ctx, k, rewarder)
 
 				assert.NoError(t, err)
 				assert.Len(t, k.DeleteKeygenSessionCalls(), 1)
@@ -138,7 +139,7 @@ func TestEndBlocker(t *testing.T) {
 				k.DeleteKeygenSessionFunc = func(sdk.Context, exported.KeyID) {}
 				k.SetKeyFunc = func(sdk.Context, types.Key) {}
 
-				_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+				_, err := multisig.EndBlocker(ctx, k, rewarder)
 
 				assert.NoError(t, err)
 				assert.Len(t, k.DeleteKeygenSessionCalls(), 1)
@@ -201,7 +202,7 @@ func TestEndBlocker(t *testing.T) {
 						rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
 						sigHandler.HandleFailedFunc = func(sdk.Context, codec.ProtoMarshaler) error { return nil }
 
-						_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+						_, err := multisig.EndBlocker(ctx, k, rewarder)
 
 						assert.NoError(t, err)
 						assert.Len(t, k.DeleteSigningSessionCalls(), 1)
@@ -227,7 +228,7 @@ func TestEndBlocker(t *testing.T) {
 						k.DeleteSigningSessionFunc = func(sdk.Context, uint64) {}
 						sigHandler.HandleCompletedFunc = func(sdk.Context, utils.ValidatedProtoMarshaler, codec.ProtoMarshaler) error { return nil }
 
-						_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+						_, err := multisig.EndBlocker(ctx, k, rewarder)
 
 						assert.NoError(t, err)
 						assert.Len(t, k.DeleteSigningSessionCalls(), 1)
@@ -255,7 +256,7 @@ func TestEndBlocker(t *testing.T) {
 						k.DeleteSigningSessionFunc = func(sdk.Context, uint64) {}
 						sigHandler.HandleCompletedFunc = func(sdk.Context, utils.ValidatedProtoMarshaler, codec.ProtoMarshaler) error { return nil }
 
-						_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+						_, err := multisig.EndBlocker(ctx, k, rewarder)
 
 						assert.NoError(t, err)
 						assert.Len(t, k.DeleteSigningSessionCalls(), 1)
@@ -286,7 +287,7 @@ func TestEndBlocker(t *testing.T) {
 						k.DeleteSigningSessionFunc = func(sdk.Context, uint64) {}
 						sigHandler.HandleCompletedFunc = func(sdk.Context, utils.ValidatedProtoMarshaler, codec.ProtoMarshaler) error { return nil }
 
-						_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+						_, err := multisig.EndBlocker(ctx, k, rewarder)
 
 						assert.NoError(t, err)
 						assert.Len(t, k.DeleteSigningSessionCalls(), 4)
@@ -317,12 +318,12 @@ func TestEndBlocker(t *testing.T) {
 							ReleaseRewardsFunc: func(sdk.ValAddress) error { return nil },
 						}
 						rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
-						storeKey := sdk.NewKVStoreKey("cache")
+						storeKey := store.NewKVStoreKey("cache")
 						rolledBackKey := []byte("ephemeral")
 						k.DeleteSigningSessionFunc = func(ctx sdk.Context, _ uint64) {
 							ctx.MultiStore().GetKVStore(storeKey).Set(rolledBackKey, []byte{})
 						}
-						_, err := multisig.EndBlocker(ctx, abci.RequestEndBlock{}, k, rewarder)
+						_, err := multisig.EndBlocker(ctx, k, rewarder)
 						assert.NoError(t, err)
 						assert.False(t, ctx.MultiStore().GetKVStore(storeKey).Has(rolledBackKey))
 						assert.Equal(t, len(k.DeleteSigningSessionCalls()), len(k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+1)))
@@ -348,7 +349,7 @@ func newSigningSessionWithMissingParticipants(module string, missingCount uint64
 
 	participants := make(map[string]snapshot.Participant)
 	for _, v := range validators {
-		participants[v] = snapshot.NewParticipant(funcs.Must(sdk.ValAddressFromBech32(v)), sdk.OneUint())
+		participants[v] = snapshot.NewParticipant(funcs.Must(sdk.ValAddressFromBech32(v)), math.OneUint())
 	}
 
 	return types.SigningSession{
@@ -358,7 +359,7 @@ func newSigningSessionWithMissingParticipants(module string, missingCount uint64
 			PubKeys: pubKeys,
 			Snapshot: snapshot.Snapshot{
 				Participants: participants,
-				BondedWeight: sdk.OneUint().MulUint64(uint64(len(participants))),
+				BondedWeight: math.OneUint().MulUint64(uint64(len(participants))),
 			},
 			SigningThreshold: utils.NewThreshold(int64(len(participants))-int64(missingCount), int64(len(participants))),
 		},

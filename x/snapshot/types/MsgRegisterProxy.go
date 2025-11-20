@@ -1,14 +1,15 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewRegisterProxyRequest - RegisterProxyRequest constructor
-func NewRegisterProxyRequest(sender sdk.ValAddress, proxy sdk.AccAddress) *RegisterProxyRequest {
+func NewRegisterProxyRequest(sender sdk.AccAddress, proxy sdk.AccAddress) *RegisterProxyRequest {
 	return &RegisterProxyRequest{
-		Sender:    sender,
+		Sender:    sender.String(),
 		ProxyAddr: proxy,
 	}
 }
@@ -25,11 +26,11 @@ func (m RegisterProxyRequest) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m RegisterProxyRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "principal").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "principal").Error())
 	}
 	if err := sdk.VerifyAddressFormat(m.ProxyAddr); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "proxy").Error())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "proxy").Error())
 	}
 
 	return nil
@@ -38,9 +39,4 @@ func (m RegisterProxyRequest) ValidateBasic() error {
 // GetSignBytes returns the message bytes that need to be signed
 func (m RegisterProxyRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
-}
-
-// GetSigners returns the set of signers for this message
-func (m RegisterProxyRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{sdk.AccAddress(m.Sender)}
 }

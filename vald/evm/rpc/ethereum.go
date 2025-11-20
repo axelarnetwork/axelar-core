@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -71,7 +71,7 @@ func (c *EthereumClient) LatestFinalizedBlockNumber(ctx context.Context, confirm
 		return nil, err
 	}
 
-	return sdk.NewIntFromUint64(blockNumber).SubRaw(int64(confirmations)).AddRaw(1).BigInt(), nil
+	return math.NewIntFromUint64(blockNumber).SubRaw(int64(confirmations)).AddRaw(1).BigInt(), nil
 }
 
 func (c *EthereumClient) TransactionReceipts(ctx context.Context, txHashes []common.Hash) ([]TxReceiptResult, error) {

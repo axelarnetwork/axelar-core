@@ -5,21 +5,28 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	"github.com/ethereum/go-ethereum/common"
+	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 var _ types.MsgServiceServer = msgServer{}
@@ -32,11 +39,12 @@ type msgServer struct {
 	staking        types.StakingKeeper
 	slashing       types.SlashingKeeper
 	multisigKeeper types.MultisigKeeper
+	permission     types.Permission
 }
 
 // NewMsgServerImpl returns an implementation of the evm MsgServiceServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper types.BaseKeeper, n types.Nexus, v types.Voter, snap types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper, multisigKeeper types.MultisigKeeper) types.MsgServiceServer {
+func NewMsgServerImpl(keeper types.BaseKeeper, n types.Nexus, v types.Voter, snap types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper, multisigKeeper types.MultisigKeeper, permission types.Permission) types.MsgServiceServer {
 	return msgServer{
 		BaseKeeper:     keeper,
 		nexus:          n,
@@ -45,12 +53,13 @@ func NewMsgServerImpl(keeper types.BaseKeeper, n types.Nexus, v types.Voter, sna
 		staking:        staking,
 		slashing:       slashing,
 		multisigKeeper: multisigKeeper,
+		permission:     permission,
 	}
 }
 
 func validateChainActivated(ctx sdk.Context, n types.Nexus, chain nexus.Chain) error {
 	if !n.IsChainActivated(ctx, chain) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest,
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest,
 			fmt.Sprintf("chain %s is not activated yet", chain.Name))
 	}
 
@@ -68,7 +77,12 @@ func excludeJailedOrTombstoned(ctx sdk.Context, slashing types.SlashingKeeper, s
 	}
 
 	isProxyActive := func(v snapshot.ValidatorI) bool {
-		_, isActive := snapshotter.GetProxy(ctx, v.GetOperator())
+		valAddress, err := sdk.ValAddressFromBech32(v.GetOperator())
+		if err != nil {
+			return false
+		}
+
+		_, isActive := snapshotter.GetProxy(ctx, valAddress)
 
 		return isActive
 	}
@@ -390,6 +404,10 @@ func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRe
 
 // ConfirmTransferKey handles transfer operatorship confirmation
 func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTransferKeyRequest) (*types.ConfirmTransferKeyResponse, error) {
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidAddress.Wrapf("invalid sender: %s", err)
+	}
 	ctx := sdk.UnwrapSDKContext(c)
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
@@ -409,6 +427,53 @@ func (s msgServer) ConfirmTransferKey(c context.Context, req *types.ConfirmTrans
 		return nil, err
 	}
 
+	// Chain management role skips the poll.
+	if s.permission.GetRole(ctx, sender) == permission.ROLE_CHAIN_MANAGEMENT {
+		s.Logger(ctx).Info(fmt.Sprintf("key transfer confirmation signed by chain management (%s), skipping poll and forcing confirmation", sender.String()))
+
+		// Construct a synthetic operatorship transferred event using the next key
+		nextKeyID := funcs.MustOk(s.multisigKeeper.GetNextKeyID(ctx, chain.Name))
+		nextKey := funcs.MustOk(s.multisigKeeper.GetKey(ctx, nextKeyID))
+
+		// Derive expected weights/threshold from the next key
+		expectedAddressWeights, expectedThreshold := types.ParseMultisigKey(nextKey)
+
+		// Build ordered arrays matching expectedAddressWeights
+		hexAddresses := maps.Keys(expectedAddressWeights)
+		sort.Strings(hexAddresses)
+		newOperators := slices.Map(hexAddresses, func(addrHex string) types.Address {
+			return types.Address(common.HexToAddress(addrHex))
+		})
+		newWeights := slices.Map(hexAddresses, func(addrHex string) math.Uint {
+			return expectedAddressWeights[addrHex]
+		})
+
+		// Create a synthetic event
+		ev := types.Event{
+			Chain: chain.Name,
+			TxID:  req.TxID,
+			Index: 0, // placeholder since no on-chain tx proof exists
+			Event: &types.Event_MultisigOperatorshipTransferred{
+				MultisigOperatorshipTransferred: &types.EventMultisigOperatorshipTransferred{
+					NewOperators: newOperators,
+					NewThreshold: expectedThreshold,
+					NewWeights:   newWeights,
+				},
+			},
+		}
+
+		// Mark confirmed and enqueue for processing in end blocker
+		if err := keeper.SetConfirmedEvent(ctx, ev); err != nil {
+			return nil, err
+		}
+		if err := keeper.EnqueueConfirmedEvent(ctx, ev.GetID()); err != nil {
+			return nil, err
+		}
+
+		return &types.ConfirmTransferKeyResponse{}, nil
+	}
+
+	// Normal flow, initialize a poll for vald.
 	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
 	if !ok {
 		return nil, fmt.Errorf("axelar gateway address not set")
@@ -436,7 +501,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	mintLimit, err := sdk.ParseUint(req.DailyMintLimit)
+	mintLimit, err := math.ParseUint(req.DailyMintLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -477,7 +542,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 
 	token, err := keeper.CreateERC20Token(ctx, req.Asset.Name, req.TokenDetails, req.Address)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
+		return nil, errorsmod.Wrapf(err, "failed to initialize token %s(%s) for chain %s", req.TokenDetails.TokenName, req.TokenDetails.Symbol, chain.Name)
 	}
 
 	cmd, err := token.CreateDeployCommand(keyID, mintLimit)
@@ -564,7 +629,7 @@ func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnToke
 
 		cmd := types.NewBurnTokenCommand(chainID, multisig.KeyID(keyID), ctx.BlockHeight(), *burnerInfo, token.IsExternal())
 		if err != nil {
-			return nil, sdkerrors.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
+			return nil, errorsmod.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
 		}
 
 		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
@@ -633,7 +698,7 @@ func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePe
 
 		cmd, err := token.CreateMintCommand(multisig.KeyID(keyID), transfer)
 		if err != nil {
-			return nil, sdkerrors.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
+			return nil, errorsmod.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
 		}
 
 		s.Logger(ctx).Info(fmt.Sprintf("minting %s to recipient %s on %s with transfer ID %s and command ID %s", transfer.Asset.String(), transfer.Recipient.Address, transfer.Recipient.Chain.Name, transfer.ID.String(), cmd.ID.Hex()),
@@ -703,7 +768,7 @@ func (s msgServer) createTransferKeyCommand(ctx sdk.Context, keeper types.ChainK
 	}
 
 	if _, ok := s.multisigKeeper.GetNextKeyID(ctx, chain.Name); ok {
-		return types.Command{}, sdkerrors.Wrapf(types.ErrRotationInProgress, "finish rotating to next key for chain %s first", chain.Name)
+		return types.Command{}, errorsmod.Wrapf(types.ErrRotationInProgress, "finish rotating to next key for chain %s first", chain.Name)
 	}
 
 	if err := s.multisigKeeper.AssignKey(ctx, chain.Name, nextKeyID); err != nil {
@@ -728,7 +793,7 @@ func getCommandBatchToSign(ctx sdk.Context, keeper types.ChainKeeper) (types.Com
 
 	switch latest.GetStatus() {
 	case types.BatchSigning:
-		return types.CommandBatch{}, sdkerrors.Wrapf(types.ErrSignCommandsInProgress, "command batch '%s'", hex.EncodeToString(latest.GetID()))
+		return types.CommandBatch{}, errorsmod.Wrapf(types.ErrSignCommandsInProgress, "command batch '%s'", hex.EncodeToString(latest.GetID()))
 	case types.BatchAborted:
 		return latest, nil
 	default:
@@ -796,7 +861,7 @@ func (s msgServer) SignCommands(c context.Context, req *types.SignCommandsReques
 			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueStart),
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
 			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
-			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender.String()),
+			sdk.NewAttribute(sdk.AttributeKeySender, req.Sender),
 			sdk.NewAttribute(types.AttributeKeyBatchedCommandsID, batchedCommandsIDHex),
 			sdk.NewAttribute(types.AttributeKeyCommandsIDs, strings.Join(commandList, ",")),
 		),
@@ -869,6 +934,22 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 	})
 
 	return &types.RetryFailedEventResponse{}, nil
+}
+
+func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsRequest) (*types.UpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := req.Params.Validate(); err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+	}
+
+	// Update params for the specified chain
+	ck, err := s.ForChain(ctx, req.Params.Chain)
+	if err != nil {
+		return nil, err
+	}
+	ck.SetParams(ctx, req.Params)
+	return &types.UpdateParamsResponse{}, nil
 }
 
 func (s msgServer) CreateSnapshot(ctx sdk.Context, chain nexus.Chain) (snapshot.Snapshot, error) {

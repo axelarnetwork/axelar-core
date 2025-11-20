@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	gethParams "github.com/ethereum/go-ethereum/params"
@@ -22,6 +22,8 @@ const (
 	RinkebyChainId uint64 = 4
 	GoerliChainId  uint64 = 5
 )
+
+const blockTimeSpeedUp = 5
 
 // Parameter keys
 var (
@@ -63,31 +65,31 @@ func DefaultParams() []Params {
 		Network:             Ganache,
 		TokenCode:           bzToken,
 		Burnable:            bzBurnable,
-		RevoteLockingPeriod: 50,
+		RevoteLockingPeriod: 15 * blockTimeSpeedUp,
 		Networks: []NetworkInfo{
 			{
 				Name: Mainnet,
-				Id:   sdk.NewIntFromBigInt(gethParams.MainnetChainConfig.ChainID),
+				Id:   math.NewIntFromBigInt(gethParams.MainnetChainConfig.ChainID),
 			},
 			{
 				Name: Ropsten,
-				Id:   sdk.NewIntFromUint64(RopstenChainId),
+				Id:   math.NewIntFromUint64(RopstenChainId),
 			},
 			{
 				Name: Rinkeby,
-				Id:   sdk.NewIntFromUint64(RinkebyChainId),
+				Id:   math.NewIntFromUint64(RinkebyChainId),
 			},
 			{
 				Name: Goerli,
-				Id:   sdk.NewIntFromUint64(GoerliChainId),
+				Id:   math.NewIntFromUint64(GoerliChainId),
 			},
 			{
 				Name: Ganache,
-				Id:   sdk.NewIntFromBigInt(gethParams.AllCliqueProtocolChanges.ChainID),
+				Id:   math.NewIntFromBigInt(gethParams.AllCliqueProtocolChanges.ChainID),
 			},
 		},
 		VotingThreshold:   utils.Threshold{Numerator: 51, Denominator: 100},
-		VotingGracePeriod: 3,
+		VotingGracePeriod: 3 * blockTimeSpeedUp,
 		MinVoterCount:     1,
 		CommandsGasLimit:  5000000,
 		EndBlockerLimit:   50,
@@ -128,7 +130,7 @@ func validateChain(chain interface{}) error {
 	}
 	err := c.Validate()
 	if err != nil {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "invalid chain name")
+		return errorsmod.Wrap(types.ErrInvalidGenesis, "invalid chain name")
 	}
 	return nil
 }
@@ -139,7 +141,7 @@ func validateNetwork(network interface{}) error {
 		return fmt.Errorf("invalid parameter type for network: %T", network)
 	}
 	if n == "" {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "network name cannot be an empty string")
+		return errorsmod.Wrap(types.ErrInvalidGenesis, "network name cannot be an empty string")
 	}
 	return nil
 }
@@ -150,7 +152,7 @@ func validateConfirmationHeight(height interface{}) error {
 		return fmt.Errorf("invalid parameter type for confirmation height: %T", height)
 	}
 	if h < 1 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "transaction confirmation height must be greater than 0")
+		return errorsmod.Wrap(types.ErrInvalidGenesis, "transaction confirmation height must be greater than 0")
 	}
 	return nil
 }
@@ -175,7 +177,7 @@ func validateRevoteLockingPeriod(revoteLockingPeriod interface{}) error {
 	}
 
 	if r <= 0 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "revote lock period must be >0")
+		return errorsmod.Wrap(types.ErrInvalidGenesis, "revote lock period must be >0")
 	}
 
 	return nil
@@ -188,7 +190,7 @@ func validateVotingGracePeriod(votingGracePeriod interface{}) error {
 	}
 
 	if r < 0 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "voting grace period must be >=0")
+		return errorsmod.Wrap(types.ErrInvalidGenesis, "voting grace period must be >=0")
 	}
 
 	return nil
@@ -201,7 +203,7 @@ func validateNetworks(network interface{}) error {
 	}
 	for _, n := range networks {
 		if n.Name == "" {
-			return sdkerrors.Wrap(types.ErrInvalidGenesis, "network name cannot be an empty string")
+			return errorsmod.Wrap(types.ErrInvalidGenesis, "network name cannot be an empty string")
 		}
 
 		if !n.Id.IsPositive() {
@@ -219,7 +221,7 @@ func validateVotingThreshold(votingThreshold interface{}) error {
 	}
 
 	if err := val.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid VotingThreshold")
+		return errorsmod.Wrap(err, "invalid VotingThreshold")
 	}
 
 	return nil

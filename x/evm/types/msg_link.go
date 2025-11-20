@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -11,7 +12,7 @@ import (
 // NewLinkRequest creates a message of type LinkRequest
 func NewLinkRequest(sender sdk.AccAddress, chain, recipientChain, recipientAddr, asset string) *LinkRequest {
 	return &LinkRequest{
-		Sender:         sender,
+		Sender:         sender.String(),
 		Chain:          nexus.ChainName(utils.NormalizeString(chain)),
 		RecipientChain: nexus.ChainName(utils.NormalizeString(recipientChain)),
 		RecipientAddr:  utils.NormalizeString(recipientAddr),
@@ -31,24 +32,24 @@ func (m LinkRequest) Type() string {
 
 // ValidateBasic implements sdk.Msg
 func (m LinkRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
+		return errorsmod.Wrap(err, "invalid chain")
 	}
 
 	if err := m.RecipientChain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid recipient chain")
+		return errorsmod.Wrap(err, "invalid recipient chain")
 	}
 
 	if err := utils.ValidateString(m.RecipientAddr); err != nil {
-		return sdkerrors.Wrap(err, "invalid recipient address")
+		return errorsmod.Wrap(err, "invalid recipient address")
 	}
 
 	if err := sdk.ValidateDenom(m.Asset); err != nil {
-		return sdkerrors.Wrap(err, "invalid asset")
+		return errorsmod.Wrap(err, "invalid asset")
 	}
 
 	return nil
@@ -58,9 +59,4 @@ func (m LinkRequest) ValidateBasic() error {
 func (m LinkRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners implements sdk.Msg
-func (m LinkRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

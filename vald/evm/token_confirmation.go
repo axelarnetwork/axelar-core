@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
 
@@ -59,7 +59,7 @@ func (mgr Mgr) processTokenConfirmationLogs(event *types.ConfirmTokenStarted, lo
 
 		erc20Event, err := DecodeERC20TokenDeploymentEvent(log)
 		if err != nil {
-			mgr.logger().Debug(sdkerrors.Wrap(err, "decode event TokenDeployed failed").Error())
+			mgr.logger().Debug(errorsmod.Wrap(err, "decode event TokenDeployed failed").Error())
 			continue
 		}
 
@@ -68,7 +68,7 @@ func (mgr Mgr) processTokenConfirmationLogs(event *types.ConfirmTokenStarted, lo
 		}
 
 		if err := erc20Event.ValidateBasic(); err != nil {
-			mgr.logger().Debug(sdkerrors.Wrap(err, "invalid event ERC20TokenDeployment").Error())
+			mgr.logger().Debug(errorsmod.Wrap(err, "invalid event ERC20TokenDeployment").Error())
 			continue
 		}
 

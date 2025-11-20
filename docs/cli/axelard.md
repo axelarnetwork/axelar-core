@@ -17,16 +17,18 @@ Axelar App
 
 - [axelard add-genesis-account](axelard_add-genesis-account.md) - Add a genesis account to genesis.json
 - [axelard add-genesis-evm-chain](axelard_add-genesis-evm-chain.md) - Adds an EVM chain in genesis.json
-- [axelard collect-gentxs](axelard_collect-gentxs.md) - Collect genesis txs and output a genesis.json file
+- [axelard comet](axelard_comet.md) - CometBFT subcommands
+- [axelard config](axelard_config.md) - Utilities for managing application configuration
 - [axelard debug](axelard_debug.md) - Tool for helping with debugging your application
 - [axelard export](axelard_export.md) - Export state to JSON
-- [axelard gentx](axelard_gentx.md) - Generate a genesis tx carrying a self delegation
+- [axelard genesis](axelard_genesis.md) - Application's genesis-related subcommands
 - [axelard health-check](axelard_health-check.md) -
 - [axelard init](axelard_init.md) - Initialize private validator, p2p, genesis, and application configuration files
 - [axelard keys](axelard_keys.md) - Manage your application's keys
-- [axelard migrate](axelard_migrate.md) - Migrate genesis to a specified target version
+- [axelard module-hash-by-height](axelard_module-hash-by-height.md) - Get module hashes at a given height
+- [axelard prune](axelard_prune.md) - Prune app history states by keeping the recent heights and deleting old heights
 - [axelard query](axelard_query.md) - Querying subcommands
-- [axelard rollback](axelard_rollback.md) - rollback cosmos-sdk and tendermint state by one height
+- [axelard rollback](axelard_rollback.md) - rollback Cosmos SDK and CometBFT state by one height
 - [axelard rosetta](axelard_rosetta.md) - spin up a rosetta server
 - [axelard set-genesis-auth](axelard_set-genesis-auth.md) - Set the genesis parameters for the auth module
 - [axelard set-genesis-chain-params](axelard_set-genesis-chain-params.md) - Set chain parameters in genesis.json
@@ -40,11 +42,10 @@ Axelar App
 - [axelard set-genesis-staking](axelard_set-genesis-staking.md) - Set the genesis parameters for the staking module
 - [axelard set-genesis-vote](axelard_set-genesis-vote.md) - Set the genesis parameters for the vote module
 - [axelard set-governance-key](axelard_set-governance-key.md) - Set the genesis multisig governance key for the axelar network
+- [axelard snapshots](axelard_snapshots.md) - Manage local snapshots
 - [axelard start](axelard_start.md) - Run the full node
 - [axelard status](axelard_status.md) - Query remote node for status
-- [axelard tendermint](axelard_tendermint.md) - Tendermint subcommands
 - [axelard tx](axelard_tx.md) - Transactions subcommands
 - [axelard vald-sign](axelard_vald-sign.md) - Sign hash with the key corresponding to the key id for the given validator. If unspecified, the public key will be retrieved from the node.
 - [axelard vald-start](axelard_vald-start.md) -
-- [axelard validate-genesis](axelard_validate-genesis.md) - validates the genesis file at the default location or at the location passed as an arg
 - [axelard version](axelard_version.md) - Print the application binary version information

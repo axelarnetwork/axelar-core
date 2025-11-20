@@ -3,6 +3,7 @@ package keeper
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
@@ -11,27 +12,27 @@ import (
 )
 
 func TestExportGenesis(t *testing.T) {
-	ctx, keeper, _, _, _ := setup()
+	ctx, keeper, _, _, _ := setup(t)
 	keeper.InitGenesis(ctx, types.NewGenesisState(types.DefaultParams(), []types.Pool{}))
 
 	poolName1 := "aaaaa"
 	pool1 := keeper.GetPool(ctx, poolName1)
 
-	pool1.AddReward(rand.ValAddr(), sdk.NewCoin(denom, sdk.ZeroInt()))
+	pool1.AddReward(rand.ValAddr(), sdk.NewCoin(denom, math.ZeroInt()))
 
 	validator2 := rand.ValAddr()
-	coin2 := sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000)))
+	coin2 := sdk.NewCoin(denom, math.NewInt(rand.I64Between(10, 10000)))
 	pool1.AddReward(validator2, coin2)
 
 	validator3 := rand.ValAddr()
-	pool1.AddReward(validator3, sdk.NewCoin(denom, sdk.ZeroInt()))
+	pool1.AddReward(validator3, sdk.NewCoin(denom, math.ZeroInt()))
 	pool1.ClearRewards(validator3)
 
 	poolName2 := "bbbbb"
 	pool2 := keeper.GetPool(ctx, poolName2)
 
 	validator4 := rand.ValAddr()
-	coin4 := sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000)))
+	coin4 := sdk.NewCoin(denom, math.NewInt(rand.I64Between(10, 10000)))
 	pool2.AddReward(validator4, coin4)
 
 	expectedPool1 := types.NewPool(poolName1)
@@ -59,28 +60,28 @@ func TestExportGenesis(t *testing.T) {
 }
 
 func TestInitGenesis(t *testing.T) {
-	ctx, keeper, _, _, _ := setup()
+	ctx, keeper, _, _, _ := setup(t)
 
 	expectedPool1 := types.NewPool("aaaaa")
 	expectedPool1.Rewards = []types.Pool_Reward{
 		{
 			Validator: rand.ValAddr(),
-			Coins:     sdk.NewCoins(sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000)))),
+			Coins:     sdk.NewCoins(sdk.NewCoin(denom, math.NewInt(rand.I64Between(10, 10000)))),
 		},
 		{
 			Validator: rand.ValAddr(),
-			Coins:     sdk.NewCoins(sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000)))),
+			Coins:     sdk.NewCoins(sdk.NewCoin(denom, math.NewInt(rand.I64Between(10, 10000)))),
 		},
 		{
 			Validator: rand.ValAddr(),
-			Coins:     sdk.NewCoins(sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000)))),
+			Coins:     sdk.NewCoins(sdk.NewCoin(denom, math.NewInt(rand.I64Between(10, 10000)))),
 		},
 	}
 	expectedPool2 := types.NewPool("bbbbb")
 	expectedPool2.Rewards = []types.Pool_Reward{
 		{
 			Validator: rand.ValAddr(),
-			Coins:     sdk.NewCoins(sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000)))),
+			Coins:     sdk.NewCoins(sdk.NewCoin(denom, math.NewInt(rand.I64Between(10, 10000)))),
 		},
 	}
 	expectedPool3 := types.NewPool("ccccc")

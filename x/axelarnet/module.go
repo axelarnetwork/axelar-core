@@ -5,27 +5,28 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"cosmossdk.io/core/appmodule"
+	errorsmod "cosmossdk.io/errors"
+	sdklogger "cosmossdk.io/log"
+	"cosmossdk.io/math"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	porttypes "github.com/cosmos/ibc-go/v4/modules/core/05-port/types"
-	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
-	"github.com/gorilla/mux"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	porttypes "github.com/cosmos/ibc-go/v8/modules/core/05-port/types"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/utils/grpc"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/cli"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet/client/rest"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -33,8 +34,9 @@ import (
 )
 
 var (
-	_ module.AppModule      = AppModule{}
-	_ module.AppModuleBasic = AppModuleBasic{}
+	_ appmodule.AppModule    = AppModule{}
+	_ module.AppModuleBasic  = AppModuleBasic{}
+	_ module.HasABCIEndBlock = AppModule{}
 )
 
 // AppModuleBasic implements module.AppModuleBasic
@@ -71,11 +73,6 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingCo
 	return genState.Validate()
 }
 
-// RegisterRESTRoutes registers the REST routes for this module
-func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
-	rest.RegisterRoutes(clientCtx, rtr)
-}
-
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
 	if err := types.RegisterQueryServiceHandlerClient(context.Background(), mux, types.NewQueryServiceClient(clientCtx)); err != nil {
@@ -96,7 +93,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	logger  log.Logger
+	logger  sdklogger.Logger
 	ibcK    keeper.IBCKeeper
 	keeper  keeper.Keeper
 	nexus   types.Nexus
@@ -105,7 +102,7 @@ type AppModule struct {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(ibcK keeper.IBCKeeper, nexus types.Nexus, bank types.BankKeeper, account types.AccountKeeper, logger log.Logger) AppModule {
+func NewAppModule(ibcK keeper.IBCKeeper, nexus types.Nexus, bank types.BankKeeper, account types.AccountKeeper, logger sdklogger.Logger) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		logger:         logger,
@@ -139,19 +136,9 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 	return cdc.MustMarshalJSON(genState)
 }
 
-// Route returns the module's route
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.nexus, am.bank, am.ibcK))
-}
-
 // QuerierRoute returns this module's query route
 func (AppModule) QuerierRoute() string {
 	return types.QuerierRoute
-}
-
-// LegacyQuerierHandler returns a new query handler for this module
-func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
-	return nil
 }
 
 // RegisterServices registers a GRPC query service to respond to the
@@ -162,26 +149,21 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus))
 
-	err := cfg.RegisterMigration(types.ModuleName, 6, keeper.Migrate6to7(am.keeper, am.bank, am.account, am.nexus, am.ibcK))
+	err := cfg.RegisterMigration(types.ModuleName, 7, keeper.Migrate7to8(am.keeper))
 	if err != nil {
 		panic(err)
 	}
 }
 
-// BeginBlock executes all state transitions this module requires at the beginning of each new block
-func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	BeginBlocker(ctx, req)
-}
-
 // EndBlock executes all state transitions this module requires at the end of each new block
-func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return utils.RunCached(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
-		return EndBlocker(ctx, req, am.keeper, am.ibcK)
-	})
+func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
+	return utils.RunCached(sdk.UnwrapSDKContext(ctx), am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
+		return EndBlocker(ctx, am.keeper, am.ibcK)
+	}), nil
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 7 }
+func (AppModule) ConsensusVersion() uint64 { return 8 }
 
 // AxelarnetIBCModule is an IBCModule that adds rate limiting and gmp processing to the ibc middleware
 type AxelarnetIBCModule struct {
@@ -243,7 +225,7 @@ func (m AxelarnetIBCModule) OnAcknowledgementPacket(
 
 	var ack channeltypes.Acknowledgement
 	if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement, &ack); err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet acknowledgement: %v", err)
+		return errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet acknowledgement: %v", err)
 	}
 
 	if err := ack.ValidateBasic(); err != nil {
@@ -398,7 +380,7 @@ func extractTokenFromAckOrTimeoutPacket(packet channeltypes.Packet) sdk.Coin {
 	data := funcs.Must(types.ToICS20Packet(packet))
 
 	trace := ibctransfertypes.ParseDenomTrace(data.Denom)
-	amount := funcs.MustOk(sdk.NewIntFromString(data.Amount))
+	amount := funcs.MustOk(math.NewIntFromString(data.Amount))
 
 	return sdk.NewCoin(trace.IBCDenom(), amount)
 }
@@ -418,8 +400,15 @@ func refundFromAssetEscrowAddressToIBCAccount(ctx sdk.Context, packet channeltyp
 	}
 
 	denom := ibctransfertypes.ParseDenomTrace(data.Denom).IBCDenom()
-	transferAmount := funcs.MustOk(sdk.NewIntFromString(data.Amount))
+	transferAmount := funcs.MustOk(math.NewIntFromString(data.Amount))
 
 	token := sdk.NewCoin(denom, transferAmount)
 	return bank.SendCoins(ctx, originalSender, types.AxelarIBCAccount, sdk.NewCoins(token))
 }
+
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() { // marker
+}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}

@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -10,7 +11,7 @@ import (
 // NewRegisterAssetFeeRequest creates a message of type RegisterAssetFeeRequest
 func NewRegisterAssetFeeRequest(sender sdk.AccAddress, feeInfo exported.FeeInfo) *RegisterAssetFeeRequest {
 	return &RegisterAssetFeeRequest{
-		Sender:  sender,
+		Sender:  sender.String(),
 		FeeInfo: feeInfo,
 	}
 }
@@ -27,8 +28,8 @@ func (m RegisterAssetFeeRequest) Type() string {
 
 // ValidateBasic implements sdk.Msg
 func (m RegisterAssetFeeRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.FeeInfo.Validate(); err != nil {
@@ -42,9 +43,4 @@ func (m RegisterAssetFeeRequest) ValidateBasic() error {
 func (m RegisterAssetFeeRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners implements sdk.Msg
-func (m RegisterAssetFeeRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

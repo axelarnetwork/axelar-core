@@ -7,8 +7,8 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/gogo/protobuf/proto"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	"github.com/cosmos/gogoproto/proto"
 
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 )
@@ -25,6 +25,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&RetryIBCTransferRequest{}, "axelarnet/RetryIBCTransfer", nil)
 	cdc.RegisterConcrete(&RouteMessageRequest{}, "axelarnet/RouteMessage", nil)
 	cdc.RegisterConcrete(&CallContractRequest{}, "axelarnet/CallContract", nil)
+	cdc.RegisterConcrete(&UpdateParamsRequest{}, "axelarnet/UpdateParams", nil)
 
 	cdc.RegisterConcrete(&CallContractsProposal{}, "axelarnet/CallContractsProposal", nil)
 }
@@ -46,6 +47,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&RetryIBCTransferRequest{},
 		&RouteMessageRequest{},
 		&CallContractRequest{},
+		&UpdateParamsRequest{},
 	)
 	registry.RegisterInterface("reward.v1beta1.Refundable",
 		(*exported.Refundable)(nil))

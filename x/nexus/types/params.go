@@ -3,8 +3,8 @@ package types
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -99,7 +99,7 @@ func validateThresholdWith(paramName string) func(interface{}) error {
 		}
 
 		if err := val.Validate(); err != nil {
-			return sdkerrors.Wrapf(err, "invalid %s", paramName)
+			return errorsmod.Wrapf(err, "invalid %s", paramName)
 		}
 
 		return nil
@@ -134,7 +134,7 @@ func validateGateway(i interface{}) error {
 	}
 
 	if err := sdk.VerifyAddressFormat(val); err != nil {
-		return sdkerrors.Wrap(err, "invalid Gateway")
+		return errorsmod.Wrap(err, "invalid Gateway")
 	}
 
 	return nil

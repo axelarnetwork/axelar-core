@@ -4,13 +4,14 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -29,16 +30,16 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 )
 
-func setup() (sdk.Context, Keeper) {
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+func setup(t log.TestingT) (sdk.Context, Keeper) {
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	encodingConfig := params.MakeEncodingConfig()
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "nexus")
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "nexus")
 
 	keeper := NewKeeper(
 		encodingConfig.Codec,
-		sdk.NewKVStoreKey(types.StoreKey),
+		store.NewKVStoreKey(types.StoreKey),
 		subspace,
 	)
 
@@ -104,7 +105,7 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 }
 
 func TestExportGenesisInitGenesis(t *testing.T) {
-	ctx, keeper := setup()
+	ctx, keeper := setup(t)
 
 	keeper.InitGenesis(ctx, types.DefaultGenesisState())
 
@@ -216,7 +217,7 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	assert.NoError(t, actual.Validate())
 	assertChainStatesEqual(t, expected, actual)
 
-	ctx, keeper = setup()
+	ctx, keeper = setup(t)
 	keeper.InitGenesis(ctx, expected)
 	actual = keeper.ExportGenesis(ctx)
 

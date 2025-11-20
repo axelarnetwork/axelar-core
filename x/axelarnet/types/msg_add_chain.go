@@ -3,9 +3,10 @@ package types
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
+	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -14,7 +15,7 @@ import (
 // NewAddCosmosBasedChainRequest is the constructor for NewAddCosmosBasedChainRequest
 func NewAddCosmosBasedChainRequest(sender sdk.AccAddress, name, addrPrefix string, assets []nexus.Asset, ibcPath string) *AddCosmosBasedChainRequest {
 	return &AddCosmosBasedChainRequest{
-		Sender:       sender,
+		Sender:       sender.String(),
 		AddrPrefix:   utils.NormalizeString(addrPrefix),
 		NativeAssets: assets,
 		CosmosChain:  nexus.ChainName(utils.NormalizeString(name)),
@@ -34,18 +35,18 @@ func (m AddCosmosBasedChainRequest) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m AddCosmosBasedChainRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := utils.ValidateString(m.AddrPrefix); err != nil {
-		return sdkerrors.Wrap(err, "invalid address prefix")
+		return errorsmod.Wrap(err, "invalid address prefix")
 	}
 
 	seen := make(map[string]bool)
 	for _, asset := range m.NativeAssets {
 		if err := asset.Validate(); err != nil {
-			return sdkerrors.Wrap(err, "invalid asset")
+			return errorsmod.Wrap(err, "invalid asset")
 		}
 
 		if !asset.IsNativeAsset {
@@ -60,16 +61,16 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 	}
 
 	if err := m.CosmosChain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid cosmos chain name")
+		return errorsmod.Wrap(err, "invalid cosmos chain name")
 	}
 
 	if err := utils.ValidateString(m.IBCPath); err != nil {
-		return sdkerrors.Wrap(err, "invalid path")
+		return errorsmod.Wrap(err, "invalid path")
 	}
 
 	validator := host.NewPathValidator(func(path string) error { return nil })
 	if err := validator(m.IBCPath); err != nil {
-		return sdkerrors.Wrap(err, "invalid IBC path")
+		return errorsmod.Wrap(err, "invalid IBC path")
 	}
 
 	return nil
@@ -79,9 +80,4 @@ func (m AddCosmosBasedChainRequest) ValidateBasic() error {
 func (m AddCosmosBasedChainRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners returns the set of signers for this message
-func (m AddCosmosBasedChainRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

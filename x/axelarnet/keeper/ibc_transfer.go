@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
+	ibctypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -40,7 +40,8 @@ func (i IBCKeeper) SendIBCTransfer(ctx sdk.Context, transfer types.IBCTransfer) 
 		return err
 	}
 
-	return i.ibcTransferK.SendTransfer(ctx, transfer.PortID, transfer.ChannelID, transfer.Token, transfer.Sender, transfer.Receiver, height, 0)
+	_, err = i.ibcTransferK.Transfer(ctx, ibctypes.NewMsgTransfer(transfer.PortID, transfer.ChannelID, transfer.Token, transfer.Sender.String(), transfer.Receiver, height, 0, ""))
+	return err
 }
 
 // ParseIBCDenom retrieves the full identifiers trace and base denomination from the IBC transfer keeper store
@@ -55,7 +56,7 @@ func (i IBCKeeper) ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.Den
 	if !found {
 		return ibctypes.DenomTrace{}, status.Error(
 			codes.NotFound,
-			sdkerrors.Wrap(ibctypes.ErrTraceNotFound, denomSplit[1]).Error(),
+			errorsmod.Wrap(ibctypes.ErrTraceNotFound, denomSplit[1]).Error(),
 		)
 	}
 	return denomTrace, nil
@@ -75,7 +76,7 @@ func (i IBCKeeper) SendMessage(c context.Context, recipient nexus.CrossChainAddr
 		return err
 	}
 
-	msg := ibctypes.NewMsgTransfer(portID, channelID, asset, types.AxelarIBCAccount.String(), recipient.Address, height, 0)
+	msg := ibctypes.NewMsgTransfer(portID, channelID, asset, types.AxelarIBCAccount.String(), recipient.Address, height, 0, "")
 	msg.Memo = payload
 
 	res, err := i.ibcTransferK.Transfer(c, msg)

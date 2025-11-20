@@ -3,11 +3,12 @@ package keeper
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/log"
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
@@ -30,12 +31,12 @@ type BaseKeeper struct {
 
 type internalKeeper struct {
 	cdc          codec.BinaryCodec
-	storeKey     sdk.StoreKey
+	storeKey     storetypes.StoreKey
 	paramsKeeper types.ParamsKeeper
 }
 
 // NewKeeper returns a new EVM base keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramsKeeper types.ParamsKeeper) *BaseKeeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey storetypes.StoreKey, paramsKeeper types.ParamsKeeper) *BaseKeeper {
 	return &BaseKeeper{
 		internalKeeper: internalKeeper{
 			cdc:          cdc,
@@ -64,7 +65,7 @@ func (k *BaseKeeper) InitChains(ctx sdk.Context) {
 // CreateChain creates the subspace for a new EVM chain. Returns an error if the chain already exists
 func (k BaseKeeper) CreateChain(ctx sdk.Context, params types.Params) (err error) {
 	defer func() {
-		err = sdkerrors.Wrap(err, "cannot create new EVM chain")
+		err = errorsmod.Wrap(err, "cannot create new EVM chain")
 	}()
 
 	if !k.initialized {

@@ -1,10 +1,12 @@
 package keeper
 
 import (
+	"context"
+
+	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	distribution "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distributionTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/distribution/types"
@@ -38,7 +40,7 @@ func NewKeeper(
 // AllocateTokens modifies the fee distribution by:
 // - Allocating the community tax portion to the community pool
 // - Burning all remaining tokens instead of distributing to validators
-func (k Keeper) AllocateTokens(ctx sdk.Context, _, _ int64, _ sdk.ConsAddress, _ []abci.VoteInfo) {
+func (k Keeper) AllocateTokens(ctx context.Context, _ int64, _ []abci.VoteInfo) error {
 	// fetch and clear the collected fees for distribution, since this is
 	// called in BeginBlock, collected fees will be from the previous block
 	// (and distributed to the previous proposer)
@@ -49,12 +51,15 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, _, _ int64, _ sdk.ConsAddress, _
 	// transfer collected fees to the distribution module account
 	err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, k.feeCollectorName, distributionTypes.ModuleName, feesCollectedInt)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	feePool := k.GetFeePool(ctx)
+	feePool, err := k.FeePool.Get(ctx)
+	if err != nil {
+		return err
+	}
 
-	communityTaxRate := k.GetCommunityTax(ctx)
+	communityTaxRate := funcs.Must(k.GetCommunityTax(ctx))
 	communityPoolAmount := feesCollected.MulDecTruncate(communityTaxRate)
 	remaining := feesCollected.Sub(communityPoolAmount)
 
@@ -64,16 +69,28 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, _, _ int64, _ sdk.ConsAddress, _
 
 	// allocate community funding
 	feePool.CommunityPool = feePool.CommunityPool.Add(communityPoolAmount...)
-	k.SetFeePool(ctx, feePool)
+	err = k.FeePool.Set(ctx, feePool)
+	if err != nil {
+		return err
+	}
 
 	// burn the rest
-	funcs.MustNoErr(k.bankKeeper.BurnCoins(ctx, distributionTypes.ModuleName, feesToBurn))
-	events.Emit(ctx, &types.FeesBurned{
+	err = k.bankKeeper.BurnCoins(ctx, distributionTypes.ModuleName, feesToBurn)
+	if err != nil {
+		return err
+	}
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	events.Emit(sdkCtx, &types.FeesBurned{
 		Coins: feesToBurn,
 	})
 
 	// track cumulative burned fees
 	feesBurned := slices.Map(feesToBurn, types.WithBurnedPrefix)
-	funcs.MustNoErr(k.bankKeeper.MintCoins(ctx, distributionTypes.ModuleName, feesBurned))
-	funcs.MustNoErr(k.bankKeeper.SendCoinsFromModuleToAccount(ctx, distributionTypes.ModuleName, types.ZeroAddress, feesBurned))
+	err = k.bankKeeper.MintCoins(ctx, distributionTypes.ModuleName, feesBurned)
+	if err != nil {
+		return err
+	}
+
+	return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, distributionTypes.ModuleName, types.ZeroAddress, feesBurned)
 }

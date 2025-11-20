@@ -83,11 +83,11 @@ message FeePaid {
   string refund_recipient = 4;
   string asset = 5; // registered asset name in nexus
   string source_chain = 6
-  [ (gogoproto.casttype) =
-      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
   string destination_chain = 7
-  [ (gogoproto.casttype) =
-      "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
 message ContractCallSubmitted {

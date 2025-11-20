@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -40,7 +41,7 @@ func (k Keeper) RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, ass
 			types.AttributeKeyTransferEpoch, transferEpoch.Amount,
 			types.AttributeKeyBlock, ctx.BlockHeight(),
 		)
-		return sdkerrors.Wrap(types.ErrRateLimitExceeded, err.Error())
+		return errorsmod.Wrap(types.ErrRateLimitExceeded, err.Error())
 	}
 
 	k.setTransferEpoch(ctx, transferEpoch)
@@ -69,7 +70,7 @@ func (k Keeper) SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limi
 	})
 
 	// delete any rate limit info if provided limit is max uint256
-	if limit.Amount.Equal(sdk.NewIntFromBigInt(utils.MaxUint.BigInt())) {
+	if limit.Amount.Equal(math.NewIntFromBigInt(utils.MaxUint.BigInt())) {
 		k.getStore(ctx).DeleteNew(getRateLimitKey(chain.Name, limit.Denom))
 		k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.TransferDirectionFrom)
 		k.deleteTransferEpoch(ctx, chain.Name, limit.Denom, exported.TransferDirectionTo)

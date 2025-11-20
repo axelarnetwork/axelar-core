@@ -4,9 +4,9 @@
 package mock
 
 import (
+	"cosmossdk.io/log"
 	"github.com/axelarnetwork/axelar-core/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 )
 

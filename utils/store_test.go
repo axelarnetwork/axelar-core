@@ -5,11 +5,12 @@ import (
 	"strings"
 	"testing"
 
+	"cosmossdk.io/log"
+	storetypes "cosmossdk.io/store/types"
+	abci "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	abci "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -64,8 +65,8 @@ func TestKey(t *testing.T) {
 
 func TestKVStore_Get(t *testing.T) {
 	encConf := params.MakeEncodingConfig()
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	store := utils.NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey("test")), encConf.Codec)
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t))
+	store := utils.NewNormalizedStore(ctx.KVStore(storetypes.NewKVStoreKey("test")), encConf.Codec)
 
 	filledState := utils.QueueState{
 		Items: map[string]utils.QueueState_Item{"state": {Key: []byte("stateKey1"), Value: []byte("stateValue1")}},
@@ -80,8 +81,8 @@ func TestKVStore_Get(t *testing.T) {
 
 func TestKVStore_GetNew(t *testing.T) {
 	encConf := params.MakeEncodingConfig()
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	store := utils.NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey("test")), encConf.Codec)
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t))
+	store := utils.NewNormalizedStore(ctx.KVStore(storetypes.NewKVStoreKey("test")), encConf.Codec)
 
 	filledState := utils.QueueState{
 		Items: map[string]utils.QueueState_Item{"state": {Key: []byte("stateKey1"), Value: []byte("stateValue1")}},
@@ -102,8 +103,8 @@ func TestKVStore_SetNewValidated(t *testing.T) {
 
 	givenKVStore := Given("a kv store", func() {
 		encConf := params.MakeEncodingConfig()
-		ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-		store = utils.NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey("test")), encConf.Codec)
+		ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t))
+		store = utils.NewNormalizedStore(ctx.KVStore(storetypes.NewKVStoreKey("test")), encConf.Codec)
 	})
 
 	givenKVStore.
@@ -147,8 +148,8 @@ func TestKVStore_SetNewValidated(t *testing.T) {
 
 func TestKVStore_Iterator(t *testing.T) {
 	encConf := params.MakeEncodingConfig()
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
-	store := utils.NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey("test")), encConf.Codec)
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t))
+	store := utils.NewNormalizedStore(ctx.KVStore(storetypes.NewKVStoreKey("test")), encConf.Codec)
 
 	filledState := utils.QueueState{
 		Items: map[string]utils.QueueState_Item{"state": {Key: []byte("stateKey1"), Value: []byte("stateValue1")}},

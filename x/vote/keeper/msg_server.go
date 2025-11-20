@@ -6,6 +6,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -27,9 +28,14 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServiceServer {
 func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	voter := s.snapshotter.GetOperator(ctx, req.Sender)
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender: %s", err)
+	}
+
+	voter := s.snapshotter.GetOperator(ctx, sender)
 	if voter == nil {
-		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender)
 	}
 
 	poll, ok := s.GetPoll(ctx, req.PollID)
@@ -48,7 +54,7 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 				Module: types.ModuleName,
 				Action: types.AttributeValueVote,
 				Poll:   req.PollID.String(),
-				Voter:  req.Sender.String(),
+				Voter:  req.Sender,
 				State:  poll.GetState().String(),
 			})
 	}
@@ -70,4 +76,15 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 	default:
 		panic(fmt.Sprintf("unexpected poll state %s", poll.GetState().String()))
 	}
+}
+
+func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsRequest) (*types.UpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := req.Params.Validate(); err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+	}
+
+	s.SetParams(ctx, req.Params)
+	return &types.UpdateParamsResponse{}, nil
 }

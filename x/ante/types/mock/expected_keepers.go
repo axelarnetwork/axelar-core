@@ -4,6 +4,7 @@
 package mock
 
 import (
+	"context"
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
 	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
@@ -94,7 +95,7 @@ var _ types.Staking = &StakingMock{}
 //
 //		// make and configure a mocked types.Staking
 //		mockedStaking := &StakingMock{
-//			ValidatorFunc: func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
+//			ValidatorFunc: func(ctx context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error) {
 //				panic("mock out the Validator method")
 //			},
 //		}
@@ -105,14 +106,14 @@ var _ types.Staking = &StakingMock{}
 //	}
 type StakingMock struct {
 	// ValidatorFunc mocks the Validator method.
-	ValidatorFunc func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
+	ValidatorFunc func(ctx context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// Validator holds details about calls to the Validator method.
 		Validator []struct {
 			// Ctx is the ctx argument value.
-			Ctx sdk.Context
+			Ctx context.Context
 			// Addr is the addr argument value.
 			Addr sdk.ValAddress
 		}
@@ -121,12 +122,12 @@ type StakingMock struct {
 }
 
 // Validator calls ValidatorFunc.
-func (mock *StakingMock) Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
+func (mock *StakingMock) Validator(ctx context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error) {
 	if mock.ValidatorFunc == nil {
 		panic("StakingMock.ValidatorFunc: method is nil but Staking.Validator was just called")
 	}
 	callInfo := struct {
-		Ctx  sdk.Context
+		Ctx  context.Context
 		Addr sdk.ValAddress
 	}{
 		Ctx:  ctx,
@@ -143,11 +144,11 @@ func (mock *StakingMock) Validator(ctx sdk.Context, addr sdk.ValAddress) staking
 //
 //	len(mockedStaking.ValidatorCalls())
 func (mock *StakingMock) ValidatorCalls() []struct {
-	Ctx  sdk.Context
+	Ctx  context.Context
 	Addr sdk.ValAddress
 } {
 	var calls []struct {
-		Ctx  sdk.Context
+		Ctx  context.Context
 		Addr sdk.ValAddress
 	}
 	mock.lockValidator.RLock()

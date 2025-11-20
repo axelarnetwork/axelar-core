@@ -86,6 +86,13 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc UpdateParams(UpdateParamsRequest) returns (UpdateParamsResponse) {
+    option (google.api.http) = {
+      post : "/axelar/axelarnet/v1beta1/params"
+      body : "*"
+    };
+  }
 }
 
 // QueryService defines the gRPC querier service.

@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -29,10 +28,10 @@ func TestRouteQueuedMessages(t *testing.T) {
 	)
 
 	givenTheEndBlocker := Given("everything needed for the end blocker", func() {
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 
 		n = &mock.NexusMock{
-			LoggerFunc:    func(_ sdk.Context) log.Logger { return log.TestingLogger() },
+			LoggerFunc:    func(_ sdk.Context) log.Logger { return log.NewTestLogger(t) },
 			GetChainsFunc: func(ctx sdk.Context) []exported.Chain { return nil },
 			GetParamsFunc: func(ctx sdk.Context) types.Params { return types.DefaultParams() },
 		}
@@ -45,7 +44,7 @@ func TestRouteQueuedMessages(t *testing.T) {
 			n.DequeueRouteMessageFunc = func(ctx sdk.Context) (exported.GeneralMessage, bool) { return exported.GeneralMessage{}, false }
 		}).
 		Then("no message is routed", func(t *testing.T) {
-			_, err := nexus.EndBlocker(ctx, abci.RequestEndBlock{}, n, reward, snapshot)
+			_, err := nexus.EndBlocker(ctx, n, reward, snapshot)
 			assert.NoError(t, err)
 		}).
 		Run(t)
@@ -71,7 +70,7 @@ func TestRouteQueuedMessages(t *testing.T) {
 			}
 		}).
 		Then("the failure should be ignored", func(t *testing.T) {
-			_, err := nexus.EndBlocker(ctx, abci.RequestEndBlock{}, n, reward, snapshot)
+			_, err := nexus.EndBlocker(ctx, n, reward, snapshot)
 			assert.NoError(t, err)
 
 			assert.Len(t, n.RouteMessageCalls(), len(msgs))
@@ -106,7 +105,7 @@ func TestRouteQueuedMessages(t *testing.T) {
 			}
 		}).
 		Then("should route up to the maximum messages", func(t *testing.T) {
-			_, err := nexus.EndBlocker(ctx, abci.RequestEndBlock{}, n, reward, snapshot)
+			_, err := nexus.EndBlocker(ctx, n, reward, snapshot)
 			assert.NoError(t, err)
 
 			assert.Len(t, n.RouteMessageCalls(), int(endBlockerLimit))

@@ -4,14 +4,14 @@ import (
 	"errors"
 	"testing"
 
+	"cosmossdk.io/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoprototypes "github.com/cosmos/gogoproto/types"
 	"github.com/ethereum/go-ethereum/common"
-	gogoprototypes "github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	fakeMock "github.com/axelarnetwork/axelar-core/testutils/fake/interfaces/mock"
@@ -28,14 +28,14 @@ import (
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func setup2() (sdk.Context, *mock.BaseKeeperMock, *mock.ChainKeeperMock, multisig.SigHandler) {
-	ctx := sdk.NewContext(&fakeMock.MultiStoreMock{}, tmproto.Header{}, false, log.TestingLogger())
+func setup2(t log.TestingT) (sdk.Context, *mock.BaseKeeperMock, *mock.ChainKeeperMock, multisig.SigHandler) {
+	ctx := sdk.NewContext(&fakeMock.MultiStoreMock{}, tmproto.Header{}, false, log.NewTestLogger(t))
 	chaink := &mock.ChainKeeperMock{
-		LoggerFunc: func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+		LoggerFunc: func(ctx sdk.Context) log.Logger { return log.NewTestLogger(t) },
 	}
 	basek := &mock.BaseKeeperMock{
 		ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) { return chaink, nil },
-		LoggerFunc:   func(ctx sdk.Context) log.Logger { return log.TestingLogger() },
+		LoggerFunc:   func(ctx sdk.Context) log.Logger { return log.NewTestLogger(t) },
 	}
 
 	encCfg := params.MakeEncodingConfig()
@@ -57,7 +57,7 @@ func TestHandleCompleted(t *testing.T) {
 	repeat := 20
 
 	givenSigsAndModuleMetadata := Given("sigs and module metadata", func() {
-		ctx, basek, chaink, handler = setup2()
+		ctx, basek, chaink, handler = setup2(t)
 
 		multisig := multisigtestutils.MultiSig()
 		sig = &multisig

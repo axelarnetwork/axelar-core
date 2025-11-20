@@ -17,7 +17,7 @@ message InflationRateRequest { string validator = 1; }
 
 message InflationRateResponse {
   bytes inflation_rate = 1 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false
   ];
 }

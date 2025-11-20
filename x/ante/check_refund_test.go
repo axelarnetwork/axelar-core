@@ -1,11 +1,17 @@
 package ante_test
 
 import (
+	mathrand "math/rand"
+	"os"
 	"testing"
+	"time"
 
+	"cosmossdk.io/log"
 	"github.com/CosmWasm/wasmd/x/wasm"
-	"github.com/cosmos/cosmos-sdk/simapp"
-	"github.com/cosmos/cosmos-sdk/simapp/helpers"
+	abci "github.com/cometbft/cometbft/proto/tendermint/types"
+	abcitypes "github.com/cometbft/cometbft/proto/tendermint/types"
+	dbm "github.com/cosmos/cosmos-db"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -15,10 +21,6 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/assert"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	abci "github.com/tendermint/tendermint/proto/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
@@ -153,8 +155,12 @@ func TestCheckRefundFeeDecorator_AnteHandle(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.label, func(t *testing.T) {
-			ctx := prepareCtx()
-			anteHandler, rewardKeeper := prepareAnteHandler(ctx, sender, encConfig)
+			t.Cleanup(func() {
+				funcs.MustNoErr(os.RemoveAll("wasm"))
+			})
+
+			ctx := prepareCtx(t)
+			anteHandler, rewardKeeper := prepareAnteHandler(ctx, sender, encConfig, t)
 
 			// keep track of all the fees to be refunded
 			var feeTotal sdk.Coins
@@ -182,41 +188,39 @@ func TestCheckRefundFeeDecorator_AnteHandle(t *testing.T) {
 	}
 }
 
-func prepareAnteHandler(ctx sdk.Context, sender sdk.AccAddress, encConfig params.EncodingConfig) (sdk.AnteHandler, *mock.RewardMock) {
+func prepareAnteHandler(ctx sdk.Context, sender sdk.AccAddress, encConfig params.EncodingConfig, t log.TestingT) (sdk.AnteHandler, *mock.RewardMock) {
 	axelarApp := app.NewAxelarApp(
-		log.TestingLogger(),
+		log.NewTestLogger(t),
 		dbm.NewMemDB(),
 		nil,
 		true,
-		nil,
-		"",
-		"",
-		0,
+
 		encConfig,
-		simapp.EmptyAppOptions{},
+		simtestutil.EmptyAppOptions{},
 		[]wasm.Option{},
 	)
 
 	// set up proxy and validator because the refund ante handler checks the sender
 	bankKeeper := app.GetKeeper[bankkeeper.BaseKeeper](axelarApp.Keepers)
-	bankKeeper.SetParams(ctx, banktypes.DefaultParams())
+	funcs.MustNoErr(bankKeeper.SetParams(ctx, banktypes.DefaultParams()))
 	balance := sdk.NewCoins(sdk.NewInt64Coin("stake", 1e10))
 	funcs.MustNoErr(bankKeeper.MintCoins(ctx, nexustypes.ModuleName, balance))
 	funcs.MustNoErr(bankKeeper.SendCoinsFromModuleToAccount(ctx, nexustypes.ModuleName, sender, balance))
 
 	stakingKeeper := app.GetKeeper[stakingkeeper.Keeper](axelarApp.Keepers)
-	stakingKeeper.SetParams(ctx, stakingtypes.DefaultParams())
-	validator := stakingtypes.Validator{OperatorAddress: rand.ValAddr().String()}
-	stakingKeeper.SetValidator(ctx, validator)
+	funcs.MustNoErr(stakingKeeper.SetParams(ctx, stakingtypes.DefaultParams()))
+	valAddr := rand.ValAddr()
+	validator := stakingtypes.Validator{OperatorAddress: valAddr.String()}
+	funcs.MustNoErr(stakingKeeper.SetValidator(ctx, validator))
 
 	snapshotKeeper := app.GetKeeper[snapshotkeeper.Keeper](axelarApp.Keepers)
 	snapshotKeeper.SetParams(ctx, snapshottypes.DefaultParams())
-	funcs.MustNoErr(snapshotKeeper.ActivateProxy(ctx, validator.GetOperator(), sender))
+	funcs.MustNoErr(snapshotKeeper.ActivateProxy(ctx, valAddr, sender))
 
 	rewardKeeper := &mock.RewardMock{}
 
 	anteHandler := ante.NewCheckRefundFeeDecorator(
-		encConfig.InterfaceRegistry,
+		encConfig.Codec,
 		app.GetKeeper[authkeeper.AccountKeeper](axelarApp.Keepers),
 		stakingKeeper,
 		snapshotKeeper,
@@ -230,7 +234,8 @@ func prepareAnteHandler(ctx sdk.Context, sender sdk.AccAddress, encConfig params
 func prepareTx(encConfig params.EncodingConfig, msgs []sdk.Msg) sdk.FeeTx {
 	sk, _, _ := testdata.KeyTestPubAddr()
 
-	tx := funcs.Must(helpers.GenTx(
+	tx := funcs.Must(simtestutil.GenSignedMockTx(
+		mathrand.New(mathrand.NewSource(time.Now().UnixNano())),
 		encConfig.TxConfig,
 		msgs,
 		sdk.NewCoins(sdk.NewInt64Coin("stake", 1000)),
@@ -243,9 +248,9 @@ func prepareTx(encConfig params.EncodingConfig, msgs []sdk.Msg) sdk.FeeTx {
 	return tx.(sdk.FeeTx)
 }
 
-func prepareCtx() sdk.Context {
-	return sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger()).
-		WithConsensusParams(&abcitypes.ConsensusParams{
+func prepareCtx(t log.TestingT) sdk.Context {
+	return sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t)).
+		WithConsensusParams(abcitypes.ConsensusParams{
 			Block: &abcitypes.BlockParams{MaxGas: 1000000000},
 		})
 }

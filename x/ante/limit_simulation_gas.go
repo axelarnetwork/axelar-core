@@ -1,6 +1,7 @@
 package ante
 
 import (
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -8,11 +9,11 @@ import (
 // This is a fix for cosmwasm's LimitSimulationGasDecorator.
 // The original implementation discards any gas consumption before this decorator is called.
 type LimitSimulationGasDecorator struct {
-	gasLimit *sdk.Gas
+	gasLimit *storetypes.Gas
 }
 
 // NewLimitSimulationGasDecorator constructor accepts nil value to fallback to block gas limit.
-func NewLimitSimulationGasDecorator(gasLimit *sdk.Gas) *LimitSimulationGasDecorator {
+func NewLimitSimulationGasDecorator(gasLimit *storetypes.Gas) *LimitSimulationGasDecorator {
 	if gasLimit != nil && *gasLimit == 0 {
 		panic("gas limit must not be zero")
 	}
@@ -30,11 +31,11 @@ func (d LimitSimulationGasDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 		return next(ctx, tx, simulate)
 	}
 
-	var gasMeter sdk.GasMeter
+	var gasMeter storetypes.GasMeter
 
 	limit, hasLimit := d.getGasLimit(ctx)
 	if hasLimit {
-		gasMeter = sdk.NewGasMeter(limit)
+		gasMeter = storetypes.NewGasMeter(limit)
 		gasMeter.ConsumeGas(ctx.GasMeter().GasConsumed(), "ante handler")
 		ctx = ctx.WithGasMeter(gasMeter)
 	}
@@ -42,15 +43,15 @@ func (d LimitSimulationGasDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 	return next(ctx, tx, simulate)
 }
 
-func (d LimitSimulationGasDecorator) getGasLimit(ctx sdk.Context) (sdk.Gas, bool) {
+func (d LimitSimulationGasDecorator) getGasLimit(ctx sdk.Context) (storetypes.Gas, bool) {
 	// apply custom node gas limit
 	if d.gasLimit != nil {
 		return *d.gasLimit, true
 	}
 
 	// default to max block gas when set, to be on the safe side
-	if maxGas := ctx.ConsensusParams().GetBlock().MaxGas; maxGas > 0 {
-		return sdk.Gas(maxGas), true
+	if maxGas := ctx.ConsensusParams().Block.MaxGas; maxGas > 0 {
+		return storetypes.Gas(maxGas), true
 	}
 
 	return 0, false

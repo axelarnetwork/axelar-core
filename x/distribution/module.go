@@ -1,15 +1,20 @@
 package distribution
 
 import (
+	"context"
+
+	"cosmossdk.io/core/appmodule"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/x/distribution/keeper"
 )
 
-var _ module.AppModule = AppModule{}
+var (
+	_ module.AppModule          = AppModule{}
+	_ appmodule.HasBeginBlocker = AppModule{}
+)
 
 type AppModule struct {
 	distr.AppModule
@@ -25,6 +30,6 @@ func NewAppModule(distrAppModule distr.AppModule, keeper keeper.Keeper) AppModul
 	}
 }
 
-func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	BeginBlocker(ctx, req, am.keeper)
+func (am AppModule) BeginBlock(ctx context.Context) error {
+	return BeginBlocker(sdk.UnwrapSDKContext(ctx), am.keeper)
 }

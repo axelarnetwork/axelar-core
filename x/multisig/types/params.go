@@ -8,6 +8,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 )
 
+const blockTimeSpeedUp = 5
+
 // Parameter keys
 var (
 	KeyKeygenThreshold    = []byte("KeygenThreshold")
@@ -29,10 +31,10 @@ func DefaultParams() Params {
 	return Params{
 		KeygenThreshold:    utils.NewThreshold(80, 100),
 		SigningThreshold:   utils.NewThreshold(60, 100),
-		KeygenTimeout:      10,
-		KeygenGracePeriod:  5,
-		SigningTimeout:     10,
-		SigningGracePeriod: 1,
+		KeygenTimeout:      10 * blockTimeSpeedUp,
+		KeygenGracePeriod:  10 * blockTimeSpeedUp,
+		SigningTimeout:     10 * blockTimeSpeedUp,
+		SigningGracePeriod: 10 * blockTimeSpeedUp,
 		ActiveEpochCount:   5,
 	}
 }

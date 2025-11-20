@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -35,7 +36,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 		receipt     *geth.Receipt
 		tokenAddr   types.Address
 		depositAddr types.Address
-		amount      sdk.Uint
+		amount      math.Uint
 		evmMap      map[string]evmRpc.Client
 		rpc         *mock.ClientMock
 		valAddr     sdk.ValAddress
@@ -45,7 +46,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 	)
 
 	givenDeposit := Given("a deposit has been made", func() {
-		amount = sdk.NewUint(uint64(rand.PosI64()))
+		amount = math.NewUint(uint64(rand.PosI64()))
 		tokenAddr = testutils.RandomAddress()
 		depositAddr = testutils.RandomAddress()
 		randomTokenDeposit := &geth.Log{
@@ -197,7 +198,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 			givenDeposit.
 				Given("confirmation height is not reached yet", func() {
 					rpc.LatestFinalizedBlockNumberFunc = func(ctx context.Context, confirmations uint64) (*big.Int, error) {
-						return sdk.NewIntFromBigInt(receipt.BlockNumber).SubRaw(int64(confirmations)).BigInt(), nil
+						return math.NewIntFromBigInt(receipt.BlockNumber).SubRaw(int64(confirmations)).BigInt(), nil
 					}
 				}).
 				When2(confirmingDeposit).
@@ -273,7 +274,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 
 			givenDeposit.
 				Given("multiple deposits in a single tx", func() {
-					additionalAmount := sdk.NewUint(uint64(rand.PosI64()))
+					additionalAmount := math.NewUint(uint64(rand.PosI64()))
 					amount = amount.Add(additionalAmount)
 					additionalDeposit := &geth.Log{
 						Address: common.Address(tokenAddr),
@@ -301,7 +302,7 @@ func TestMgr_ProccessDepositConfirmation(t *testing.T) {
 					assert.Len(t, votes, 1)
 					assert.Len(t, votes[0].Events, 2)
 
-					actualAmount := sdk.ZeroUint()
+					actualAmount := math.ZeroUint()
 					for _, event := range votes[0].Events {
 						transferEvent, ok := event.Event.(*types.Event_Transfer)
 						assert.True(t, ok)

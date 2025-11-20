@@ -3,19 +3,15 @@ package nexus
 import (
 	"fmt"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
-// BeginBlocker check for infraction evidence or downtime of validators
-// on every begin block
-func BeginBlocker(_ sdk.Context, _ abci.RequestBeginBlock, _ types.Nexus) {}
-
 // EndBlocker called every block
-func EndBlocker(ctx sdk.Context, _ abci.RequestEndBlock, n types.Nexus, r types.RewardKeeper, s types.Snapshotter) ([]abci.ValidatorUpdate, error) {
+func EndBlocker(ctx sdk.Context, n types.Nexus, r types.RewardKeeper, s types.Snapshotter) ([]abci.ValidatorUpdate, error) {
 	if err := checkChainMaintainers(ctx, n, r, s); err != nil {
 		return nil, err
 	}
