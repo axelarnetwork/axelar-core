@@ -17,7 +17,7 @@ require (
 	github.com/CosmWasm/wasmd v0.54.3
 	// Ensure WASMVM_VERSION in the Dockerfile is updated when changing wasmvm version.
 	github.com/CosmWasm/wasmvm/v2 v2.2.4
-	github.com/axelarnetwork/tm-events v0.0.0-20250318181253-c71853c5bb8f
+	github.com/axelarnetwork/tm-events v0.0.0-20251120132303-dd93f72c8194
 	github.com/axelarnetwork/utils v0.0.0-20250317211301-dd7399dbbc5f
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/cometbft/cometbft v0.38.19
