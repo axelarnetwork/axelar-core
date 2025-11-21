@@ -142,6 +142,31 @@ message SetTransferRateLimitRequest {
 
 message SetTransferRateLimitResponse {}
 
+// EnableLinkDepositRequest enables the link-deposit protocol for cross-chain transfers.
+// The link-deposit protocol allows users to create deposit addresses and confirm deposits
+// for cross-chain asset transfers on both EVM and Cosmos chains.
+message EnableLinkDepositRequest {
+  option (amino.name) = "nexus/EnableLinkDeposit";
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+}
+
+message EnableLinkDepositResponse {}
+
+// DisableLinkDepositRequest disables the link-deposit protocol for cross-chain transfers.
+// When disabled, Link, ConfirmDeposit, and CreateBurnTokens operations will be rejected.
+message DisableLinkDepositRequest {
+  option (amino.name) = "nexus/DisableLinkDeposit";
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+}
+
+message DisableLinkDepositResponse {}
+
 message UpdateParamsRequest {
   option (amino.name) = "nexus/UpdateParams";
   option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
