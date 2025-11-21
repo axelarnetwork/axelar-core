@@ -8890,6 +8890,107 @@ paths:
                 type: string
       tags:
         - MsgService
+  /axelar/nexus/disable_link_deposit:
+    post:
+      operationId: DisableLinkDeposit
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+            description: >-
+              DisableLinkDepositRequest disables the link-deposit protocol for
+              cross-chain
+
+              transfers. When disabled, Link, ConfirmDeposit, and
+              CreateBurnTokens
+
+              operations will be rejected.
+      tags:
+        - MsgService
+  /axelar/nexus/enable_link_deposit:
+    post:
+      operationId: EnableLinkDeposit
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+            description: >-
+              EnableLinkDepositRequest enables the link-deposit protocol for
+              cross-chain
+
+              transfers. The link-deposit protocol allows users to create
+              deposit addresses
+
+              and confirm deposits for cross-chain asset transfers on both EVM
+              and Cosmos
+
+              chains.
+      tags:
+        - MsgService
   /axelar/nexus/register_asset_fee:
     post:
       operationId: RegisterAssetFee
@@ -60406,6 +60507,37 @@ definitions:
       sender:
         type: string
   axelar.nexus.v1beta1.DeregisterChainMaintainerResponse:
+    type: object
+  axelar.nexus.v1beta1.DisableLinkDepositRequest:
+    type: object
+    properties:
+      authority:
+        type: string
+    description: >-
+      DisableLinkDepositRequest disables the link-deposit protocol for
+      cross-chain
+
+      transfers. When disabled, Link, ConfirmDeposit, and CreateBurnTokens
+
+      operations will be rejected.
+  axelar.nexus.v1beta1.DisableLinkDepositResponse:
+    type: object
+  axelar.nexus.v1beta1.EnableLinkDepositRequest:
+    type: object
+    properties:
+      authority:
+        type: string
+    description: >-
+      EnableLinkDepositRequest enables the link-deposit protocol for cross-chain
+
+      transfers. The link-deposit protocol allows users to create deposit
+      addresses
+
+      and confirm deposits for cross-chain asset transfers on both EVM and
+      Cosmos
+
+      chains.
+  axelar.nexus.v1beta1.EnableLinkDepositResponse:
     type: object
   axelar.nexus.v1beta1.FeeInfoResponse:
     type: object
