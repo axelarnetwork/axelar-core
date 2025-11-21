@@ -2,15 +2,14 @@ package vald
 
 import (
 	"context"
-	"github.com/axelarnetwork/axelar-core/app"
+	"sync/atomic"
 	"testing"
 	"time"
-
-	"sync/atomic"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
 )
