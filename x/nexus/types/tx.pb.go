@@ -511,9 +511,10 @@ func (m *SetTransferRateLimitResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_SetTransferRateLimitResponse proto.InternalMessageInfo
 
-// EnableLinkDepositRequest enables the link-deposit protocol for cross-chain transfers.
-// The link-deposit protocol allows users to create deposit addresses and confirm deposits
-// for cross-chain asset transfers on both EVM and Cosmos chains.
+// EnableLinkDepositRequest enables the link-deposit protocol for cross-chain
+// transfers. The link-deposit protocol allows users to create deposit addresses
+// and confirm deposits for cross-chain asset transfers on both EVM and Cosmos
+// chains.
 type EnableLinkDepositRequest struct {
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 }
@@ -587,8 +588,9 @@ func (m *EnableLinkDepositResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EnableLinkDepositResponse proto.InternalMessageInfo
 
-// DisableLinkDepositRequest disables the link-deposit protocol for cross-chain transfers.
-// When disabled, Link, ConfirmDeposit, and CreateBurnTokens operations will be rejected.
+// DisableLinkDepositRequest disables the link-deposit protocol for cross-chain
+// transfers. When disabled, Link, ConfirmDeposit, and CreateBurnTokens
+// operations will be rejected.
 type DisableLinkDepositRequest struct {
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 }

@@ -155,7 +155,8 @@ service QueryService {
     };
   }
 
-  rpc LinkDepositEnabled(LinkDepositEnabledRequest) returns (LinkDepositEnabledResponse) {
+  rpc LinkDepositEnabled(LinkDepositEnabledRequest)
+      returns (LinkDepositEnabledResponse) {
     option (google.api.http).get = "/axelar/nexus/v1beta1/link_deposit_enabled";
   }
 }

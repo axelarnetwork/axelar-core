@@ -9577,6 +9577,41 @@ paths:
           type: string
       tags:
         - QueryService
+  /axelar/nexus/v1beta1/link_deposit_enabled:
+    get:
+      operationId: LinkDepositEnabled
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              enabled:
+                type: boolean
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type_url:
+                      type: string
+                    value:
+                      type: string
+                      format: byte
+      tags:
+        - QueryService
   /axelar/nexus/v1beta1/message:
     get:
       operationId: Message
@@ -60396,6 +60431,11 @@ definitions:
     properties:
       deposit_addr:
         type: string
+  axelar.nexus.v1beta1.LinkDepositEnabledResponse:
+    type: object
+    properties:
+      enabled:
+        type: boolean
   axelar.nexus.v1beta1.MaintainerState:
     type: object
     properties:

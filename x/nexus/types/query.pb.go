@@ -1100,7 +1100,8 @@ func (m *ParamsResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ParamsResponse proto.InternalMessageInfo
 
-// LinkDepositEnabledRequest represents a message that queries whether the link-deposit protocol is enabled
+// LinkDepositEnabledRequest represents a message that queries whether the
+// link-deposit protocol is enabled
 type LinkDepositEnabledRequest struct {
 }
 
