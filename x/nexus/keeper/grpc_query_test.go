@@ -203,12 +203,14 @@ func TestKeeper_Message(t *testing.T) {
 			destinationChain.Module = evmtypes.ModuleName
 			k.SetChain(ctx, sourceChain)
 			k.SetChain(ctx, destinationChain)
-			id, txID, nonce := k.GenerateMessageID(ctx)
-			msg := exported.GeneralMessage{
+			var txID []byte
+			var nonce uint64
+			id, txID, nonce = k.GenerateMessageID(ctx)
+			msg = exported.GeneralMessage{
 				ID:            id,
 				Sender:        exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
 				Recipient:     exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
-				Status:        exported.Processing,
+				Status:        exported.Approved,
 				PayloadHash:   crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
 				Asset:         nil,
 				SourceTxID:    txID,
