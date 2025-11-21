@@ -562,6 +562,9 @@ func TestLink_UnknownChain(t *testing.T) {
 	n := &mock.NexusMock{
 		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 		GetChainFunc:         func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false },
+		IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
+			return true
+		},
 	}
 	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{}, &mock.PermissionMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr().String(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: asset})
@@ -608,6 +611,9 @@ func TestLink_NoGateway(t *testing.T) {
 			c, ok := chains[chain]
 			return c, ok
 		},
+		IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
+			return true
+		},
 	}
 	multisigKeeper := &mock.MultisigKeeperMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
@@ -638,6 +644,9 @@ func TestLink_NoRecipientChain(t *testing.T) {
 		GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
+		},
+		IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
+			return true
 		},
 	}
 
@@ -671,6 +680,9 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 			return c, ok
 		},
 		IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return false },
+		IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
+			return true
+		},
 	}
 
 	multisigKeeper := &mock.MultisigKeeperMock{
@@ -730,6 +742,9 @@ func TestLink_Success(t *testing.T) {
 			return c, ok
 		},
 		IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
+		IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
+			return true
+		},
 	}
 	multisigKeeper := &mock.MultisigKeeperMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
@@ -1218,6 +1233,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
+			},
+			IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
+				return true
 			},
 		}
 
