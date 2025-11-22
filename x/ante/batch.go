@@ -40,7 +40,7 @@ func NewBatchDecorator(cdc codec.Codec) BatchDecorator {
 	}
 }
 
-// AnteHandle record qualified refund for the multiSig and vote transactions
+// AnteHandle unwraps batch requests and passes them to the next AnteHandler
 func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	tx, err := newTxWithUnwrappedMsgs(tx)
 	if err != nil {
