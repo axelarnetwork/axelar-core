@@ -1,6 +1,7 @@
 package ante
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -17,7 +18,7 @@ type txWithUnwrappedMsgs struct {
 func newTxWithUnwrappedMsgs(tx sdk.Tx) (txWithUnwrappedMsgs, error) {
 	feeTx, ok := tx.(sdk.FeeTx)
 	if !ok {
-		return txWithUnwrappedMsgs{}, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx must be a FeeTx")
+		return txWithUnwrappedMsgs{}, errorsmod.Wrap(sdkerrors.ErrTxDecode, "tx must be a FeeTx")
 	}
 
 	return txWithUnwrappedMsgs{feeTx, unpackMsgs(tx.GetMsgs())}, nil
@@ -39,7 +40,7 @@ func NewBatchDecorator(cdc codec.Codec) BatchDecorator {
 	}
 }
 
-// AnteHandle record qualified refund for the multiSig and vote transactions
+// AnteHandle unwraps batch requests and passes them to the next AnteHandler
 func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	tx, err := newTxWithUnwrappedMsgs(tx)
 	if err != nil {

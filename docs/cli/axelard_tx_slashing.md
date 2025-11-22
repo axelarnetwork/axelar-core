@@ -1,6 +1,6 @@
 ## axelard tx slashing
 
-Slashing transaction subcommands
+Transactions commands for the slashing module
 
 ```
 axelard tx slashing [flags]
@@ -15,7 +15,6 @@ axelard tx slashing [flags]
 ### Options inherited from parent commands
 
 ```
-      --chain-id string     The network chain ID (default "axelar")
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
@@ -26,4 +25,4 @@ axelard tx slashing [flags]
 ### SEE ALSO
 
 - [axelard tx](axelard_tx.md) - Transactions subcommands
-- [axelard tx slashing unjail](axelard_tx_slashing_unjail.md) - unjail validator previously jailed for downtime
+- [axelard tx slashing unjail](axelard_tx_slashing_unjail.md) - Unjail a jailed validator

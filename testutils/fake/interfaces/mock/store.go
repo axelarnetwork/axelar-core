@@ -4,8 +4,8 @@
 package mock
 
 import (
+	"cosmossdk.io/store/types"
 	"github.com/axelarnetwork/axelar-core/testutils/fake/interfaces"
-	"github.com/cosmos/cosmos-sdk/store/types"
 	"io"
 	"sync"
 )
@@ -40,6 +40,9 @@ var _ interfaces.MultiStore = &MultiStoreMock{}
 //			},
 //			GetStoreTypeFunc: func() types.StoreType {
 //				panic("mock out the GetStoreType method")
+//			},
+//			LatestVersionFunc: func() int64 {
+//				panic("mock out the LatestVersion method")
 //			},
 //			SetTracerFunc: func(w io.Writer) types.MultiStore {
 //				panic("mock out the SetTracer method")
@@ -77,6 +80,9 @@ type MultiStoreMock struct {
 
 	// GetStoreTypeFunc mocks the GetStoreType method.
 	GetStoreTypeFunc func() types.StoreType
+
+	// LatestVersionFunc mocks the LatestVersion method.
+	LatestVersionFunc func() int64
 
 	// SetTracerFunc mocks the SetTracer method.
 	SetTracerFunc func(w io.Writer) types.MultiStore
@@ -120,6 +126,9 @@ type MultiStoreMock struct {
 		// GetStoreType holds details about calls to the GetStoreType method.
 		GetStoreType []struct {
 		}
+		// LatestVersion holds details about calls to the LatestVersion method.
+		LatestVersion []struct {
+		}
 		// SetTracer holds details about calls to the SetTracer method.
 		SetTracer []struct {
 			// W is the w argument value.
@@ -141,6 +150,7 @@ type MultiStoreMock struct {
 	lockGetKVStore                 sync.RWMutex
 	lockGetStore                   sync.RWMutex
 	lockGetStoreType               sync.RWMutex
+	lockLatestVersion              sync.RWMutex
 	lockSetTracer                  sync.RWMutex
 	lockSetTracingContext          sync.RWMutex
 	lockTracingEnabled             sync.RWMutex
@@ -359,6 +369,33 @@ func (mock *MultiStoreMock) GetStoreTypeCalls() []struct {
 	return calls
 }
 
+// LatestVersion calls LatestVersionFunc.
+func (mock *MultiStoreMock) LatestVersion() int64 {
+	if mock.LatestVersionFunc == nil {
+		panic("MultiStoreMock.LatestVersionFunc: method is nil but MultiStore.LatestVersion was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockLatestVersion.Lock()
+	mock.calls.LatestVersion = append(mock.calls.LatestVersion, callInfo)
+	mock.lockLatestVersion.Unlock()
+	return mock.LatestVersionFunc()
+}
+
+// LatestVersionCalls gets all the calls that were made to LatestVersion.
+// Check the length with:
+//
+//	len(mockedMultiStore.LatestVersionCalls())
+func (mock *MultiStoreMock) LatestVersionCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockLatestVersion.RLock()
+	calls = mock.calls.LatestVersion
+	mock.lockLatestVersion.RUnlock()
+	return calls
+}
+
 // SetTracer calls SetTracerFunc.
 func (mock *MultiStoreMock) SetTracer(w io.Writer) types.MultiStore {
 	if mock.SetTracerFunc == nil {
@@ -481,6 +518,9 @@ var _ interfaces.CacheMultiStore = &CacheMultiStoreMock{}
 //			GetStoreTypeFunc: func() types.StoreType {
 //				panic("mock out the GetStoreType method")
 //			},
+//			LatestVersionFunc: func() int64 {
+//				panic("mock out the LatestVersion method")
+//			},
 //			SetTracerFunc: func(w io.Writer) types.MultiStore {
 //				panic("mock out the SetTracer method")
 //			},
@@ -520,6 +560,9 @@ type CacheMultiStoreMock struct {
 
 	// GetStoreTypeFunc mocks the GetStoreType method.
 	GetStoreTypeFunc func() types.StoreType
+
+	// LatestVersionFunc mocks the LatestVersion method.
+	LatestVersionFunc func() int64
 
 	// SetTracerFunc mocks the SetTracer method.
 	SetTracerFunc func(w io.Writer) types.MultiStore
@@ -566,6 +609,9 @@ type CacheMultiStoreMock struct {
 		// GetStoreType holds details about calls to the GetStoreType method.
 		GetStoreType []struct {
 		}
+		// LatestVersion holds details about calls to the LatestVersion method.
+		LatestVersion []struct {
+		}
 		// SetTracer holds details about calls to the SetTracer method.
 		SetTracer []struct {
 			// W is the w argument value.
@@ -590,6 +636,7 @@ type CacheMultiStoreMock struct {
 	lockGetKVStore                 sync.RWMutex
 	lockGetStore                   sync.RWMutex
 	lockGetStoreType               sync.RWMutex
+	lockLatestVersion              sync.RWMutex
 	lockSetTracer                  sync.RWMutex
 	lockSetTracingContext          sync.RWMutex
 	lockTracingEnabled             sync.RWMutex
@@ -806,6 +853,33 @@ func (mock *CacheMultiStoreMock) GetStoreTypeCalls() []struct {
 	mock.lockGetStoreType.RLock()
 	calls = mock.calls.GetStoreType
 	mock.lockGetStoreType.RUnlock()
+	return calls
+}
+
+// LatestVersion calls LatestVersionFunc.
+func (mock *CacheMultiStoreMock) LatestVersion() int64 {
+	if mock.LatestVersionFunc == nil {
+		panic("CacheMultiStoreMock.LatestVersionFunc: method is nil but CacheMultiStore.LatestVersion was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockLatestVersion.Lock()
+	mock.calls.LatestVersion = append(mock.calls.LatestVersion, callInfo)
+	mock.lockLatestVersion.Unlock()
+	return mock.LatestVersionFunc()
+}
+
+// LatestVersionCalls gets all the calls that were made to LatestVersion.
+// Check the length with:
+//
+//	len(mockedCacheMultiStore.LatestVersionCalls())
+func (mock *CacheMultiStoreMock) LatestVersionCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockLatestVersion.RLock()
+	calls = mock.calls.LatestVersion
+	mock.lockLatestVersion.RUnlock()
 	return calls
 }
 

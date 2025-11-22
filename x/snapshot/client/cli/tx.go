@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	legacyTx "github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
 
@@ -47,10 +47,10 @@ func GetCmdRegisterProxy() *cobra.Command {
 			}
 			addr, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
-				return sdkerrors.Wrap(types.ErrSnapshot, "proxy invalid")
+				return errorsmod.Wrap(types.ErrSnapshot, "proxy invalid")
 			}
 
-			msg := types.NewRegisterProxyRequest(sdk.ValAddress(clientCtx.FromAddress), addr)
+			msg := types.NewRegisterProxyRequest(clientCtx.FromAddress, addr)
 			return legacyTx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
@@ -70,7 +70,7 @@ func GetCmdDeregisterProxy() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewDeactivateProxyRequest(sdk.ValAddress(clientCtx.FromAddress))
+			msg := types.NewDeactivateProxyRequest(clientCtx.FromAddress)
 			return legacyTx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
@@ -104,7 +104,7 @@ func GetCmdSendTokens() *cobra.Command {
 				return errors.New("amount must be an integer value")
 			}
 
-			inputs := make([]banktypes.Input, 0)
+			totalIn := sdk.NewCoins()
 			outputs := make([]banktypes.Output, 0)
 
 			for _, addr := range args[1:] {
@@ -114,12 +114,12 @@ func GetCmdSendTokens() *cobra.Command {
 					return err
 				}
 
-				inputs = append(inputs, banktypes.NewInput(clientCtx.FromAddress, coins))
+				totalIn = totalIn.Add(coins...)
 				outputs = append(outputs, banktypes.NewOutput(to, coins))
 
 			}
 
-			msg := banktypes.NewMsgMultiSend(inputs, outputs)
+			msg := banktypes.NewMsgMultiSend(banktypes.NewInput(clientCtx.FromAddress, totalIn), outputs)
 			return legacyTx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}

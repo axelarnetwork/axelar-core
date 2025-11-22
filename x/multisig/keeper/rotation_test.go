@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	store "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
@@ -33,9 +34,9 @@ func TestKeeper(t *testing.T) {
 	)
 
 	givenKeeper := Given("multisig keeper", func() {
-		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "multisig")
-		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
-		ctx = testutilsrand.Context(fake.NewMultiStore())
+		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "multisig")
+		k = keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(types.StoreKey), subspace)
+		ctx = testutilsrand.Context(fake.NewMultiStore(), t)
 
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 	})
@@ -169,9 +170,9 @@ func TestKeeper_GetActiveKeyIDs(t *testing.T) {
 	)
 
 	givenMultisigKeeper := Given("multisig keeper", func() {
-		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "multisig")
-		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
-		ctx = testutilsrand.Context(fake.NewMultiStore())
+		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "multisig")
+		k = keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(types.StoreKey), subspace)
+		ctx = testutilsrand.Context(fake.NewMultiStore(), t)
 
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 	})

@@ -15,12 +15,14 @@ axelard rosetta [flags]
       --enable-fee-suggestion      enable default fee suggestion
       --gas-to-suggest int         default gas for fee suggestion (default 200000)
       --grpc string                the app gRPC endpoint (default "localhost:9090")
+      --grpc-types-server string   the app gRPC Server endpoint for proto messages types and reflection
   -h, --help                       help for rosetta
       --network string             the network name (default "network")
       --offline                    run rosetta only with construction API
+      --plugin string              plugin folder name
       --prices-to-suggest string   default prices for fee suggestion (default "1uatom,1stake")
       --retries int                the number of retries that will be done before quitting (default 5)
-      --tendermint string          the tendermint rpc endpoint, without tcp:// (default "localhost:26657")
+      --tendermint string          the CometBFT rpc endpoint, without tcp:// (default "localhost:26657")
 ```
 
 ### Options inherited from parent commands

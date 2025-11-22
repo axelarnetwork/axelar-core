@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -13,7 +15,7 @@ import (
 // NewCreateDeployTokenRequest is the constructor for CreateDeployTokenRequest
 func NewCreateDeployTokenRequest(sender sdk.AccAddress, chain string, asset Asset, tokenDetails TokenDetails, address Address, dailyMintLimit string) *CreateDeployTokenRequest {
 	return &CreateDeployTokenRequest{
-		Sender:         sender,
+		Sender:         sender.String(),
 		Chain:          nexus.ChainName(utils.NormalizeString(chain)),
 		Asset:          asset,
 		TokenDetails:   tokenDetails,
@@ -38,19 +40,14 @@ func (m CreateDeployTokenRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(bz)
 }
 
-// GetSigners implements sdk.Msg
-func (m CreateDeployTokenRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
-}
-
 // ValidateBasic implements sdk.Msg
 func (m CreateDeployTokenRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
+		return errorsmod.Wrap(err, "invalid chain")
 	}
 
 	if err := m.Asset.Validate(); err != nil {
@@ -72,7 +69,7 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 		return err
 	}
 
-	if _, err := sdk.ParseUint(m.DailyMintLimit); err != nil {
+	if _, err := math.ParseUint(m.DailyMintLimit); err != nil {
 		return err
 	}
 

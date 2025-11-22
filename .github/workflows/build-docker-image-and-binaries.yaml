@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-          - 1.23
+          - 1.25
         os: [ubuntu-22.04, macos-latest]
         arch: [amd64, arm64]
         exclude:
@@ -35,7 +35,7 @@ jobs:
     steps:
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1
         with:
           aws-region: us-east-2
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ghwf-${{ github.event.repository.name }}
@@ -48,20 +48,20 @@ jobs:
           aws s3 ls s3://axelar-releases/axelard/"$SEMVER" && echo "tag already exists, use a new one" && exit 1
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
         with:
           fetch-depth: '0'
           ref: ${{ github.event.inputs.tag }}
           submodules: recursive
 
       - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v2
+        uses: magnetikonline/action-golang-cache@401702e21cff5562276de84c15d7b083bc22e79f # v2
         with:
           go-version: ${{ matrix.go-version }}
 
       - name: Import GPG key
         id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v4
+        uses: crazy-max/ghaction-import-gpg@e00cb83a68c1158b29afc5217dd0582cada6d172 # v4
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
@@ -117,7 +117,7 @@ jobs:
           done
 
       - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
+        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ./bin/*
@@ -132,7 +132,7 @@ jobs:
           aws s3 cp ./bin ${S3_PATH}/ --recursive
 
       - name: Upload binaries to Cloudflare R2
-        uses: ryand56/r2-upload-action@latest
+        uses: ryand56/r2-upload-action@b801a390acbdeb034c5e684ff5e1361c06639e7c # latest
         with:
           r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
           r2-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_CF }}
@@ -157,28 +157,28 @@ jobs:
     steps:
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
         with:
           fetch-depth: '0'
           ref: ${{ github.event.inputs.tag }}
           submodules: recursive
 
       - name: Set up ssh agent
-        uses: webfactory/ssh-agent@v0.5.2
+        uses: webfactory/ssh-agent@cb8b21017acfd319f0f4eb320ae495f22c36d0a7 # v0.5.2
         with:
           ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@27d0a4f181a40b142cce983c5393082c365d1480 # v1
 
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@f211e3e9ded2d9377c8cadc4489a4e38014bc4c9 # v1
         with:
           config: .github/buildkit-config.toml
 
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@dd4fa0671be5250ee6f50aedf4cb05514abda2c7 # v1
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
@@ -208,12 +208,12 @@ jobs:
     steps:
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.3.0
+        uses: sigstore/cosign-installer@9614fae9e5c5eddabb09f90a270fcb487c9f7149 # v 3.3.0
         with:
           cosign-release: 'v2.2.2'
 
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@dd4fa0671be5250ee6f50aedf4cb05514abda2c7 # v1
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}

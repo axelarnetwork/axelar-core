@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
+	db "github.com/cometbft/cometbft-db"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	gogoprototypes "github.com/gogo/protobuf/types"
-	"github.com/tendermint/tendermint/libs/log"
-	db "github.com/tendermint/tm-db"
+	gogoprototypes "github.com/cosmos/gogoproto/types"
 )
 
 //go:generate moq -out ./mock/queuer.go -pkg mock . KVQueue
@@ -64,7 +64,7 @@ func noopFilter(_ codec.ProtoMarshaler) bool {
 
 // Dequeue pops the first item in queue and stores it in the given value
 func (q GeneralKVQueue) Dequeue(value codec.ProtoMarshaler) bool {
-	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
+	iter := store.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
 	return q.dequeue(value, iter, noopFilter, false)
@@ -72,7 +72,7 @@ func (q GeneralKVQueue) Dequeue(value codec.ProtoMarshaler) bool {
 
 // DequeueIf pops the first item in queue iff it matches the given filter and stores it in the given value
 func (q GeneralKVQueue) DequeueIf(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
-	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
+	iter := store.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
 	return q.dequeue(value, iter, filter, false)
@@ -80,7 +80,7 @@ func (q GeneralKVQueue) DequeueIf(value codec.ProtoMarshaler, filter func(value 
 
 // DequeueUntil pops the first item in queue that matches the given filter and stores it in the given value
 func (q GeneralKVQueue) DequeueUntil(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
-	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
+	iter := store.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
 	return q.dequeue(value, iter, filter, true)
@@ -112,7 +112,7 @@ func (q GeneralKVQueue) dequeue(value codec.ProtoMarshaler, iter db.Iterator, fi
 
 // IsEmpty returns true if the queue is empty; otherwise, false
 func (q GeneralKVQueue) IsEmpty() bool {
-	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
+	iter := store.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
 	return !iter.Valid()
@@ -120,7 +120,7 @@ func (q GeneralKVQueue) IsEmpty() bool {
 
 // Keys returns a list with the keys for the values still enqueued
 func (q GeneralKVQueue) Keys() []Key {
-	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
+	iter := store.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
 	var keys []Key
@@ -138,7 +138,7 @@ func (q GeneralKVQueue) Keys() []Key {
 func (q GeneralKVQueue) ExportState() (state QueueState) {
 	state.Items = make(map[string]QueueState_Item)
 
-	iter := sdk.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
+	iter := store.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
 
 	for ; iter.Valid(); iter.Next() {

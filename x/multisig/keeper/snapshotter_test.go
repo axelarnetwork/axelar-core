@@ -1,8 +1,10 @@
 package keeper_test
 
 import (
+	"context"
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +27,7 @@ func TestSnapshotCreator_CreateSnapshot(t *testing.T) {
 		}, 10)
 
 		staker = &mock.StakerMock{
-			GetBondedValidatorsByPowerFunc: func(ctx sdk.Context) []stakingtypes.Validator { return bondedValidators },
+			GetBondedValidatorsByPowerFunc: func(ctx context.Context) ([]stakingtypes.Validator, error) { return bondedValidators, nil },
 		}
 
 		jailedAddr     = rand2.ValAddr()
@@ -35,23 +37,23 @@ func TestSnapshotCreator_CreateSnapshot(t *testing.T) {
 
 		jailedVal = &mock2.ValidatorIMock{
 			IsJailedFunc:    func() bool { return true },
-			GetConsAddrFunc: func() (sdk.ConsAddress, error) { return sdk.ConsAddress(jailedAddr), nil },
-			GetOperatorFunc: func() sdk.ValAddress { return jailedAddr },
+			GetConsAddrFunc: func() ([]byte, error) { return sdk.ConsAddress(jailedAddr), nil },
+			GetOperatorFunc: func() string { return jailedAddr.String() },
 		}
 		tombstonedVal = &mock2.ValidatorIMock{
 			IsJailedFunc:    func() bool { return false },
-			GetConsAddrFunc: func() (sdk.ConsAddress, error) { return sdk.ConsAddress(tombstonedAddr), nil },
-			GetOperatorFunc: func() sdk.ValAddress { return tombstonedAddr },
+			GetConsAddrFunc: func() ([]byte, error) { return sdk.ConsAddress(tombstonedAddr), nil },
+			GetOperatorFunc: func() string { return tombstonedAddr.String() },
 		}
 		inactiveVal = &mock2.ValidatorIMock{
 			IsJailedFunc:    func() bool { return false },
-			GetConsAddrFunc: func() (sdk.ConsAddress, error) { return sdk.ConsAddress(inactiveAddr), nil },
-			GetOperatorFunc: func() sdk.ValAddress { return inactiveAddr },
+			GetConsAddrFunc: func() ([]byte, error) { return sdk.ConsAddress(inactiveAddr), nil },
+			GetOperatorFunc: func() string { return inactiveAddr.String() },
 		}
 		activeVal = &mock2.ValidatorIMock{
 			IsJailedFunc:    func() bool { return false },
-			GetConsAddrFunc: func() (sdk.ConsAddress, error) { return sdk.ConsAddress(activeAddr), nil },
-			GetOperatorFunc: func() sdk.ValAddress { return activeAddr },
+			GetConsAddrFunc: func() ([]byte, error) { return sdk.ConsAddress(activeAddr), nil },
+			GetOperatorFunc: func() string { return activeAddr.String() },
 		}
 
 		snapshotter = &mock.SnapshotterMock{
@@ -64,7 +66,7 @@ func TestSnapshotCreator_CreateSnapshot(t *testing.T) {
 			}}
 
 		slasher = &mock.SlasherMock{
-			IsTombstonedFunc: func(_ sdk.Context, consAddr sdk.ConsAddress) bool {
+			IsTombstonedFunc: func(_ context.Context, consAddr sdk.ConsAddress) bool {
 				return consAddr.Equals(tombstonedAddr)
 			}}
 
@@ -82,25 +84,28 @@ func TestSnapshotCreator_CreateSnapshot(t *testing.T) {
 			_ sdk.Context,
 			candidates []sdk.ValAddress,
 			filterFunc func(snapshot.ValidatorI) bool,
-			weightFunc func(consensusPower sdk.Uint) sdk.Uint,
+			weightFunc func(consensusPower math.Uint) math.Uint,
 			threshold utils.Threshold,
 		) (snapshot.Snapshot, error) {
-			assert.ElementsMatch(t, candidates, slices.Map(bondedValidators, stakingtypes.Validator.GetOperator))
+			assert.ElementsMatch(t,
+				slices.Map(candidates, func(v sdk.ValAddress) string { return v.String() }),
+				slices.Map(bondedValidators, stakingtypes.Validator.GetOperator),
+			)
 
 			assert.False(t, filterFunc(jailedVal))
 			assert.False(t, filterFunc(tombstonedVal))
 			assert.False(t, filterFunc(inactiveVal))
 			assert.True(t, filterFunc(activeVal))
 
-			assert.True(t, sdk.NewUint(5).Equal(weightFunc(sdk.NewUint(25))))
-			assert.True(t, sdk.NewUint(6).Equal(weightFunc(sdk.NewUint(36))))
-			assert.True(t, sdk.NewUint(16).Equal(weightFunc(sdk.NewUint(256))))
-			assert.True(t, sdk.NewUint(9).Equal(weightFunc(sdk.NewUint(99))))
+			assert.True(t, math.NewUint(5).Equal(weightFunc(math.NewUint(25))))
+			assert.True(t, math.NewUint(6).Equal(weightFunc(math.NewUint(36))))
+			assert.True(t, math.NewUint(16).Equal(weightFunc(math.NewUint(256))))
+			assert.True(t, math.NewUint(9).Equal(weightFunc(math.NewUint(99))))
 
 			assert.Equal(t, expectedThreshold, threshold)
 
 			return snapshot.Snapshot{}, nil
 		}
 
-	_, _ = creator.CreateSnapshot(rand2.Context(fake.NewMultiStore()), expectedThreshold)
+	_, _ = creator.CreateSnapshot(rand2.Context(fake.NewMultiStore(), t), expectedThreshold)
 }

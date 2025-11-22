@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -10,7 +11,7 @@ import (
 
 // NewCreateBurnTokensRequest is the constructor for CreateBurnTokensRequest
 func NewCreateBurnTokensRequest(sender sdk.AccAddress, chain string) *CreateBurnTokensRequest {
-	return &CreateBurnTokensRequest{Sender: sender, Chain: nexus.ChainName(utils.NormalizeString(chain))}
+	return &CreateBurnTokensRequest{Sender: sender.String(), Chain: nexus.ChainName(utils.NormalizeString(chain))}
 }
 
 // Route implements sdk.Msg
@@ -29,19 +30,14 @@ func (m CreateBurnTokensRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(bz)
 }
 
-// GetSigners implements sdk.Msg
-func (m CreateBurnTokensRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
-}
-
 // ValidateBasic implements sdk.Msg
 func (m CreateBurnTokensRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
+		return errorsmod.Wrap(err, "invalid chain")
 	}
 
 	return nil

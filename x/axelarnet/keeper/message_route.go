@@ -3,9 +3,10 @@ package keeper
 import (
 	"fmt"
 
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -29,7 +30,7 @@ func NewMessageRoute(
 
 		bz, err := types.TranslateMessage(msg, routingCtx.Payload)
 		if err != nil {
-			return sdkerrors.Wrap(err, "invalid payload")
+			return errorsmod.Wrap(err, "invalid payload")
 		}
 
 		asset, err := escrowAssetToMessageSender(ctx, feegrantK, bankK, nexusK, ibcK, stakingK, routingCtx, msg)
@@ -57,13 +58,17 @@ func escrowAssetToMessageSender(
 ) (sdk.Coin, error) {
 	switch msg.Type() {
 	case nexus.TypeGeneralMessage:
+		denom, err := stakingK.BondDenom(ctx)
+		if err != nil {
+			return sdk.Coin{}, err
+		}
 		// pure general message, take dust amount from sender to satisfy ibc transfer requirements
-		asset := sdk.NewCoin(stakingK.BondDenom(ctx), sdk.OneInt())
+		asset := sdk.NewCoin(denom, math.OneInt())
 		sender := routingCtx.Sender
 
 		if !routingCtx.FeeGranter.Empty() {
 			req := types.RouteMessageRequest{
-				Sender:     routingCtx.Sender,
+				Sender:     routingCtx.Sender.String(),
 				ID:         msg.ID,
 				Payload:    routingCtx.Payload,
 				Feegranter: routingCtx.FeeGranter,

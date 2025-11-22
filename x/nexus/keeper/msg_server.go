@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
@@ -41,12 +42,21 @@ func NewMsgServerImpl(k types.Nexus, snapshotter types.Snapshotter, slashing typ
 func (s msgServer) RegisterChainMaintainer(c context.Context, req *types.RegisterChainMaintainerRequest) (*types.RegisterChainMaintainerResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	validator := s.snapshotter.GetOperator(ctx, req.Sender)
-	if validator.Empty() {
-		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender: %s", err)
 	}
 
-	valAddr := s.staking.Validator(ctx, validator)
+	validator := s.snapshotter.GetOperator(ctx, sender)
+	if validator.Empty() {
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender)
+	}
+
+	valAddr, err := s.staking.Validator(ctx, validator)
+	if err != nil {
+		return nil, err
+	}
+
 	if valAddr == nil {
 		return nil, fmt.Errorf("account %v is not registered as a validator", validator)
 	}
@@ -93,9 +103,14 @@ func (s msgServer) RegisterChainMaintainer(c context.Context, req *types.Registe
 func (s msgServer) DeregisterChainMaintainer(c context.Context, req *types.DeregisterChainMaintainerRequest) (*types.DeregisterChainMaintainerResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	validator := s.snapshotter.GetOperator(ctx, req.Sender)
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender: %s", err)
+	}
+
+	validator := s.snapshotter.GetOperator(ctx, sender)
 	if validator.Empty() {
-		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender.String())
+		return nil, fmt.Errorf("account %v is not registered as a validator proxy", req.Sender)
 	}
 
 	for _, chainStr := range req.Chains {
@@ -234,7 +249,12 @@ func (s msgServer) isActivationThresholdMet(ctx sdk.Context, chain exported.Chai
 	}
 
 	isProxyActive := func(v snapshot.ValidatorI) bool {
-		_, isActive := s.snapshotter.GetProxy(ctx, v.GetOperator())
+		valAddress, err := sdk.ValAddressFromBech32(v.GetOperator())
+		if err != nil {
+			return false
+		}
+
+		_, isActive := s.snapshotter.GetProxy(ctx, valAddress)
 
 		return isActive
 	}
@@ -288,4 +308,15 @@ func (s msgServer) SetTransferRateLimit(c context.Context, req *types.SetTransfe
 	}
 
 	return &types.SetTransferRateLimitResponse{}, nil
+}
+
+func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsRequest) (*types.UpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := req.Params.Validate(); err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+	}
+
+	s.Nexus.SetParams(ctx, req.Params)
+	return &types.UpdateParamsResponse{}, nil
 }

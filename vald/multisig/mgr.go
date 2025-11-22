@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -49,7 +49,7 @@ func (mgr Mgr) generateKey(keyUID string) (exported.PublicKey, error) {
 		PartyUid: mgr.participant.String(),
 	})
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "failed generating key")
+		return nil, errorsmod.Wrapf(err, "failed generating key")
 	}
 
 	switch res.GetKeygenResponse().(type) {
@@ -73,7 +73,7 @@ func (mgr Mgr) sign(keyUID string, payloadHash exported.Hash, pubKey []byte) (ty
 		PubKey:    pubKey,
 	})
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "failed signing")
+		return nil, errorsmod.Wrap(err, "failed signing")
 	}
 
 	switch res.GetSignResponse().(type) {

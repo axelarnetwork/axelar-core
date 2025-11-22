@@ -135,30 +135,30 @@ message TransferRateLimitResponse { TransferRateLimit transfer_rate_limit = 1; }
 
 message TransferRateLimit {
   bytes limit = 1 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];
   google.protobuf.Duration window = 2
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
   bytes incoming = 3 [
     deprecated = true,
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];
   bytes outgoing = 4 [
     deprecated = true,
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];
   // time_left indicates the time left in the rate limit window
   google.protobuf.Duration time_left = 5
       [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
   bytes from = 6 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];
   bytes to = 7 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false
   ];
 }

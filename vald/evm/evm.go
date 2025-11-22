@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
 	errors2 "github.com/pkg/errors"
@@ -132,7 +132,7 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 	if err != nil {
 		return slices.Map(txIDs, func(_ common.Hash) results.Result[geth.Receipt] {
 			return results.FromErr[geth.Receipt](
-				sdkerrors.Wrapf(
+				errorsmod.Wrapf(
 					errors.With(err, "chain", chain.String(), "tx_ids", txIDs),
 					"cannot get transaction receipts"),
 			)
@@ -144,7 +144,7 @@ func (mgr Mgr) GetTxReceiptsIfFinalized(chain nexus.ChainName, txIDs []common.Ha
 
 			isFinalized, err := mgr.isFinalized(chain, receipt, confHeight)
 			if err != nil {
-				return results.FromErr[geth.Receipt](sdkerrors.Wrapf(errors.With(err, "chain", chain.String()),
+				return results.FromErr[geth.Receipt](errorsmod.Wrapf(errors.With(err, "chain", chain.String()),
 					"cannot determine if the transaction %s is finalized", receipt.TxHash.Hex()),
 				)
 			}

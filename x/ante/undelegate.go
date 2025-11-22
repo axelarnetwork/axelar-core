@@ -1,6 +1,7 @@
 package ante
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -32,12 +33,12 @@ func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulat
 		case *stakingtypes.MsgUndelegate:
 			valAddress, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
 			if err != nil {
-				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+				return ctx, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 			}
 
 			delegatorAddress, err := sdk.AccAddressFromBech32(msg.DelegatorAddress)
 			if err != nil {
-				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+				return ctx, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 			}
 
 			// only restrict a validator from unbonding it's self-delegation
@@ -55,14 +56,14 @@ func (d UndelegateDecorator) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulat
 				nextKeyID, idFound := d.multiSig.GetNextKeyID(ctx, chain.Name)
 				key, keyFound := d.multiSig.GetKey(ctx, nextKeyID)
 				if idFound && keyFound && !key.GetWeight(valAddress).IsZero() {
-					return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding multiSig share of %s's next key %s", valAddress, chain.Name, nextKeyID)
+					return ctx, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding multiSig share of %s's next key %s", valAddress, chain.Name, nextKeyID)
 				}
 
 				activeKeyIDs := d.multiSig.GetActiveKeyIDs(ctx, chain.Name)
 				for _, activeKeyID := range activeKeyIDs {
 					key := funcs.MustOk(d.multiSig.GetKey(ctx, activeKeyID))
 					if !key.GetWeight(valAddress).IsZero() {
-						return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding multiSig share of %s's active key %s", valAddress, chain.Name, activeKeyID)
+						return ctx, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "validator %s cannot unbond while holding multiSig share of %s's active key %s", valAddress, chain.Name, activeKeyID)
 					}
 				}
 			}

@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -45,7 +45,7 @@ func DefaultGenesisState() *GenesisState {
 // Validate checks if the genesis state is valid
 func (m GenesisState) Validate() error {
 	if err := m.Params.Validate(); err != nil {
-		return sdkerrors.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
+		return errorsmod.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
 	}
 
 	if len(m.CollectorAddress) > 0 {
@@ -56,12 +56,12 @@ func (m GenesisState) Validate() error {
 
 	for i, chain := range m.Chains {
 		if err := chain.ValidateBasic(); err != nil {
-			return getValidateError(sdkerrors.Wrap(err, fmt.Sprintf("faulty chain entry %d", i)))
+			return getValidateError(errorsmod.Wrap(err, fmt.Sprintf("faulty chain entry %d", i)))
 		}
 	}
 
 	if err := m.TransferQueue.ValidateBasic(); err != nil {
-		return getValidateError(sdkerrors.Wrapf(err, "invalid transfer queue state"))
+		return getValidateError(errorsmod.Wrapf(err, "invalid transfer queue state"))
 	}
 
 	// IBCTransfer ID should be unique
@@ -76,7 +76,7 @@ func (m GenesisState) Validate() error {
 		}
 
 		if err := t.ValidateBasic(); err != nil {
-			return getValidateError(sdkerrors.Wrapf(err, "invalid transfer %s", t.ID))
+			return getValidateError(errorsmod.Wrapf(err, "invalid transfer %s", t.ID))
 		}
 
 		transferSeen[t.ID] = true
@@ -95,7 +95,7 @@ func (m GenesisState) Validate() error {
 }
 
 func getValidateError(err error) error {
-	return sdkerrors.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
+	return errorsmod.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
 }
 
 // SortedMapKeys returns sorted map keys

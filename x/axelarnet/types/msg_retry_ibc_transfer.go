@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -10,7 +11,7 @@ import (
 // NewRetryIBCTransferRequest creates a message of type RetryIBCTransferRequest
 func NewRetryIBCTransferRequest(sender sdk.AccAddress, id nexus.TransferID) *RetryIBCTransferRequest {
 	return &RetryIBCTransferRequest{
-		Sender: sender,
+		Sender: sender.String(),
 		Chain:  nexus.ChainName(""),
 		ID:     id,
 	}
@@ -28,8 +29,8 @@ func (m RetryIBCTransferRequest) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m RetryIBCTransferRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	return nil
@@ -39,9 +40,4 @@ func (m RetryIBCTransferRequest) ValidateBasic() error {
 func (m RetryIBCTransferRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners returns the set of signers for this message
-func (m RetryIBCTransferRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

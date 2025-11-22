@@ -5,16 +5,16 @@ package mock
 
 import (
 	"context"
+	"github.com/cometbft/cometbft/libs/bytes"
+	"github.com/cometbft/cometbft/libs/log"
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
+	"github.com/cometbft/cometbft/rpc/core/types"
+	cometbfttypes "github.com/cometbft/cometbft/types"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/libs/bytes"
-	"github.com/tendermint/tendermint/libs/log"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	"github.com/tendermint/tendermint/rpc/core/types"
-	tenderminttypes "github.com/tendermint/tendermint/types"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"sync"
 )
 
@@ -52,19 +52,19 @@ var _ Client = &ClientMock{}
 //			BlockchainInfoFunc: func(ctx context.Context, minHeight int64, maxHeight int64) (*coretypes.ResultBlockchainInfo, error) {
 //				panic("mock out the BlockchainInfo method")
 //			},
-//			BroadcastEvidenceFunc: func(contextMoqParam context.Context, evidence tenderminttypes.Evidence) (*coretypes.ResultBroadcastEvidence, error) {
+//			BroadcastEvidenceFunc: func(contextMoqParam context.Context, evidence cometbfttypes.Evidence) (*coretypes.ResultBroadcastEvidence, error) {
 //				panic("mock out the BroadcastEvidence method")
 //			},
-//			BroadcastTxAsyncFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
+//			BroadcastTxAsyncFunc: func(contextMoqParam context.Context, tx cometbfttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
 //				panic("mock out the BroadcastTxAsync method")
 //			},
-//			BroadcastTxCommitFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTxCommit, error) {
+//			BroadcastTxCommitFunc: func(contextMoqParam context.Context, tx cometbfttypes.Tx) (*coretypes.ResultBroadcastTxCommit, error) {
 //				panic("mock out the BroadcastTxCommit method")
 //			},
-//			BroadcastTxSyncFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
+//			BroadcastTxSyncFunc: func(contextMoqParam context.Context, tx cometbfttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
 //				panic("mock out the BroadcastTxSync method")
 //			},
-//			CheckTxFunc: func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultCheckTx, error) {
+//			CheckTxFunc: func(contextMoqParam context.Context, tx cometbfttypes.Tx) (*coretypes.ResultCheckTx, error) {
 //				panic("mock out the CheckTx method")
 //			},
 //			CommitFunc: func(ctx context.Context, height *int64) (*coretypes.ResultCommit, error) {
@@ -84,6 +84,12 @@ var _ Client = &ClientMock{}
 //			},
 //			GenesisChunkedFunc: func(contextMoqParam context.Context, v uint) (*coretypes.ResultGenesisChunk, error) {
 //				panic("mock out the GenesisChunked method")
+//			},
+//			HeaderFunc: func(ctx context.Context, height *int64) (*coretypes.ResultHeader, error) {
+//				panic("mock out the Header method")
+//			},
+//			HeaderByHashFunc: func(ctx context.Context, hash bytes.HexBytes) (*coretypes.ResultHeader, error) {
+//				panic("mock out the HeaderByHash method")
 //			},
 //			HealthFunc: func(contextMoqParam context.Context) (*coretypes.ResultHealth, error) {
 //				panic("mock out the Health method")
@@ -180,19 +186,19 @@ type ClientMock struct {
 	BlockchainInfoFunc func(ctx context.Context, minHeight int64, maxHeight int64) (*coretypes.ResultBlockchainInfo, error)
 
 	// BroadcastEvidenceFunc mocks the BroadcastEvidence method.
-	BroadcastEvidenceFunc func(contextMoqParam context.Context, evidence tenderminttypes.Evidence) (*coretypes.ResultBroadcastEvidence, error)
+	BroadcastEvidenceFunc func(contextMoqParam context.Context, evidence cometbfttypes.Evidence) (*coretypes.ResultBroadcastEvidence, error)
 
 	// BroadcastTxAsyncFunc mocks the BroadcastTxAsync method.
-	BroadcastTxAsyncFunc func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error)
+	BroadcastTxAsyncFunc func(contextMoqParam context.Context, tx cometbfttypes.Tx) (*coretypes.ResultBroadcastTx, error)
 
 	// BroadcastTxCommitFunc mocks the BroadcastTxCommit method.
-	BroadcastTxCommitFunc func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTxCommit, error)
+	BroadcastTxCommitFunc func(contextMoqParam context.Context, tx cometbfttypes.Tx) (*coretypes.ResultBroadcastTxCommit, error)
 
 	// BroadcastTxSyncFunc mocks the BroadcastTxSync method.
-	BroadcastTxSyncFunc func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error)
+	BroadcastTxSyncFunc func(contextMoqParam context.Context, tx cometbfttypes.Tx) (*coretypes.ResultBroadcastTx, error)
 
 	// CheckTxFunc mocks the CheckTx method.
-	CheckTxFunc func(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultCheckTx, error)
+	CheckTxFunc func(contextMoqParam context.Context, tx cometbfttypes.Tx) (*coretypes.ResultCheckTx, error)
 
 	// CommitFunc mocks the Commit method.
 	CommitFunc func(ctx context.Context, height *int64) (*coretypes.ResultCommit, error)
@@ -211,6 +217,12 @@ type ClientMock struct {
 
 	// GenesisChunkedFunc mocks the GenesisChunked method.
 	GenesisChunkedFunc func(contextMoqParam context.Context, v uint) (*coretypes.ResultGenesisChunk, error)
+
+	// HeaderFunc mocks the Header method.
+	HeaderFunc func(ctx context.Context, height *int64) (*coretypes.ResultHeader, error)
+
+	// HeaderByHashFunc mocks the HeaderByHash method.
+	HeaderByHashFunc func(ctx context.Context, hash bytes.HexBytes) (*coretypes.ResultHeader, error)
 
 	// HealthFunc mocks the Health method.
 	HealthFunc func(contextMoqParam context.Context) (*coretypes.ResultHealth, error)
@@ -350,35 +362,35 @@ type ClientMock struct {
 			// ContextMoqParam is the contextMoqParam argument value.
 			ContextMoqParam context.Context
 			// Evidence is the evidence argument value.
-			Evidence tenderminttypes.Evidence
+			Evidence cometbfttypes.Evidence
 		}
 		// BroadcastTxAsync holds details about calls to the BroadcastTxAsync method.
 		BroadcastTxAsync []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
 			ContextMoqParam context.Context
 			// Tx is the tx argument value.
-			Tx tenderminttypes.Tx
+			Tx cometbfttypes.Tx
 		}
 		// BroadcastTxCommit holds details about calls to the BroadcastTxCommit method.
 		BroadcastTxCommit []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
 			ContextMoqParam context.Context
 			// Tx is the tx argument value.
-			Tx tenderminttypes.Tx
+			Tx cometbfttypes.Tx
 		}
 		// BroadcastTxSync holds details about calls to the BroadcastTxSync method.
 		BroadcastTxSync []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
 			ContextMoqParam context.Context
 			// Tx is the tx argument value.
-			Tx tenderminttypes.Tx
+			Tx cometbfttypes.Tx
 		}
 		// CheckTx holds details about calls to the CheckTx method.
 		CheckTx []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
 			ContextMoqParam context.Context
 			// Tx is the tx argument value.
-			Tx tenderminttypes.Tx
+			Tx cometbfttypes.Tx
 		}
 		// Commit holds details about calls to the Commit method.
 		Commit []struct {
@@ -415,6 +427,20 @@ type ClientMock struct {
 			ContextMoqParam context.Context
 			// V is the v argument value.
 			V uint
+		}
+		// Header holds details about calls to the Header method.
+		Header []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Height is the height argument value.
+			Height *int64
+		}
+		// HeaderByHash holds details about calls to the HeaderByHash method.
+		HeaderByHash []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Hash is the hash argument value.
+			Hash bytes.HexBytes
 		}
 		// Health holds details about calls to the Health method.
 		Health []struct {
@@ -557,6 +583,8 @@ type ClientMock struct {
 	lockDumpConsensusState   sync.RWMutex
 	lockGenesis              sync.RWMutex
 	lockGenesisChunked       sync.RWMutex
+	lockHeader               sync.RWMutex
+	lockHeaderByHash         sync.RWMutex
 	lockHealth               sync.RWMutex
 	lockIsRunning            sync.RWMutex
 	lockNetInfo              sync.RWMutex
@@ -893,13 +921,13 @@ func (mock *ClientMock) BlockchainInfoCalls() []struct {
 }
 
 // BroadcastEvidence calls BroadcastEvidenceFunc.
-func (mock *ClientMock) BroadcastEvidence(contextMoqParam context.Context, evidence tenderminttypes.Evidence) (*coretypes.ResultBroadcastEvidence, error) {
+func (mock *ClientMock) BroadcastEvidence(contextMoqParam context.Context, evidence cometbfttypes.Evidence) (*coretypes.ResultBroadcastEvidence, error) {
 	if mock.BroadcastEvidenceFunc == nil {
 		panic("ClientMock.BroadcastEvidenceFunc: method is nil but Client.BroadcastEvidence was just called")
 	}
 	callInfo := struct {
 		ContextMoqParam context.Context
-		Evidence        tenderminttypes.Evidence
+		Evidence        cometbfttypes.Evidence
 	}{
 		ContextMoqParam: contextMoqParam,
 		Evidence:        evidence,
@@ -916,11 +944,11 @@ func (mock *ClientMock) BroadcastEvidence(contextMoqParam context.Context, evide
 //	len(mockedClient.BroadcastEvidenceCalls())
 func (mock *ClientMock) BroadcastEvidenceCalls() []struct {
 	ContextMoqParam context.Context
-	Evidence        tenderminttypes.Evidence
+	Evidence        cometbfttypes.Evidence
 } {
 	var calls []struct {
 		ContextMoqParam context.Context
-		Evidence        tenderminttypes.Evidence
+		Evidence        cometbfttypes.Evidence
 	}
 	mock.lockBroadcastEvidence.RLock()
 	calls = mock.calls.BroadcastEvidence
@@ -929,13 +957,13 @@ func (mock *ClientMock) BroadcastEvidenceCalls() []struct {
 }
 
 // BroadcastTxAsync calls BroadcastTxAsyncFunc.
-func (mock *ClientMock) BroadcastTxAsync(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
+func (mock *ClientMock) BroadcastTxAsync(contextMoqParam context.Context, tx cometbfttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
 	if mock.BroadcastTxAsyncFunc == nil {
 		panic("ClientMock.BroadcastTxAsyncFunc: method is nil but Client.BroadcastTxAsync was just called")
 	}
 	callInfo := struct {
 		ContextMoqParam context.Context
-		Tx              tenderminttypes.Tx
+		Tx              cometbfttypes.Tx
 	}{
 		ContextMoqParam: contextMoqParam,
 		Tx:              tx,
@@ -952,11 +980,11 @@ func (mock *ClientMock) BroadcastTxAsync(contextMoqParam context.Context, tx ten
 //	len(mockedClient.BroadcastTxAsyncCalls())
 func (mock *ClientMock) BroadcastTxAsyncCalls() []struct {
 	ContextMoqParam context.Context
-	Tx              tenderminttypes.Tx
+	Tx              cometbfttypes.Tx
 } {
 	var calls []struct {
 		ContextMoqParam context.Context
-		Tx              tenderminttypes.Tx
+		Tx              cometbfttypes.Tx
 	}
 	mock.lockBroadcastTxAsync.RLock()
 	calls = mock.calls.BroadcastTxAsync
@@ -965,13 +993,13 @@ func (mock *ClientMock) BroadcastTxAsyncCalls() []struct {
 }
 
 // BroadcastTxCommit calls BroadcastTxCommitFunc.
-func (mock *ClientMock) BroadcastTxCommit(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTxCommit, error) {
+func (mock *ClientMock) BroadcastTxCommit(contextMoqParam context.Context, tx cometbfttypes.Tx) (*coretypes.ResultBroadcastTxCommit, error) {
 	if mock.BroadcastTxCommitFunc == nil {
 		panic("ClientMock.BroadcastTxCommitFunc: method is nil but Client.BroadcastTxCommit was just called")
 	}
 	callInfo := struct {
 		ContextMoqParam context.Context
-		Tx              tenderminttypes.Tx
+		Tx              cometbfttypes.Tx
 	}{
 		ContextMoqParam: contextMoqParam,
 		Tx:              tx,
@@ -988,11 +1016,11 @@ func (mock *ClientMock) BroadcastTxCommit(contextMoqParam context.Context, tx te
 //	len(mockedClient.BroadcastTxCommitCalls())
 func (mock *ClientMock) BroadcastTxCommitCalls() []struct {
 	ContextMoqParam context.Context
-	Tx              tenderminttypes.Tx
+	Tx              cometbfttypes.Tx
 } {
 	var calls []struct {
 		ContextMoqParam context.Context
-		Tx              tenderminttypes.Tx
+		Tx              cometbfttypes.Tx
 	}
 	mock.lockBroadcastTxCommit.RLock()
 	calls = mock.calls.BroadcastTxCommit
@@ -1001,13 +1029,13 @@ func (mock *ClientMock) BroadcastTxCommitCalls() []struct {
 }
 
 // BroadcastTxSync calls BroadcastTxSyncFunc.
-func (mock *ClientMock) BroadcastTxSync(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
+func (mock *ClientMock) BroadcastTxSync(contextMoqParam context.Context, tx cometbfttypes.Tx) (*coretypes.ResultBroadcastTx, error) {
 	if mock.BroadcastTxSyncFunc == nil {
 		panic("ClientMock.BroadcastTxSyncFunc: method is nil but Client.BroadcastTxSync was just called")
 	}
 	callInfo := struct {
 		ContextMoqParam context.Context
-		Tx              tenderminttypes.Tx
+		Tx              cometbfttypes.Tx
 	}{
 		ContextMoqParam: contextMoqParam,
 		Tx:              tx,
@@ -1024,11 +1052,11 @@ func (mock *ClientMock) BroadcastTxSync(contextMoqParam context.Context, tx tend
 //	len(mockedClient.BroadcastTxSyncCalls())
 func (mock *ClientMock) BroadcastTxSyncCalls() []struct {
 	ContextMoqParam context.Context
-	Tx              tenderminttypes.Tx
+	Tx              cometbfttypes.Tx
 } {
 	var calls []struct {
 		ContextMoqParam context.Context
-		Tx              tenderminttypes.Tx
+		Tx              cometbfttypes.Tx
 	}
 	mock.lockBroadcastTxSync.RLock()
 	calls = mock.calls.BroadcastTxSync
@@ -1037,13 +1065,13 @@ func (mock *ClientMock) BroadcastTxSyncCalls() []struct {
 }
 
 // CheckTx calls CheckTxFunc.
-func (mock *ClientMock) CheckTx(contextMoqParam context.Context, tx tenderminttypes.Tx) (*coretypes.ResultCheckTx, error) {
+func (mock *ClientMock) CheckTx(contextMoqParam context.Context, tx cometbfttypes.Tx) (*coretypes.ResultCheckTx, error) {
 	if mock.CheckTxFunc == nil {
 		panic("ClientMock.CheckTxFunc: method is nil but Client.CheckTx was just called")
 	}
 	callInfo := struct {
 		ContextMoqParam context.Context
-		Tx              tenderminttypes.Tx
+		Tx              cometbfttypes.Tx
 	}{
 		ContextMoqParam: contextMoqParam,
 		Tx:              tx,
@@ -1060,11 +1088,11 @@ func (mock *ClientMock) CheckTx(contextMoqParam context.Context, tx tendermintty
 //	len(mockedClient.CheckTxCalls())
 func (mock *ClientMock) CheckTxCalls() []struct {
 	ContextMoqParam context.Context
-	Tx              tenderminttypes.Tx
+	Tx              cometbfttypes.Tx
 } {
 	var calls []struct {
 		ContextMoqParam context.Context
-		Tx              tenderminttypes.Tx
+		Tx              cometbfttypes.Tx
 	}
 	mock.lockCheckTx.RLock()
 	calls = mock.calls.CheckTx
@@ -1273,6 +1301,78 @@ func (mock *ClientMock) GenesisChunkedCalls() []struct {
 	mock.lockGenesisChunked.RLock()
 	calls = mock.calls.GenesisChunked
 	mock.lockGenesisChunked.RUnlock()
+	return calls
+}
+
+// Header calls HeaderFunc.
+func (mock *ClientMock) Header(ctx context.Context, height *int64) (*coretypes.ResultHeader, error) {
+	if mock.HeaderFunc == nil {
+		panic("ClientMock.HeaderFunc: method is nil but Client.Header was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Height *int64
+	}{
+		Ctx:    ctx,
+		Height: height,
+	}
+	mock.lockHeader.Lock()
+	mock.calls.Header = append(mock.calls.Header, callInfo)
+	mock.lockHeader.Unlock()
+	return mock.HeaderFunc(ctx, height)
+}
+
+// HeaderCalls gets all the calls that were made to Header.
+// Check the length with:
+//
+//	len(mockedClient.HeaderCalls())
+func (mock *ClientMock) HeaderCalls() []struct {
+	Ctx    context.Context
+	Height *int64
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Height *int64
+	}
+	mock.lockHeader.RLock()
+	calls = mock.calls.Header
+	mock.lockHeader.RUnlock()
+	return calls
+}
+
+// HeaderByHash calls HeaderByHashFunc.
+func (mock *ClientMock) HeaderByHash(ctx context.Context, hash bytes.HexBytes) (*coretypes.ResultHeader, error) {
+	if mock.HeaderByHashFunc == nil {
+		panic("ClientMock.HeaderByHashFunc: method is nil but Client.HeaderByHash was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Hash bytes.HexBytes
+	}{
+		Ctx:  ctx,
+		Hash: hash,
+	}
+	mock.lockHeaderByHash.Lock()
+	mock.calls.HeaderByHash = append(mock.calls.HeaderByHash, callInfo)
+	mock.lockHeaderByHash.Unlock()
+	return mock.HeaderByHashFunc(ctx, hash)
+}
+
+// HeaderByHashCalls gets all the calls that were made to HeaderByHash.
+// Check the length with:
+//
+//	len(mockedClient.HeaderByHashCalls())
+func (mock *ClientMock) HeaderByHashCalls() []struct {
+	Ctx  context.Context
+	Hash bytes.HexBytes
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Hash bytes.HexBytes
+	}
+	mock.lockHeaderByHash.RLock()
+	calls = mock.calls.HeaderByHash
+	mock.lockHeaderByHash.RUnlock()
 	return calls
 }
 
@@ -2203,6 +2303,9 @@ var _ Keyring = &KeyringMock{}
 //
 //		// make and configure a mocked Keyring
 //		mockedKeyring := &KeyringMock{
+//			BackendFunc: func() string {
+//				panic("mock out the Backend method")
+//			},
 //			DeleteFunc: func(uid string) error {
 //				panic("mock out the Delete method")
 //			},
@@ -2224,37 +2327,46 @@ var _ Keyring = &KeyringMock{}
 //			ImportPrivKeyFunc: func(uid string, armor string, passphrase string) error {
 //				panic("mock out the ImportPrivKey method")
 //			},
+//			ImportPrivKeyHexFunc: func(uid string, privKey string, algoStr string) error {
+//				panic("mock out the ImportPrivKeyHex method")
+//			},
 //			ImportPubKeyFunc: func(uid string, armor string) error {
 //				panic("mock out the ImportPubKey method")
 //			},
-//			KeyFunc: func(uid string) (keyring.Info, error) {
+//			KeyFunc: func(uid string) (*keyring.Record, error) {
 //				panic("mock out the Key method")
 //			},
-//			KeyByAddressFunc: func(address sdk.Address) (keyring.Info, error) {
+//			KeyByAddressFunc: func(address sdk.Address) (*keyring.Record, error) {
 //				panic("mock out the KeyByAddress method")
 //			},
-//			ListFunc: func() ([]keyring.Info, error) {
+//			ListFunc: func() ([]*keyring.Record, error) {
 //				panic("mock out the List method")
 //			},
-//			NewAccountFunc: func(uid string, mnemonic string, bip39Passphrase string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error) {
+//			MigrateAllFunc: func() ([]*keyring.Record, error) {
+//				panic("mock out the MigrateAll method")
+//			},
+//			NewAccountFunc: func(uid string, mnemonic string, bip39Passphrase string, hdPath string, algo keyring.SignatureAlgo) (*keyring.Record, error) {
 //				panic("mock out the NewAccount method")
 //			},
-//			NewMnemonicFunc: func(uid string, language keyring.Language, hdPath string, bip39Passphrase string, algo keyring.SignatureAlgo) (keyring.Info, string, error) {
+//			NewMnemonicFunc: func(uid string, language keyring.Language, hdPath string, bip39Passphrase string, algo keyring.SignatureAlgo) (*keyring.Record, string, error) {
 //				panic("mock out the NewMnemonic method")
 //			},
-//			SaveLedgerKeyFunc: func(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (keyring.Info, error) {
+//			RenameFunc: func(from string, to string) error {
+//				panic("mock out the Rename method")
+//			},
+//			SaveLedgerKeyFunc: func(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (*keyring.Record, error) {
 //				panic("mock out the SaveLedgerKey method")
 //			},
-//			SaveMultisigFunc: func(uid string, pubkey cryptotypes.PubKey) (keyring.Info, error) {
+//			SaveMultisigFunc: func(uid string, pubkey cryptotypes.PubKey) (*keyring.Record, error) {
 //				panic("mock out the SaveMultisig method")
 //			},
-//			SavePubKeyFunc: func(uid string, pubkey cryptotypes.PubKey, algo hd.PubKeyType) (keyring.Info, error) {
-//				panic("mock out the SavePubKey method")
+//			SaveOfflineKeyFunc: func(uid string, pubkey cryptotypes.PubKey) (*keyring.Record, error) {
+//				panic("mock out the SaveOfflineKey method")
 //			},
-//			SignFunc: func(uid string, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+//			SignFunc: func(uid string, msg []byte, signMode signing.SignMode) ([]byte, cryptotypes.PubKey, error) {
 //				panic("mock out the Sign method")
 //			},
-//			SignByAddressFunc: func(address sdk.Address, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+//			SignByAddressFunc: func(address sdk.Address, msg []byte, signMode signing.SignMode) ([]byte, cryptotypes.PubKey, error) {
 //				panic("mock out the SignByAddress method")
 //			},
 //			SupportedAlgorithmsFunc: func() (keyring.SigningAlgoList, keyring.SigningAlgoList) {
@@ -2267,6 +2379,9 @@ var _ Keyring = &KeyringMock{}
 //
 //	}
 type KeyringMock struct {
+	// BackendFunc mocks the Backend method.
+	BackendFunc func() string
+
 	// DeleteFunc mocks the Delete method.
 	DeleteFunc func(uid string) error
 
@@ -2288,44 +2403,56 @@ type KeyringMock struct {
 	// ImportPrivKeyFunc mocks the ImportPrivKey method.
 	ImportPrivKeyFunc func(uid string, armor string, passphrase string) error
 
+	// ImportPrivKeyHexFunc mocks the ImportPrivKeyHex method.
+	ImportPrivKeyHexFunc func(uid string, privKey string, algoStr string) error
+
 	// ImportPubKeyFunc mocks the ImportPubKey method.
 	ImportPubKeyFunc func(uid string, armor string) error
 
 	// KeyFunc mocks the Key method.
-	KeyFunc func(uid string) (keyring.Info, error)
+	KeyFunc func(uid string) (*keyring.Record, error)
 
 	// KeyByAddressFunc mocks the KeyByAddress method.
-	KeyByAddressFunc func(address sdk.Address) (keyring.Info, error)
+	KeyByAddressFunc func(address sdk.Address) (*keyring.Record, error)
 
 	// ListFunc mocks the List method.
-	ListFunc func() ([]keyring.Info, error)
+	ListFunc func() ([]*keyring.Record, error)
+
+	// MigrateAllFunc mocks the MigrateAll method.
+	MigrateAllFunc func() ([]*keyring.Record, error)
 
 	// NewAccountFunc mocks the NewAccount method.
-	NewAccountFunc func(uid string, mnemonic string, bip39Passphrase string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error)
+	NewAccountFunc func(uid string, mnemonic string, bip39Passphrase string, hdPath string, algo keyring.SignatureAlgo) (*keyring.Record, error)
 
 	// NewMnemonicFunc mocks the NewMnemonic method.
-	NewMnemonicFunc func(uid string, language keyring.Language, hdPath string, bip39Passphrase string, algo keyring.SignatureAlgo) (keyring.Info, string, error)
+	NewMnemonicFunc func(uid string, language keyring.Language, hdPath string, bip39Passphrase string, algo keyring.SignatureAlgo) (*keyring.Record, string, error)
+
+	// RenameFunc mocks the Rename method.
+	RenameFunc func(from string, to string) error
 
 	// SaveLedgerKeyFunc mocks the SaveLedgerKey method.
-	SaveLedgerKeyFunc func(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (keyring.Info, error)
+	SaveLedgerKeyFunc func(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (*keyring.Record, error)
 
 	// SaveMultisigFunc mocks the SaveMultisig method.
-	SaveMultisigFunc func(uid string, pubkey cryptotypes.PubKey) (keyring.Info, error)
+	SaveMultisigFunc func(uid string, pubkey cryptotypes.PubKey) (*keyring.Record, error)
 
-	// SavePubKeyFunc mocks the SavePubKey method.
-	SavePubKeyFunc func(uid string, pubkey cryptotypes.PubKey, algo hd.PubKeyType) (keyring.Info, error)
+	// SaveOfflineKeyFunc mocks the SaveOfflineKey method.
+	SaveOfflineKeyFunc func(uid string, pubkey cryptotypes.PubKey) (*keyring.Record, error)
 
 	// SignFunc mocks the Sign method.
-	SignFunc func(uid string, msg []byte) ([]byte, cryptotypes.PubKey, error)
+	SignFunc func(uid string, msg []byte, signMode signing.SignMode) ([]byte, cryptotypes.PubKey, error)
 
 	// SignByAddressFunc mocks the SignByAddress method.
-	SignByAddressFunc func(address sdk.Address, msg []byte) ([]byte, cryptotypes.PubKey, error)
+	SignByAddressFunc func(address sdk.Address, msg []byte, signMode signing.SignMode) ([]byte, cryptotypes.PubKey, error)
 
 	// SupportedAlgorithmsFunc mocks the SupportedAlgorithms method.
 	SupportedAlgorithmsFunc func() (keyring.SigningAlgoList, keyring.SigningAlgoList)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// Backend holds details about calls to the Backend method.
+		Backend []struct {
+		}
 		// Delete holds details about calls to the Delete method.
 		Delete []struct {
 			// UID is the uid argument value.
@@ -2369,6 +2496,15 @@ type KeyringMock struct {
 			// Passphrase is the passphrase argument value.
 			Passphrase string
 		}
+		// ImportPrivKeyHex holds details about calls to the ImportPrivKeyHex method.
+		ImportPrivKeyHex []struct {
+			// UID is the uid argument value.
+			UID string
+			// PrivKey is the privKey argument value.
+			PrivKey string
+			// AlgoStr is the algoStr argument value.
+			AlgoStr string
+		}
 		// ImportPubKey holds details about calls to the ImportPubKey method.
 		ImportPubKey []struct {
 			// UID is the uid argument value.
@@ -2388,6 +2524,9 @@ type KeyringMock struct {
 		}
 		// List holds details about calls to the List method.
 		List []struct {
+		}
+		// MigrateAll holds details about calls to the MigrateAll method.
+		MigrateAll []struct {
 		}
 		// NewAccount holds details about calls to the NewAccount method.
 		NewAccount []struct {
@@ -2415,6 +2554,13 @@ type KeyringMock struct {
 			// Algo is the algo argument value.
 			Algo keyring.SignatureAlgo
 		}
+		// Rename holds details about calls to the Rename method.
+		Rename []struct {
+			// From is the from argument value.
+			From string
+			// To is the to argument value.
+			To string
+		}
 		// SaveLedgerKey holds details about calls to the SaveLedgerKey method.
 		SaveLedgerKey []struct {
 			// UID is the uid argument value.
@@ -2437,14 +2583,12 @@ type KeyringMock struct {
 			// Pubkey is the pubkey argument value.
 			Pubkey cryptotypes.PubKey
 		}
-		// SavePubKey holds details about calls to the SavePubKey method.
-		SavePubKey []struct {
+		// SaveOfflineKey holds details about calls to the SaveOfflineKey method.
+		SaveOfflineKey []struct {
 			// UID is the uid argument value.
 			UID string
 			// Pubkey is the pubkey argument value.
 			Pubkey cryptotypes.PubKey
-			// Algo is the algo argument value.
-			Algo hd.PubKeyType
 		}
 		// Sign holds details about calls to the Sign method.
 		Sign []struct {
@@ -2452,6 +2596,8 @@ type KeyringMock struct {
 			UID string
 			// Msg is the msg argument value.
 			Msg []byte
+			// SignMode is the signMode argument value.
+			SignMode signing.SignMode
 		}
 		// SignByAddress holds details about calls to the SignByAddress method.
 		SignByAddress []struct {
@@ -2459,11 +2605,14 @@ type KeyringMock struct {
 			Address sdk.Address
 			// Msg is the msg argument value.
 			Msg []byte
+			// SignMode is the signMode argument value.
+			SignMode signing.SignMode
 		}
 		// SupportedAlgorithms holds details about calls to the SupportedAlgorithms method.
 		SupportedAlgorithms []struct {
 		}
 	}
+	lockBackend                     sync.RWMutex
 	lockDelete                      sync.RWMutex
 	lockDeleteByAddress             sync.RWMutex
 	lockExportPrivKeyArmor          sync.RWMutex
@@ -2471,18 +2620,48 @@ type KeyringMock struct {
 	lockExportPubKeyArmor           sync.RWMutex
 	lockExportPubKeyArmorByAddress  sync.RWMutex
 	lockImportPrivKey               sync.RWMutex
+	lockImportPrivKeyHex            sync.RWMutex
 	lockImportPubKey                sync.RWMutex
 	lockKey                         sync.RWMutex
 	lockKeyByAddress                sync.RWMutex
 	lockList                        sync.RWMutex
+	lockMigrateAll                  sync.RWMutex
 	lockNewAccount                  sync.RWMutex
 	lockNewMnemonic                 sync.RWMutex
+	lockRename                      sync.RWMutex
 	lockSaveLedgerKey               sync.RWMutex
 	lockSaveMultisig                sync.RWMutex
-	lockSavePubKey                  sync.RWMutex
+	lockSaveOfflineKey              sync.RWMutex
 	lockSign                        sync.RWMutex
 	lockSignByAddress               sync.RWMutex
 	lockSupportedAlgorithms         sync.RWMutex
+}
+
+// Backend calls BackendFunc.
+func (mock *KeyringMock) Backend() string {
+	if mock.BackendFunc == nil {
+		panic("KeyringMock.BackendFunc: method is nil but Keyring.Backend was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockBackend.Lock()
+	mock.calls.Backend = append(mock.calls.Backend, callInfo)
+	mock.lockBackend.Unlock()
+	return mock.BackendFunc()
+}
+
+// BackendCalls gets all the calls that were made to Backend.
+// Check the length with:
+//
+//	len(mockedKeyring.BackendCalls())
+func (mock *KeyringMock) BackendCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockBackend.RLock()
+	calls = mock.calls.Backend
+	mock.lockBackend.RUnlock()
+	return calls
 }
 
 // Delete calls DeleteFunc.
@@ -2725,6 +2904,46 @@ func (mock *KeyringMock) ImportPrivKeyCalls() []struct {
 	return calls
 }
 
+// ImportPrivKeyHex calls ImportPrivKeyHexFunc.
+func (mock *KeyringMock) ImportPrivKeyHex(uid string, privKey string, algoStr string) error {
+	if mock.ImportPrivKeyHexFunc == nil {
+		panic("KeyringMock.ImportPrivKeyHexFunc: method is nil but Keyring.ImportPrivKeyHex was just called")
+	}
+	callInfo := struct {
+		UID     string
+		PrivKey string
+		AlgoStr string
+	}{
+		UID:     uid,
+		PrivKey: privKey,
+		AlgoStr: algoStr,
+	}
+	mock.lockImportPrivKeyHex.Lock()
+	mock.calls.ImportPrivKeyHex = append(mock.calls.ImportPrivKeyHex, callInfo)
+	mock.lockImportPrivKeyHex.Unlock()
+	return mock.ImportPrivKeyHexFunc(uid, privKey, algoStr)
+}
+
+// ImportPrivKeyHexCalls gets all the calls that were made to ImportPrivKeyHex.
+// Check the length with:
+//
+//	len(mockedKeyring.ImportPrivKeyHexCalls())
+func (mock *KeyringMock) ImportPrivKeyHexCalls() []struct {
+	UID     string
+	PrivKey string
+	AlgoStr string
+} {
+	var calls []struct {
+		UID     string
+		PrivKey string
+		AlgoStr string
+	}
+	mock.lockImportPrivKeyHex.RLock()
+	calls = mock.calls.ImportPrivKeyHex
+	mock.lockImportPrivKeyHex.RUnlock()
+	return calls
+}
+
 // ImportPubKey calls ImportPubKeyFunc.
 func (mock *KeyringMock) ImportPubKey(uid string, armor string) error {
 	if mock.ImportPubKeyFunc == nil {
@@ -2762,7 +2981,7 @@ func (mock *KeyringMock) ImportPubKeyCalls() []struct {
 }
 
 // Key calls KeyFunc.
-func (mock *KeyringMock) Key(uid string) (keyring.Info, error) {
+func (mock *KeyringMock) Key(uid string) (*keyring.Record, error) {
 	if mock.KeyFunc == nil {
 		panic("KeyringMock.KeyFunc: method is nil but Keyring.Key was just called")
 	}
@@ -2794,7 +3013,7 @@ func (mock *KeyringMock) KeyCalls() []struct {
 }
 
 // KeyByAddress calls KeyByAddressFunc.
-func (mock *KeyringMock) KeyByAddress(address sdk.Address) (keyring.Info, error) {
+func (mock *KeyringMock) KeyByAddress(address sdk.Address) (*keyring.Record, error) {
 	if mock.KeyByAddressFunc == nil {
 		panic("KeyringMock.KeyByAddressFunc: method is nil but Keyring.KeyByAddress was just called")
 	}
@@ -2826,7 +3045,7 @@ func (mock *KeyringMock) KeyByAddressCalls() []struct {
 }
 
 // List calls ListFunc.
-func (mock *KeyringMock) List() ([]keyring.Info, error) {
+func (mock *KeyringMock) List() ([]*keyring.Record, error) {
 	if mock.ListFunc == nil {
 		panic("KeyringMock.ListFunc: method is nil but Keyring.List was just called")
 	}
@@ -2852,8 +3071,35 @@ func (mock *KeyringMock) ListCalls() []struct {
 	return calls
 }
 
+// MigrateAll calls MigrateAllFunc.
+func (mock *KeyringMock) MigrateAll() ([]*keyring.Record, error) {
+	if mock.MigrateAllFunc == nil {
+		panic("KeyringMock.MigrateAllFunc: method is nil but Keyring.MigrateAll was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockMigrateAll.Lock()
+	mock.calls.MigrateAll = append(mock.calls.MigrateAll, callInfo)
+	mock.lockMigrateAll.Unlock()
+	return mock.MigrateAllFunc()
+}
+
+// MigrateAllCalls gets all the calls that were made to MigrateAll.
+// Check the length with:
+//
+//	len(mockedKeyring.MigrateAllCalls())
+func (mock *KeyringMock) MigrateAllCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockMigrateAll.RLock()
+	calls = mock.calls.MigrateAll
+	mock.lockMigrateAll.RUnlock()
+	return calls
+}
+
 // NewAccount calls NewAccountFunc.
-func (mock *KeyringMock) NewAccount(uid string, mnemonic string, bip39Passphrase string, hdPath string, algo keyring.SignatureAlgo) (keyring.Info, error) {
+func (mock *KeyringMock) NewAccount(uid string, mnemonic string, bip39Passphrase string, hdPath string, algo keyring.SignatureAlgo) (*keyring.Record, error) {
 	if mock.NewAccountFunc == nil {
 		panic("KeyringMock.NewAccountFunc: method is nil but Keyring.NewAccount was just called")
 	}
@@ -2901,7 +3147,7 @@ func (mock *KeyringMock) NewAccountCalls() []struct {
 }
 
 // NewMnemonic calls NewMnemonicFunc.
-func (mock *KeyringMock) NewMnemonic(uid string, language keyring.Language, hdPath string, bip39Passphrase string, algo keyring.SignatureAlgo) (keyring.Info, string, error) {
+func (mock *KeyringMock) NewMnemonic(uid string, language keyring.Language, hdPath string, bip39Passphrase string, algo keyring.SignatureAlgo) (*keyring.Record, string, error) {
 	if mock.NewMnemonicFunc == nil {
 		panic("KeyringMock.NewMnemonicFunc: method is nil but Keyring.NewMnemonic was just called")
 	}
@@ -2948,8 +3194,44 @@ func (mock *KeyringMock) NewMnemonicCalls() []struct {
 	return calls
 }
 
+// Rename calls RenameFunc.
+func (mock *KeyringMock) Rename(from string, to string) error {
+	if mock.RenameFunc == nil {
+		panic("KeyringMock.RenameFunc: method is nil but Keyring.Rename was just called")
+	}
+	callInfo := struct {
+		From string
+		To   string
+	}{
+		From: from,
+		To:   to,
+	}
+	mock.lockRename.Lock()
+	mock.calls.Rename = append(mock.calls.Rename, callInfo)
+	mock.lockRename.Unlock()
+	return mock.RenameFunc(from, to)
+}
+
+// RenameCalls gets all the calls that were made to Rename.
+// Check the length with:
+//
+//	len(mockedKeyring.RenameCalls())
+func (mock *KeyringMock) RenameCalls() []struct {
+	From string
+	To   string
+} {
+	var calls []struct {
+		From string
+		To   string
+	}
+	mock.lockRename.RLock()
+	calls = mock.calls.Rename
+	mock.lockRename.RUnlock()
+	return calls
+}
+
 // SaveLedgerKey calls SaveLedgerKeyFunc.
-func (mock *KeyringMock) SaveLedgerKey(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (keyring.Info, error) {
+func (mock *KeyringMock) SaveLedgerKey(uid string, algo keyring.SignatureAlgo, hrp string, coinType uint32, account uint32, index uint32) (*keyring.Record, error) {
 	if mock.SaveLedgerKeyFunc == nil {
 		panic("KeyringMock.SaveLedgerKeyFunc: method is nil but Keyring.SaveLedgerKey was just called")
 	}
@@ -3001,7 +3283,7 @@ func (mock *KeyringMock) SaveLedgerKeyCalls() []struct {
 }
 
 // SaveMultisig calls SaveMultisigFunc.
-func (mock *KeyringMock) SaveMultisig(uid string, pubkey cryptotypes.PubKey) (keyring.Info, error) {
+func (mock *KeyringMock) SaveMultisig(uid string, pubkey cryptotypes.PubKey) (*keyring.Record, error) {
 	if mock.SaveMultisigFunc == nil {
 		panic("KeyringMock.SaveMultisigFunc: method is nil but Keyring.SaveMultisig was just called")
 	}
@@ -3036,62 +3318,60 @@ func (mock *KeyringMock) SaveMultisigCalls() []struct {
 	return calls
 }
 
-// SavePubKey calls SavePubKeyFunc.
-func (mock *KeyringMock) SavePubKey(uid string, pubkey cryptotypes.PubKey, algo hd.PubKeyType) (keyring.Info, error) {
-	if mock.SavePubKeyFunc == nil {
-		panic("KeyringMock.SavePubKeyFunc: method is nil but Keyring.SavePubKey was just called")
+// SaveOfflineKey calls SaveOfflineKeyFunc.
+func (mock *KeyringMock) SaveOfflineKey(uid string, pubkey cryptotypes.PubKey) (*keyring.Record, error) {
+	if mock.SaveOfflineKeyFunc == nil {
+		panic("KeyringMock.SaveOfflineKeyFunc: method is nil but Keyring.SaveOfflineKey was just called")
 	}
 	callInfo := struct {
 		UID    string
 		Pubkey cryptotypes.PubKey
-		Algo   hd.PubKeyType
 	}{
 		UID:    uid,
 		Pubkey: pubkey,
-		Algo:   algo,
 	}
-	mock.lockSavePubKey.Lock()
-	mock.calls.SavePubKey = append(mock.calls.SavePubKey, callInfo)
-	mock.lockSavePubKey.Unlock()
-	return mock.SavePubKeyFunc(uid, pubkey, algo)
+	mock.lockSaveOfflineKey.Lock()
+	mock.calls.SaveOfflineKey = append(mock.calls.SaveOfflineKey, callInfo)
+	mock.lockSaveOfflineKey.Unlock()
+	return mock.SaveOfflineKeyFunc(uid, pubkey)
 }
 
-// SavePubKeyCalls gets all the calls that were made to SavePubKey.
+// SaveOfflineKeyCalls gets all the calls that were made to SaveOfflineKey.
 // Check the length with:
 //
-//	len(mockedKeyring.SavePubKeyCalls())
-func (mock *KeyringMock) SavePubKeyCalls() []struct {
+//	len(mockedKeyring.SaveOfflineKeyCalls())
+func (mock *KeyringMock) SaveOfflineKeyCalls() []struct {
 	UID    string
 	Pubkey cryptotypes.PubKey
-	Algo   hd.PubKeyType
 } {
 	var calls []struct {
 		UID    string
 		Pubkey cryptotypes.PubKey
-		Algo   hd.PubKeyType
 	}
-	mock.lockSavePubKey.RLock()
-	calls = mock.calls.SavePubKey
-	mock.lockSavePubKey.RUnlock()
+	mock.lockSaveOfflineKey.RLock()
+	calls = mock.calls.SaveOfflineKey
+	mock.lockSaveOfflineKey.RUnlock()
 	return calls
 }
 
 // Sign calls SignFunc.
-func (mock *KeyringMock) Sign(uid string, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+func (mock *KeyringMock) Sign(uid string, msg []byte, signMode signing.SignMode) ([]byte, cryptotypes.PubKey, error) {
 	if mock.SignFunc == nil {
 		panic("KeyringMock.SignFunc: method is nil but Keyring.Sign was just called")
 	}
 	callInfo := struct {
-		UID string
-		Msg []byte
+		UID      string
+		Msg      []byte
+		SignMode signing.SignMode
 	}{
-		UID: uid,
-		Msg: msg,
+		UID:      uid,
+		Msg:      msg,
+		SignMode: signMode,
 	}
 	mock.lockSign.Lock()
 	mock.calls.Sign = append(mock.calls.Sign, callInfo)
 	mock.lockSign.Unlock()
-	return mock.SignFunc(uid, msg)
+	return mock.SignFunc(uid, msg, signMode)
 }
 
 // SignCalls gets all the calls that were made to Sign.
@@ -3099,12 +3379,14 @@ func (mock *KeyringMock) Sign(uid string, msg []byte) ([]byte, cryptotypes.PubKe
 //
 //	len(mockedKeyring.SignCalls())
 func (mock *KeyringMock) SignCalls() []struct {
-	UID string
-	Msg []byte
+	UID      string
+	Msg      []byte
+	SignMode signing.SignMode
 } {
 	var calls []struct {
-		UID string
-		Msg []byte
+		UID      string
+		Msg      []byte
+		SignMode signing.SignMode
 	}
 	mock.lockSign.RLock()
 	calls = mock.calls.Sign
@@ -3113,21 +3395,23 @@ func (mock *KeyringMock) SignCalls() []struct {
 }
 
 // SignByAddress calls SignByAddressFunc.
-func (mock *KeyringMock) SignByAddress(address sdk.Address, msg []byte) ([]byte, cryptotypes.PubKey, error) {
+func (mock *KeyringMock) SignByAddress(address sdk.Address, msg []byte, signMode signing.SignMode) ([]byte, cryptotypes.PubKey, error) {
 	if mock.SignByAddressFunc == nil {
 		panic("KeyringMock.SignByAddressFunc: method is nil but Keyring.SignByAddress was just called")
 	}
 	callInfo := struct {
-		Address sdk.Address
-		Msg     []byte
+		Address  sdk.Address
+		Msg      []byte
+		SignMode signing.SignMode
 	}{
-		Address: address,
-		Msg:     msg,
+		Address:  address,
+		Msg:      msg,
+		SignMode: signMode,
 	}
 	mock.lockSignByAddress.Lock()
 	mock.calls.SignByAddress = append(mock.calls.SignByAddress, callInfo)
 	mock.lockSignByAddress.Unlock()
-	return mock.SignByAddressFunc(address, msg)
+	return mock.SignByAddressFunc(address, msg, signMode)
 }
 
 // SignByAddressCalls gets all the calls that were made to SignByAddress.
@@ -3135,12 +3419,14 @@ func (mock *KeyringMock) SignByAddress(address sdk.Address, msg []byte) ([]byte,
 //
 //	len(mockedKeyring.SignByAddressCalls())
 func (mock *KeyringMock) SignByAddressCalls() []struct {
-	Address sdk.Address
-	Msg     []byte
+	Address  sdk.Address
+	Msg      []byte
+	SignMode signing.SignMode
 } {
 	var calls []struct {
-		Address sdk.Address
-		Msg     []byte
+		Address  sdk.Address
+		Msg      []byte
+		SignMode signing.SignMode
 	}
 	mock.lockSignByAddress.RLock()
 	calls = mock.calls.SignByAddress
@@ -3172,249 +3458,5 @@ func (mock *KeyringMock) SupportedAlgorithmsCalls() []struct {
 	mock.lockSupportedAlgorithms.RLock()
 	calls = mock.calls.SupportedAlgorithms
 	mock.lockSupportedAlgorithms.RUnlock()
-	return calls
-}
-
-// Ensure, that InfoMock does implement Info.
-// If this is not the case, regenerate this file with moq.
-var _ Info = &InfoMock{}
-
-// InfoMock is a mock implementation of Info.
-//
-//	func TestSomethingThatUsesInfo(t *testing.T) {
-//
-//		// make and configure a mocked Info
-//		mockedInfo := &InfoMock{
-//			GetAddressFunc: func() sdk.AccAddress {
-//				panic("mock out the GetAddress method")
-//			},
-//			GetAlgoFunc: func() hd.PubKeyType {
-//				panic("mock out the GetAlgo method")
-//			},
-//			GetNameFunc: func() string {
-//				panic("mock out the GetName method")
-//			},
-//			GetPathFunc: func() (*hd.BIP44Params, error) {
-//				panic("mock out the GetPath method")
-//			},
-//			GetPubKeyFunc: func() cryptotypes.PubKey {
-//				panic("mock out the GetPubKey method")
-//			},
-//			GetTypeFunc: func() keyring.KeyType {
-//				panic("mock out the GetType method")
-//			},
-//		}
-//
-//		// use mockedInfo in code that requires Info
-//		// and then make assertions.
-//
-//	}
-type InfoMock struct {
-	// GetAddressFunc mocks the GetAddress method.
-	GetAddressFunc func() sdk.AccAddress
-
-	// GetAlgoFunc mocks the GetAlgo method.
-	GetAlgoFunc func() hd.PubKeyType
-
-	// GetNameFunc mocks the GetName method.
-	GetNameFunc func() string
-
-	// GetPathFunc mocks the GetPath method.
-	GetPathFunc func() (*hd.BIP44Params, error)
-
-	// GetPubKeyFunc mocks the GetPubKey method.
-	GetPubKeyFunc func() cryptotypes.PubKey
-
-	// GetTypeFunc mocks the GetType method.
-	GetTypeFunc func() keyring.KeyType
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// GetAddress holds details about calls to the GetAddress method.
-		GetAddress []struct {
-		}
-		// GetAlgo holds details about calls to the GetAlgo method.
-		GetAlgo []struct {
-		}
-		// GetName holds details about calls to the GetName method.
-		GetName []struct {
-		}
-		// GetPath holds details about calls to the GetPath method.
-		GetPath []struct {
-		}
-		// GetPubKey holds details about calls to the GetPubKey method.
-		GetPubKey []struct {
-		}
-		// GetType holds details about calls to the GetType method.
-		GetType []struct {
-		}
-	}
-	lockGetAddress sync.RWMutex
-	lockGetAlgo    sync.RWMutex
-	lockGetName    sync.RWMutex
-	lockGetPath    sync.RWMutex
-	lockGetPubKey  sync.RWMutex
-	lockGetType    sync.RWMutex
-}
-
-// GetAddress calls GetAddressFunc.
-func (mock *InfoMock) GetAddress() sdk.AccAddress {
-	if mock.GetAddressFunc == nil {
-		panic("InfoMock.GetAddressFunc: method is nil but Info.GetAddress was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockGetAddress.Lock()
-	mock.calls.GetAddress = append(mock.calls.GetAddress, callInfo)
-	mock.lockGetAddress.Unlock()
-	return mock.GetAddressFunc()
-}
-
-// GetAddressCalls gets all the calls that were made to GetAddress.
-// Check the length with:
-//
-//	len(mockedInfo.GetAddressCalls())
-func (mock *InfoMock) GetAddressCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetAddress.RLock()
-	calls = mock.calls.GetAddress
-	mock.lockGetAddress.RUnlock()
-	return calls
-}
-
-// GetAlgo calls GetAlgoFunc.
-func (mock *InfoMock) GetAlgo() hd.PubKeyType {
-	if mock.GetAlgoFunc == nil {
-		panic("InfoMock.GetAlgoFunc: method is nil but Info.GetAlgo was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockGetAlgo.Lock()
-	mock.calls.GetAlgo = append(mock.calls.GetAlgo, callInfo)
-	mock.lockGetAlgo.Unlock()
-	return mock.GetAlgoFunc()
-}
-
-// GetAlgoCalls gets all the calls that were made to GetAlgo.
-// Check the length with:
-//
-//	len(mockedInfo.GetAlgoCalls())
-func (mock *InfoMock) GetAlgoCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetAlgo.RLock()
-	calls = mock.calls.GetAlgo
-	mock.lockGetAlgo.RUnlock()
-	return calls
-}
-
-// GetName calls GetNameFunc.
-func (mock *InfoMock) GetName() string {
-	if mock.GetNameFunc == nil {
-		panic("InfoMock.GetNameFunc: method is nil but Info.GetName was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockGetName.Lock()
-	mock.calls.GetName = append(mock.calls.GetName, callInfo)
-	mock.lockGetName.Unlock()
-	return mock.GetNameFunc()
-}
-
-// GetNameCalls gets all the calls that were made to GetName.
-// Check the length with:
-//
-//	len(mockedInfo.GetNameCalls())
-func (mock *InfoMock) GetNameCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetName.RLock()
-	calls = mock.calls.GetName
-	mock.lockGetName.RUnlock()
-	return calls
-}
-
-// GetPath calls GetPathFunc.
-func (mock *InfoMock) GetPath() (*hd.BIP44Params, error) {
-	if mock.GetPathFunc == nil {
-		panic("InfoMock.GetPathFunc: method is nil but Info.GetPath was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockGetPath.Lock()
-	mock.calls.GetPath = append(mock.calls.GetPath, callInfo)
-	mock.lockGetPath.Unlock()
-	return mock.GetPathFunc()
-}
-
-// GetPathCalls gets all the calls that were made to GetPath.
-// Check the length with:
-//
-//	len(mockedInfo.GetPathCalls())
-func (mock *InfoMock) GetPathCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetPath.RLock()
-	calls = mock.calls.GetPath
-	mock.lockGetPath.RUnlock()
-	return calls
-}
-
-// GetPubKey calls GetPubKeyFunc.
-func (mock *InfoMock) GetPubKey() cryptotypes.PubKey {
-	if mock.GetPubKeyFunc == nil {
-		panic("InfoMock.GetPubKeyFunc: method is nil but Info.GetPubKey was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockGetPubKey.Lock()
-	mock.calls.GetPubKey = append(mock.calls.GetPubKey, callInfo)
-	mock.lockGetPubKey.Unlock()
-	return mock.GetPubKeyFunc()
-}
-
-// GetPubKeyCalls gets all the calls that were made to GetPubKey.
-// Check the length with:
-//
-//	len(mockedInfo.GetPubKeyCalls())
-func (mock *InfoMock) GetPubKeyCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetPubKey.RLock()
-	calls = mock.calls.GetPubKey
-	mock.lockGetPubKey.RUnlock()
-	return calls
-}
-
-// GetType calls GetTypeFunc.
-func (mock *InfoMock) GetType() keyring.KeyType {
-	if mock.GetTypeFunc == nil {
-		panic("InfoMock.GetTypeFunc: method is nil but Info.GetType was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockGetType.Lock()
-	mock.calls.GetType = append(mock.calls.GetType, callInfo)
-	mock.lockGetType.Unlock()
-	return mock.GetTypeFunc()
-}
-
-// GetTypeCalls gets all the calls that were made to GetType.
-// Check the length with:
-//
-//	len(mockedInfo.GetTypeCalls())
-func (mock *InfoMock) GetTypeCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockGetType.RLock()
-	calls = mock.calls.GetType
-	mock.lockGetType.RUnlock()
 	return calls
 }

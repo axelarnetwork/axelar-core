@@ -5,13 +5,15 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/log"
+	sdkmath "cosmossdk.io/math"
+	store "cosmossdk.io/store/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
@@ -42,20 +44,20 @@ var (
 )
 
 func TestUintIntConversion(t *testing.T) {
-	maxUint := sdk.NewUintFromBigInt(math.MaxBig256)
-	maxInt := sdk.Int(maxUint)
+	maxUint := sdkmath.NewUintFromBigInt(math.MaxBig256)
+	maxInt := sdkmath.Int(maxUint)
 
 	// ensure max uint can be converted into int without overflow
 	assert.True(t, maxInt.IsPositive())
 	assert.Equal(t, maxInt.BigInt().BitLen(), 256)
 	assert.Panics(t, func() { maxInt.AddRaw(1) })
-	assert.Equal(t, maxUint, sdk.Uint(maxInt))
+	assert.Equal(t, maxUint, sdkmath.Uint(maxInt))
 }
 
 func TestComputeTransferFee(t *testing.T) {
 	cfg := app.MakeEncodingConfig()
 	repeated := 10
-	k, ctx := setup(cfg)
+	k, ctx := setup(cfg, t)
 
 	var (
 		assetFees map[string]nexus.FeeInfo
@@ -64,23 +66,23 @@ func TestComputeTransferFee(t *testing.T) {
 	testChain := chains[0].Name
 	testAsset := assets[0]
 
-	err := nexus.NewFeeInfo(testChain, testAsset, sdk.ZeroDec(), sdk.ZeroInt(), sdk.ZeroInt()).Validate()
+	err := nexus.NewFeeInfo(testChain, testAsset, sdkmath.LegacyZeroDec(), sdkmath.ZeroInt(), sdkmath.ZeroInt()).Validate()
 	assert.Nil(t, err)
 
-	err = nexus.NewFeeInfo(testChain, testAsset, sdk.OneDec(), sdk.NewInt(10000), sdk.NewInt(10000)).Validate()
+	err = nexus.NewFeeInfo(testChain, testAsset, sdkmath.LegacyOneDec(), sdkmath.NewInt(10000), sdkmath.NewInt(10000)).Validate()
 	assert.Nil(t, err)
 
 	// invalid fee
-	err = nexus.NewFeeInfo(testChain, testAsset, sdk.NewDecWithPrec(15, 1), sdk.ZeroInt(), sdk.ZeroInt()).Validate()
+	err = nexus.NewFeeInfo(testChain, testAsset, sdkmath.LegacyNewDecWithPrec(15, 1), sdkmath.ZeroInt(), sdkmath.ZeroInt()).Validate()
 	assert.Error(t, err)
 
 	// invalid fee
-	err = nexus.NewFeeInfo(testChain, testAsset, sdk.ZeroDec(), sdk.NewInt(10), sdk.NewInt(4)).Validate()
+	err = nexus.NewFeeInfo(testChain, testAsset, sdkmath.LegacyZeroDec(), sdkmath.NewInt(10), sdkmath.NewInt(4)).Validate()
 	assert.Error(t, err)
 
 	Given("a keeper",
 		func() {
-			k, ctx = setup(cfg)
+			k, ctx = setup(cfg, t)
 			assetFees = make(map[string]nexus.FeeInfo)
 		}).
 		When("asset fees are registered",
@@ -115,9 +117,9 @@ func TestComputeTransferFee(t *testing.T) {
 							feeRate := sourceChainFee.FeeRate.Add(destinationChainFee.FeeRate)
 							maxFee := sourceChainFee.MaxFee.Add(destinationChainFee.MaxFee)
 
-							fee := sdk.NewDecFromInt(amount).Mul(feeRate).TruncateInt()
-							fee = sdk.MaxInt(minFee, fee)
-							fee = sdk.MinInt(maxFee, fee)
+							fee := sdkmath.LegacyNewDecFromInt(amount).Mul(feeRate).TruncateInt()
+							fee = sdkmath.MaxInt(minFee, fee)
+							fee = sdkmath.MinInt(maxFee, fee)
 
 							assert.Equal(t, fees.Amount, fee)
 						}
@@ -158,7 +160,7 @@ func TestTransfer(t *testing.T) {
 	)
 
 	givenKeeper := Given("a keeper", func() {
-		k, ctx = setup(cfg)
+		k, ctx = setup(cfg, t)
 
 		source, dest = testutils.RandomChain(), testutils.RandomChain()
 		source.Module = evmtypes.ModuleName
@@ -215,7 +217,7 @@ func TestTransfer(t *testing.T) {
 
 	Given("a keeper",
 		func() {
-			k, ctx = setup(cfg)
+			k, ctx = setup(cfg, t)
 
 			// clear start
 			recipients = nil
@@ -237,8 +239,8 @@ func TestTransfer(t *testing.T) {
 			for _, r := range recipients {
 				asset := randAsset()
 				feeInfo := k.GetFeeInfo(ctx, r.Chain, asset)
-				assert.NotEqual(t, feeInfo.MinFee, sdk.ZeroInt())
-				randAmt := sdk.NewCoin(randAsset(), sdk.NewInt(rand.I64Between(1, feeInfo.MinFee.BigInt().Int64()*2)))
+				assert.NotEqual(t, feeInfo.MinFee, sdkmath.ZeroInt())
+				randAmt := sdk.NewCoin(randAsset(), sdkmath.NewInt(rand.I64Between(1, feeInfo.MinFee.BigInt().Int64()*2)))
 				transfers = append(transfers, randAmt)
 			}
 		}).
@@ -249,7 +251,7 @@ func TestTransfer(t *testing.T) {
 
 					// count transfers
 					c := expectedTransfers[recipients[i].Chain.Name]
-					feeDue := sdk.ZeroInt()
+					feeDue := sdkmath.ZeroInt()
 					c.fees.Add(sdk.NewCoin(transfer.Denom, feeDue))
 					c.coins.Add(sdk.NewCoin(transfer.Denom, transfer.Amount.Sub(feeDue)))
 					c.count += 1
@@ -388,7 +390,7 @@ func TestTransfer(t *testing.T) {
 
 	Given("a keeper with registered assets",
 		func() {
-			k, ctx = setup(cfg)
+			k, ctx = setup(cfg, t)
 			expectedTransfers = nil
 		}).
 		When("enqueue transfers",
@@ -435,11 +437,11 @@ func TestTransfer(t *testing.T) {
 		).Run(t, repeated)
 }
 
-func setup(cfg params.EncodingConfig) (nexusKeeper.Keeper, sdk.Context) {
+func setup(cfg params.EncodingConfig, t log.TestingT) (nexusKeeper.Keeper, sdk.Context) {
 	sdk.GetConfig().SetBech32PrefixForAccount("axelar", "axelar")
-	subspace := paramstypes.NewSubspace(cfg.Codec, cfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	k := nexusKeeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	subspace := paramstypes.NewSubspace(cfg.Codec, cfg.Amino, store.NewKVStoreKey("nexusKey"), store.NewKVStoreKey("tNexusKey"), "nexus")
+	k := nexusKeeper.NewKeeper(cfg.Codec, store.NewKVStoreKey(types.StoreKey), subspace)
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 
 	k.SetParams(ctx, types.DefaultParams())
 	k.SetAddressValidators(addressValidators())
@@ -460,7 +462,7 @@ func setup(cfg params.EncodingConfig) (nexusKeeper.Keeper, sdk.Context) {
 				panic(err)
 			}
 
-			feeInfo := nexus.NewFeeInfo(chain.Name, asset, sdk.ZeroDec(), sdk.NewInt(minAmount), sdk.NewInt(maxAmount))
+			feeInfo := nexus.NewFeeInfo(chain.Name, asset, sdkmath.LegacyZeroDec(), sdkmath.NewInt(minAmount), sdkmath.NewInt(maxAmount))
 			if err := k.RegisterFee(ctx, chain, feeInfo); err != nil {
 				panic(err)
 			}
@@ -489,16 +491,16 @@ func randAsset() string {
 }
 
 func makeAmountAboveMin(denom string) sdk.Coin {
-	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(minAmount*2, maxAmount*2)))
+	return sdk.NewCoin(denom, sdkmath.NewInt(rand.I64Between(minAmount*2, maxAmount*2)))
 }
 
 func randFee(chain nexus.ChainName, asset string) nexus.FeeInfo {
-	rate := sdk.NewDecWithPrec(sdk.Int(randInt(0, 100)).Int64(), 3)
+	rate := sdkmath.LegacyNewDecWithPrec(sdkmath.Int(randInt(0, 100)).Int64(), 3)
 	min := randInt(0, minAmount)
 	max := randInt(min.Int64(), maxAmount)
 	return nexus.NewFeeInfo(chain, asset, rate, min, max)
 }
 
-func randInt(min int64, max int64) sdk.Int {
-	return sdk.NewInt(rand.I64Between(min, max))
+func randInt(min int64, max int64) sdkmath.Int {
+	return sdkmath.NewInt(rand.I64Between(min, max))
 }

@@ -4,12 +4,14 @@ import (
 	"strings"
 	"testing"
 
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
+	store "cosmossdk.io/store/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	evmUtil "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils"
@@ -58,8 +60,8 @@ func addressValidators() *types.AddressValidators {
 
 func init() {
 	encCfg := app.MakeEncodingConfig()
-	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-	k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), subspace)
+	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("nexusKey"), store.NewKVStoreKey("tNexusKey"), "nexus")
+	k = keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("nexus"), subspace)
 	k.SetAddressValidators(addressValidators())
 }
 
@@ -68,7 +70,7 @@ func TestLinkAddress(t *testing.T) {
 
 	var ctx sdk.Context
 	cfg := app.MakeEncodingConfig()
-	k, ctx = setup(cfg)
+	k, ctx = setup(cfg, t)
 
 	terra := exported.Chain{Name: exported.ChainName("terra"), Module: axelarnetTypes.ModuleName, SupportsForeignAssets: true}
 	evmAddr := exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"}
@@ -146,7 +148,7 @@ func TestSetChainGetChain_MixCaseChainName(t *testing.T) {
 	chainName := strings.ToUpper(rand.StrBetween(5, 10)) + strings.ToLower(rand.StrBetween(5, 10))
 	chain := makeRandomChain(chainName)
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	k.SetChain(ctx, chain)
 
 	actual, ok := k.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
@@ -164,7 +166,7 @@ func TestSetChainGetChain_UpperCaseChainName(t *testing.T) {
 	chainName := strings.ToUpper(rand.StrBetween(5, 10))
 	chain := makeRandomChain(chainName)
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	k.SetChain(ctx, chain)
 
 	actual, ok := k.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
@@ -182,7 +184,7 @@ func TestSetChainGetChain_LowerCaseChainName(t *testing.T) {
 	chainName := strings.ToLower(rand.StrBetween(5, 10))
 	chain := makeRandomChain(chainName)
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	k.SetChain(ctx, chain)
 
 	actual, ok := k.GetChain(ctx, exported.ChainName(strings.ToUpper(chainName)))
@@ -210,7 +212,7 @@ func makeRandomDenom() string {
 }
 
 func makeRandAmount(denom string) sdk.Coin {
-	return sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(1, maxAmount)))
+	return sdk.NewCoin(denom, math.NewInt(rand.I64Between(1, maxAmount)))
 }
 
 func makeRandAddressesForChain(origin, destination exported.Chain) (exported.CrossChainAddress, exported.CrossChainAddress) {

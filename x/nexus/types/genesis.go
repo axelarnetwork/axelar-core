@@ -3,8 +3,8 @@ package types
 import (
 	"encoding/json"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
@@ -136,5 +136,5 @@ func GetGenesisStateFromAppState(cdc codec.JSONCodec, appState map[string]json.R
 }
 
 func getValidateError(err error) error {
-	return sdkerrors.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
+	return errorsmod.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
 }

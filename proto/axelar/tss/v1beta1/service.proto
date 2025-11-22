@@ -5,7 +5,6 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/tss/types";
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "axelar/snapshot/v1beta1/tx.proto";
 import "axelar/tss/v1beta1/tx.proto";
 import "axelar/tss/v1beta1/query.proto";
 
@@ -17,6 +16,13 @@ service MsgService {
       returns (axelar.tss.v1beta1.HeartBeatResponse) {
     option (google.api.http) = {
       post : "/axelar/tss/heartbeat"
+      body : "*"
+    };
+  }
+
+  rpc UpdateParams(UpdateParamsRequest) returns (UpdateParamsResponse) {
+    option (google.api.http) = {
+      post : "/axelar/tss/v1beta1/params"
       body : "*"
     };
   }

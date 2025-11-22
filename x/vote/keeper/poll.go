@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
@@ -22,7 +23,7 @@ type poll struct {
 	exported.PollMetadata
 	ctx           sdk.Context
 	k             Keeper
-	passingWeight cached.Cached[sdk.Uint]
+	passingWeight cached.Cached[math.Uint]
 }
 
 func newPoll(ctx sdk.Context, k Keeper, metadata exported.PollMetadata) *poll {
@@ -30,7 +31,7 @@ func newPoll(ctx sdk.Context, k Keeper, metadata exported.PollMetadata) *poll {
 		ctx:          ctx,
 		k:            k,
 		PollMetadata: metadata,
-		passingWeight: cached.New(func() sdk.Uint {
+		passingWeight: cached.New(func() math.Uint {
 			return metadata.Snapshot.CalculateMinPassingWeight(metadata.VotingThreshold)
 		}),
 	}
@@ -187,12 +188,12 @@ func (p *poll) voteBeforeCompletion(voter sdk.ValAddress, blockHeight int64, dat
 	}
 }
 
-func (p poll) hasEnoughVotes(majority sdk.Uint) bool {
+func (p poll) hasEnoughVotes(majority math.Uint) bool {
 	return majority.GTE(p.passingWeight.Value()) &&
 		p.getVoterCount() >= p.MinVoterCount
 }
 
-func (p poll) cannotWin(majority sdk.Uint) bool {
+func (p poll) cannotWin(majority math.Uint) bool {
 	alreadyTallied := p.getTalliedVotingPower()
 	missingVotingPower := p.Snapshot.GetParticipantsWeight().Sub(alreadyTallied)
 
@@ -201,8 +202,8 @@ func (p poll) cannotWin(majority sdk.Uint) bool {
 		LT(p.passingWeight.Value())
 }
 
-func (p poll) getTalliedVotingPower() sdk.Uint {
-	result := sdk.ZeroUint()
+func (p poll) getTalliedVotingPower() math.Uint {
+	result := math.ZeroUint()
 
 	for _, talliedVote := range p.k.getTalliedVotes(p.ctx, p.ID) {
 		result = result.Add(talliedVote.Tally)

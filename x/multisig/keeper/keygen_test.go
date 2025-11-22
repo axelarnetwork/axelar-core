@@ -3,7 +3,7 @@ package keeper_test
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	store "cosmossdk.io/store/types"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
@@ -15,11 +15,11 @@ import (
 
 func TestKeygenOptOut(t *testing.T) {
 	encCfg := params.MakeEncodingConfig()
-	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), testutils.NewSubspace(encCfg))
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(types.StoreKey), testutils.NewSubspace(encCfg))
 
 	participant := rand.AccAddr()
 
-	ctx := testutils.NewContext()
+	ctx := testutils.NewContext(t)
 	assert.False(t, k.HasOptedOut(ctx, participant))
 	k.KeygenOptOut(ctx, participant)
 	assert.True(t, k.HasOptedOut(ctx, participant))

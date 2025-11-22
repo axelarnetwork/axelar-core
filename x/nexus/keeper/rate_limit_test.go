@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
@@ -34,7 +35,7 @@ func TestSetRateLimit(t *testing.T) {
 	)
 
 	givenKeeper := Given("a keeper", func() {
-		k, ctx = setup(cfg)
+		k, ctx = setup(cfg, t)
 	})
 
 	whenAssetIsRegistered := When("asset is registered", func() {
@@ -74,7 +75,7 @@ func TestSetRateLimit(t *testing.T) {
 		When("using an invalid rate limit", func() {
 			chain = randChain(k, ctx).Name
 			asset = rand.Denom(3, 20)
-			limit = sdk.Coin{Denom: asset, Amount: sdk.NewInt(-1)}
+			limit = sdk.Coin{Denom: asset, Amount: sdkmath.NewInt(-1)}
 			window = rand.Duration()
 		}).
 		When2(whenAssetIsRegistered).
@@ -112,7 +113,7 @@ func TestSetRateLimit(t *testing.T) {
 			assert.NoError(t, err)
 		}).
 		Then("remove rate limit", func(t *testing.T) {
-			limit.Amount = sdk.Int(utils.MaxUint)
+			limit.Amount = sdkmath.Int(utils.MaxUint)
 			err := k.SetRateLimit(ctx, chain, limit, window)
 			assert.NoError(t, err)
 		}).
@@ -135,7 +136,7 @@ func TestRateLimitTransfer(t *testing.T) {
 	)
 
 	givenKeeper := Given("a keeper", func() {
-		k, ctx = setup(cfg)
+		k, ctx = setup(cfg, t)
 	})
 
 	whenAssetIsRegistered := When("asset is registered", func() {
@@ -170,7 +171,7 @@ func TestRateLimitTransfer(t *testing.T) {
 		}).
 		When("transfer amount is within rate limit", func() {
 			asset = limit
-			asset.Amount = rand.IntBetween(sdk.ZeroInt(), limit.Amount)
+			asset.Amount = rand.IntBetween(sdkmath.ZeroInt(), limit.Amount)
 		}).
 		Then("rate limit transfer succeeds", func(t *testing.T) {
 			err := k.RateLimitTransfer(ctx, chain, asset, direction)
@@ -206,7 +207,7 @@ func TestRateLimitTransfer(t *testing.T) {
 			assert.ErrorContains(t, err, "exceeded rate limit")
 		}).
 		Then("reset rate limit and rate limit transfer succeeds", func(t *testing.T) {
-			limit.Amount = sdk.Int(utils.MaxUint)
+			limit.Amount = sdkmath.Int(utils.MaxUint)
 			err := k.SetRateLimit(ctx, chain, limit, window)
 			assert.NoError(t, err)
 
@@ -234,7 +235,7 @@ func TestRateLimitTransfer(t *testing.T) {
 			assert.ErrorContains(t, err, "exceeded rate limit")
 		}).
 		Then("rate limit transfer succeeds on a small transfer", func(t *testing.T) {
-			asset.Amount = rand.IntBetween(sdk.ZeroInt(), limit.Amount)
+			asset.Amount = rand.IntBetween(sdkmath.ZeroInt(), limit.Amount)
 			err := k.RateLimitTransfer(ctx, chain, asset, direction)
 			assert.NoError(t, err)
 		}).

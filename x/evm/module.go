@@ -5,27 +5,27 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"cosmossdk.io/core/appmodule"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/grpc"
 	"github.com/axelarnetwork/axelar-core/x/evm/client/cli"
-	"github.com/axelarnetwork/axelar-core/x/evm/client/rest"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
 var (
-	_ module.AppModule      = AppModule{}
-	_ module.AppModuleBasic = AppModuleBasic{}
+	_ appmodule.AppModule    = AppModule{}
+	_ module.AppModuleBasic  = AppModuleBasic{}
+	_ module.HasABCIEndBlock = AppModule{}
 )
 
 // AppModuleBasic implements module.AppModuleBasic
@@ -62,11 +62,6 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, _ client.TxEncodingCo
 	return genState.Validate()
 }
 
-// RegisterRESTRoutes registers the REST routes for this module
-func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
-	rest.RegisterRoutes(clientCtx, rtr)
-}
-
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
 	if err := types.RegisterQueryServiceHandlerClient(context.Background(), mux, types.NewQueryServiceClient(clientCtx)); err != nil {
@@ -88,6 +83,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 	keeper      *keeper.BaseKeeper
+	permission  types.Permission
 	voter       types.Voter
 	nexus       types.Nexus
 	snapshotter types.Snapshotter
@@ -97,7 +93,7 @@ type AppModule struct {
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(k *keeper.BaseKeeper, voter types.Voter, nexus types.Nexus, snapshotter types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper, multisig types.MultisigKeeper) AppModule {
+func NewAppModule(k *keeper.BaseKeeper, voter types.Voter, nexus types.Nexus, snapshotter types.Snapshotter, staking types.StakingKeeper, slashing types.SlashingKeeper, multisig types.MultisigKeeper, permission types.Permission) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -107,6 +103,7 @@ func NewAppModule(k *keeper.BaseKeeper, voter types.Voter, nexus types.Nexus, sn
 		staking:        staking,
 		slashing:       slashing,
 		multisig:       multisig,
+		permission:     permission,
 	}
 }
 
@@ -130,45 +127,37 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 	return cdc.MustMarshalJSON(&genState)
 }
 
-// Route returns the module's route
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.voter, am.nexus, am.snapshotter, am.staking, am.slashing, am.multisig))
-}
-
 // QuerierRoute returns this module's query route
 func (AppModule) QuerierRoute() string {
 	return types.QuerierRoute
 }
 
-// LegacyQuerierHandler returns a new query handler for this module
-func (am AppModule) LegacyQuerierHandler(*codec.LegacyAmino) sdk.Querier {
-	return keeper.NewQuerier(am.keeper, am.nexus)
-}
-
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	msgServer := keeper.NewMsgServerImpl(am.keeper, am.nexus, am.voter, am.snapshotter, am.staking, am.slashing, am.multisig)
+	msgServer := keeper.NewMsgServerImpl(am.keeper, am.nexus, am.voter, am.snapshotter, am.staking, am.slashing, am.multisig, am.permission)
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrEVM, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus, am.multisig))
 
-	err := cfg.RegisterMigration(types.ModuleName, 8, keeper.AlwaysMigrateBytecode(am.keeper, am.nexus, keeper.Migrate8to9(am.keeper, am.nexus)))
+	err := cfg.RegisterMigration(types.ModuleName, 9, keeper.AlwaysMigrateBytecode(am.keeper, am.nexus, keeper.Migrate9to10(am.keeper, am.nexus)))
 	if err != nil {
 		panic(err)
 	}
 }
 
-// BeginBlock executes all state transitions this module requires at the beginning of each new block
-func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	BeginBlocker(ctx, req, am.keeper)
-}
-
 // EndBlock executes all state transitions this module requires at the end of each new block
-func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return utils.RunCached(ctx, am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
-		return EndBlocker(ctx, req, am.keeper, am.nexus, am.multisig)
-	})
+func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
+	return utils.RunCached(sdk.UnwrapSDKContext(ctx), am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
+		return EndBlocker(ctx, am.keeper, am.nexus, am.multisig)
+	}), nil
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 9 }
+func (AppModule) ConsensusVersion() uint64 { return 10 }
+
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() { // marker
+}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}

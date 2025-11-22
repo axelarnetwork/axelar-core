@@ -33,3 +33,23 @@ message QueryValidatorsResponse {
 message ParamsRequest {}
 
 message ParamsResponse { Params params = 1 [ (gogoproto.nullable) = false ]; }
+
+// OperatorByProxyRequest retrieves the operator address associated with a given
+// proxy address
+message OperatorByProxyRequest { string proxy_address = 1; }
+message OperatorByProxyResponse { string operator_address = 1; }
+
+// ProxyByOperatorRequest retrieves the proxy address associated with a given
+// operator address
+message ProxyByOperatorRequest { string operator_address = 1; }
+
+message ProxyByOperatorResponse {
+  enum Status {
+    option (gogoproto.goproto_enum_prefix) = false;
+    STATUS_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Unspecified" ];
+    STATUS_ACTIVE = 1 [ (gogoproto.enumvalue_customname) = "Active" ];
+    STATUS_INACTIVE = 2 [ (gogoproto.enumvalue_customname) = "Inactive" ];
+  }
+  string proxy_address = 1;
+  Status status = 2;
+}

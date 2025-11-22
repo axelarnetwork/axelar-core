@@ -1,8 +1,9 @@
 package types
 
 import (
-	fmt "fmt"
+	"fmt"
 
+	"cosmossdk.io/math"
 	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -162,8 +163,8 @@ func (m SigningSession) Result() (MultiSig, error) {
 }
 
 // GetParticipantsWeight returns the total weights of the participants
-func (m SigningSession) GetParticipantsWeight() sdk.Uint {
-	return slices.Reduce(m.MultiSig.GetParticipants(), sdk.ZeroUint(), func(total sdk.Uint, p sdk.ValAddress) sdk.Uint {
+func (m SigningSession) GetParticipantsWeight() math.Uint {
+	return slices.Reduce(m.MultiSig.GetParticipants(), math.ZeroUint(), func(total math.Uint, p sdk.ValAddress) math.Uint {
 		return total.Add(m.Key.Snapshot.GetParticipantWeight(p))
 	})
 }
