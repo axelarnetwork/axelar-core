@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -13,7 +14,7 @@ func NewUpdateGovernanceKeyRequest(sender sdk.AccAddress, threshold int, pubKeys
 	govKey := multisig.NewLegacyAminoPubKey(threshold, pubKeys)
 
 	return &UpdateGovernanceKeyRequest{
-		Sender:        sender,
+		Sender:        sender.String(),
 		GovernanceKey: *govKey,
 	}
 }
@@ -30,16 +31,16 @@ func (m UpdateGovernanceKeyRequest) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m UpdateGovernanceKeyRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if m.GovernanceKey.Threshold <= 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "threshold k of n multisignature: k <= 0")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "threshold k of n multisignature: k <= 0")
 	}
 
 	if uint32(len(m.GovernanceKey.GetPubKeys())) < m.GovernanceKey.Threshold {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "threshold k of n multisignature: len(pubKeys) < k")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "threshold k of n multisignature: len(pubKeys) < k")
 	}
 
 	return nil
@@ -48,11 +49,6 @@ func (m UpdateGovernanceKeyRequest) ValidateBasic() error {
 // GetSignBytes returns the message bytes that need to be signed
 func (m UpdateGovernanceKeyRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
-}
-
-// GetSigners returns the set of signers for this message
-func (m UpdateGovernanceKeyRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }
 
 // UnpackInterfaces implements UnpackInterfacesMessage

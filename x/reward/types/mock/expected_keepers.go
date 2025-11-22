@@ -4,13 +4,14 @@
 package mock
 
 import (
+	context "context"
+	"cosmossdk.io/log"
+	cosmossdk_io_math "cosmossdk.io/math"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	cosmossdktypes "github.com/cosmos/cosmos-sdk/types"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/tendermint/tendermint/libs/log"
 	"sync"
 )
 
@@ -193,6 +194,9 @@ var _ rewardtypes.Refunder = &RefunderMock{}
 //			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 //				panic("mock out the Logger method")
 //			},
+//			SetParamsFunc: func(ctx cosmossdktypes.Context, params rewardtypes.Params)  {
+//				panic("mock out the SetParams method")
+//			},
 //		}
 //
 //		// use mockedRefunder in code that requires rewardtypes.Refunder
@@ -208,6 +212,9 @@ type RefunderMock struct {
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
+
+	// SetParamsFunc mocks the SetParams method.
+	SetParamsFunc func(ctx cosmossdktypes.Context, params rewardtypes.Params)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -230,10 +237,18 @@ type RefunderMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
+		// SetParams holds details about calls to the SetParams method.
+		SetParams []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Params is the params argument value.
+			Params rewardtypes.Params
+		}
 	}
 	lockDeletePendingRefund sync.RWMutex
 	lockGetPendingRefund    sync.RWMutex
 	lockLogger              sync.RWMutex
+	lockSetParams           sync.RWMutex
 }
 
 // DeletePendingRefund calls DeletePendingRefundFunc.
@@ -337,6 +352,42 @@ func (mock *RefunderMock) LoggerCalls() []struct {
 	mock.lockLogger.RLock()
 	calls = mock.calls.Logger
 	mock.lockLogger.RUnlock()
+	return calls
+}
+
+// SetParams calls SetParamsFunc.
+func (mock *RefunderMock) SetParams(ctx cosmossdktypes.Context, params rewardtypes.Params) {
+	if mock.SetParamsFunc == nil {
+		panic("RefunderMock.SetParamsFunc: method is nil but Refunder.SetParams was just called")
+	}
+	callInfo := struct {
+		Ctx    cosmossdktypes.Context
+		Params rewardtypes.Params
+	}{
+		Ctx:    ctx,
+		Params: params,
+	}
+	mock.lockSetParams.Lock()
+	mock.calls.SetParams = append(mock.calls.SetParams, callInfo)
+	mock.lockSetParams.Unlock()
+	mock.SetParamsFunc(ctx, params)
+}
+
+// SetParamsCalls gets all the calls that were made to SetParams.
+// Check the length with:
+//
+//	len(mockedRefunder.SetParamsCalls())
+func (mock *RefunderMock) SetParamsCalls() []struct {
+	Ctx    cosmossdktypes.Context
+	Params rewardtypes.Params
+} {
+	var calls []struct {
+		Ctx    cosmossdktypes.Context
+		Params rewardtypes.Params
+	}
+	mock.lockSetParams.RLock()
+	calls = mock.calls.SetParams
+	mock.lockSetParams.RUnlock()
 	return calls
 }
 
@@ -506,160 +557,6 @@ func (mock *NexusMock) IsChainActivatedCalls() []struct {
 	return calls
 }
 
-// Ensure, that MinterMock does implement rewardtypes.Minter.
-// If this is not the case, regenerate this file with moq.
-var _ rewardtypes.Minter = &MinterMock{}
-
-// MinterMock is a mock implementation of rewardtypes.Minter.
-//
-//	func TestSomethingThatUsesMinter(t *testing.T) {
-//
-//		// make and configure a mocked rewardtypes.Minter
-//		mockedMinter := &MinterMock{
-//			GetMinterFunc: func(ctx cosmossdktypes.Context) minttypes.Minter {
-//				panic("mock out the GetMinter method")
-//			},
-//			GetParamsFunc: func(ctx cosmossdktypes.Context) minttypes.Params {
-//				panic("mock out the GetParams method")
-//			},
-//			StakingTokenSupplyFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Int {
-//				panic("mock out the StakingTokenSupply method")
-//			},
-//		}
-//
-//		// use mockedMinter in code that requires rewardtypes.Minter
-//		// and then make assertions.
-//
-//	}
-type MinterMock struct {
-	// GetMinterFunc mocks the GetMinter method.
-	GetMinterFunc func(ctx cosmossdktypes.Context) minttypes.Minter
-
-	// GetParamsFunc mocks the GetParams method.
-	GetParamsFunc func(ctx cosmossdktypes.Context) minttypes.Params
-
-	// StakingTokenSupplyFunc mocks the StakingTokenSupply method.
-	StakingTokenSupplyFunc func(ctx cosmossdktypes.Context) cosmossdktypes.Int
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// GetMinter holds details about calls to the GetMinter method.
-		GetMinter []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-		}
-		// GetParams holds details about calls to the GetParams method.
-		GetParams []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-		}
-		// StakingTokenSupply holds details about calls to the StakingTokenSupply method.
-		StakingTokenSupply []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-		}
-	}
-	lockGetMinter          sync.RWMutex
-	lockGetParams          sync.RWMutex
-	lockStakingTokenSupply sync.RWMutex
-}
-
-// GetMinter calls GetMinterFunc.
-func (mock *MinterMock) GetMinter(ctx cosmossdktypes.Context) minttypes.Minter {
-	if mock.GetMinterFunc == nil {
-		panic("MinterMock.GetMinterFunc: method is nil but Minter.GetMinter was just called")
-	}
-	callInfo := struct {
-		Ctx cosmossdktypes.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetMinter.Lock()
-	mock.calls.GetMinter = append(mock.calls.GetMinter, callInfo)
-	mock.lockGetMinter.Unlock()
-	return mock.GetMinterFunc(ctx)
-}
-
-// GetMinterCalls gets all the calls that were made to GetMinter.
-// Check the length with:
-//
-//	len(mockedMinter.GetMinterCalls())
-func (mock *MinterMock) GetMinterCalls() []struct {
-	Ctx cosmossdktypes.Context
-} {
-	var calls []struct {
-		Ctx cosmossdktypes.Context
-	}
-	mock.lockGetMinter.RLock()
-	calls = mock.calls.GetMinter
-	mock.lockGetMinter.RUnlock()
-	return calls
-}
-
-// GetParams calls GetParamsFunc.
-func (mock *MinterMock) GetParams(ctx cosmossdktypes.Context) minttypes.Params {
-	if mock.GetParamsFunc == nil {
-		panic("MinterMock.GetParamsFunc: method is nil but Minter.GetParams was just called")
-	}
-	callInfo := struct {
-		Ctx cosmossdktypes.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockGetParams.Lock()
-	mock.calls.GetParams = append(mock.calls.GetParams, callInfo)
-	mock.lockGetParams.Unlock()
-	return mock.GetParamsFunc(ctx)
-}
-
-// GetParamsCalls gets all the calls that were made to GetParams.
-// Check the length with:
-//
-//	len(mockedMinter.GetParamsCalls())
-func (mock *MinterMock) GetParamsCalls() []struct {
-	Ctx cosmossdktypes.Context
-} {
-	var calls []struct {
-		Ctx cosmossdktypes.Context
-	}
-	mock.lockGetParams.RLock()
-	calls = mock.calls.GetParams
-	mock.lockGetParams.RUnlock()
-	return calls
-}
-
-// StakingTokenSupply calls StakingTokenSupplyFunc.
-func (mock *MinterMock) StakingTokenSupply(ctx cosmossdktypes.Context) cosmossdktypes.Int {
-	if mock.StakingTokenSupplyFunc == nil {
-		panic("MinterMock.StakingTokenSupplyFunc: method is nil but Minter.StakingTokenSupply was just called")
-	}
-	callInfo := struct {
-		Ctx cosmossdktypes.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockStakingTokenSupply.Lock()
-	mock.calls.StakingTokenSupply = append(mock.calls.StakingTokenSupply, callInfo)
-	mock.lockStakingTokenSupply.Unlock()
-	return mock.StakingTokenSupplyFunc(ctx)
-}
-
-// StakingTokenSupplyCalls gets all the calls that were made to StakingTokenSupply.
-// Check the length with:
-//
-//	len(mockedMinter.StakingTokenSupplyCalls())
-func (mock *MinterMock) StakingTokenSupplyCalls() []struct {
-	Ctx cosmossdktypes.Context
-} {
-	var calls []struct {
-		Ctx cosmossdktypes.Context
-	}
-	mock.lockStakingTokenSupply.RLock()
-	calls = mock.calls.StakingTokenSupply
-	mock.lockStakingTokenSupply.RUnlock()
-	return calls
-}
-
 // Ensure, that DistributorMock does implement rewardtypes.Distributor.
 // If this is not the case, regenerate this file with moq.
 var _ rewardtypes.Distributor = &DistributorMock{}
@@ -670,7 +567,7 @@ var _ rewardtypes.Distributor = &DistributorMock{}
 //
 //		// make and configure a mocked rewardtypes.Distributor
 //		mockedDistributor := &DistributorMock{
-//			AllocateTokensToValidatorFunc: func(ctx cosmossdktypes.Context, val stakingtypes.ValidatorI, tokens cosmossdktypes.DecCoins)  {
+//			AllocateTokensToValidatorFunc: func(ctx context.Context, val stakingtypes.ValidatorI, tokens cosmossdktypes.DecCoins) error {
 //				panic("mock out the AllocateTokensToValidator method")
 //			},
 //		}
@@ -681,14 +578,14 @@ var _ rewardtypes.Distributor = &DistributorMock{}
 //	}
 type DistributorMock struct {
 	// AllocateTokensToValidatorFunc mocks the AllocateTokensToValidator method.
-	AllocateTokensToValidatorFunc func(ctx cosmossdktypes.Context, val stakingtypes.ValidatorI, tokens cosmossdktypes.DecCoins)
+	AllocateTokensToValidatorFunc func(ctx context.Context, val stakingtypes.ValidatorI, tokens cosmossdktypes.DecCoins) error
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// AllocateTokensToValidator holds details about calls to the AllocateTokensToValidator method.
 		AllocateTokensToValidator []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// Val is the val argument value.
 			Val stakingtypes.ValidatorI
 			// Tokens is the tokens argument value.
@@ -699,12 +596,12 @@ type DistributorMock struct {
 }
 
 // AllocateTokensToValidator calls AllocateTokensToValidatorFunc.
-func (mock *DistributorMock) AllocateTokensToValidator(ctx cosmossdktypes.Context, val stakingtypes.ValidatorI, tokens cosmossdktypes.DecCoins) {
+func (mock *DistributorMock) AllocateTokensToValidator(ctx context.Context, val stakingtypes.ValidatorI, tokens cosmossdktypes.DecCoins) error {
 	if mock.AllocateTokensToValidatorFunc == nil {
 		panic("DistributorMock.AllocateTokensToValidatorFunc: method is nil but Distributor.AllocateTokensToValidator was just called")
 	}
 	callInfo := struct {
-		Ctx    cosmossdktypes.Context
+		Ctx    context.Context
 		Val    stakingtypes.ValidatorI
 		Tokens cosmossdktypes.DecCoins
 	}{
@@ -715,7 +612,7 @@ func (mock *DistributorMock) AllocateTokensToValidator(ctx cosmossdktypes.Contex
 	mock.lockAllocateTokensToValidator.Lock()
 	mock.calls.AllocateTokensToValidator = append(mock.calls.AllocateTokensToValidator, callInfo)
 	mock.lockAllocateTokensToValidator.Unlock()
-	mock.AllocateTokensToValidatorFunc(ctx, val, tokens)
+	return mock.AllocateTokensToValidatorFunc(ctx, val, tokens)
 }
 
 // AllocateTokensToValidatorCalls gets all the calls that were made to AllocateTokensToValidator.
@@ -723,12 +620,12 @@ func (mock *DistributorMock) AllocateTokensToValidator(ctx cosmossdktypes.Contex
 //
 //	len(mockedDistributor.AllocateTokensToValidatorCalls())
 func (mock *DistributorMock) AllocateTokensToValidatorCalls() []struct {
-	Ctx    cosmossdktypes.Context
+	Ctx    context.Context
 	Val    stakingtypes.ValidatorI
 	Tokens cosmossdktypes.DecCoins
 } {
 	var calls []struct {
-		Ctx    cosmossdktypes.Context
+		Ctx    context.Context
 		Val    stakingtypes.ValidatorI
 		Tokens cosmossdktypes.DecCoins
 	}
@@ -748,13 +645,13 @@ var _ rewardtypes.Staker = &StakerMock{}
 //
 //		// make and configure a mocked rewardtypes.Staker
 //		mockedStaker := &StakerMock{
-//			IterateBondedValidatorsByPowerFunc: func(ctx cosmossdktypes.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))  {
+//			IterateBondedValidatorsByPowerFunc: func(ctx context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error {
 //				panic("mock out the IterateBondedValidatorsByPower method")
 //			},
-//			PowerReductionFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Int {
+//			PowerReductionFunc: func(ctx context.Context) cosmossdk_io_math.Int {
 //				panic("mock out the PowerReduction method")
 //			},
-//			ValidatorFunc: func(ctx cosmossdktypes.Context, addr cosmossdktypes.ValAddress) stakingtypes.ValidatorI {
+//			ValidatorFunc: func(ctx context.Context, addr cosmossdktypes.ValAddress) (stakingtypes.ValidatorI, error) {
 //				panic("mock out the Validator method")
 //			},
 //		}
@@ -765,32 +662,32 @@ var _ rewardtypes.Staker = &StakerMock{}
 //	}
 type StakerMock struct {
 	// IterateBondedValidatorsByPowerFunc mocks the IterateBondedValidatorsByPower method.
-	IterateBondedValidatorsByPowerFunc func(ctx cosmossdktypes.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
+	IterateBondedValidatorsByPowerFunc func(ctx context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error
 
 	// PowerReductionFunc mocks the PowerReduction method.
-	PowerReductionFunc func(ctx cosmossdktypes.Context) cosmossdktypes.Int
+	PowerReductionFunc func(ctx context.Context) cosmossdk_io_math.Int
 
 	// ValidatorFunc mocks the Validator method.
-	ValidatorFunc func(ctx cosmossdktypes.Context, addr cosmossdktypes.ValAddress) stakingtypes.ValidatorI
+	ValidatorFunc func(ctx context.Context, addr cosmossdktypes.ValAddress) (stakingtypes.ValidatorI, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// IterateBondedValidatorsByPower holds details about calls to the IterateBondedValidatorsByPower method.
 		IterateBondedValidatorsByPower []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// Fn is the fn argument value.
 			Fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 		}
 		// PowerReduction holds details about calls to the PowerReduction method.
 		PowerReduction []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 		}
 		// Validator holds details about calls to the Validator method.
 		Validator []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// Addr is the addr argument value.
 			Addr cosmossdktypes.ValAddress
 		}
@@ -801,12 +698,12 @@ type StakerMock struct {
 }
 
 // IterateBondedValidatorsByPower calls IterateBondedValidatorsByPowerFunc.
-func (mock *StakerMock) IterateBondedValidatorsByPower(ctx cosmossdktypes.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
+func (mock *StakerMock) IterateBondedValidatorsByPower(ctx context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error {
 	if mock.IterateBondedValidatorsByPowerFunc == nil {
 		panic("StakerMock.IterateBondedValidatorsByPowerFunc: method is nil but Staker.IterateBondedValidatorsByPower was just called")
 	}
 	callInfo := struct {
-		Ctx cosmossdktypes.Context
+		Ctx context.Context
 		Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 	}{
 		Ctx: ctx,
@@ -815,7 +712,7 @@ func (mock *StakerMock) IterateBondedValidatorsByPower(ctx cosmossdktypes.Contex
 	mock.lockIterateBondedValidatorsByPower.Lock()
 	mock.calls.IterateBondedValidatorsByPower = append(mock.calls.IterateBondedValidatorsByPower, callInfo)
 	mock.lockIterateBondedValidatorsByPower.Unlock()
-	mock.IterateBondedValidatorsByPowerFunc(ctx, fn)
+	return mock.IterateBondedValidatorsByPowerFunc(ctx, fn)
 }
 
 // IterateBondedValidatorsByPowerCalls gets all the calls that were made to IterateBondedValidatorsByPower.
@@ -823,11 +720,11 @@ func (mock *StakerMock) IterateBondedValidatorsByPower(ctx cosmossdktypes.Contex
 //
 //	len(mockedStaker.IterateBondedValidatorsByPowerCalls())
 func (mock *StakerMock) IterateBondedValidatorsByPowerCalls() []struct {
-	Ctx cosmossdktypes.Context
+	Ctx context.Context
 	Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 } {
 	var calls []struct {
-		Ctx cosmossdktypes.Context
+		Ctx context.Context
 		Fn  func(index int64, validator stakingtypes.ValidatorI) (stop bool)
 	}
 	mock.lockIterateBondedValidatorsByPower.RLock()
@@ -837,12 +734,12 @@ func (mock *StakerMock) IterateBondedValidatorsByPowerCalls() []struct {
 }
 
 // PowerReduction calls PowerReductionFunc.
-func (mock *StakerMock) PowerReduction(ctx cosmossdktypes.Context) cosmossdktypes.Int {
+func (mock *StakerMock) PowerReduction(ctx context.Context) cosmossdk_io_math.Int {
 	if mock.PowerReductionFunc == nil {
 		panic("StakerMock.PowerReductionFunc: method is nil but Staker.PowerReduction was just called")
 	}
 	callInfo := struct {
-		Ctx cosmossdktypes.Context
+		Ctx context.Context
 	}{
 		Ctx: ctx,
 	}
@@ -857,10 +754,10 @@ func (mock *StakerMock) PowerReduction(ctx cosmossdktypes.Context) cosmossdktype
 //
 //	len(mockedStaker.PowerReductionCalls())
 func (mock *StakerMock) PowerReductionCalls() []struct {
-	Ctx cosmossdktypes.Context
+	Ctx context.Context
 } {
 	var calls []struct {
-		Ctx cosmossdktypes.Context
+		Ctx context.Context
 	}
 	mock.lockPowerReduction.RLock()
 	calls = mock.calls.PowerReduction
@@ -869,12 +766,12 @@ func (mock *StakerMock) PowerReductionCalls() []struct {
 }
 
 // Validator calls ValidatorFunc.
-func (mock *StakerMock) Validator(ctx cosmossdktypes.Context, addr cosmossdktypes.ValAddress) stakingtypes.ValidatorI {
+func (mock *StakerMock) Validator(ctx context.Context, addr cosmossdktypes.ValAddress) (stakingtypes.ValidatorI, error) {
 	if mock.ValidatorFunc == nil {
 		panic("StakerMock.ValidatorFunc: method is nil but Staker.Validator was just called")
 	}
 	callInfo := struct {
-		Ctx  cosmossdktypes.Context
+		Ctx  context.Context
 		Addr cosmossdktypes.ValAddress
 	}{
 		Ctx:  ctx,
@@ -891,11 +788,11 @@ func (mock *StakerMock) Validator(ctx cosmossdktypes.Context, addr cosmossdktype
 //
 //	len(mockedStaker.ValidatorCalls())
 func (mock *StakerMock) ValidatorCalls() []struct {
-	Ctx  cosmossdktypes.Context
+	Ctx  context.Context
 	Addr cosmossdktypes.ValAddress
 } {
 	var calls []struct {
-		Ctx  cosmossdktypes.Context
+		Ctx  context.Context
 		Addr cosmossdktypes.ValAddress
 	}
 	mock.lockValidator.RLock()
@@ -914,7 +811,7 @@ var _ rewardtypes.Slasher = &SlasherMock{}
 //
 //		// make and configure a mocked rewardtypes.Slasher
 //		mockedSlasher := &SlasherMock{
-//			IsTombstonedFunc: func(ctx cosmossdktypes.Context, consAddr cosmossdktypes.ConsAddress) bool {
+//			IsTombstonedFunc: func(ctx context.Context, consAddr cosmossdktypes.ConsAddress) bool {
 //				panic("mock out the IsTombstoned method")
 //			},
 //		}
@@ -925,14 +822,14 @@ var _ rewardtypes.Slasher = &SlasherMock{}
 //	}
 type SlasherMock struct {
 	// IsTombstonedFunc mocks the IsTombstoned method.
-	IsTombstonedFunc func(ctx cosmossdktypes.Context, consAddr cosmossdktypes.ConsAddress) bool
+	IsTombstonedFunc func(ctx context.Context, consAddr cosmossdktypes.ConsAddress) bool
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// IsTombstoned holds details about calls to the IsTombstoned method.
 		IsTombstoned []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// ConsAddr is the consAddr argument value.
 			ConsAddr cosmossdktypes.ConsAddress
 		}
@@ -941,12 +838,12 @@ type SlasherMock struct {
 }
 
 // IsTombstoned calls IsTombstonedFunc.
-func (mock *SlasherMock) IsTombstoned(ctx cosmossdktypes.Context, consAddr cosmossdktypes.ConsAddress) bool {
+func (mock *SlasherMock) IsTombstoned(ctx context.Context, consAddr cosmossdktypes.ConsAddress) bool {
 	if mock.IsTombstonedFunc == nil {
 		panic("SlasherMock.IsTombstonedFunc: method is nil but Slasher.IsTombstoned was just called")
 	}
 	callInfo := struct {
-		Ctx      cosmossdktypes.Context
+		Ctx      context.Context
 		ConsAddr cosmossdktypes.ConsAddress
 	}{
 		Ctx:      ctx,
@@ -963,11 +860,11 @@ func (mock *SlasherMock) IsTombstoned(ctx cosmossdktypes.Context, consAddr cosmo
 //
 //	len(mockedSlasher.IsTombstonedCalls())
 func (mock *SlasherMock) IsTombstonedCalls() []struct {
-	Ctx      cosmossdktypes.Context
+	Ctx      context.Context
 	ConsAddr cosmossdktypes.ConsAddress
 } {
 	var calls []struct {
-		Ctx      cosmossdktypes.Context
+		Ctx      context.Context
 		ConsAddr cosmossdktypes.ConsAddress
 	}
 	mock.lockIsTombstoned.RLock()
@@ -986,13 +883,13 @@ var _ rewardtypes.Banker = &BankerMock{}
 //
 //		// make and configure a mocked rewardtypes.Banker
 //		mockedBanker := &BankerMock{
-//			MintCoinsFunc: func(ctx cosmossdktypes.Context, name string, amt cosmossdktypes.Coins) error {
+//			MintCoinsFunc: func(ctx context.Context, name string, amt cosmossdktypes.Coins) error {
 //				panic("mock out the MintCoins method")
 //			},
-//			SendCoinsFromModuleToAccountFunc: func(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
+//			SendCoinsFromModuleToAccountFunc: func(ctx context.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
 //				panic("mock out the SendCoinsFromModuleToAccount method")
 //			},
-//			SendCoinsFromModuleToModuleFunc: func(ctx cosmossdktypes.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error {
+//			SendCoinsFromModuleToModuleFunc: func(ctx context.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error {
 //				panic("mock out the SendCoinsFromModuleToModule method")
 //			},
 //		}
@@ -1003,20 +900,20 @@ var _ rewardtypes.Banker = &BankerMock{}
 //	}
 type BankerMock struct {
 	// MintCoinsFunc mocks the MintCoins method.
-	MintCoinsFunc func(ctx cosmossdktypes.Context, name string, amt cosmossdktypes.Coins) error
+	MintCoinsFunc func(ctx context.Context, name string, amt cosmossdktypes.Coins) error
 
 	// SendCoinsFromModuleToAccountFunc mocks the SendCoinsFromModuleToAccount method.
-	SendCoinsFromModuleToAccountFunc func(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error
+	SendCoinsFromModuleToAccountFunc func(ctx context.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error
 
 	// SendCoinsFromModuleToModuleFunc mocks the SendCoinsFromModuleToModule method.
-	SendCoinsFromModuleToModuleFunc func(ctx cosmossdktypes.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error
+	SendCoinsFromModuleToModuleFunc func(ctx context.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// MintCoins holds details about calls to the MintCoins method.
 		MintCoins []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// Name is the name argument value.
 			Name string
 			// Amt is the amt argument value.
@@ -1025,7 +922,7 @@ type BankerMock struct {
 		// SendCoinsFromModuleToAccount holds details about calls to the SendCoinsFromModuleToAccount method.
 		SendCoinsFromModuleToAccount []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// SenderModule is the senderModule argument value.
 			SenderModule string
 			// RecipientAddr is the recipientAddr argument value.
@@ -1036,7 +933,7 @@ type BankerMock struct {
 		// SendCoinsFromModuleToModule holds details about calls to the SendCoinsFromModuleToModule method.
 		SendCoinsFromModuleToModule []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// SenderModule is the senderModule argument value.
 			SenderModule string
 			// RecipientModule is the recipientModule argument value.
@@ -1051,12 +948,12 @@ type BankerMock struct {
 }
 
 // MintCoins calls MintCoinsFunc.
-func (mock *BankerMock) MintCoins(ctx cosmossdktypes.Context, name string, amt cosmossdktypes.Coins) error {
+func (mock *BankerMock) MintCoins(ctx context.Context, name string, amt cosmossdktypes.Coins) error {
 	if mock.MintCoinsFunc == nil {
 		panic("BankerMock.MintCoinsFunc: method is nil but Banker.MintCoins was just called")
 	}
 	callInfo := struct {
-		Ctx  cosmossdktypes.Context
+		Ctx  context.Context
 		Name string
 		Amt  cosmossdktypes.Coins
 	}{
@@ -1075,12 +972,12 @@ func (mock *BankerMock) MintCoins(ctx cosmossdktypes.Context, name string, amt c
 //
 //	len(mockedBanker.MintCoinsCalls())
 func (mock *BankerMock) MintCoinsCalls() []struct {
-	Ctx  cosmossdktypes.Context
+	Ctx  context.Context
 	Name string
 	Amt  cosmossdktypes.Coins
 } {
 	var calls []struct {
-		Ctx  cosmossdktypes.Context
+		Ctx  context.Context
 		Name string
 		Amt  cosmossdktypes.Coins
 	}
@@ -1091,12 +988,12 @@ func (mock *BankerMock) MintCoinsCalls() []struct {
 }
 
 // SendCoinsFromModuleToAccount calls SendCoinsFromModuleToAccountFunc.
-func (mock *BankerMock) SendCoinsFromModuleToAccount(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
+func (mock *BankerMock) SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
 	if mock.SendCoinsFromModuleToAccountFunc == nil {
 		panic("BankerMock.SendCoinsFromModuleToAccountFunc: method is nil but Banker.SendCoinsFromModuleToAccount was just called")
 	}
 	callInfo := struct {
-		Ctx           cosmossdktypes.Context
+		Ctx           context.Context
 		SenderModule  string
 		RecipientAddr cosmossdktypes.AccAddress
 		Amt           cosmossdktypes.Coins
@@ -1117,13 +1014,13 @@ func (mock *BankerMock) SendCoinsFromModuleToAccount(ctx cosmossdktypes.Context,
 //
 //	len(mockedBanker.SendCoinsFromModuleToAccountCalls())
 func (mock *BankerMock) SendCoinsFromModuleToAccountCalls() []struct {
-	Ctx           cosmossdktypes.Context
+	Ctx           context.Context
 	SenderModule  string
 	RecipientAddr cosmossdktypes.AccAddress
 	Amt           cosmossdktypes.Coins
 } {
 	var calls []struct {
-		Ctx           cosmossdktypes.Context
+		Ctx           context.Context
 		SenderModule  string
 		RecipientAddr cosmossdktypes.AccAddress
 		Amt           cosmossdktypes.Coins
@@ -1135,12 +1032,12 @@ func (mock *BankerMock) SendCoinsFromModuleToAccountCalls() []struct {
 }
 
 // SendCoinsFromModuleToModule calls SendCoinsFromModuleToModuleFunc.
-func (mock *BankerMock) SendCoinsFromModuleToModule(ctx cosmossdktypes.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error {
+func (mock *BankerMock) SendCoinsFromModuleToModule(ctx context.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error {
 	if mock.SendCoinsFromModuleToModuleFunc == nil {
 		panic("BankerMock.SendCoinsFromModuleToModuleFunc: method is nil but Banker.SendCoinsFromModuleToModule was just called")
 	}
 	callInfo := struct {
-		Ctx             cosmossdktypes.Context
+		Ctx             context.Context
 		SenderModule    string
 		RecipientModule string
 		Amt             cosmossdktypes.Coins
@@ -1161,13 +1058,13 @@ func (mock *BankerMock) SendCoinsFromModuleToModule(ctx cosmossdktypes.Context, 
 //
 //	len(mockedBanker.SendCoinsFromModuleToModuleCalls())
 func (mock *BankerMock) SendCoinsFromModuleToModuleCalls() []struct {
-	Ctx             cosmossdktypes.Context
+	Ctx             context.Context
 	SenderModule    string
 	RecipientModule string
 	Amt             cosmossdktypes.Coins
 } {
 	var calls []struct {
-		Ctx             cosmossdktypes.Context
+		Ctx             context.Context
 		SenderModule    string
 		RecipientModule string
 		Amt             cosmossdktypes.Coins
@@ -1175,5 +1072,171 @@ func (mock *BankerMock) SendCoinsFromModuleToModuleCalls() []struct {
 	mock.lockSendCoinsFromModuleToModule.RLock()
 	calls = mock.calls.SendCoinsFromModuleToModule
 	mock.lockSendCoinsFromModuleToModule.RUnlock()
+	return calls
+}
+
+// Ensure, that AccountKeeperMock does implement rewardtypes.AccountKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ rewardtypes.AccountKeeper = &AccountKeeperMock{}
+
+// AccountKeeperMock is a mock implementation of rewardtypes.AccountKeeper.
+//
+//	func TestSomethingThatUsesAccountKeeper(t *testing.T) {
+//
+//		// make and configure a mocked rewardtypes.AccountKeeper
+//		mockedAccountKeeper := &AccountKeeperMock{
+//			GetModuleAccountFunc: func(ctx context.Context, moduleName string) cosmossdktypes.ModuleAccountI {
+//				panic("mock out the GetModuleAccount method")
+//			},
+//			GetModuleAddressFunc: func(name string) cosmossdktypes.AccAddress {
+//				panic("mock out the GetModuleAddress method")
+//			},
+//			SetModuleAccountFunc: func(contextMoqParam context.Context, moduleAccountI cosmossdktypes.ModuleAccountI)  {
+//				panic("mock out the SetModuleAccount method")
+//			},
+//		}
+//
+//		// use mockedAccountKeeper in code that requires rewardtypes.AccountKeeper
+//		// and then make assertions.
+//
+//	}
+type AccountKeeperMock struct {
+	// GetModuleAccountFunc mocks the GetModuleAccount method.
+	GetModuleAccountFunc func(ctx context.Context, moduleName string) cosmossdktypes.ModuleAccountI
+
+	// GetModuleAddressFunc mocks the GetModuleAddress method.
+	GetModuleAddressFunc func(name string) cosmossdktypes.AccAddress
+
+	// SetModuleAccountFunc mocks the SetModuleAccount method.
+	SetModuleAccountFunc func(contextMoqParam context.Context, moduleAccountI cosmossdktypes.ModuleAccountI)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetModuleAccount holds details about calls to the GetModuleAccount method.
+		GetModuleAccount []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ModuleName is the moduleName argument value.
+			ModuleName string
+		}
+		// GetModuleAddress holds details about calls to the GetModuleAddress method.
+		GetModuleAddress []struct {
+			// Name is the name argument value.
+			Name string
+		}
+		// SetModuleAccount holds details about calls to the SetModuleAccount method.
+		SetModuleAccount []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// ModuleAccountI is the moduleAccountI argument value.
+			ModuleAccountI cosmossdktypes.ModuleAccountI
+		}
+	}
+	lockGetModuleAccount sync.RWMutex
+	lockGetModuleAddress sync.RWMutex
+	lockSetModuleAccount sync.RWMutex
+}
+
+// GetModuleAccount calls GetModuleAccountFunc.
+func (mock *AccountKeeperMock) GetModuleAccount(ctx context.Context, moduleName string) cosmossdktypes.ModuleAccountI {
+	if mock.GetModuleAccountFunc == nil {
+		panic("AccountKeeperMock.GetModuleAccountFunc: method is nil but AccountKeeper.GetModuleAccount was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		ModuleName string
+	}{
+		Ctx:        ctx,
+		ModuleName: moduleName,
+	}
+	mock.lockGetModuleAccount.Lock()
+	mock.calls.GetModuleAccount = append(mock.calls.GetModuleAccount, callInfo)
+	mock.lockGetModuleAccount.Unlock()
+	return mock.GetModuleAccountFunc(ctx, moduleName)
+}
+
+// GetModuleAccountCalls gets all the calls that were made to GetModuleAccount.
+// Check the length with:
+//
+//	len(mockedAccountKeeper.GetModuleAccountCalls())
+func (mock *AccountKeeperMock) GetModuleAccountCalls() []struct {
+	Ctx        context.Context
+	ModuleName string
+} {
+	var calls []struct {
+		Ctx        context.Context
+		ModuleName string
+	}
+	mock.lockGetModuleAccount.RLock()
+	calls = mock.calls.GetModuleAccount
+	mock.lockGetModuleAccount.RUnlock()
+	return calls
+}
+
+// GetModuleAddress calls GetModuleAddressFunc.
+func (mock *AccountKeeperMock) GetModuleAddress(name string) cosmossdktypes.AccAddress {
+	if mock.GetModuleAddressFunc == nil {
+		panic("AccountKeeperMock.GetModuleAddressFunc: method is nil but AccountKeeper.GetModuleAddress was just called")
+	}
+	callInfo := struct {
+		Name string
+	}{
+		Name: name,
+	}
+	mock.lockGetModuleAddress.Lock()
+	mock.calls.GetModuleAddress = append(mock.calls.GetModuleAddress, callInfo)
+	mock.lockGetModuleAddress.Unlock()
+	return mock.GetModuleAddressFunc(name)
+}
+
+// GetModuleAddressCalls gets all the calls that were made to GetModuleAddress.
+// Check the length with:
+//
+//	len(mockedAccountKeeper.GetModuleAddressCalls())
+func (mock *AccountKeeperMock) GetModuleAddressCalls() []struct {
+	Name string
+} {
+	var calls []struct {
+		Name string
+	}
+	mock.lockGetModuleAddress.RLock()
+	calls = mock.calls.GetModuleAddress
+	mock.lockGetModuleAddress.RUnlock()
+	return calls
+}
+
+// SetModuleAccount calls SetModuleAccountFunc.
+func (mock *AccountKeeperMock) SetModuleAccount(contextMoqParam context.Context, moduleAccountI cosmossdktypes.ModuleAccountI) {
+	if mock.SetModuleAccountFunc == nil {
+		panic("AccountKeeperMock.SetModuleAccountFunc: method is nil but AccountKeeper.SetModuleAccount was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam context.Context
+		ModuleAccountI  cosmossdktypes.ModuleAccountI
+	}{
+		ContextMoqParam: contextMoqParam,
+		ModuleAccountI:  moduleAccountI,
+	}
+	mock.lockSetModuleAccount.Lock()
+	mock.calls.SetModuleAccount = append(mock.calls.SetModuleAccount, callInfo)
+	mock.lockSetModuleAccount.Unlock()
+	mock.SetModuleAccountFunc(contextMoqParam, moduleAccountI)
+}
+
+// SetModuleAccountCalls gets all the calls that were made to SetModuleAccount.
+// Check the length with:
+//
+//	len(mockedAccountKeeper.SetModuleAccountCalls())
+func (mock *AccountKeeperMock) SetModuleAccountCalls() []struct {
+	ContextMoqParam context.Context
+	ModuleAccountI  cosmossdktypes.ModuleAccountI
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+		ModuleAccountI  cosmossdktypes.ModuleAccountI
+	}
+	mock.lockSetModuleAccount.RLock()
+	calls = mock.calls.SetModuleAccount
+	mock.lockSetModuleAccount.RUnlock()
 	return calls
 }

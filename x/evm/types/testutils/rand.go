@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"strings"
 
+	"cosmossdk.io/math"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -155,7 +156,7 @@ func RandomNetworks() []types.NetworkInfo {
 func RandomNetwork() types.NetworkInfo {
 	return types.NetworkInfo{
 		Name: randomNormalizedStr(5, 20),
-		Id:   sdk.NewInt(rand.PosI64()),
+		Id:   math.NewInt(rand.PosI64()),
 	}
 }
 
@@ -175,7 +176,7 @@ func RandomDeposit() types.ERC20Deposit {
 	return types.ERC20Deposit{
 		TxID:             RandomHash(),
 		LogIndex:         uint64(rand.I64Between(0, 100)),
-		Amount:           sdk.NewUint(uint64(rand.PosI64())),
+		Amount:           math.NewUint(uint64(rand.PosI64())),
 		Asset:            rand.Denom(5, 10),
 		DestinationChain: nexus.ChainName(randomNormalizedStr(5, 20)),
 		BurnerAddress:    RandomAddress(),
@@ -189,7 +190,7 @@ func RandomCommand() types.Command {
 			slices.TryCast[int32, types.CommandType](
 				maps.Keys(types.CommandType_name)),
 			func(t types.CommandType) bool { return t != types.COMMAND_TYPE_UNSPECIFIED })...)
-	chainID := sdk.NewIntFromUint64(uint64(rand.PosI64()))
+	chainID := math.NewIntFromUint64(uint64(rand.PosI64()))
 	asset := rand.Denom(5, 10)
 	amount := big.NewInt(rand.PosI64())
 
@@ -197,9 +198,9 @@ func RandomCommand() types.Command {
 	case types.COMMAND_TYPE_APPROVE_CONTRACT_CALL:
 		return types.NewApproveContractCallCommand(chainID, multisigTestutils.KeyID(), nexustestutils.RandomChainName(), RandomHash(), uint64(rand.PosI64()), RandomEventContractCall())
 	case types.COMMAND_TYPE_APPROVE_CONTRACT_CALL_WITH_MINT:
-		return types.NewApproveContractCallWithMintCommand(chainID, multisigTestutils.KeyID(), nexustestutils.RandomChainName(), RandomHash(), uint64(rand.PosI64()), RandomEventContractCallWithToken(), sdk.NewUint(uint64(rand.PosI64())), asset)
+		return types.NewApproveContractCallWithMintCommand(chainID, multisigTestutils.KeyID(), nexustestutils.RandomChainName(), RandomHash(), uint64(rand.PosI64()), RandomEventContractCallWithToken(), math.NewUint(uint64(rand.PosI64())), asset)
 	case types.COMMAND_TYPE_DEPLOY_TOKEN:
-		return types.NewDeployTokenCommand(chainID, multisigTestutils.KeyID(), asset, RandomTokenDetails(), RandomAddress(), sdk.NewUint(uint64(rand.PosI64())))
+		return types.NewDeployTokenCommand(chainID, multisigTestutils.KeyID(), asset, RandomTokenDetails(), RandomAddress(), math.NewUint(uint64(rand.PosI64())))
 	case types.COMMAND_TYPE_BURN_TOKEN:
 		return types.NewBurnTokenCommand(chainID, multisigTestutils.KeyID(), rand.PosI64(), RandomBurnerInfo(), false)
 	case types.COMMAND_TYPE_MINT_TOKEN:
@@ -212,8 +213,8 @@ func RandomCommand() types.Command {
 			GetParticipantsFunc: func() []sdk.ValAddress {
 				return slices.Expand2(rand.ValAddr, int(rand.I64Between(1, 10)))
 			},
-			GetWeightFunc:           func(sdk.ValAddress) sdk.Uint { return sdk.NewUint(uint64(rand.PosI64())) },
-			GetMinPassingWeightFunc: func() sdk.Uint { return sdk.NewUint(uint64(rand.PosI64())) },
+			GetWeightFunc:           func(sdk.ValAddress) math.Uint { return math.NewUint(uint64(rand.PosI64())) },
+			GetMinPassingWeightFunc: func() math.Uint { return math.NewUint(uint64(rand.PosI64())) },
 		}
 		return types.NewMultisigTransferCommand(chainID, multisigTestutils.KeyID(), key)
 	default:
@@ -225,7 +226,7 @@ func RandomCommand() types.Command {
 func RandomEventTransfer() types.EventTransfer {
 	return types.EventTransfer{
 		To:     RandomAddress(),
-		Amount: rand.UintBetween(sdk.OneUint(), sdk.NewUint(100000)),
+		Amount: rand.UintBetween(math.OneUint(), math.NewUint(100000)),
 	}
 }
 
@@ -237,7 +238,7 @@ func RandomEventContractCallWithToken() types.EventContractCallWithToken {
 		ContractAddress:  RandomAddress().Hex(),
 		PayloadHash:      RandomHash(),
 		Symbol:           rand.Denom(3, 5),
-		Amount:           sdk.NewUint(uint64(rand.PosI64())),
+		Amount:           math.NewUint(uint64(rand.PosI64())),
 	}
 }
 
@@ -306,7 +307,7 @@ func RandomCommandIDs() []types.CommandID {
 
 // RandomCommandID returns a random (valid) command ID for testing
 func RandomCommandID() types.CommandID {
-	return types.NewCommandID(rand.Bytes(int(rand.I64Between(1, 100))), sdk.NewInt(rand.PosI64()))
+	return types.NewCommandID(rand.Bytes(int(rand.I64Between(1, 100))), math.NewInt(rand.PosI64()))
 }
 
 // RandomTokens returns a random (valid) slice of tokens for testing
@@ -329,7 +330,7 @@ func RandomToken() types.ERC20TokenMetadata {
 
 	md := types.ERC20TokenMetadata{
 		Asset:        rand.Denom(5, 20),
-		ChainID:      sdk.NewInt(rand.PosI64()),
+		ChainID:      math.NewInt(rand.PosI64()),
 		Details:      RandomTokenDetails(),
 		TokenAddress: RandomAddress(),
 		TxHash:       RandomHash(),
@@ -350,7 +351,7 @@ func RandomTokenDetails() types.TokenDetails {
 		TokenName: randomNormalizedStr(5, 20),
 		Symbol:    randomNormalizedStr(5, 20),
 		Decimals:  uint8(rand.I64Between(1, 20)),
-		Capacity:  sdk.NewInt(rand.PosI64()),
+		Capacity:  math.NewInt(rand.PosI64()),
 	}
 }
 
@@ -464,7 +465,7 @@ func RandomGatewayEvent(statuses ...types.Event_Status) types.Event {
 					ContractAddress:  RandomAddress().Hex(),
 					PayloadHash:      types.Hash(crypto.Keccak256Hash(payload)),
 					Symbol:           randomNormalizedStr(5, 20),
-					Amount:           sdk.NewUint(uint64(rand.PosI64())),
+					Amount:           math.NewUint(uint64(rand.PosI64())),
 				},
 			},
 		},
@@ -479,7 +480,7 @@ func RandomGatewayEvent(statuses ...types.Event_Status) types.Event {
 					DestinationChain:   nexus.ChainName(randomNormalizedStr(5, 20)),
 					DestinationAddress: RandomAddress().Hex(),
 					Symbol:             randomNormalizedStr(5, 20),
-					Amount:             sdk.NewUint(uint64(rand.PosI64())),
+					Amount:             math.NewUint(uint64(rand.PosI64())),
 				},
 			},
 		},

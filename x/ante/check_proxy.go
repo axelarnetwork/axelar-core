@@ -1,6 +1,7 @@
 package ante
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -32,10 +33,10 @@ func (d CheckProxy) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool, n
 		case *stakingtypes.MsgCreateValidator:
 			valAddress, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
 			if err != nil {
-				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+				return ctx, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 			}
 			if proxy, active := d.snapshotter.GetProxy(ctx, valAddress); proxy.Empty() || !active {
-				return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "no proxy found for operator %s", valAddress.String())
+				return ctx, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "no proxy found for operator %s", valAddress.String())
 			}
 		default:
 			continue

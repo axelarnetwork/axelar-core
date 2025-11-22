@@ -3,10 +3,11 @@ package keeper
 import (
 	"fmt"
 
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
@@ -31,13 +32,13 @@ var _ types.Keeper = &Keeper{}
 // Keeper provides access to all state changes regarding this module
 type Keeper struct {
 	cdc        codec.BinaryCodec
-	storeKey   sdk.StoreKey
+	storeKey   store.StoreKey
 	paramSpace paramtypes.Subspace
 	sigRouter  types.SigRouter
 }
 
 // NewKeeper is the constructor for the keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace paramtypes.Subspace) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey store.StoreKey, paramSpace paramtypes.Subspace) Keeper {
 	return Keeper{
 		cdc:        cdc,
 		storeKey:   storeKey,

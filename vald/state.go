@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 )
 
 //go:generate moq -pkg mock -out ./mock/state.go . ReadWriter
@@ -29,12 +29,12 @@ func NewStateStore(rw ReadWriter) StateStore {
 func (s StateStore) GetState() (completed int64, err error) {
 	bz, err := s.rw.ReadAll()
 	if err != nil {
-		return 0, sdkerrors.Wrap(err, "could not read the event state")
+		return 0, errorsmod.Wrap(err, "could not read the event state")
 	}
 
 	err = json.Unmarshal(bz, &completed)
 	if err != nil {
-		return 0, sdkerrors.Wrap(err, "state is in unexpected format")
+		return 0, errorsmod.Wrap(err, "state is in unexpected format")
 	}
 
 	if completed < 0 {

@@ -3,9 +3,9 @@ package utils
 import (
 	"fmt"
 
+	"cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-errors/errors"
-	"github.com/tendermint/tendermint/libs/log"
 )
 
 //go:generate moq -out ./mock/abci.go -pkg mock . Logger
@@ -33,7 +33,6 @@ func RunCached[T any](c sdk.Context, l Logger, f func(sdk.Context) (T, error)) T
 	}
 
 	writeCache()
-	c.EventManager().EmitEvents(ctx.EventManager().Events())
 
 	return result
 }

@@ -17,6 +17,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&SubmitSignatureRequest{},
 		&KeygenOptInRequest{},
 		&KeygenOptOutRequest{},
+		&UpdateParamsRequest{},
 	)
 
 	registry.RegisterImplementations((*reward.Refundable)(nil),

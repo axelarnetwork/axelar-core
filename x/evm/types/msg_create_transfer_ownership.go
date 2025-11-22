@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -11,7 +12,7 @@ import (
 
 // NewCreateTransferOwnershipRequest is the constructor for CreateTransferOwnershipRequest
 func NewCreateTransferOwnershipRequest(sender sdk.AccAddress, chain string, keyID string) *CreateTransferOwnershipRequest {
-	return &CreateTransferOwnershipRequest{Sender: sender, Chain: nexus.ChainName(utils.NormalizeString(chain)), KeyID: multisig.KeyID(keyID)}
+	return &CreateTransferOwnershipRequest{Sender: sender.String(), Chain: nexus.ChainName(utils.NormalizeString(chain)), KeyID: multisig.KeyID(keyID)}
 }
 
 // Route implements sdk.Msg
@@ -29,19 +30,14 @@ func (m CreateTransferOwnershipRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
-// GetSigners implements sdk.Msg
-func (m CreateTransferOwnershipRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
-}
-
 // ValidateBasic implements sdk.Msg
 func (m CreateTransferOwnershipRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
+		return errorsmod.Wrap(err, "invalid chain")
 	}
 
 	if err := m.KeyID.ValidateBasic(); err != nil {

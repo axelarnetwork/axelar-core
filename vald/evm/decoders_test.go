@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
@@ -28,7 +28,7 @@ func TestDecodeEventTokenSent(t *testing.T) {
 		DestinationChain:   "ethereum-2",
 		DestinationAddress: "0x58ea4103ed955dCBbdc8a0fEbaba395B6e44d15F",
 		Symbol:             "ethereum-1-uaxl",
-		Amount:             sdk.NewUint(10000000),
+		Amount:             math.NewUint(10000000),
 	}
 	actual, err := evm.DecodeEventTokenSent(log)
 
@@ -74,7 +74,7 @@ func TestDecodeEventContractCallWithToken(t *testing.T) {
 		ContractAddress:  "0x76a06043391712bE39A343d1f43165854fCF6De3",
 		PayloadHash:      types.Hash(common.HexToHash("0x9fcef596d62dca8e51b6ba3414901947c0e6821d4483b2f3327ce87c2d4e662e")),
 		Symbol:           "uaxl",
-		Amount:           sdk.NewUint(10000000),
+		Amount:           math.NewUint(10000000),
 	}
 	actual, err := evm.DecodeEventContractCallWithToken(log)
 
@@ -132,7 +132,7 @@ func TestDecodeErc20TransferEvent_CorrectData(t *testing.T) {
 	erc20TransferEventSig := common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
 	expectedFrom := common.BytesToAddress(rand.Bytes(common.AddressLength))
 	expectedTo := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	expectedAmount := sdk.NewUint(uint64(rand.I64Between(1, 10000)))
+	expectedAmount := math.NewUint(uint64(rand.I64Between(1, 10000)))
 
 	l := geth.Log{
 		Topics: []common.Hash{

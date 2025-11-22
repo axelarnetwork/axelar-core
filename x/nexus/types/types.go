@@ -3,8 +3,9 @@ package types
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -86,7 +87,7 @@ func (m ChainState) Validate() error {
 		}
 
 		if err := asset.Validate(); err != nil {
-			return sdkerrors.Wrap(err, "invalid asset")
+			return errorsmod.Wrap(err, "invalid asset")
 		}
 
 		if seenDenoms[asset.Denom] {
@@ -183,7 +184,7 @@ func (m TransferEpoch) ValidateBasic() error {
 func NewTransferEpoch(chain exported.ChainName, asset string, epoch uint64, direction exported.TransferDirection) TransferEpoch {
 	return TransferEpoch{
 		Chain:     chain,
-		Amount:    sdk.NewCoin(asset, sdk.ZeroInt()),
+		Amount:    sdk.NewCoin(asset, math.ZeroInt()),
 		Epoch:     epoch,
 		Direction: direction,
 	}

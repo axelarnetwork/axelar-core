@@ -12,6 +12,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&UpdateGovernanceKeyRequest{}, "permission/UpdateGovernanceKey", nil)
 	cdc.RegisterConcrete(&RegisterControllerRequest{}, "permission/RegisterController", nil)
 	cdc.RegisterConcrete(&DeregisterControllerRequest{}, "permission/DeregisterController", nil)
+	cdc.RegisterConcrete(&UpdateParamsRequest{}, "permission/UpdateParams", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -20,6 +21,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&UpdateGovernanceKeyRequest{},
 		&RegisterControllerRequest{},
 		&DeregisterControllerRequest{},
+		&UpdateParamsRequest{},
 	)
 }
 

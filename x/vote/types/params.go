@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
@@ -76,7 +76,7 @@ func validateEndBlockerLimit(limit interface{}) error {
 		return fmt.Errorf("invalid parameter type for end blocker limit: %T", limit)
 	}
 	if h <= 0 {
-		return sdkerrors.Wrap(types.ErrInvalidGenesis, "end blocker limit must be greater >0")
+		return errorsmod.Wrap(types.ErrInvalidGenesis, "end blocker limit must be greater >0")
 	}
 
 	return nil

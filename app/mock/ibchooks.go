@@ -5,7 +5,7 @@ package mock
 
 import (
 	"github.com/axelarnetwork/axelar-core/app"
-	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"sync"
 )
 

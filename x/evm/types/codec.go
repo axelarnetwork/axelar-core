@@ -5,7 +5,7 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	gogoprototypes "github.com/gogo/protobuf/types"
+	gogoprototypes "github.com/cosmos/gogoproto/types"
 )
 
 // RegisterLegacyAminoCodec registers concrete types on codec
@@ -24,6 +24,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&ConfirmGatewayTxRequest{}, "evm/ConfirmGatewayTxRequest", nil)
 	cdc.RegisterConcrete(&ConfirmGatewayTxsRequest{}, "evm/ConfirmGatewayTxsRequest", nil)
 	cdc.RegisterConcrete(&RetryFailedEventRequest{}, "evm/RetryFailedEvent", nil)
+	cdc.RegisterConcrete(&UpdateParamsRequest{}, "evm/UpdateParams", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -43,6 +44,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&ConfirmGatewayTxRequest{},
 		&ConfirmGatewayTxsRequest{},
 		&RetryFailedEventRequest{},
+		&UpdateParamsRequest{},
 	)
 	registry.RegisterImplementations((*codec.ProtoMarshaler)(nil),
 		&gogoprototypes.BoolValue{},

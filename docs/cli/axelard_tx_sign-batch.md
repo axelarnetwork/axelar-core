@@ -5,9 +5,9 @@ Sign transaction batch files
 ### Synopsis
 
 Sign batch files of transactions generated with --generate-only.
-The command processes list of transactions from file (one StdTx each line), generate
-signed transactions or signatures and print their JSON encoding, delimited by '\\n'.
-As the signatures are generated, the command updates the account sequence number accordingly.
+The command processes list of transactions from a file (one StdTx each line), or multiple files.
+Then generates signed transactions or signatures and print their JSON encoding, delimited by '\\n'.
+As the signatures are generated, the command updates the account and sequence number accordingly.
 
 If the --signature-only flag is set, it will output the signature parts only.
 
@@ -17,41 +17,48 @@ it is required to set such parameters manually. Note, invalid values will cause
 the transaction to fail. The sequence will be incremented automatically for each
 transaction that is signed.
 
+If --account-number or --sequence flag is used when offline=false, they are ignored and
+overwritten by the default flag values.
+
 The --multisig=\<multisig_key> flag generates a signature on behalf of a multisig
 account key. It implies --signature-only.
 
 ```
-axelard tx sign-batch [file] [flags]
+axelard tx sign-batch [file] ([file2]...) [flags]
 ```
 
 ### Options
 
 ```
   -a, --account-number uint      The account number of the signing account (offline mode only)
-  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async|block) (default "block")
-      --chain-id string          network chain ID (default "axelar")
+      --append                   Combine all message and generate single signed transaction for broadcast.
+      --aux                      Generate aux signer data instead of sending a tx
+  -b, --broadcast-mode string    Transaction broadcasting mode (sync|async) (default "sync")
+      --chain-id string          The network chain ID (default "axelar")
       --dry-run                  ignore the --gas flag and perform a simulation of a transaction, but don't broadcast it (when enabled, the local Keybase is not accessible)
-      --fee-account string       Fee account pays fees for the transaction instead of deducting from the signer
+      --fee-granter string       Fee granter grants fees for the transaction
+      --fee-payer string         Fee payer pays fees for the transaction instead of deducting from the signer
       --fees string              Fees to pay along with transaction; eg: 10uatom
       --from string              Name or address of private key with which to sign
-      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically (default 200000)
+      --gas string               gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically. Note: "auto" option doesn't always report accurate results. Set a valid coin value to adjust the result. Can be used instead of "fees". (default 200000)
       --gas-adjustment float     adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored  (default 1)
       --gas-prices string        Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom) (default "0.007uaxl")
-      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase is not accessible)
+      --generate-only            Build an unsigned transaction and write it to STDOUT (when enabled, the local Keybase only accessed when providing a key name)
   -h, --help                     help for sign-batch
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test|memory) (default "file")
       --keyring-dir string       The client Keyring directory; if omitted, the default 'home' directory will be used
       --ledger                   Use a connected Ledger device
       --multisig string          Address or key name of the multisig account on behalf of which the transaction shall be signed
-      --node string              <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --node string              <host>:<port> to CometBFT rpc interface for this chain (default "tcp://localhost:26657")
       --note string              Note to add a description to the transaction (previously --memo)
-      --offline                  Offline mode (does not allow any online functionality
+      --offline                  Offline mode (does not allow any online functionality)
   -o, --output string            Output format (text|json) (default "json")
       --output-document string   The document will be written to the given file instead of STDOUT
   -s, --sequence uint            The sequence number of the signing account (offline mode only)
-      --sign-mode string         Choose sign mode (direct|amino-json), this is an advanced feature
-      --signature-only           Print only the generated signature, then exit (default true)
+      --sign-mode string         Choose sign mode (direct|amino-json|direct-aux|textual), this is an advanced feature
+      --signature-only           Print only the generated signature, then exit
       --timeout-height uint      Set a block timeout height to prevent the tx from being committed past a certain height
+      --tip string               Tip is the amount that is going to be transferred to the fee payer on the target chain. This flag is only valid when used with --aux, and is ignored if the target chain didn't enable the TipDecorator
   -y, --yes                      Skip tx broadcasting prompt confirmation (default true)
 ```
 

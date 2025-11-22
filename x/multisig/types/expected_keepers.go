@@ -1,9 +1,12 @@
 package types
 
 import (
+	"context"
+
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -41,7 +44,7 @@ type Snapshotter interface {
 		ctx sdk.Context,
 		candidates []sdk.ValAddress,
 		filterFunc func(snapshot.ValidatorI) bool,
-		weightFunc func(consensusPower sdk.Uint) sdk.Uint,
+		weightFunc func(consensusPower math.Uint) math.Uint,
 		threshold utils.Threshold,
 	) (snapshot.Snapshot, error)
 	GetProxy(ctx sdk.Context, operator sdk.ValAddress) (addr sdk.AccAddress, active bool)
@@ -50,12 +53,12 @@ type Snapshotter interface {
 
 // Staker provides staking keeper functionality
 type Staker interface {
-	GetBondedValidatorsByPower(ctx sdk.Context) []stakingTypes.Validator
+	GetBondedValidatorsByPower(ctx context.Context) ([]stakingTypes.Validator, error)
 }
 
 // Slasher provides slashing keeper functionality
 type Slasher interface {
-	IsTombstoned(ctx sdk.Context, consAddr sdk.ConsAddress) bool
+	IsTombstoned(ctx context.Context, consAddr sdk.ConsAddress) bool
 }
 
 // Rewarder provides reward keeper functionality

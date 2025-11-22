@@ -5,10 +5,10 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/ante"
 	"github.com/axelarnetwork/axelar-core/x/ante/types/mock"
@@ -24,19 +24,21 @@ func TestRestrictedTx(t *testing.T) {
 		handler    sdk.AnteDecorator
 		permission *mock.PermissionMock
 		tx         *mock.TxMock
-		signers    []sdk.AccAddress
+		signer     string
 	)
+	encodingConfig := app.MakeEncodingConfig()
+	govAccount := rand.AccAddr()
 
-	signerAnyRole := func() {
-		signers = slices.Expand(func(_ int) sdk.AccAddress { return rand.AccAddr() }, int(rand.I64Between(1, 5)))
+	signerHasAnyRole := func() {
+		signer = rand.AccAddr().String()
 		permission.GetRoleFunc = func(sdk.Context, sdk.AccAddress) exported.Role {
 			return exported.Role(rand.Of(maps.Keys(exported.Role_name)...))
 		}
 	}
 
 	signerIsNot := func(role exported.Role) func() {
-		signers = slices.Expand(func(_ int) sdk.AccAddress { return rand.AccAddr() }, int(rand.I64Between(1, 5)))
 		return func() {
+			signer = rand.AccAddr().String()
 			permission.GetRoleFunc = func(sdk.Context, sdk.AccAddress) exported.Role {
 				filtered := slices.Filter(maps.Keys(exported.Role_name), func(k int32) bool { return k != int32(role) })
 				return exported.Role(rand.Of(filtered...))
@@ -44,14 +46,23 @@ func TestRestrictedTx(t *testing.T) {
 		}
 	}
 
-	noSigner := func() {
-		signers = []sdk.AccAddress{}
+	signerIsGovAccount := func() {
+		signer = govAccount.String()
 		permission.GetRoleFunc = func(_ sdk.Context, addr sdk.AccAddress) exported.Role {
-			if len(addr) == 0 {
+			if addr.Empty() {
 				return exported.ROLE_UNRESTRICTED
 			}
+			return exported.ROLE_UNRESTRICTED
+		}
+	}
 
-			return exported.Role(rand.Of(maps.Keys(exported.Role_name)...))
+	signerIsEmpty := func() {
+		signer = ""
+		permission.GetRoleFunc = func(_ sdk.Context, addr sdk.AccAddress) exported.Role {
+			if addr.Empty() {
+				return exported.ROLE_UNRESTRICTED
+			}
+			panic("GetRole should not be called with non-empty address when signer is empty")
 		}
 	}
 
@@ -67,61 +78,59 @@ func TestRestrictedTx(t *testing.T) {
 		assert.Error(t, err)
 	}
 
-	txWithMsg := func(msg descriptor.Message) *mock.TxMock {
+	txWithMsg := func(msg sdk.Msg) *mock.TxMock {
 		return &mock.TxMock{
 			GetMsgsFunc: func() []sdk.Msg {
 				return slices.Expand(func(_ int) sdk.Msg {
-					return &mock.MsgMock{
-						GetSignersFunc: func() []sdk.AccAddress {
-							return signers
-						},
-						DescriptorFunc: msg.Descriptor,
-					}
+					return msg
 				}, int(rand.I64Between(1, 20)))
 			},
 		}
 	}
 
-	msgRoleIsUnrestricted := func() { tx = txWithMsg(&evm.LinkRequest{}) }
-	msgRoleIsUnspecified := func() { tx = txWithMsg(&banktypes.MsgSend{}) }
-	msgRoleIsChainManagement := func() { tx = txWithMsg(&evm.CreateDeployTokenRequest{}) }
-	msgRoleIsAccessControl := func() { tx = txWithMsg(&axelarnet.RegisterFeeCollectorRequest{}) }
+	msgRoleIsUnrestricted := func() { tx = txWithMsg(&evm.LinkRequest{Sender: signer}) }
+	msgRoleIsUnspecified := func() { tx = txWithMsg(&banktypes.MsgSend{FromAddress: signer}) }
+	msgRoleIsChainManagement := func() { tx = txWithMsg(&evm.CreateDeployTokenRequest{Sender: signer}) }
+	msgRoleIsAccessControl := func() { tx = txWithMsg(&axelarnet.RegisterFeeCollectorRequest{Sender: signer}) }
 
 	Given("a restricted tx ante handler", func() {
 		permission = &mock.PermissionMock{}
 		handler = ante.NewAnteHandlerDecorator(
-			ante.ChainMessageAnteDecorators(ante.NewRestrictedTx(permission)).ToAnteHandler())
+			ante.ChainMessageAnteDecorators(ante.NewRestrictedTx(permission, encodingConfig.Codec)).ToAnteHandler())
 	}).Branch(
-		When("msg role is unrestricted", msgRoleIsUnrestricted).
-			When("signer has any role", signerAnyRole).
-			Then("let the msg through", letTxThrough),
+		When("signer has any role", signerHasAnyRole).Branch(
+			When("msg role is unrestricted", msgRoleIsUnrestricted).
+				Then("let the msg through", letTxThrough),
+			When("msg role is unspecified", msgRoleIsUnspecified).
+				Then("let the msg through", letTxThrough),
+		),
 
-		When("msg role is unspecified", msgRoleIsUnspecified).
-			When("signer has any role", signerAnyRole).
-			Then("let the msg through", letTxThrough),
-
-		When("msg role is chain management", msgRoleIsChainManagement).
-			When("signer is not chain management", signerIsNot(exported.ROLE_CHAIN_MANAGEMENT)).
+		When("signer is not chain management", signerIsNot(exported.ROLE_CHAIN_MANAGEMENT)).
+			When("msg role is chain management", msgRoleIsChainManagement).
 			Then("stop tx", stopTx),
 
-		When("msg role is access control", msgRoleIsAccessControl).
-			When("signer is not access control", signerIsNot(exported.ROLE_ACCESS_CONTROL)).
+		When("signer is not access control", signerIsNot(exported.ROLE_ACCESS_CONTROL)).
+			When("msg role is access control", msgRoleIsAccessControl).
 			Then("stop tx", stopTx),
 
-		When("msg role is unrestricted", msgRoleIsUnrestricted).
-			When("there is no signer", noSigner).
-			Then("let the msg through", letTxThrough),
+		When("signer is empty", signerIsEmpty).Branch(
+			When("msg role is unrestricted", msgRoleIsUnrestricted).
+				Then("stop tx", stopTx),
+			When("msg role is unspecified", msgRoleIsUnspecified).
+				Then("stop tx", stopTx),
+			When("msg role is chain management", msgRoleIsChainManagement).
+				Then("stop tx", stopTx),
+			When("msg role is access control", msgRoleIsAccessControl).
+				Then("stop tx", stopTx),
+		),
 
-		When("msg role is unspecified", msgRoleIsUnspecified).
-			When("there is no signer", noSigner).
-			Then("let the msg through", letTxThrough),
-
-		When("msg role is chain management", msgRoleIsChainManagement).
-			When("there is no signer", noSigner).
-			Then("stop tx", stopTx),
-
-		When("msg role is access control", msgRoleIsAccessControl).
-			When("there is no signer", noSigner).
-			Then("stop tx", stopTx),
+		// governance proposals bypass ante handlers, so the governance address should behave just like an account
+		//without special permissions to prevent unintended permission check bypasses
+		When("signer is gov account", signerIsGovAccount).Branch(
+			When("msg role is chain management", msgRoleIsChainManagement).
+				Then("stop tx", stopTx),
+			When("msg role is access control", msgRoleIsAccessControl).
+				Then("stop tx", stopTx),
+		),
 	).Run(t, 20)
 }

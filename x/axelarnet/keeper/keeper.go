@@ -3,13 +3,14 @@ package keeper
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	gogoprototypes "github.com/gogo/protobuf/types"
-	"github.com/tendermint/tendermint/libs/log"
+	gogoprototypes "github.com/cosmos/gogoproto/types"
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
@@ -39,7 +40,7 @@ var (
 
 // Keeper provides access to all state changes regarding the Axelarnet module
 type Keeper struct {
-	storeKey sdk.StoreKey
+	storeKey store.StoreKey
 	cdc      codec.BinaryCodec
 	params   params.Subspace
 
@@ -48,7 +49,7 @@ type Keeper struct {
 }
 
 // NewKeeper returns a new axelarnet keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, paramSpace params.Subspace, channelK types.ChannelKeeper, feegrantK types.FeegrantKeeper) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, storeKey store.StoreKey, paramSpace params.Subspace, channelK types.ChannelKeeper, feegrantK types.FeegrantKeeper) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable()), channelK: channelK, feegrantK: feegrantK}
 }
 
@@ -278,7 +279,7 @@ func getSeqIDMappingKey(portID, channelID string, seq uint64) key.Key {
 func (k Keeper) SetSeqIDMapping(ctx sdk.Context, t types.IBCTransfer) error {
 	nextSeq, ok := k.channelK.GetNextSequenceSend(ctx, t.PortID, t.ChannelID)
 	if !ok {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			channeltypes.ErrSequenceSendNotFound,
 			"source port: %s, source channel: %s", t.PortID, t.ChannelID,
 		)
@@ -366,4 +367,8 @@ func (k Keeper) GetSeqMessageIDMapping(ctx sdk.Context, portID, channelID string
 // DeleteSeqMessageIDMapping deletes (port, channel, packet seq) -> general message ID mapping
 func (k Keeper) DeleteSeqMessageIDMapping(ctx sdk.Context, portID, channelID string, seq uint64) {
 	k.getStore(ctx).DeleteRaw(getSeqMessageIDMappingKey(portID, channelID, seq).Bytes())
+}
+
+func (k Keeper) GetChannel(ctx sdk.Context, srcPort string, srcChan string) (channel channeltypes.Channel, found bool) {
+	return k.channelK.GetChannel(ctx, srcPort, srcChan)
 }

@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -20,7 +21,7 @@ func NewPool(name string) Pool {
 // ValidateBasic returns an error if the Pool is not valid; nil otherwise
 func (m Pool) ValidateBasic() error {
 	if err := utils.ValidateString(m.Name); err != nil {
-		return sdkerrors.Wrap(err, "invalid name")
+		return errorsmod.Wrap(err, "invalid name")
 	}
 
 	validatorSeen := make(map[string]bool)
@@ -39,7 +40,7 @@ func (m Pool) ValidateBasic() error {
 		}
 
 		if err := reward.Coins.Validate(); err != nil {
-			return sdkerrors.Wrapf(err, "invalid rewards for validator %s found in pool %s", validatorAddr, m.Name)
+			return errorsmod.Wrapf(err, "invalid rewards for validator %s found in pool %s", validatorAddr, m.Name)
 		}
 
 		validatorSeen[validatorAddr] = true
@@ -51,7 +52,7 @@ func (m Pool) ValidateBasic() error {
 // ValidateBasic returns an error if the Refund is not valid; nil otherwise
 func (m Refund) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Payer); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "payer").Error())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "payer").Error())
 	}
 
 	if err := m.Fees.Validate(); err != nil {

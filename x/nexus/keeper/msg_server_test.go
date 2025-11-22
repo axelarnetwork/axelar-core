@@ -3,11 +3,12 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
+	abci "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	abci "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -21,11 +22,11 @@ func TestMsgServerActivateDeactivateWasm(t *testing.T) {
 	encodingConfig := params.MakeEncodingConfig()
 	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "nexus")
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "nexus")
 
 	k := keeper.NewKeeper(
 		encodingConfig.Codec,
-		sdk.NewKVStoreKey(types.StoreKey),
+		store.NewKVStoreKey(types.StoreKey),
 		subspace,
 	)
 
@@ -36,7 +37,7 @@ func TestMsgServerActivateDeactivateWasm(t *testing.T) {
 
 	msgServer := keeper.NewMsgServerImpl(k, &snap, &slashing, &staking, &ax)
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t))
 
 	assert.True(t, k.IsWasmConnectionActivated(ctx))
 
@@ -51,4 +52,26 @@ func TestMsgServerActivateDeactivateWasm(t *testing.T) {
 	_, err = msgServer.DeactivateChain(sdk.WrapSDKContext(ctx), &types.DeactivateChainRequest{Chains: []nexus.ChainName{"not_wasm"}})
 	assert.NoError(t, err)
 	assert.True(t, k.IsWasmConnectionActivated(ctx))
+}
+
+func TestUpdateParams(t *testing.T) {
+	encodingConfig := params.MakeEncodingConfig()
+	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "nexus")
+
+	k := keeper.NewKeeper(
+		encodingConfig.Codec,
+		store.NewKVStoreKey(types.StoreKey),
+		subspace,
+	)
+
+	msgServer := keeper.NewMsgServerImpl(k, &mock.SnapshotterMock{}, &mock.SlashingKeeperMock{}, &mock.StakingKeeperMock{}, &mock.AxelarnetKeeperMock{})
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t))
+
+	p := types.DefaultParams()
+	p.ChainMaintainerCheckWindow = p.ChainMaintainerCheckWindow + 1
+	_, err := msgServer.UpdateParams(ctx, &types.UpdateParamsRequest{Authority: "", Params: p})
+	assert.NoError(t, err)
+	assert.Equal(t, p, k.GetParams(ctx))
 }
