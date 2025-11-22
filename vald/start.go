@@ -493,7 +493,7 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broad
 			Debugf("created JSON-RPC client of type %T", client)
 
 		// clean up evmRPC connection on process shutdown
-		cleanupCommands = append(cleanupCommands, sdkClient.Close)
+		cleanupCommands = append(cleanupCommands, client.Close)
 
 		rpcs[chainName] = client
 		log.Infof("successfully connected to EVM bridge for chain %s", chainName)
