@@ -3,7 +3,7 @@ package testutils
 import (
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"cosmossdk.io/math"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -13,9 +13,9 @@ import (
 
 // Snapshot returns random snapshot based on the given parameters
 func Snapshot(participantCount uint64, threshold utils.Threshold) exported.Snapshot {
-	participantsWeight := sdk.ZeroUint()
+	participantsWeight := math.ZeroUint()
 	participants := slices.Expand(func(int) exported.Participant {
-		weight := sdk.NewUint(uint64(rand.I64Between(1, 100)))
+		weight := math.NewUint(uint64(rand.I64Between(1, 100)))
 		participantsWeight = participantsWeight.Add(weight)
 
 		return exported.NewParticipant(rand.ValAddr(), weight)
@@ -23,7 +23,7 @@ func Snapshot(participantCount uint64, threshold utils.Threshold) exported.Snaps
 		int(participantCount),
 	)
 
-	bondedWeight := sdk.NewUint(uint64(rand.I64Between(
+	bondedWeight := math.NewUint(uint64(rand.I64Between(
 		participantsWeight.BigInt().Int64(),
 		participantsWeight.MulUint64(uint64(threshold.Denominator)).QuoUint64(uint64(threshold.Numerator)).BigInt().Int64()+1),
 	))

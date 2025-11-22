@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -11,7 +12,7 @@ import (
 // NewRegisterIBCPathRequest creates a message of type RegisterIBCPathRequest
 func NewRegisterIBCPathRequest(sender sdk.AccAddress, chain, path string) *RegisterIBCPathRequest {
 	return &RegisterIBCPathRequest{
-		Sender: sender,
+		Sender: sender.String(),
 		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
 		Path:   utils.NormalizeString(path),
 	}
@@ -29,12 +30,12 @@ func (m RegisterIBCPathRequest) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m RegisterIBCPathRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
+		return errorsmod.Wrap(err, "invalid chain")
 	}
 
 	if err := ValidateIBCPath(m.Path); err != nil {
@@ -47,9 +48,4 @@ func (m RegisterIBCPathRequest) ValidateBasic() error {
 // GetSignBytes returns the message bytes that need to be signed
 func (m RegisterIBCPathRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
-}
-
-// GetSigners returns the set of signers for this message
-func (m RegisterIBCPathRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

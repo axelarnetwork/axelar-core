@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	slashingTypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
@@ -62,7 +62,7 @@ func SetGenesisSlashingCmd(defaultNodeHome string) *cobra.Command {
 			}
 
 			if minSignedPerWindow != "" {
-				min, err := sdk.NewDecFromStr(minSignedPerWindow)
+				min, err := math.LegacyNewDecFromStr(minSignedPerWindow)
 				if err != nil {
 					return err
 				}
@@ -79,7 +79,7 @@ func SetGenesisSlashingCmd(defaultNodeHome string) *cobra.Command {
 			}
 
 			if slashFractionDoubleSign != "" {
-				fraction, err := sdk.NewDecFromStr(slashFractionDoubleSign)
+				fraction, err := math.LegacyNewDecFromStr(slashFractionDoubleSign)
 				if err != nil {
 					return err
 				}
@@ -88,7 +88,7 @@ func SetGenesisSlashingCmd(defaultNodeHome string) *cobra.Command {
 			}
 
 			if slashFractionDowntime != "" {
-				fraction, err := sdk.NewDecFromStr(slashFractionDowntime)
+				fraction, err := math.LegacyNewDecFromStr(slashFractionDowntime)
 				if err != nil {
 					return err
 				}

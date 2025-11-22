@@ -1,8 +1,11 @@
 package keeper
 
 import (
+	"errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
@@ -73,9 +76,12 @@ func (p *rewardPool) ReleaseRewards(validator sdk.ValAddress) error {
 
 	defer p.ClearRewards(validator)
 
-	v := p.staker.Validator(p.ctx, validator)
-	if v == nil {
-		return nil
+	v, err := p.staker.Validator(p.ctx, validator)
+	if err != nil {
+		if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
+			return nil
+		}
+		return err
 	}
 
 	if err := p.banker.MintCoins(p.ctx, types.ModuleName, rewards); err != nil {
@@ -88,13 +94,11 @@ func (p *rewardPool) ReleaseRewards(validator sdk.ValAddress) error {
 
 	p.k.Logger(p.ctx).Info("releasing rewards in pool", "pool", p.Name, "validator", validator.String())
 
-	p.distributor.AllocateTokensToValidator(
+	return p.distributor.AllocateTokensToValidator(
 		p.ctx,
 		v,
 		sdk.NewDecCoinsFromCoins(rewards...),
 	)
-
-	return nil
 }
 
 func (p *rewardPool) ClearRewards(validator sdk.ValAddress) {

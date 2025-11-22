@@ -1,6 +1,7 @@
 package ante
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -17,7 +18,7 @@ type txWithUnwrappedMsgs struct {
 func newTxWithUnwrappedMsgs(tx sdk.Tx) (txWithUnwrappedMsgs, error) {
 	feeTx, ok := tx.(sdk.FeeTx)
 	if !ok {
-		return txWithUnwrappedMsgs{}, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "tx must be a FeeTx")
+		return txWithUnwrappedMsgs{}, errorsmod.Wrap(sdkerrors.ErrTxDecode, "tx must be a FeeTx")
 	}
 
 	return txWithUnwrappedMsgs{feeTx, unpackMsgs(tx.GetMsgs())}, nil

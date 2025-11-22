@@ -1,19 +1,22 @@
 package axelarnet
 
 import (
+	"context"
 	"fmt"
+	mathrand "math/rand"
 	"testing"
 
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
+	abci "github.com/cometbft/cometbft/abci/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
-	ibcchanneltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	ibcclient "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	ibcclient "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -30,10 +33,10 @@ import (
 	. "github.com/axelarnetwork/utils/test"
 )
 
-func setup() (sdk.Context, keeper.IBCKeeper, *mock.ChannelKeeperMock, *mock.IBCTransferKeeperMock) {
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+func setup(t log.TestingT) (sdk.Context, keeper.IBCKeeper, *mock.ChannelKeeperMock, *mock.IBCTransferKeeperMock) {
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	encCfg := appParams.MakeEncodingConfig()
-	axelarnetSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("axelarnetKey"), sdk.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
+	axelarnetSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("axelarnetKey"), store.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
 
 	channelK := &mock.ChannelKeeperMock{
 		GetNextSequenceSendFunc: func(ctx sdk.Context, portID string, channelID string) (uint64, bool) {
@@ -42,7 +45,7 @@ func setup() (sdk.Context, keeper.IBCKeeper, *mock.ChannelKeeperMock, *mock.IBCT
 	}
 	transferK := &mock.IBCTransferKeeperMock{}
 
-	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.FeegrantKeeperMock{})
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.FeegrantKeeperMock{})
 	k.InitGenesis(ctx, types.DefaultGenesisState())
 	ibcK := keeper.NewIBCKeeper(k, transferK)
 	return ctx, ibcK, channelK, transferK
@@ -66,7 +69,7 @@ func TestEndBlocker(t *testing.T) {
 	repeats := 20
 
 	givenTransferQueue := Given("transfer queue", func() {
-		ctx, ibcK, channelK, transferK = setup()
+		ctx, ibcK, channelK, transferK = setup(t)
 
 		bk = &mock.BaseKeeperMock{
 			LoggerFunc:                func(ctx sdk.Context) log.Logger { return log.NewNopLogger() },
@@ -78,20 +81,20 @@ func TestEndBlocker(t *testing.T) {
 			},
 		}
 
-		transferK.SendTransferFunc = func(sdk.Context, string, string, sdk.Coin, sdk.AccAddress, string, clienttypes.Height, uint64) error {
+		transferK.TransferFunc = func(context.Context, *ibctransfertypes.MsgTransfer) (*ibctransfertypes.MsgTransferResponse, error) {
 			if queueIdx <= ibcTransferErrors {
 				if panicOnTransferError {
 					panic("panicked on transfer")
 				}
 
-				return fmt.Errorf("failed to send transfer")
+				return nil, fmt.Errorf("failed to send transfer")
 			}
 
 			ctx.EventManager().EmitEvent(
 				sdk.NewEvent(
 					ibcchanneltypes.EventTypeSendPacket,
 				))
-			return nil
+			return &ibctransfertypes.MsgTransferResponse{Sequence: mathrand.Uint64()}, nil
 		}
 
 		channelK.GetChannelClientStateFunc = func(ctx sdk.Context, portID string, channelID string) (string, ibcclient.ClientState, error) {
@@ -128,10 +131,10 @@ func TestEndBlocker(t *testing.T) {
 			queueSize = 0
 		}).
 		Then("should do nothing", func(t *testing.T) {
-			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
+			_, err := EndBlocker(ctx, bk, ibcK)
 			assert.NoError(t, err)
 			assert.Equal(t, len(transferQueue.DequeueCalls()), 0)
-			assert.Equal(t, len(transferK.SendTransferCalls()), 0)
+			assert.Equal(t, len(transferK.TransferCalls()), 0)
 		}).
 		Run(t, repeats)
 
@@ -140,10 +143,10 @@ func TestEndBlocker(t *testing.T) {
 			queueSize = int(rand.I64Between(50, 200))
 		}).
 		Then("should init ibc transfers", func(t *testing.T) {
-			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
+			_, err := EndBlocker(ctx, bk, ibcK)
 			assert.NoError(t, err)
 			assert.Equal(t, queueSize, len(transferQueue.DequeueCalls()))
-			assert.Equal(t, queueSize, len(transferK.SendTransferCalls()))
+			assert.Equal(t, queueSize, len(transferK.TransferCalls()))
 			assert.Equal(t, queueSize, slices.Reduce(ctx.EventManager().Events().ToABCIEvents(), 0, func(c int, e abci.Event) int {
 				if e.Type == ibcchanneltypes.EventTypeSendPacket {
 					c++
@@ -163,10 +166,10 @@ func TestEndBlocker(t *testing.T) {
 		}).
 		Then("should init ibc transfers", func(t *testing.T) {
 			numTransfers := math.Min(queueSize, transferLimit)
-			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
+			_, err := EndBlocker(ctx, bk, ibcK)
 			assert.NoError(t, err)
 			assert.Equal(t, numTransfers, len(transferQueue.DequeueCalls()))
-			assert.Equal(t, numTransfers, len(transferK.SendTransferCalls()))
+			assert.Equal(t, numTransfers, len(transferK.TransferCalls()))
 			assert.Equal(t, numTransfers, slices.Reduce(ctx.EventManager().Events().ToABCIEvents(), 0, func(c int, e abci.Event) int {
 				if e.Type == ibcchanneltypes.EventTypeSendPacket {
 					c++
@@ -182,10 +185,10 @@ func TestEndBlocker(t *testing.T) {
 			ibcTransferErrors = int(rand.I64Between(1, int64(queueSize)) + 1)
 		}).
 		Then("should set failed transfers", func(t *testing.T) {
-			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
+			_, err := EndBlocker(ctx, bk, ibcK)
 			assert.NoError(t, err)
 			assert.Equal(t, queueSize, len(transferQueue.DequeueCalls()))
-			assert.Equal(t, queueSize, len(transferK.SendTransferCalls()))
+			assert.Equal(t, queueSize, len(transferK.TransferCalls()))
 			assert.Equal(t, queueSize-ibcTransferErrors, slices.Reduce(ctx.EventManager().Events().ToABCIEvents(), 0, func(c int, e abci.Event) int {
 				if e.Type == ibcchanneltypes.EventTypeSendPacket {
 					c++
@@ -203,10 +206,10 @@ func TestEndBlocker(t *testing.T) {
 			panicOnTransferError = true
 		}).
 		Then("should set transfers failed", func(t *testing.T) {
-			_, err := EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()}, bk, ibcK)
+			_, err := EndBlocker(ctx, bk, ibcK)
 			assert.NoError(t, err)
 			assert.Equal(t, queueSize, len(transferQueue.DequeueCalls()))
-			assert.Equal(t, queueSize, len(transferK.SendTransferCalls()))
+			assert.Equal(t, queueSize, len(transferK.TransferCalls()))
 			assert.Equal(t, queueSize-ibcTransferErrors, slices.Reduce(ctx.EventManager().Events().ToABCIEvents(), 0, func(c int, e abci.Event) int {
 				if e.Type == ibcchanneltypes.EventTypeSendPacket {
 					c++

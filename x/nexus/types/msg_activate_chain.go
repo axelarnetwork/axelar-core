@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -14,7 +15,7 @@ import (
 // NewActivateChainRequest creates a message of type ActivateChainRequest
 func NewActivateChainRequest(sender sdk.AccAddress, chains ...string) *ActivateChainRequest {
 	return &ActivateChainRequest{
-		Sender: sender,
+		Sender: sender.String(),
 		Chains: slices.Map(chains, func(c string) exported.ChainName {
 			return exported.ChainName(utils.NormalizeString(c))
 		}),
@@ -33,8 +34,8 @@ func (m ActivateChainRequest) Type() string {
 
 // ValidateBasic implements sdk.Msg
 func (m ActivateChainRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if len(m.Chains) == 0 {
@@ -43,7 +44,7 @@ func (m ActivateChainRequest) ValidateBasic() error {
 
 	for _, chain := range m.Chains {
 		if err := chain.Validate(); err != nil {
-			return sdkerrors.Wrap(err, "invalid chain")
+			return errorsmod.Wrap(err, "invalid chain")
 		}
 	}
 
@@ -54,9 +55,4 @@ func (m ActivateChainRequest) ValidateBasic() error {
 func (m ActivateChainRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners implements sdk.Msg
-func (m ActivateChainRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

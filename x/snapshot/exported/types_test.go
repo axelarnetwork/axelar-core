@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
@@ -26,14 +27,14 @@ func TestSnapshot(t *testing.T) {
 		participantCount := rand.I64Between(1, 100)
 		participants := make([]exported.Participant, participantCount)
 		for i := range participants {
-			participants[i] = exported.NewParticipant(rand.ValAddr(), sdk.NewUint(uint64(rand.I64Between(1, 100))))
+			participants[i] = exported.NewParticipant(rand.ValAddr(), math.NewUint(uint64(rand.I64Between(1, 100))))
 		}
 
 		snapshot = exported.NewSnapshot(
 			testRand.Time(),
 			rand.PosI64(),
 			participants,
-			sdk.NewUint(uint64(rand.I64Between(10000, 100000))),
+			math.NewUint(uint64(rand.I64Between(10000, 100000))),
 		)
 	})
 
@@ -58,7 +59,7 @@ func TestSnapshot(t *testing.T) {
 
 		givenSnapshot.
 			When("bonded weight is zero", func() {
-				snapshot.BondedWeight = sdk.ZeroUint()
+				snapshot.BondedWeight = math.ZeroUint()
 			}).
 			Then("should return error", func(t *testing.T) {
 				assert.ErrorContains(t, snapshot.ValidateBasic(), "bonded weight >0")
@@ -120,8 +121,8 @@ func TestSnapshot(t *testing.T) {
 				assert.Equal(t, snapshot.BondedWeight, snapshot.CalculateMinPassingWeight(threshold))
 
 				threshold = utils.NewThreshold(1, 3)
-				snapshot.BondedWeight = sdk.NewUint(10)
-				assert.Equal(t, sdk.NewUint(4), snapshot.CalculateMinPassingWeight(threshold))
+				snapshot.BondedWeight = math.NewUint(10)
+				assert.Equal(t, math.NewUint(4), snapshot.CalculateMinPassingWeight(threshold))
 			}).
 			Run(t)
 	})
@@ -153,7 +154,7 @@ func TestSnapshot(t *testing.T) {
 					assert.Equal(t, participant.Weight, snapshot.GetParticipantWeight(addr))
 				}
 
-				assert.Equal(t, sdk.ZeroUint(), snapshot.GetParticipantWeight(rand.ValAddr()))
+				assert.Equal(t, math.ZeroUint(), snapshot.GetParticipantWeight(rand.ValAddr()))
 			}).
 			Run(t, repeat)
 	})
@@ -162,13 +163,13 @@ func TestSnapshot(t *testing.T) {
 		givenSnapshot.
 			When("participants weight is 10", func() {
 				snapshot.Participants = map[string]exported.Participant{
-					"1": exported.NewParticipant(rand.ValAddr(), sdk.NewUint(2)),
-					"2": exported.NewParticipant(rand.ValAddr(), sdk.NewUint(3)),
-					"3": exported.NewParticipant(rand.ValAddr(), sdk.NewUint(5)),
+					"1": exported.NewParticipant(rand.ValAddr(), math.NewUint(2)),
+					"2": exported.NewParticipant(rand.ValAddr(), math.NewUint(3)),
+					"3": exported.NewParticipant(rand.ValAddr(), math.NewUint(5)),
 				}
 			}).
 			Then("should calculate the correct participants weight", func(t *testing.T) {
-				expected := sdk.NewUint(10)
+				expected := math.NewUint(10)
 				actual := snapshot.GetParticipantsWeight()
 
 				assert.Equal(t, expected, actual)

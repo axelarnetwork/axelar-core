@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
 
@@ -58,12 +58,12 @@ func (mgr Mgr) processGatewayTxLogs(chain nexus.ChainName, gatewayAddress types.
 		case ContractCallSig:
 			gatewayEvent, err := DecodeEventContractCall(txlog)
 			if err != nil {
-				mgr.logger().Debug(sdkerrors.Wrap(err, "decode event ContractCall failed").Error())
+				mgr.logger().Debug(errorsmod.Wrap(err, "decode event ContractCall failed").Error())
 				continue
 			}
 
 			if err := gatewayEvent.ValidateBasic(); err != nil {
-				mgr.logger().Debug(sdkerrors.Wrap(err, "invalid event ContractCall").Error())
+				mgr.logger().Debug(errorsmod.Wrap(err, "invalid event ContractCall").Error())
 				continue
 			}
 
@@ -78,12 +78,12 @@ func (mgr Mgr) processGatewayTxLogs(chain nexus.ChainName, gatewayAddress types.
 		case ContractCallWithTokenSig:
 			gatewayEvent, err := DecodeEventContractCallWithToken(txlog)
 			if err != nil {
-				mgr.logger().Debug(sdkerrors.Wrap(err, "decode event ContractCallWithToken failed").Error())
+				mgr.logger().Debug(errorsmod.Wrap(err, "decode event ContractCallWithToken failed").Error())
 				continue
 			}
 
 			if err := gatewayEvent.ValidateBasic(); err != nil {
-				mgr.logger().Debug(sdkerrors.Wrap(err, "invalid event ContractCallWithToken").Error())
+				mgr.logger().Debug(errorsmod.Wrap(err, "invalid event ContractCallWithToken").Error())
 				continue
 			}
 
@@ -98,11 +98,11 @@ func (mgr Mgr) processGatewayTxLogs(chain nexus.ChainName, gatewayAddress types.
 		case TokenSentSig:
 			gatewayEvent, err := DecodeEventTokenSent(txlog)
 			if err != nil {
-				mgr.logger().Debug(sdkerrors.Wrap(err, "decode event TokenSent failed").Error())
+				mgr.logger().Debug(errorsmod.Wrap(err, "decode event TokenSent failed").Error())
 			}
 
 			if err := gatewayEvent.ValidateBasic(); err != nil {
-				mgr.logger().Debug(sdkerrors.Wrap(err, "invalid event TokenSent").Error())
+				mgr.logger().Debug(errorsmod.Wrap(err, "invalid event TokenSent").Error())
 				continue
 			}
 

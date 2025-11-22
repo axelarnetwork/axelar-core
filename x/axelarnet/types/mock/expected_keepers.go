@@ -5,21 +5,24 @@ package mock
 
 import (
 	context "context"
+	addresscodec "cosmossdk.io/core/address"
+	"cosmossdk.io/log"
+	cosmossdk_io_math "cosmossdk.io/math"
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	axelarnettypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
+	tmbytes "github.com/cometbft/cometbft/libs/bytes"
 	cosmossdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	gov "github.com/cosmos/cosmos-sdk/x/gov/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
-	"github.com/tendermint/tendermint/libs/log"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"sync"
 	time "time"
 )
@@ -760,7 +763,7 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			RateLimitTransferFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
 //				panic("mock out the RateLimitTransfer method")
 //			},
-//			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint, window time.Duration) error {
+//			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdk_io_math.Uint, window time.Duration) error {
 //				panic("mock out the RegisterAsset method")
 //			},
 //			RegisterFeeFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, feeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo) error {
@@ -900,7 +903,7 @@ type NexusMock struct {
 	RateLimitTransferFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
-	RegisterAssetFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint, window time.Duration) error
+	RegisterAssetFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdk_io_math.Uint, window time.Duration) error
 
 	// RegisterFeeFunc mocks the RegisterFee method.
 	RegisterFeeFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, feeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo) error
@@ -1178,7 +1181,7 @@ type NexusMock struct {
 			// Asset is the asset argument value.
 			Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
 			// Limit is the limit argument value.
-			Limit cosmossdktypes.Uint
+			Limit cosmossdk_io_math.Uint
 			// Window is the window argument value.
 			Window time.Duration
 		}
@@ -2485,7 +2488,7 @@ func (mock *NexusMock) RateLimitTransferCalls() []struct {
 }
 
 // RegisterAsset calls RegisterAssetFunc.
-func (mock *NexusMock) RegisterAsset(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdktypes.Uint, window time.Duration) error {
+func (mock *NexusMock) RegisterAsset(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdk_io_math.Uint, window time.Duration) error {
 	if mock.RegisterAssetFunc == nil {
 		panic("NexusMock.RegisterAssetFunc: method is nil but Nexus.RegisterAsset was just called")
 	}
@@ -2493,7 +2496,7 @@ func (mock *NexusMock) RegisterAsset(ctx cosmossdktypes.Context, chain github_co
 		Ctx    cosmossdktypes.Context
 		Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-		Limit  cosmossdktypes.Uint
+		Limit  cosmossdk_io_math.Uint
 		Window time.Duration
 	}{
 		Ctx:    ctx,
@@ -2516,14 +2519,14 @@ func (mock *NexusMock) RegisterAssetCalls() []struct {
 	Ctx    cosmossdktypes.Context
 	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 	Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-	Limit  cosmossdktypes.Uint
+	Limit  cosmossdk_io_math.Uint
 	Window time.Duration
 } {
 	var calls []struct {
 		Ctx    cosmossdktypes.Context
 		Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-		Limit  cosmossdktypes.Uint
+		Limit  cosmossdk_io_math.Uint
 		Window time.Duration
 	}
 	mock.lockRegisterAsset.RLock()
@@ -2961,37 +2964,49 @@ var _ axelarnettypes.BankKeeper = &BankKeeperMock{}
 //			BlockedAddrFunc: func(addr cosmossdktypes.AccAddress) bool {
 //				panic("mock out the BlockedAddr method")
 //			},
-//			BurnCoinsFunc: func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error {
+//			BurnCoinsFunc: func(ctx context.Context, moduleName string, amt cosmossdktypes.Coins) error {
 //				panic("mock out the BurnCoins method")
 //			},
-//			GetAllBalancesFunc: func(ctx cosmossdktypes.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins {
+//			GetAllBalancesFunc: func(ctx context.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins {
 //				panic("mock out the GetAllBalances method")
 //			},
-//			IsSendEnabledCoinFunc: func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin) bool {
+//			GetBalanceFunc: func(ctx context.Context, addr cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin {
+//				panic("mock out the GetBalance method")
+//			},
+//			HasDenomMetaDataFunc: func(ctx context.Context, denom string) bool {
+//				panic("mock out the HasDenomMetaData method")
+//			},
+//			IsSendEnabledCoinFunc: func(ctx context.Context, coin cosmossdktypes.Coin) bool {
 //				panic("mock out the IsSendEnabledCoin method")
 //			},
-//			IsSendEnabledCoinsFunc: func(ctx cosmossdktypes.Context, coins ...cosmossdktypes.Coin) error {
+//			IsSendEnabledCoinsFunc: func(ctx context.Context, coins ...cosmossdktypes.Coin) error {
 //				panic("mock out the IsSendEnabledCoins method")
 //			},
-//			MintCoinsFunc: func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error {
+//			LockedCoinsFunc: func(ctx context.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins {
+//				panic("mock out the LockedCoins method")
+//			},
+//			MintCoinsFunc: func(ctx context.Context, moduleName string, amt cosmossdktypes.Coins) error {
 //				panic("mock out the MintCoins method")
 //			},
-//			SendCoinsFunc: func(ctx cosmossdktypes.Context, fromAddr cosmossdktypes.AccAddress, toAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
+//			SendCoinsFunc: func(ctx context.Context, fromAddr cosmossdktypes.AccAddress, toAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
 //				panic("mock out the SendCoins method")
 //			},
-//			SendCoinsFromAccountToModuleFunc: func(ctx cosmossdktypes.Context, senderAddr cosmossdktypes.AccAddress, recipientModule string, amt cosmossdktypes.Coins) error {
+//			SendCoinsFromAccountToModuleFunc: func(ctx context.Context, senderAddr cosmossdktypes.AccAddress, recipientModule string, amt cosmossdktypes.Coins) error {
 //				panic("mock out the SendCoinsFromAccountToModule method")
 //			},
-//			SendCoinsFromModuleToAccountFunc: func(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
+//			SendCoinsFromModuleToAccountFunc: func(ctx context.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
 //				panic("mock out the SendCoinsFromModuleToAccount method")
 //			},
-//			SendCoinsFromModuleToModuleFunc: func(ctx cosmossdktypes.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error {
+//			SendCoinsFromModuleToModuleFunc: func(ctx context.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error {
 //				panic("mock out the SendCoinsFromModuleToModule method")
 //			},
-//			SpendableBalanceFunc: func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin {
+//			SetDenomMetaDataFunc: func(ctx context.Context, denomMetaData banktypes.Metadata)  {
+//				panic("mock out the SetDenomMetaData method")
+//			},
+//			SpendableBalanceFunc: func(ctx context.Context, address cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin {
 //				panic("mock out the SpendableBalance method")
 //			},
-//			SpendableCoinsFunc: func(ctx cosmossdktypes.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins {
+//			SpendableCoinsFunc: func(ctx context.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins {
 //				panic("mock out the SpendableCoins method")
 //			},
 //		}
@@ -3005,37 +3020,49 @@ type BankKeeperMock struct {
 	BlockedAddrFunc func(addr cosmossdktypes.AccAddress) bool
 
 	// BurnCoinsFunc mocks the BurnCoins method.
-	BurnCoinsFunc func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error
+	BurnCoinsFunc func(ctx context.Context, moduleName string, amt cosmossdktypes.Coins) error
 
 	// GetAllBalancesFunc mocks the GetAllBalances method.
-	GetAllBalancesFunc func(ctx cosmossdktypes.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins
+	GetAllBalancesFunc func(ctx context.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins
+
+	// GetBalanceFunc mocks the GetBalance method.
+	GetBalanceFunc func(ctx context.Context, addr cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin
+
+	// HasDenomMetaDataFunc mocks the HasDenomMetaData method.
+	HasDenomMetaDataFunc func(ctx context.Context, denom string) bool
 
 	// IsSendEnabledCoinFunc mocks the IsSendEnabledCoin method.
-	IsSendEnabledCoinFunc func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin) bool
+	IsSendEnabledCoinFunc func(ctx context.Context, coin cosmossdktypes.Coin) bool
 
 	// IsSendEnabledCoinsFunc mocks the IsSendEnabledCoins method.
-	IsSendEnabledCoinsFunc func(ctx cosmossdktypes.Context, coins ...cosmossdktypes.Coin) error
+	IsSendEnabledCoinsFunc func(ctx context.Context, coins ...cosmossdktypes.Coin) error
+
+	// LockedCoinsFunc mocks the LockedCoins method.
+	LockedCoinsFunc func(ctx context.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins
 
 	// MintCoinsFunc mocks the MintCoins method.
-	MintCoinsFunc func(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error
+	MintCoinsFunc func(ctx context.Context, moduleName string, amt cosmossdktypes.Coins) error
 
 	// SendCoinsFunc mocks the SendCoins method.
-	SendCoinsFunc func(ctx cosmossdktypes.Context, fromAddr cosmossdktypes.AccAddress, toAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error
+	SendCoinsFunc func(ctx context.Context, fromAddr cosmossdktypes.AccAddress, toAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error
 
 	// SendCoinsFromAccountToModuleFunc mocks the SendCoinsFromAccountToModule method.
-	SendCoinsFromAccountToModuleFunc func(ctx cosmossdktypes.Context, senderAddr cosmossdktypes.AccAddress, recipientModule string, amt cosmossdktypes.Coins) error
+	SendCoinsFromAccountToModuleFunc func(ctx context.Context, senderAddr cosmossdktypes.AccAddress, recipientModule string, amt cosmossdktypes.Coins) error
 
 	// SendCoinsFromModuleToAccountFunc mocks the SendCoinsFromModuleToAccount method.
-	SendCoinsFromModuleToAccountFunc func(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error
+	SendCoinsFromModuleToAccountFunc func(ctx context.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error
 
 	// SendCoinsFromModuleToModuleFunc mocks the SendCoinsFromModuleToModule method.
-	SendCoinsFromModuleToModuleFunc func(ctx cosmossdktypes.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error
+	SendCoinsFromModuleToModuleFunc func(ctx context.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error
+
+	// SetDenomMetaDataFunc mocks the SetDenomMetaData method.
+	SetDenomMetaDataFunc func(ctx context.Context, denomMetaData banktypes.Metadata)
 
 	// SpendableBalanceFunc mocks the SpendableBalance method.
-	SpendableBalanceFunc func(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin
+	SpendableBalanceFunc func(ctx context.Context, address cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin
 
 	// SpendableCoinsFunc mocks the SpendableCoins method.
-	SpendableCoinsFunc func(ctx cosmossdktypes.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins
+	SpendableCoinsFunc func(ctx context.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -3047,7 +3074,7 @@ type BankKeeperMock struct {
 		// BurnCoins holds details about calls to the BurnCoins method.
 		BurnCoins []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// ModuleName is the moduleName argument value.
 			ModuleName string
 			// Amt is the amt argument value.
@@ -3056,28 +3083,51 @@ type BankKeeperMock struct {
 		// GetAllBalances holds details about calls to the GetAllBalances method.
 		GetAllBalances []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// Addr is the addr argument value.
 			Addr cosmossdktypes.AccAddress
+		}
+		// GetBalance holds details about calls to the GetBalance method.
+		GetBalance []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Addr is the addr argument value.
+			Addr cosmossdktypes.AccAddress
+			// Denom is the denom argument value.
+			Denom string
+		}
+		// HasDenomMetaData holds details about calls to the HasDenomMetaData method.
+		HasDenomMetaData []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Denom is the denom argument value.
+			Denom string
 		}
 		// IsSendEnabledCoin holds details about calls to the IsSendEnabledCoin method.
 		IsSendEnabledCoin []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// Coin is the coin argument value.
 			Coin cosmossdktypes.Coin
 		}
 		// IsSendEnabledCoins holds details about calls to the IsSendEnabledCoins method.
 		IsSendEnabledCoins []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// Coins is the coins argument value.
 			Coins []cosmossdktypes.Coin
+		}
+		// LockedCoins holds details about calls to the LockedCoins method.
+		LockedCoins []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Addr is the addr argument value.
+			Addr cosmossdktypes.AccAddress
 		}
 		// MintCoins holds details about calls to the MintCoins method.
 		MintCoins []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// ModuleName is the moduleName argument value.
 			ModuleName string
 			// Amt is the amt argument value.
@@ -3086,7 +3136,7 @@ type BankKeeperMock struct {
 		// SendCoins holds details about calls to the SendCoins method.
 		SendCoins []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// FromAddr is the fromAddr argument value.
 			FromAddr cosmossdktypes.AccAddress
 			// ToAddr is the toAddr argument value.
@@ -3097,7 +3147,7 @@ type BankKeeperMock struct {
 		// SendCoinsFromAccountToModule holds details about calls to the SendCoinsFromAccountToModule method.
 		SendCoinsFromAccountToModule []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// SenderAddr is the senderAddr argument value.
 			SenderAddr cosmossdktypes.AccAddress
 			// RecipientModule is the recipientModule argument value.
@@ -3108,7 +3158,7 @@ type BankKeeperMock struct {
 		// SendCoinsFromModuleToAccount holds details about calls to the SendCoinsFromModuleToAccount method.
 		SendCoinsFromModuleToAccount []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// SenderModule is the senderModule argument value.
 			SenderModule string
 			// RecipientAddr is the recipientAddr argument value.
@@ -3119,7 +3169,7 @@ type BankKeeperMock struct {
 		// SendCoinsFromModuleToModule holds details about calls to the SendCoinsFromModuleToModule method.
 		SendCoinsFromModuleToModule []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// SenderModule is the senderModule argument value.
 			SenderModule string
 			// RecipientModule is the recipientModule argument value.
@@ -3127,10 +3177,17 @@ type BankKeeperMock struct {
 			// Amt is the amt argument value.
 			Amt cosmossdktypes.Coins
 		}
+		// SetDenomMetaData holds details about calls to the SetDenomMetaData method.
+		SetDenomMetaData []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DenomMetaData is the denomMetaData argument value.
+			DenomMetaData banktypes.Metadata
+		}
 		// SpendableBalance holds details about calls to the SpendableBalance method.
 		SpendableBalance []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// Address is the address argument value.
 			Address cosmossdktypes.AccAddress
 			// Denom is the denom argument value.
@@ -3139,7 +3196,7 @@ type BankKeeperMock struct {
 		// SpendableCoins holds details about calls to the SpendableCoins method.
 		SpendableCoins []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// Addr is the addr argument value.
 			Addr cosmossdktypes.AccAddress
 		}
@@ -3147,13 +3204,17 @@ type BankKeeperMock struct {
 	lockBlockedAddr                  sync.RWMutex
 	lockBurnCoins                    sync.RWMutex
 	lockGetAllBalances               sync.RWMutex
+	lockGetBalance                   sync.RWMutex
+	lockHasDenomMetaData             sync.RWMutex
 	lockIsSendEnabledCoin            sync.RWMutex
 	lockIsSendEnabledCoins           sync.RWMutex
+	lockLockedCoins                  sync.RWMutex
 	lockMintCoins                    sync.RWMutex
 	lockSendCoins                    sync.RWMutex
 	lockSendCoinsFromAccountToModule sync.RWMutex
 	lockSendCoinsFromModuleToAccount sync.RWMutex
 	lockSendCoinsFromModuleToModule  sync.RWMutex
+	lockSetDenomMetaData             sync.RWMutex
 	lockSpendableBalance             sync.RWMutex
 	lockSpendableCoins               sync.RWMutex
 }
@@ -3191,12 +3252,12 @@ func (mock *BankKeeperMock) BlockedAddrCalls() []struct {
 }
 
 // BurnCoins calls BurnCoinsFunc.
-func (mock *BankKeeperMock) BurnCoins(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error {
+func (mock *BankKeeperMock) BurnCoins(ctx context.Context, moduleName string, amt cosmossdktypes.Coins) error {
 	if mock.BurnCoinsFunc == nil {
 		panic("BankKeeperMock.BurnCoinsFunc: method is nil but BankKeeper.BurnCoins was just called")
 	}
 	callInfo := struct {
-		Ctx        cosmossdktypes.Context
+		Ctx        context.Context
 		ModuleName string
 		Amt        cosmossdktypes.Coins
 	}{
@@ -3215,12 +3276,12 @@ func (mock *BankKeeperMock) BurnCoins(ctx cosmossdktypes.Context, moduleName str
 //
 //	len(mockedBankKeeper.BurnCoinsCalls())
 func (mock *BankKeeperMock) BurnCoinsCalls() []struct {
-	Ctx        cosmossdktypes.Context
+	Ctx        context.Context
 	ModuleName string
 	Amt        cosmossdktypes.Coins
 } {
 	var calls []struct {
-		Ctx        cosmossdktypes.Context
+		Ctx        context.Context
 		ModuleName string
 		Amt        cosmossdktypes.Coins
 	}
@@ -3231,12 +3292,12 @@ func (mock *BankKeeperMock) BurnCoinsCalls() []struct {
 }
 
 // GetAllBalances calls GetAllBalancesFunc.
-func (mock *BankKeeperMock) GetAllBalances(ctx cosmossdktypes.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins {
+func (mock *BankKeeperMock) GetAllBalances(ctx context.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins {
 	if mock.GetAllBalancesFunc == nil {
 		panic("BankKeeperMock.GetAllBalancesFunc: method is nil but BankKeeper.GetAllBalances was just called")
 	}
 	callInfo := struct {
-		Ctx  cosmossdktypes.Context
+		Ctx  context.Context
 		Addr cosmossdktypes.AccAddress
 	}{
 		Ctx:  ctx,
@@ -3253,11 +3314,11 @@ func (mock *BankKeeperMock) GetAllBalances(ctx cosmossdktypes.Context, addr cosm
 //
 //	len(mockedBankKeeper.GetAllBalancesCalls())
 func (mock *BankKeeperMock) GetAllBalancesCalls() []struct {
-	Ctx  cosmossdktypes.Context
+	Ctx  context.Context
 	Addr cosmossdktypes.AccAddress
 } {
 	var calls []struct {
-		Ctx  cosmossdktypes.Context
+		Ctx  context.Context
 		Addr cosmossdktypes.AccAddress
 	}
 	mock.lockGetAllBalances.RLock()
@@ -3266,13 +3327,89 @@ func (mock *BankKeeperMock) GetAllBalancesCalls() []struct {
 	return calls
 }
 
+// GetBalance calls GetBalanceFunc.
+func (mock *BankKeeperMock) GetBalance(ctx context.Context, addr cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin {
+	if mock.GetBalanceFunc == nil {
+		panic("BankKeeperMock.GetBalanceFunc: method is nil but BankKeeper.GetBalance was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Addr  cosmossdktypes.AccAddress
+		Denom string
+	}{
+		Ctx:   ctx,
+		Addr:  addr,
+		Denom: denom,
+	}
+	mock.lockGetBalance.Lock()
+	mock.calls.GetBalance = append(mock.calls.GetBalance, callInfo)
+	mock.lockGetBalance.Unlock()
+	return mock.GetBalanceFunc(ctx, addr, denom)
+}
+
+// GetBalanceCalls gets all the calls that were made to GetBalance.
+// Check the length with:
+//
+//	len(mockedBankKeeper.GetBalanceCalls())
+func (mock *BankKeeperMock) GetBalanceCalls() []struct {
+	Ctx   context.Context
+	Addr  cosmossdktypes.AccAddress
+	Denom string
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Addr  cosmossdktypes.AccAddress
+		Denom string
+	}
+	mock.lockGetBalance.RLock()
+	calls = mock.calls.GetBalance
+	mock.lockGetBalance.RUnlock()
+	return calls
+}
+
+// HasDenomMetaData calls HasDenomMetaDataFunc.
+func (mock *BankKeeperMock) HasDenomMetaData(ctx context.Context, denom string) bool {
+	if mock.HasDenomMetaDataFunc == nil {
+		panic("BankKeeperMock.HasDenomMetaDataFunc: method is nil but BankKeeper.HasDenomMetaData was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Denom string
+	}{
+		Ctx:   ctx,
+		Denom: denom,
+	}
+	mock.lockHasDenomMetaData.Lock()
+	mock.calls.HasDenomMetaData = append(mock.calls.HasDenomMetaData, callInfo)
+	mock.lockHasDenomMetaData.Unlock()
+	return mock.HasDenomMetaDataFunc(ctx, denom)
+}
+
+// HasDenomMetaDataCalls gets all the calls that were made to HasDenomMetaData.
+// Check the length with:
+//
+//	len(mockedBankKeeper.HasDenomMetaDataCalls())
+func (mock *BankKeeperMock) HasDenomMetaDataCalls() []struct {
+	Ctx   context.Context
+	Denom string
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Denom string
+	}
+	mock.lockHasDenomMetaData.RLock()
+	calls = mock.calls.HasDenomMetaData
+	mock.lockHasDenomMetaData.RUnlock()
+	return calls
+}
+
 // IsSendEnabledCoin calls IsSendEnabledCoinFunc.
-func (mock *BankKeeperMock) IsSendEnabledCoin(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin) bool {
+func (mock *BankKeeperMock) IsSendEnabledCoin(ctx context.Context, coin cosmossdktypes.Coin) bool {
 	if mock.IsSendEnabledCoinFunc == nil {
 		panic("BankKeeperMock.IsSendEnabledCoinFunc: method is nil but BankKeeper.IsSendEnabledCoin was just called")
 	}
 	callInfo := struct {
-		Ctx  cosmossdktypes.Context
+		Ctx  context.Context
 		Coin cosmossdktypes.Coin
 	}{
 		Ctx:  ctx,
@@ -3289,11 +3426,11 @@ func (mock *BankKeeperMock) IsSendEnabledCoin(ctx cosmossdktypes.Context, coin c
 //
 //	len(mockedBankKeeper.IsSendEnabledCoinCalls())
 func (mock *BankKeeperMock) IsSendEnabledCoinCalls() []struct {
-	Ctx  cosmossdktypes.Context
+	Ctx  context.Context
 	Coin cosmossdktypes.Coin
 } {
 	var calls []struct {
-		Ctx  cosmossdktypes.Context
+		Ctx  context.Context
 		Coin cosmossdktypes.Coin
 	}
 	mock.lockIsSendEnabledCoin.RLock()
@@ -3303,12 +3440,12 @@ func (mock *BankKeeperMock) IsSendEnabledCoinCalls() []struct {
 }
 
 // IsSendEnabledCoins calls IsSendEnabledCoinsFunc.
-func (mock *BankKeeperMock) IsSendEnabledCoins(ctx cosmossdktypes.Context, coins ...cosmossdktypes.Coin) error {
+func (mock *BankKeeperMock) IsSendEnabledCoins(ctx context.Context, coins ...cosmossdktypes.Coin) error {
 	if mock.IsSendEnabledCoinsFunc == nil {
 		panic("BankKeeperMock.IsSendEnabledCoinsFunc: method is nil but BankKeeper.IsSendEnabledCoins was just called")
 	}
 	callInfo := struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   context.Context
 		Coins []cosmossdktypes.Coin
 	}{
 		Ctx:   ctx,
@@ -3325,11 +3462,11 @@ func (mock *BankKeeperMock) IsSendEnabledCoins(ctx cosmossdktypes.Context, coins
 //
 //	len(mockedBankKeeper.IsSendEnabledCoinsCalls())
 func (mock *BankKeeperMock) IsSendEnabledCoinsCalls() []struct {
-	Ctx   cosmossdktypes.Context
+	Ctx   context.Context
 	Coins []cosmossdktypes.Coin
 } {
 	var calls []struct {
-		Ctx   cosmossdktypes.Context
+		Ctx   context.Context
 		Coins []cosmossdktypes.Coin
 	}
 	mock.lockIsSendEnabledCoins.RLock()
@@ -3338,13 +3475,49 @@ func (mock *BankKeeperMock) IsSendEnabledCoinsCalls() []struct {
 	return calls
 }
 
+// LockedCoins calls LockedCoinsFunc.
+func (mock *BankKeeperMock) LockedCoins(ctx context.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins {
+	if mock.LockedCoinsFunc == nil {
+		panic("BankKeeperMock.LockedCoinsFunc: method is nil but BankKeeper.LockedCoins was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Addr cosmossdktypes.AccAddress
+	}{
+		Ctx:  ctx,
+		Addr: addr,
+	}
+	mock.lockLockedCoins.Lock()
+	mock.calls.LockedCoins = append(mock.calls.LockedCoins, callInfo)
+	mock.lockLockedCoins.Unlock()
+	return mock.LockedCoinsFunc(ctx, addr)
+}
+
+// LockedCoinsCalls gets all the calls that were made to LockedCoins.
+// Check the length with:
+//
+//	len(mockedBankKeeper.LockedCoinsCalls())
+func (mock *BankKeeperMock) LockedCoinsCalls() []struct {
+	Ctx  context.Context
+	Addr cosmossdktypes.AccAddress
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Addr cosmossdktypes.AccAddress
+	}
+	mock.lockLockedCoins.RLock()
+	calls = mock.calls.LockedCoins
+	mock.lockLockedCoins.RUnlock()
+	return calls
+}
+
 // MintCoins calls MintCoinsFunc.
-func (mock *BankKeeperMock) MintCoins(ctx cosmossdktypes.Context, moduleName string, amt cosmossdktypes.Coins) error {
+func (mock *BankKeeperMock) MintCoins(ctx context.Context, moduleName string, amt cosmossdktypes.Coins) error {
 	if mock.MintCoinsFunc == nil {
 		panic("BankKeeperMock.MintCoinsFunc: method is nil but BankKeeper.MintCoins was just called")
 	}
 	callInfo := struct {
-		Ctx        cosmossdktypes.Context
+		Ctx        context.Context
 		ModuleName string
 		Amt        cosmossdktypes.Coins
 	}{
@@ -3363,12 +3536,12 @@ func (mock *BankKeeperMock) MintCoins(ctx cosmossdktypes.Context, moduleName str
 //
 //	len(mockedBankKeeper.MintCoinsCalls())
 func (mock *BankKeeperMock) MintCoinsCalls() []struct {
-	Ctx        cosmossdktypes.Context
+	Ctx        context.Context
 	ModuleName string
 	Amt        cosmossdktypes.Coins
 } {
 	var calls []struct {
-		Ctx        cosmossdktypes.Context
+		Ctx        context.Context
 		ModuleName string
 		Amt        cosmossdktypes.Coins
 	}
@@ -3379,12 +3552,12 @@ func (mock *BankKeeperMock) MintCoinsCalls() []struct {
 }
 
 // SendCoins calls SendCoinsFunc.
-func (mock *BankKeeperMock) SendCoins(ctx cosmossdktypes.Context, fromAddr cosmossdktypes.AccAddress, toAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
+func (mock *BankKeeperMock) SendCoins(ctx context.Context, fromAddr cosmossdktypes.AccAddress, toAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
 	if mock.SendCoinsFunc == nil {
 		panic("BankKeeperMock.SendCoinsFunc: method is nil but BankKeeper.SendCoins was just called")
 	}
 	callInfo := struct {
-		Ctx      cosmossdktypes.Context
+		Ctx      context.Context
 		FromAddr cosmossdktypes.AccAddress
 		ToAddr   cosmossdktypes.AccAddress
 		Amt      cosmossdktypes.Coins
@@ -3405,13 +3578,13 @@ func (mock *BankKeeperMock) SendCoins(ctx cosmossdktypes.Context, fromAddr cosmo
 //
 //	len(mockedBankKeeper.SendCoinsCalls())
 func (mock *BankKeeperMock) SendCoinsCalls() []struct {
-	Ctx      cosmossdktypes.Context
+	Ctx      context.Context
 	FromAddr cosmossdktypes.AccAddress
 	ToAddr   cosmossdktypes.AccAddress
 	Amt      cosmossdktypes.Coins
 } {
 	var calls []struct {
-		Ctx      cosmossdktypes.Context
+		Ctx      context.Context
 		FromAddr cosmossdktypes.AccAddress
 		ToAddr   cosmossdktypes.AccAddress
 		Amt      cosmossdktypes.Coins
@@ -3423,12 +3596,12 @@ func (mock *BankKeeperMock) SendCoinsCalls() []struct {
 }
 
 // SendCoinsFromAccountToModule calls SendCoinsFromAccountToModuleFunc.
-func (mock *BankKeeperMock) SendCoinsFromAccountToModule(ctx cosmossdktypes.Context, senderAddr cosmossdktypes.AccAddress, recipientModule string, amt cosmossdktypes.Coins) error {
+func (mock *BankKeeperMock) SendCoinsFromAccountToModule(ctx context.Context, senderAddr cosmossdktypes.AccAddress, recipientModule string, amt cosmossdktypes.Coins) error {
 	if mock.SendCoinsFromAccountToModuleFunc == nil {
 		panic("BankKeeperMock.SendCoinsFromAccountToModuleFunc: method is nil but BankKeeper.SendCoinsFromAccountToModule was just called")
 	}
 	callInfo := struct {
-		Ctx             cosmossdktypes.Context
+		Ctx             context.Context
 		SenderAddr      cosmossdktypes.AccAddress
 		RecipientModule string
 		Amt             cosmossdktypes.Coins
@@ -3449,13 +3622,13 @@ func (mock *BankKeeperMock) SendCoinsFromAccountToModule(ctx cosmossdktypes.Cont
 //
 //	len(mockedBankKeeper.SendCoinsFromAccountToModuleCalls())
 func (mock *BankKeeperMock) SendCoinsFromAccountToModuleCalls() []struct {
-	Ctx             cosmossdktypes.Context
+	Ctx             context.Context
 	SenderAddr      cosmossdktypes.AccAddress
 	RecipientModule string
 	Amt             cosmossdktypes.Coins
 } {
 	var calls []struct {
-		Ctx             cosmossdktypes.Context
+		Ctx             context.Context
 		SenderAddr      cosmossdktypes.AccAddress
 		RecipientModule string
 		Amt             cosmossdktypes.Coins
@@ -3467,12 +3640,12 @@ func (mock *BankKeeperMock) SendCoinsFromAccountToModuleCalls() []struct {
 }
 
 // SendCoinsFromModuleToAccount calls SendCoinsFromModuleToAccountFunc.
-func (mock *BankKeeperMock) SendCoinsFromModuleToAccount(ctx cosmossdktypes.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
+func (mock *BankKeeperMock) SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr cosmossdktypes.AccAddress, amt cosmossdktypes.Coins) error {
 	if mock.SendCoinsFromModuleToAccountFunc == nil {
 		panic("BankKeeperMock.SendCoinsFromModuleToAccountFunc: method is nil but BankKeeper.SendCoinsFromModuleToAccount was just called")
 	}
 	callInfo := struct {
-		Ctx           cosmossdktypes.Context
+		Ctx           context.Context
 		SenderModule  string
 		RecipientAddr cosmossdktypes.AccAddress
 		Amt           cosmossdktypes.Coins
@@ -3493,13 +3666,13 @@ func (mock *BankKeeperMock) SendCoinsFromModuleToAccount(ctx cosmossdktypes.Cont
 //
 //	len(mockedBankKeeper.SendCoinsFromModuleToAccountCalls())
 func (mock *BankKeeperMock) SendCoinsFromModuleToAccountCalls() []struct {
-	Ctx           cosmossdktypes.Context
+	Ctx           context.Context
 	SenderModule  string
 	RecipientAddr cosmossdktypes.AccAddress
 	Amt           cosmossdktypes.Coins
 } {
 	var calls []struct {
-		Ctx           cosmossdktypes.Context
+		Ctx           context.Context
 		SenderModule  string
 		RecipientAddr cosmossdktypes.AccAddress
 		Amt           cosmossdktypes.Coins
@@ -3511,12 +3684,12 @@ func (mock *BankKeeperMock) SendCoinsFromModuleToAccountCalls() []struct {
 }
 
 // SendCoinsFromModuleToModule calls SendCoinsFromModuleToModuleFunc.
-func (mock *BankKeeperMock) SendCoinsFromModuleToModule(ctx cosmossdktypes.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error {
+func (mock *BankKeeperMock) SendCoinsFromModuleToModule(ctx context.Context, senderModule string, recipientModule string, amt cosmossdktypes.Coins) error {
 	if mock.SendCoinsFromModuleToModuleFunc == nil {
 		panic("BankKeeperMock.SendCoinsFromModuleToModuleFunc: method is nil but BankKeeper.SendCoinsFromModuleToModule was just called")
 	}
 	callInfo := struct {
-		Ctx             cosmossdktypes.Context
+		Ctx             context.Context
 		SenderModule    string
 		RecipientModule string
 		Amt             cosmossdktypes.Coins
@@ -3537,13 +3710,13 @@ func (mock *BankKeeperMock) SendCoinsFromModuleToModule(ctx cosmossdktypes.Conte
 //
 //	len(mockedBankKeeper.SendCoinsFromModuleToModuleCalls())
 func (mock *BankKeeperMock) SendCoinsFromModuleToModuleCalls() []struct {
-	Ctx             cosmossdktypes.Context
+	Ctx             context.Context
 	SenderModule    string
 	RecipientModule string
 	Amt             cosmossdktypes.Coins
 } {
 	var calls []struct {
-		Ctx             cosmossdktypes.Context
+		Ctx             context.Context
 		SenderModule    string
 		RecipientModule string
 		Amt             cosmossdktypes.Coins
@@ -3554,13 +3727,49 @@ func (mock *BankKeeperMock) SendCoinsFromModuleToModuleCalls() []struct {
 	return calls
 }
 
+// SetDenomMetaData calls SetDenomMetaDataFunc.
+func (mock *BankKeeperMock) SetDenomMetaData(ctx context.Context, denomMetaData banktypes.Metadata) {
+	if mock.SetDenomMetaDataFunc == nil {
+		panic("BankKeeperMock.SetDenomMetaDataFunc: method is nil but BankKeeper.SetDenomMetaData was just called")
+	}
+	callInfo := struct {
+		Ctx           context.Context
+		DenomMetaData banktypes.Metadata
+	}{
+		Ctx:           ctx,
+		DenomMetaData: denomMetaData,
+	}
+	mock.lockSetDenomMetaData.Lock()
+	mock.calls.SetDenomMetaData = append(mock.calls.SetDenomMetaData, callInfo)
+	mock.lockSetDenomMetaData.Unlock()
+	mock.SetDenomMetaDataFunc(ctx, denomMetaData)
+}
+
+// SetDenomMetaDataCalls gets all the calls that were made to SetDenomMetaData.
+// Check the length with:
+//
+//	len(mockedBankKeeper.SetDenomMetaDataCalls())
+func (mock *BankKeeperMock) SetDenomMetaDataCalls() []struct {
+	Ctx           context.Context
+	DenomMetaData banktypes.Metadata
+} {
+	var calls []struct {
+		Ctx           context.Context
+		DenomMetaData banktypes.Metadata
+	}
+	mock.lockSetDenomMetaData.RLock()
+	calls = mock.calls.SetDenomMetaData
+	mock.lockSetDenomMetaData.RUnlock()
+	return calls
+}
+
 // SpendableBalance calls SpendableBalanceFunc.
-func (mock *BankKeeperMock) SpendableBalance(ctx cosmossdktypes.Context, address cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin {
+func (mock *BankKeeperMock) SpendableBalance(ctx context.Context, address cosmossdktypes.AccAddress, denom string) cosmossdktypes.Coin {
 	if mock.SpendableBalanceFunc == nil {
 		panic("BankKeeperMock.SpendableBalanceFunc: method is nil but BankKeeper.SpendableBalance was just called")
 	}
 	callInfo := struct {
-		Ctx     cosmossdktypes.Context
+		Ctx     context.Context
 		Address cosmossdktypes.AccAddress
 		Denom   string
 	}{
@@ -3579,12 +3788,12 @@ func (mock *BankKeeperMock) SpendableBalance(ctx cosmossdktypes.Context, address
 //
 //	len(mockedBankKeeper.SpendableBalanceCalls())
 func (mock *BankKeeperMock) SpendableBalanceCalls() []struct {
-	Ctx     cosmossdktypes.Context
+	Ctx     context.Context
 	Address cosmossdktypes.AccAddress
 	Denom   string
 } {
 	var calls []struct {
-		Ctx     cosmossdktypes.Context
+		Ctx     context.Context
 		Address cosmossdktypes.AccAddress
 		Denom   string
 	}
@@ -3595,12 +3804,12 @@ func (mock *BankKeeperMock) SpendableBalanceCalls() []struct {
 }
 
 // SpendableCoins calls SpendableCoinsFunc.
-func (mock *BankKeeperMock) SpendableCoins(ctx cosmossdktypes.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins {
+func (mock *BankKeeperMock) SpendableCoins(ctx context.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.Coins {
 	if mock.SpendableCoinsFunc == nil {
 		panic("BankKeeperMock.SpendableCoinsFunc: method is nil but BankKeeper.SpendableCoins was just called")
 	}
 	callInfo := struct {
-		Ctx  cosmossdktypes.Context
+		Ctx  context.Context
 		Addr cosmossdktypes.AccAddress
 	}{
 		Ctx:  ctx,
@@ -3617,11 +3826,11 @@ func (mock *BankKeeperMock) SpendableCoins(ctx cosmossdktypes.Context, addr cosm
 //
 //	len(mockedBankKeeper.SpendableCoinsCalls())
 func (mock *BankKeeperMock) SpendableCoinsCalls() []struct {
-	Ctx  cosmossdktypes.Context
+	Ctx  context.Context
 	Addr cosmossdktypes.AccAddress
 } {
 	var calls []struct {
-		Ctx  cosmossdktypes.Context
+		Ctx  context.Context
 		Addr cosmossdktypes.AccAddress
 	}
 	mock.lockSpendableCoins.RLock()
@@ -3643,9 +3852,6 @@ var _ axelarnettypes.IBCTransferKeeper = &IBCTransferKeeperMock{}
 //			GetDenomTraceFunc: func(ctx cosmossdktypes.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
 //				panic("mock out the GetDenomTrace method")
 //			},
-//			SendTransferFunc: func(ctx cosmossdktypes.Context, sourcePort string, sourceChannel string, token cosmossdktypes.Coin, sender cosmossdktypes.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error {
-//				panic("mock out the SendTransfer method")
-//			},
 //			TransferFunc: func(goCtx context.Context, msg *ibctransfertypes.MsgTransfer) (*ibctransfertypes.MsgTransferResponse, error) {
 //				panic("mock out the Transfer method")
 //			},
@@ -3659,9 +3865,6 @@ type IBCTransferKeeperMock struct {
 	// GetDenomTraceFunc mocks the GetDenomTrace method.
 	GetDenomTraceFunc func(ctx cosmossdktypes.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool)
 
-	// SendTransferFunc mocks the SendTransfer method.
-	SendTransferFunc func(ctx cosmossdktypes.Context, sourcePort string, sourceChannel string, token cosmossdktypes.Coin, sender cosmossdktypes.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error
-
 	// TransferFunc mocks the Transfer method.
 	TransferFunc func(goCtx context.Context, msg *ibctransfertypes.MsgTransfer) (*ibctransfertypes.MsgTransferResponse, error)
 
@@ -3674,25 +3877,6 @@ type IBCTransferKeeperMock struct {
 			// DenomTraceHash is the denomTraceHash argument value.
 			DenomTraceHash tmbytes.HexBytes
 		}
-		// SendTransfer holds details about calls to the SendTransfer method.
-		SendTransfer []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// SourcePort is the sourcePort argument value.
-			SourcePort string
-			// SourceChannel is the sourceChannel argument value.
-			SourceChannel string
-			// Token is the token argument value.
-			Token cosmossdktypes.Coin
-			// Sender is the sender argument value.
-			Sender cosmossdktypes.AccAddress
-			// Receiver is the receiver argument value.
-			Receiver string
-			// TimeoutHeight is the timeoutHeight argument value.
-			TimeoutHeight clienttypes.Height
-			// TimeoutTimestamp is the timeoutTimestamp argument value.
-			TimeoutTimestamp uint64
-		}
 		// Transfer holds details about calls to the Transfer method.
 		Transfer []struct {
 			// GoCtx is the goCtx argument value.
@@ -3702,7 +3886,6 @@ type IBCTransferKeeperMock struct {
 		}
 	}
 	lockGetDenomTrace sync.RWMutex
-	lockSendTransfer  sync.RWMutex
 	lockTransfer      sync.RWMutex
 }
 
@@ -3739,66 +3922,6 @@ func (mock *IBCTransferKeeperMock) GetDenomTraceCalls() []struct {
 	mock.lockGetDenomTrace.RLock()
 	calls = mock.calls.GetDenomTrace
 	mock.lockGetDenomTrace.RUnlock()
-	return calls
-}
-
-// SendTransfer calls SendTransferFunc.
-func (mock *IBCTransferKeeperMock) SendTransfer(ctx cosmossdktypes.Context, sourcePort string, sourceChannel string, token cosmossdktypes.Coin, sender cosmossdktypes.AccAddress, receiver string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64) error {
-	if mock.SendTransferFunc == nil {
-		panic("IBCTransferKeeperMock.SendTransferFunc: method is nil but IBCTransferKeeper.SendTransfer was just called")
-	}
-	callInfo := struct {
-		Ctx              cosmossdktypes.Context
-		SourcePort       string
-		SourceChannel    string
-		Token            cosmossdktypes.Coin
-		Sender           cosmossdktypes.AccAddress
-		Receiver         string
-		TimeoutHeight    clienttypes.Height
-		TimeoutTimestamp uint64
-	}{
-		Ctx:              ctx,
-		SourcePort:       sourcePort,
-		SourceChannel:    sourceChannel,
-		Token:            token,
-		Sender:           sender,
-		Receiver:         receiver,
-		TimeoutHeight:    timeoutHeight,
-		TimeoutTimestamp: timeoutTimestamp,
-	}
-	mock.lockSendTransfer.Lock()
-	mock.calls.SendTransfer = append(mock.calls.SendTransfer, callInfo)
-	mock.lockSendTransfer.Unlock()
-	return mock.SendTransferFunc(ctx, sourcePort, sourceChannel, token, sender, receiver, timeoutHeight, timeoutTimestamp)
-}
-
-// SendTransferCalls gets all the calls that were made to SendTransfer.
-// Check the length with:
-//
-//	len(mockedIBCTransferKeeper.SendTransferCalls())
-func (mock *IBCTransferKeeperMock) SendTransferCalls() []struct {
-	Ctx              cosmossdktypes.Context
-	SourcePort       string
-	SourceChannel    string
-	Token            cosmossdktypes.Coin
-	Sender           cosmossdktypes.AccAddress
-	Receiver         string
-	TimeoutHeight    clienttypes.Height
-	TimeoutTimestamp uint64
-} {
-	var calls []struct {
-		Ctx              cosmossdktypes.Context
-		SourcePort       string
-		SourceChannel    string
-		Token            cosmossdktypes.Coin
-		Sender           cosmossdktypes.AccAddress
-		Receiver         string
-		TimeoutHeight    clienttypes.Height
-		TimeoutTimestamp uint64
-	}
-	mock.lockSendTransfer.RLock()
-	calls = mock.calls.SendTransfer
-	mock.lockSendTransfer.RUnlock()
 	return calls
 }
 
@@ -3848,6 +3971,9 @@ var _ axelarnettypes.ChannelKeeper = &ChannelKeeperMock{}
 //
 //		// make and configure a mocked axelarnettypes.ChannelKeeper
 //		mockedChannelKeeper := &ChannelKeeperMock{
+//			GetAllChannelsWithPortPrefixFunc: func(ctx cosmossdktypes.Context, portPrefix string) []channeltypes.IdentifiedChannel {
+//				panic("mock out the GetAllChannelsWithPortPrefix method")
+//			},
 //			GetAppVersionFunc: func(ctx cosmossdktypes.Context, portID string, channelID string) (string, bool) {
 //				panic("mock out the GetAppVersion method")
 //			},
@@ -3860,7 +3986,7 @@ var _ axelarnettypes.ChannelKeeper = &ChannelKeeperMock{}
 //			GetNextSequenceSendFunc: func(ctx cosmossdktypes.Context, portID string, channelID string) (uint64, bool) {
 //				panic("mock out the GetNextSequenceSend method")
 //			},
-//			SendPacketFunc: func(ctx cosmossdktypes.Context, channelCap *capabilitytypes.Capability, packet ibcexported.PacketI) error {
+//			SendPacketFunc: func(ctx cosmossdktypes.Context, channelCap *capabilitytypes.Capability, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error) {
 //				panic("mock out the SendPacket method")
 //			},
 //			WriteAcknowledgementFunc: func(ctx cosmossdktypes.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
@@ -3873,6 +3999,9 @@ var _ axelarnettypes.ChannelKeeper = &ChannelKeeperMock{}
 //
 //	}
 type ChannelKeeperMock struct {
+	// GetAllChannelsWithPortPrefixFunc mocks the GetAllChannelsWithPortPrefix method.
+	GetAllChannelsWithPortPrefixFunc func(ctx cosmossdktypes.Context, portPrefix string) []channeltypes.IdentifiedChannel
+
 	// GetAppVersionFunc mocks the GetAppVersion method.
 	GetAppVersionFunc func(ctx cosmossdktypes.Context, portID string, channelID string) (string, bool)
 
@@ -3886,13 +4015,20 @@ type ChannelKeeperMock struct {
 	GetNextSequenceSendFunc func(ctx cosmossdktypes.Context, portID string, channelID string) (uint64, bool)
 
 	// SendPacketFunc mocks the SendPacket method.
-	SendPacketFunc func(ctx cosmossdktypes.Context, channelCap *capabilitytypes.Capability, packet ibcexported.PacketI) error
+	SendPacketFunc func(ctx cosmossdktypes.Context, channelCap *capabilitytypes.Capability, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error)
 
 	// WriteAcknowledgementFunc mocks the WriteAcknowledgement method.
 	WriteAcknowledgementFunc func(ctx cosmossdktypes.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetAllChannelsWithPortPrefix holds details about calls to the GetAllChannelsWithPortPrefix method.
+		GetAllChannelsWithPortPrefix []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// PortPrefix is the portPrefix argument value.
+			PortPrefix string
+		}
 		// GetAppVersion holds details about calls to the GetAppVersion method.
 		GetAppVersion []struct {
 			// Ctx is the ctx argument value.
@@ -3935,8 +4071,16 @@ type ChannelKeeperMock struct {
 			Ctx cosmossdktypes.Context
 			// ChannelCap is the channelCap argument value.
 			ChannelCap *capabilitytypes.Capability
-			// Packet is the packet argument value.
-			Packet ibcexported.PacketI
+			// SourcePort is the sourcePort argument value.
+			SourcePort string
+			// SourceChannel is the sourceChannel argument value.
+			SourceChannel string
+			// TimeoutHeight is the timeoutHeight argument value.
+			TimeoutHeight clienttypes.Height
+			// TimeoutTimestamp is the timeoutTimestamp argument value.
+			TimeoutTimestamp uint64
+			// Data is the data argument value.
+			Data []byte
 		}
 		// WriteAcknowledgement holds details about calls to the WriteAcknowledgement method.
 		WriteAcknowledgement []struct {
@@ -3950,12 +4094,49 @@ type ChannelKeeperMock struct {
 			Ack ibcexported.Acknowledgement
 		}
 	}
-	lockGetAppVersion         sync.RWMutex
-	lockGetChannel            sync.RWMutex
-	lockGetChannelClientState sync.RWMutex
-	lockGetNextSequenceSend   sync.RWMutex
-	lockSendPacket            sync.RWMutex
-	lockWriteAcknowledgement  sync.RWMutex
+	lockGetAllChannelsWithPortPrefix sync.RWMutex
+	lockGetAppVersion                sync.RWMutex
+	lockGetChannel                   sync.RWMutex
+	lockGetChannelClientState        sync.RWMutex
+	lockGetNextSequenceSend          sync.RWMutex
+	lockSendPacket                   sync.RWMutex
+	lockWriteAcknowledgement         sync.RWMutex
+}
+
+// GetAllChannelsWithPortPrefix calls GetAllChannelsWithPortPrefixFunc.
+func (mock *ChannelKeeperMock) GetAllChannelsWithPortPrefix(ctx cosmossdktypes.Context, portPrefix string) []channeltypes.IdentifiedChannel {
+	if mock.GetAllChannelsWithPortPrefixFunc == nil {
+		panic("ChannelKeeperMock.GetAllChannelsWithPortPrefixFunc: method is nil but ChannelKeeper.GetAllChannelsWithPortPrefix was just called")
+	}
+	callInfo := struct {
+		Ctx        cosmossdktypes.Context
+		PortPrefix string
+	}{
+		Ctx:        ctx,
+		PortPrefix: portPrefix,
+	}
+	mock.lockGetAllChannelsWithPortPrefix.Lock()
+	mock.calls.GetAllChannelsWithPortPrefix = append(mock.calls.GetAllChannelsWithPortPrefix, callInfo)
+	mock.lockGetAllChannelsWithPortPrefix.Unlock()
+	return mock.GetAllChannelsWithPortPrefixFunc(ctx, portPrefix)
+}
+
+// GetAllChannelsWithPortPrefixCalls gets all the calls that were made to GetAllChannelsWithPortPrefix.
+// Check the length with:
+//
+//	len(mockedChannelKeeper.GetAllChannelsWithPortPrefixCalls())
+func (mock *ChannelKeeperMock) GetAllChannelsWithPortPrefixCalls() []struct {
+	Ctx        cosmossdktypes.Context
+	PortPrefix string
+} {
+	var calls []struct {
+		Ctx        cosmossdktypes.Context
+		PortPrefix string
+	}
+	mock.lockGetAllChannelsWithPortPrefix.RLock()
+	calls = mock.calls.GetAllChannelsWithPortPrefix
+	mock.lockGetAllChannelsWithPortPrefix.RUnlock()
+	return calls
 }
 
 // GetAppVersion calls GetAppVersionFunc.
@@ -4119,23 +4300,31 @@ func (mock *ChannelKeeperMock) GetNextSequenceSendCalls() []struct {
 }
 
 // SendPacket calls SendPacketFunc.
-func (mock *ChannelKeeperMock) SendPacket(ctx cosmossdktypes.Context, channelCap *capabilitytypes.Capability, packet ibcexported.PacketI) error {
+func (mock *ChannelKeeperMock) SendPacket(ctx cosmossdktypes.Context, channelCap *capabilitytypes.Capability, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error) {
 	if mock.SendPacketFunc == nil {
 		panic("ChannelKeeperMock.SendPacketFunc: method is nil but ChannelKeeper.SendPacket was just called")
 	}
 	callInfo := struct {
-		Ctx        cosmossdktypes.Context
-		ChannelCap *capabilitytypes.Capability
-		Packet     ibcexported.PacketI
+		Ctx              cosmossdktypes.Context
+		ChannelCap       *capabilitytypes.Capability
+		SourcePort       string
+		SourceChannel    string
+		TimeoutHeight    clienttypes.Height
+		TimeoutTimestamp uint64
+		Data             []byte
 	}{
-		Ctx:        ctx,
-		ChannelCap: channelCap,
-		Packet:     packet,
+		Ctx:              ctx,
+		ChannelCap:       channelCap,
+		SourcePort:       sourcePort,
+		SourceChannel:    sourceChannel,
+		TimeoutHeight:    timeoutHeight,
+		TimeoutTimestamp: timeoutTimestamp,
+		Data:             data,
 	}
 	mock.lockSendPacket.Lock()
 	mock.calls.SendPacket = append(mock.calls.SendPacket, callInfo)
 	mock.lockSendPacket.Unlock()
-	return mock.SendPacketFunc(ctx, channelCap, packet)
+	return mock.SendPacketFunc(ctx, channelCap, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data)
 }
 
 // SendPacketCalls gets all the calls that were made to SendPacket.
@@ -4143,14 +4332,22 @@ func (mock *ChannelKeeperMock) SendPacket(ctx cosmossdktypes.Context, channelCap
 //
 //	len(mockedChannelKeeper.SendPacketCalls())
 func (mock *ChannelKeeperMock) SendPacketCalls() []struct {
-	Ctx        cosmossdktypes.Context
-	ChannelCap *capabilitytypes.Capability
-	Packet     ibcexported.PacketI
+	Ctx              cosmossdktypes.Context
+	ChannelCap       *capabilitytypes.Capability
+	SourcePort       string
+	SourceChannel    string
+	TimeoutHeight    clienttypes.Height
+	TimeoutTimestamp uint64
+	Data             []byte
 } {
 	var calls []struct {
-		Ctx        cosmossdktypes.Context
-		ChannelCap *capabilitytypes.Capability
-		Packet     ibcexported.PacketI
+		Ctx              cosmossdktypes.Context
+		ChannelCap       *capabilitytypes.Capability
+		SourcePort       string
+		SourceChannel    string
+		TimeoutHeight    clienttypes.Height
+		TimeoutTimestamp uint64
+		Data             []byte
 	}
 	mock.lockSendPacket.RLock()
 	calls = mock.calls.SendPacket
@@ -4212,11 +4409,20 @@ var _ axelarnettypes.AccountKeeper = &AccountKeeperMock{}
 //
 //		// make and configure a mocked axelarnettypes.AccountKeeper
 //		mockedAccountKeeper := &AccountKeeperMock{
-//			GetModuleAccountFunc: func(ctx cosmossdktypes.Context, name string) authtypes.ModuleAccountI {
+//			AddressCodecFunc: func() addresscodec.Codec {
+//				panic("mock out the AddressCodec method")
+//			},
+//			GetAccountFunc: func(ctx context.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.AccountI {
+//				panic("mock out the GetAccount method")
+//			},
+//			GetModuleAccountFunc: func(ctx context.Context, name string) cosmossdktypes.ModuleAccountI {
 //				panic("mock out the GetModuleAccount method")
 //			},
 //			GetModuleAddressFunc: func(moduleName string) cosmossdktypes.AccAddress {
 //				panic("mock out the GetModuleAddress method")
+//			},
+//			SetModuleAccountFunc: func(contextMoqParam context.Context, moduleAccountI cosmossdktypes.ModuleAccountI)  {
+//				panic("mock out the SetModuleAccount method")
 //			},
 //		}
 //
@@ -4225,18 +4431,37 @@ var _ axelarnettypes.AccountKeeper = &AccountKeeperMock{}
 //
 //	}
 type AccountKeeperMock struct {
+	// AddressCodecFunc mocks the AddressCodec method.
+	AddressCodecFunc func() addresscodec.Codec
+
+	// GetAccountFunc mocks the GetAccount method.
+	GetAccountFunc func(ctx context.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.AccountI
+
 	// GetModuleAccountFunc mocks the GetModuleAccount method.
-	GetModuleAccountFunc func(ctx cosmossdktypes.Context, name string) authtypes.ModuleAccountI
+	GetModuleAccountFunc func(ctx context.Context, name string) cosmossdktypes.ModuleAccountI
 
 	// GetModuleAddressFunc mocks the GetModuleAddress method.
 	GetModuleAddressFunc func(moduleName string) cosmossdktypes.AccAddress
 
+	// SetModuleAccountFunc mocks the SetModuleAccount method.
+	SetModuleAccountFunc func(contextMoqParam context.Context, moduleAccountI cosmossdktypes.ModuleAccountI)
+
 	// calls tracks calls to the methods.
 	calls struct {
+		// AddressCodec holds details about calls to the AddressCodec method.
+		AddressCodec []struct {
+		}
+		// GetAccount holds details about calls to the GetAccount method.
+		GetAccount []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Addr is the addr argument value.
+			Addr cosmossdktypes.AccAddress
+		}
 		// GetModuleAccount holds details about calls to the GetModuleAccount method.
 		GetModuleAccount []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// Name is the name argument value.
 			Name string
 		}
@@ -4245,18 +4470,91 @@ type AccountKeeperMock struct {
 			// ModuleName is the moduleName argument value.
 			ModuleName string
 		}
+		// SetModuleAccount holds details about calls to the SetModuleAccount method.
+		SetModuleAccount []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// ModuleAccountI is the moduleAccountI argument value.
+			ModuleAccountI cosmossdktypes.ModuleAccountI
+		}
 	}
+	lockAddressCodec     sync.RWMutex
+	lockGetAccount       sync.RWMutex
 	lockGetModuleAccount sync.RWMutex
 	lockGetModuleAddress sync.RWMutex
+	lockSetModuleAccount sync.RWMutex
+}
+
+// AddressCodec calls AddressCodecFunc.
+func (mock *AccountKeeperMock) AddressCodec() addresscodec.Codec {
+	if mock.AddressCodecFunc == nil {
+		panic("AccountKeeperMock.AddressCodecFunc: method is nil but AccountKeeper.AddressCodec was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockAddressCodec.Lock()
+	mock.calls.AddressCodec = append(mock.calls.AddressCodec, callInfo)
+	mock.lockAddressCodec.Unlock()
+	return mock.AddressCodecFunc()
+}
+
+// AddressCodecCalls gets all the calls that were made to AddressCodec.
+// Check the length with:
+//
+//	len(mockedAccountKeeper.AddressCodecCalls())
+func (mock *AccountKeeperMock) AddressCodecCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockAddressCodec.RLock()
+	calls = mock.calls.AddressCodec
+	mock.lockAddressCodec.RUnlock()
+	return calls
+}
+
+// GetAccount calls GetAccountFunc.
+func (mock *AccountKeeperMock) GetAccount(ctx context.Context, addr cosmossdktypes.AccAddress) cosmossdktypes.AccountI {
+	if mock.GetAccountFunc == nil {
+		panic("AccountKeeperMock.GetAccountFunc: method is nil but AccountKeeper.GetAccount was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Addr cosmossdktypes.AccAddress
+	}{
+		Ctx:  ctx,
+		Addr: addr,
+	}
+	mock.lockGetAccount.Lock()
+	mock.calls.GetAccount = append(mock.calls.GetAccount, callInfo)
+	mock.lockGetAccount.Unlock()
+	return mock.GetAccountFunc(ctx, addr)
+}
+
+// GetAccountCalls gets all the calls that were made to GetAccount.
+// Check the length with:
+//
+//	len(mockedAccountKeeper.GetAccountCalls())
+func (mock *AccountKeeperMock) GetAccountCalls() []struct {
+	Ctx  context.Context
+	Addr cosmossdktypes.AccAddress
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Addr cosmossdktypes.AccAddress
+	}
+	mock.lockGetAccount.RLock()
+	calls = mock.calls.GetAccount
+	mock.lockGetAccount.RUnlock()
+	return calls
 }
 
 // GetModuleAccount calls GetModuleAccountFunc.
-func (mock *AccountKeeperMock) GetModuleAccount(ctx cosmossdktypes.Context, name string) authtypes.ModuleAccountI {
+func (mock *AccountKeeperMock) GetModuleAccount(ctx context.Context, name string) cosmossdktypes.ModuleAccountI {
 	if mock.GetModuleAccountFunc == nil {
 		panic("AccountKeeperMock.GetModuleAccountFunc: method is nil but AccountKeeper.GetModuleAccount was just called")
 	}
 	callInfo := struct {
-		Ctx  cosmossdktypes.Context
+		Ctx  context.Context
 		Name string
 	}{
 		Ctx:  ctx,
@@ -4273,11 +4571,11 @@ func (mock *AccountKeeperMock) GetModuleAccount(ctx cosmossdktypes.Context, name
 //
 //	len(mockedAccountKeeper.GetModuleAccountCalls())
 func (mock *AccountKeeperMock) GetModuleAccountCalls() []struct {
-	Ctx  cosmossdktypes.Context
+	Ctx  context.Context
 	Name string
 } {
 	var calls []struct {
-		Ctx  cosmossdktypes.Context
+		Ctx  context.Context
 		Name string
 	}
 	mock.lockGetModuleAccount.RLock()
@@ -4315,6 +4613,42 @@ func (mock *AccountKeeperMock) GetModuleAddressCalls() []struct {
 	mock.lockGetModuleAddress.RLock()
 	calls = mock.calls.GetModuleAddress
 	mock.lockGetModuleAddress.RUnlock()
+	return calls
+}
+
+// SetModuleAccount calls SetModuleAccountFunc.
+func (mock *AccountKeeperMock) SetModuleAccount(contextMoqParam context.Context, moduleAccountI cosmossdktypes.ModuleAccountI) {
+	if mock.SetModuleAccountFunc == nil {
+		panic("AccountKeeperMock.SetModuleAccountFunc: method is nil but AccountKeeper.SetModuleAccount was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam context.Context
+		ModuleAccountI  cosmossdktypes.ModuleAccountI
+	}{
+		ContextMoqParam: contextMoqParam,
+		ModuleAccountI:  moduleAccountI,
+	}
+	mock.lockSetModuleAccount.Lock()
+	mock.calls.SetModuleAccount = append(mock.calls.SetModuleAccount, callInfo)
+	mock.lockSetModuleAccount.Unlock()
+	mock.SetModuleAccountFunc(contextMoqParam, moduleAccountI)
+}
+
+// SetModuleAccountCalls gets all the calls that were made to SetModuleAccount.
+// Check the length with:
+//
+//	len(mockedAccountKeeper.SetModuleAccountCalls())
+func (mock *AccountKeeperMock) SetModuleAccountCalls() []struct {
+	ContextMoqParam context.Context
+	ModuleAccountI  cosmossdktypes.ModuleAccountI
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+		ModuleAccountI  cosmossdktypes.ModuleAccountI
+	}
+	mock.lockSetModuleAccount.RLock()
+	calls = mock.calls.SetModuleAccount
+	mock.lockSetModuleAccount.RUnlock()
 	return calls
 }
 
@@ -4400,7 +4734,7 @@ var _ axelarnettypes.GovKeeper = &GovKeeperMock{}
 //
 //		// make and configure a mocked axelarnettypes.GovKeeper
 //		mockedGovKeeper := &GovKeeperMock{
-//			GetProposalFunc: func(ctx cosmossdktypes.Context, proposalID uint64) (gov.Proposal, bool) {
+//			GetProposalFunc: func(ctx cosmossdktypes.Context, proposalID uint64) (govtypes.Proposal, bool) {
 //				panic("mock out the GetProposal method")
 //			},
 //		}
@@ -4411,7 +4745,7 @@ var _ axelarnettypes.GovKeeper = &GovKeeperMock{}
 //	}
 type GovKeeperMock struct {
 	// GetProposalFunc mocks the GetProposal method.
-	GetProposalFunc func(ctx cosmossdktypes.Context, proposalID uint64) (gov.Proposal, bool)
+	GetProposalFunc func(ctx cosmossdktypes.Context, proposalID uint64) (govtypes.Proposal, bool)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -4427,7 +4761,7 @@ type GovKeeperMock struct {
 }
 
 // GetProposal calls GetProposalFunc.
-func (mock *GovKeeperMock) GetProposal(ctx cosmossdktypes.Context, proposalID uint64) (gov.Proposal, bool) {
+func (mock *GovKeeperMock) GetProposal(ctx cosmossdktypes.Context, proposalID uint64) (govtypes.Proposal, bool) {
 	if mock.GetProposalFunc == nil {
 		panic("GovKeeperMock.GetProposalFunc: method is nil but GovKeeper.GetProposal was just called")
 	}
@@ -4472,8 +4806,20 @@ var _ axelarnettypes.StakingKeeper = &StakingKeeperMock{}
 //
 //		// make and configure a mocked axelarnettypes.StakingKeeper
 //		mockedStakingKeeper := &StakingKeeperMock{
-//			BondDenomFunc: func(ctx cosmossdktypes.Context) string {
+//			BondDenomFunc: func(ctx context.Context) (string, error) {
 //				panic("mock out the BondDenom method")
+//			},
+//			IterateBondedValidatorsByPowerFunc: func(contextMoqParam context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error {
+//				panic("mock out the IterateBondedValidatorsByPower method")
+//			},
+//			IterateDelegationsFunc: func(ctx context.Context, delegator cosmossdktypes.AccAddress, fn func(index int64, delegation stakingtypes.DelegationI) (stop bool)) error {
+//				panic("mock out the IterateDelegations method")
+//			},
+//			TotalBondedTokensFunc: func(contextMoqParam context.Context) (cosmossdk_io_math.Int, error) {
+//				panic("mock out the TotalBondedTokens method")
+//			},
+//			ValidatorAddressCodecFunc: func() addresscodec.Codec {
+//				panic("mock out the ValidatorAddressCodec method")
 //			},
 //		}
 //
@@ -4483,26 +4829,66 @@ var _ axelarnettypes.StakingKeeper = &StakingKeeperMock{}
 //	}
 type StakingKeeperMock struct {
 	// BondDenomFunc mocks the BondDenom method.
-	BondDenomFunc func(ctx cosmossdktypes.Context) string
+	BondDenomFunc func(ctx context.Context) (string, error)
+
+	// IterateBondedValidatorsByPowerFunc mocks the IterateBondedValidatorsByPower method.
+	IterateBondedValidatorsByPowerFunc func(contextMoqParam context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error
+
+	// IterateDelegationsFunc mocks the IterateDelegations method.
+	IterateDelegationsFunc func(ctx context.Context, delegator cosmossdktypes.AccAddress, fn func(index int64, delegation stakingtypes.DelegationI) (stop bool)) error
+
+	// TotalBondedTokensFunc mocks the TotalBondedTokens method.
+	TotalBondedTokensFunc func(contextMoqParam context.Context) (cosmossdk_io_math.Int, error)
+
+	// ValidatorAddressCodecFunc mocks the ValidatorAddressCodec method.
+	ValidatorAddressCodecFunc func() addresscodec.Codec
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// BondDenom holds details about calls to the BondDenom method.
 		BondDenom []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
+		}
+		// IterateBondedValidatorsByPower holds details about calls to the IterateBondedValidatorsByPower method.
+		IterateBondedValidatorsByPower []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+			// Fn is the fn argument value.
+			Fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)
+		}
+		// IterateDelegations holds details about calls to the IterateDelegations method.
+		IterateDelegations []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Delegator is the delegator argument value.
+			Delegator cosmossdktypes.AccAddress
+			// Fn is the fn argument value.
+			Fn func(index int64, delegation stakingtypes.DelegationI) (stop bool)
+		}
+		// TotalBondedTokens holds details about calls to the TotalBondedTokens method.
+		TotalBondedTokens []struct {
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
+		}
+		// ValidatorAddressCodec holds details about calls to the ValidatorAddressCodec method.
+		ValidatorAddressCodec []struct {
 		}
 	}
-	lockBondDenom sync.RWMutex
+	lockBondDenom                      sync.RWMutex
+	lockIterateBondedValidatorsByPower sync.RWMutex
+	lockIterateDelegations             sync.RWMutex
+	lockTotalBondedTokens              sync.RWMutex
+	lockValidatorAddressCodec          sync.RWMutex
 }
 
 // BondDenom calls BondDenomFunc.
-func (mock *StakingKeeperMock) BondDenom(ctx cosmossdktypes.Context) string {
+func (mock *StakingKeeperMock) BondDenom(ctx context.Context) (string, error) {
 	if mock.BondDenomFunc == nil {
 		panic("StakingKeeperMock.BondDenomFunc: method is nil but StakingKeeper.BondDenom was just called")
 	}
 	callInfo := struct {
-		Ctx cosmossdktypes.Context
+		Ctx context.Context
 	}{
 		Ctx: ctx,
 	}
@@ -4517,14 +4903,149 @@ func (mock *StakingKeeperMock) BondDenom(ctx cosmossdktypes.Context) string {
 //
 //	len(mockedStakingKeeper.BondDenomCalls())
 func (mock *StakingKeeperMock) BondDenomCalls() []struct {
-	Ctx cosmossdktypes.Context
+	Ctx context.Context
 } {
 	var calls []struct {
-		Ctx cosmossdktypes.Context
+		Ctx context.Context
 	}
 	mock.lockBondDenom.RLock()
 	calls = mock.calls.BondDenom
 	mock.lockBondDenom.RUnlock()
+	return calls
+}
+
+// IterateBondedValidatorsByPower calls IterateBondedValidatorsByPowerFunc.
+func (mock *StakingKeeperMock) IterateBondedValidatorsByPower(contextMoqParam context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error {
+	if mock.IterateBondedValidatorsByPowerFunc == nil {
+		panic("StakingKeeperMock.IterateBondedValidatorsByPowerFunc: method is nil but StakingKeeper.IterateBondedValidatorsByPower was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam context.Context
+		Fn              func(index int64, validator stakingtypes.ValidatorI) (stop bool)
+	}{
+		ContextMoqParam: contextMoqParam,
+		Fn:              fn,
+	}
+	mock.lockIterateBondedValidatorsByPower.Lock()
+	mock.calls.IterateBondedValidatorsByPower = append(mock.calls.IterateBondedValidatorsByPower, callInfo)
+	mock.lockIterateBondedValidatorsByPower.Unlock()
+	return mock.IterateBondedValidatorsByPowerFunc(contextMoqParam, fn)
+}
+
+// IterateBondedValidatorsByPowerCalls gets all the calls that were made to IterateBondedValidatorsByPower.
+// Check the length with:
+//
+//	len(mockedStakingKeeper.IterateBondedValidatorsByPowerCalls())
+func (mock *StakingKeeperMock) IterateBondedValidatorsByPowerCalls() []struct {
+	ContextMoqParam context.Context
+	Fn              func(index int64, validator stakingtypes.ValidatorI) (stop bool)
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+		Fn              func(index int64, validator stakingtypes.ValidatorI) (stop bool)
+	}
+	mock.lockIterateBondedValidatorsByPower.RLock()
+	calls = mock.calls.IterateBondedValidatorsByPower
+	mock.lockIterateBondedValidatorsByPower.RUnlock()
+	return calls
+}
+
+// IterateDelegations calls IterateDelegationsFunc.
+func (mock *StakingKeeperMock) IterateDelegations(ctx context.Context, delegator cosmossdktypes.AccAddress, fn func(index int64, delegation stakingtypes.DelegationI) (stop bool)) error {
+	if mock.IterateDelegationsFunc == nil {
+		panic("StakingKeeperMock.IterateDelegationsFunc: method is nil but StakingKeeper.IterateDelegations was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		Delegator cosmossdktypes.AccAddress
+		Fn        func(index int64, delegation stakingtypes.DelegationI) (stop bool)
+	}{
+		Ctx:       ctx,
+		Delegator: delegator,
+		Fn:        fn,
+	}
+	mock.lockIterateDelegations.Lock()
+	mock.calls.IterateDelegations = append(mock.calls.IterateDelegations, callInfo)
+	mock.lockIterateDelegations.Unlock()
+	return mock.IterateDelegationsFunc(ctx, delegator, fn)
+}
+
+// IterateDelegationsCalls gets all the calls that were made to IterateDelegations.
+// Check the length with:
+//
+//	len(mockedStakingKeeper.IterateDelegationsCalls())
+func (mock *StakingKeeperMock) IterateDelegationsCalls() []struct {
+	Ctx       context.Context
+	Delegator cosmossdktypes.AccAddress
+	Fn        func(index int64, delegation stakingtypes.DelegationI) (stop bool)
+} {
+	var calls []struct {
+		Ctx       context.Context
+		Delegator cosmossdktypes.AccAddress
+		Fn        func(index int64, delegation stakingtypes.DelegationI) (stop bool)
+	}
+	mock.lockIterateDelegations.RLock()
+	calls = mock.calls.IterateDelegations
+	mock.lockIterateDelegations.RUnlock()
+	return calls
+}
+
+// TotalBondedTokens calls TotalBondedTokensFunc.
+func (mock *StakingKeeperMock) TotalBondedTokens(contextMoqParam context.Context) (cosmossdk_io_math.Int, error) {
+	if mock.TotalBondedTokensFunc == nil {
+		panic("StakingKeeperMock.TotalBondedTokensFunc: method is nil but StakingKeeper.TotalBondedTokens was just called")
+	}
+	callInfo := struct {
+		ContextMoqParam context.Context
+	}{
+		ContextMoqParam: contextMoqParam,
+	}
+	mock.lockTotalBondedTokens.Lock()
+	mock.calls.TotalBondedTokens = append(mock.calls.TotalBondedTokens, callInfo)
+	mock.lockTotalBondedTokens.Unlock()
+	return mock.TotalBondedTokensFunc(contextMoqParam)
+}
+
+// TotalBondedTokensCalls gets all the calls that were made to TotalBondedTokens.
+// Check the length with:
+//
+//	len(mockedStakingKeeper.TotalBondedTokensCalls())
+func (mock *StakingKeeperMock) TotalBondedTokensCalls() []struct {
+	ContextMoqParam context.Context
+} {
+	var calls []struct {
+		ContextMoqParam context.Context
+	}
+	mock.lockTotalBondedTokens.RLock()
+	calls = mock.calls.TotalBondedTokens
+	mock.lockTotalBondedTokens.RUnlock()
+	return calls
+}
+
+// ValidatorAddressCodec calls ValidatorAddressCodecFunc.
+func (mock *StakingKeeperMock) ValidatorAddressCodec() addresscodec.Codec {
+	if mock.ValidatorAddressCodecFunc == nil {
+		panic("StakingKeeperMock.ValidatorAddressCodecFunc: method is nil but StakingKeeper.ValidatorAddressCodec was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockValidatorAddressCodec.Lock()
+	mock.calls.ValidatorAddressCodec = append(mock.calls.ValidatorAddressCodec, callInfo)
+	mock.lockValidatorAddressCodec.Unlock()
+	return mock.ValidatorAddressCodecFunc()
+}
+
+// ValidatorAddressCodecCalls gets all the calls that were made to ValidatorAddressCodec.
+// Check the length with:
+//
+//	len(mockedStakingKeeper.ValidatorAddressCodecCalls())
+func (mock *StakingKeeperMock) ValidatorAddressCodecCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockValidatorAddressCodec.RLock()
+	calls = mock.calls.ValidatorAddressCodec
+	mock.lockValidatorAddressCodec.RUnlock()
 	return calls
 }
 
@@ -4538,7 +5059,7 @@ var _ axelarnettypes.FeegrantKeeper = &FeegrantKeeperMock{}
 //
 //		// make and configure a mocked axelarnettypes.FeegrantKeeper
 //		mockedFeegrantKeeper := &FeegrantKeeperMock{
-//			UseGrantedFeesFunc: func(ctx cosmossdktypes.Context, granter cosmossdktypes.AccAddress, grantee cosmossdktypes.AccAddress, fee cosmossdktypes.Coins, msgs []cosmossdktypes.Msg) error {
+//			UseGrantedFeesFunc: func(ctx context.Context, granter cosmossdktypes.AccAddress, grantee cosmossdktypes.AccAddress, fee cosmossdktypes.Coins, msgs []cosmossdktypes.Msg) error {
 //				panic("mock out the UseGrantedFees method")
 //			},
 //		}
@@ -4549,14 +5070,14 @@ var _ axelarnettypes.FeegrantKeeper = &FeegrantKeeperMock{}
 //	}
 type FeegrantKeeperMock struct {
 	// UseGrantedFeesFunc mocks the UseGrantedFees method.
-	UseGrantedFeesFunc func(ctx cosmossdktypes.Context, granter cosmossdktypes.AccAddress, grantee cosmossdktypes.AccAddress, fee cosmossdktypes.Coins, msgs []cosmossdktypes.Msg) error
+	UseGrantedFeesFunc func(ctx context.Context, granter cosmossdktypes.AccAddress, grantee cosmossdktypes.AccAddress, fee cosmossdktypes.Coins, msgs []cosmossdktypes.Msg) error
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// UseGrantedFees holds details about calls to the UseGrantedFees method.
 		UseGrantedFees []struct {
 			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
+			Ctx context.Context
 			// Granter is the granter argument value.
 			Granter cosmossdktypes.AccAddress
 			// Grantee is the grantee argument value.
@@ -4571,12 +5092,12 @@ type FeegrantKeeperMock struct {
 }
 
 // UseGrantedFees calls UseGrantedFeesFunc.
-func (mock *FeegrantKeeperMock) UseGrantedFees(ctx cosmossdktypes.Context, granter cosmossdktypes.AccAddress, grantee cosmossdktypes.AccAddress, fee cosmossdktypes.Coins, msgs []cosmossdktypes.Msg) error {
+func (mock *FeegrantKeeperMock) UseGrantedFees(ctx context.Context, granter cosmossdktypes.AccAddress, grantee cosmossdktypes.AccAddress, fee cosmossdktypes.Coins, msgs []cosmossdktypes.Msg) error {
 	if mock.UseGrantedFeesFunc == nil {
 		panic("FeegrantKeeperMock.UseGrantedFeesFunc: method is nil but FeegrantKeeper.UseGrantedFees was just called")
 	}
 	callInfo := struct {
-		Ctx     cosmossdktypes.Context
+		Ctx     context.Context
 		Granter cosmossdktypes.AccAddress
 		Grantee cosmossdktypes.AccAddress
 		Fee     cosmossdktypes.Coins
@@ -4599,14 +5120,14 @@ func (mock *FeegrantKeeperMock) UseGrantedFees(ctx cosmossdktypes.Context, grant
 //
 //	len(mockedFeegrantKeeper.UseGrantedFeesCalls())
 func (mock *FeegrantKeeperMock) UseGrantedFeesCalls() []struct {
-	Ctx     cosmossdktypes.Context
+	Ctx     context.Context
 	Granter cosmossdktypes.AccAddress
 	Grantee cosmossdktypes.AccAddress
 	Fee     cosmossdktypes.Coins
 	Msgs    []cosmossdktypes.Msg
 } {
 	var calls []struct {
-		Ctx     cosmossdktypes.Context
+		Ctx     context.Context
 		Granter cosmossdktypes.AccAddress
 		Grantee cosmossdktypes.AccAddress
 		Fee     cosmossdktypes.Coins
@@ -4805,5 +5326,83 @@ func (mock *IBCKeeperMock) SendMessageCalls() []struct {
 	mock.lockSendMessage.RLock()
 	calls = mock.calls.SendMessage
 	mock.lockSendMessage.RUnlock()
+	return calls
+}
+
+// Ensure, that DistributionKeeperMock does implement axelarnettypes.DistributionKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ axelarnettypes.DistributionKeeper = &DistributionKeeperMock{}
+
+// DistributionKeeperMock is a mock implementation of axelarnettypes.DistributionKeeper.
+//
+//	func TestSomethingThatUsesDistributionKeeper(t *testing.T) {
+//
+//		// make and configure a mocked axelarnettypes.DistributionKeeper
+//		mockedDistributionKeeper := &DistributionKeeperMock{
+//			FundCommunityPoolFunc: func(ctx context.Context, amount cosmossdktypes.Coins, sender cosmossdktypes.AccAddress) error {
+//				panic("mock out the FundCommunityPool method")
+//			},
+//		}
+//
+//		// use mockedDistributionKeeper in code that requires axelarnettypes.DistributionKeeper
+//		// and then make assertions.
+//
+//	}
+type DistributionKeeperMock struct {
+	// FundCommunityPoolFunc mocks the FundCommunityPool method.
+	FundCommunityPoolFunc func(ctx context.Context, amount cosmossdktypes.Coins, sender cosmossdktypes.AccAddress) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// FundCommunityPool holds details about calls to the FundCommunityPool method.
+		FundCommunityPool []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Amount is the amount argument value.
+			Amount cosmossdktypes.Coins
+			// Sender is the sender argument value.
+			Sender cosmossdktypes.AccAddress
+		}
+	}
+	lockFundCommunityPool sync.RWMutex
+}
+
+// FundCommunityPool calls FundCommunityPoolFunc.
+func (mock *DistributionKeeperMock) FundCommunityPool(ctx context.Context, amount cosmossdktypes.Coins, sender cosmossdktypes.AccAddress) error {
+	if mock.FundCommunityPoolFunc == nil {
+		panic("DistributionKeeperMock.FundCommunityPoolFunc: method is nil but DistributionKeeper.FundCommunityPool was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Amount cosmossdktypes.Coins
+		Sender cosmossdktypes.AccAddress
+	}{
+		Ctx:    ctx,
+		Amount: amount,
+		Sender: sender,
+	}
+	mock.lockFundCommunityPool.Lock()
+	mock.calls.FundCommunityPool = append(mock.calls.FundCommunityPool, callInfo)
+	mock.lockFundCommunityPool.Unlock()
+	return mock.FundCommunityPoolFunc(ctx, amount, sender)
+}
+
+// FundCommunityPoolCalls gets all the calls that were made to FundCommunityPool.
+// Check the length with:
+//
+//	len(mockedDistributionKeeper.FundCommunityPoolCalls())
+func (mock *DistributionKeeperMock) FundCommunityPoolCalls() []struct {
+	Ctx    context.Context
+	Amount cosmossdktypes.Coins
+	Sender cosmossdktypes.AccAddress
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Amount cosmossdktypes.Coins
+		Sender cosmossdktypes.AccAddress
+	}
+	mock.lockFundCommunityPool.RLock()
+	calls = mock.calls.FundCommunityPool
+	mock.lockFundCommunityPool.RUnlock()
 	return calls
 }

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -92,14 +93,14 @@ func TestNewMessageRoute(t *testing.T) {
 	)
 
 	givenMessageRoute := Given("the message route", func() {
-		ctx, _, _, feegrantK = setup()
+		ctx, _, _, feegrantK = setup(t)
 
 		ibcK = &mock.IBCKeeperMock{}
 		bankK = &mock.BankKeeperMock{}
 		nexusK = &mock.NexusMock{}
 		stakingK = &mock.StakingKeeperMock{}
-		stakingK.BondDenomFunc = func(ctx sdk.Context) string {
-			return exported.NativeAsset
+		stakingK.BondDenomFunc = func(ctx context.Context) (string, error) {
+			return exported.NativeAsset, nil
 		}
 
 		route = keeper.NewMessageRoute(ibcK, feegrantK, bankK, nexusK, stakingK)
@@ -145,7 +146,7 @@ func TestNewMessageRoute(t *testing.T) {
 				routingCtx.FeeGranter = nil
 			}).
 				Then("should deduct the fee from the sender", func(t *testing.T) {
-					bankK.SendCoinsFunc = func(_ sdk.Context, _, _ sdk.AccAddress, _ sdk.Coins) error { return nil }
+					bankK.SendCoinsFunc = func(_ context.Context, _, _ sdk.AccAddress, _ sdk.Coins) error { return nil }
 					ibcK.SendMessageFunc = func(_ context.Context, _ nexus.CrossChainAddress, _ sdk.Coin, _, _ string) error {
 						return nil
 					}
@@ -155,11 +156,11 @@ func TestNewMessageRoute(t *testing.T) {
 					assert.Len(t, bankK.SendCoinsCalls(), 1)
 					assert.Equal(t, routingCtx.Sender, bankK.SendCoinsCalls()[0].FromAddr)
 					assert.Equal(t, types.AxelarIBCAccount, bankK.SendCoinsCalls()[0].ToAddr)
-					assert.Equal(t, sdk.NewCoins(sdk.NewCoin(exported.NativeAsset, sdk.OneInt())), bankK.SendCoinsCalls()[0].Amt)
+					assert.Equal(t, sdk.NewCoins(sdk.NewCoin(exported.NativeAsset, math.OneInt())), bankK.SendCoinsCalls()[0].Amt)
 
 					assert.Len(t, ibcK.SendMessageCalls(), 1)
 					assert.Equal(t, msg.Recipient, ibcK.SendMessageCalls()[0].Recipient)
-					assert.Equal(t, sdk.NewCoin(exported.NativeAsset, sdk.OneInt()), ibcK.SendMessageCalls()[0].Asset)
+					assert.Equal(t, sdk.NewCoin(exported.NativeAsset, math.OneInt()), ibcK.SendMessageCalls()[0].Asset)
 					assert.Equal(t, msg.ID, ibcK.SendMessageCalls()[0].ID)
 				}),
 
@@ -167,10 +168,10 @@ func TestNewMessageRoute(t *testing.T) {
 				routingCtx.FeeGranter = rand.AccAddr()
 			}).
 				Then("should deduct the fee from the fee granter", func(t *testing.T) {
-					feegrantK.UseGrantedFeesFunc = func(_ sdk.Context, granter, _ sdk.AccAddress, _ sdk.Coins, _ []sdk.Msg) error {
+					feegrantK.UseGrantedFeesFunc = func(_ context.Context, granter, _ sdk.AccAddress, _ sdk.Coins, _ []sdk.Msg) error {
 						return nil
 					}
-					bankK.SendCoinsFunc = func(_ sdk.Context, _, _ sdk.AccAddress, _ sdk.Coins) error { return nil }
+					bankK.SendCoinsFunc = func(_ context.Context, _, _ sdk.AccAddress, _ sdk.Coins) error { return nil }
 					ibcK.SendMessageFunc = func(_ context.Context, _ nexus.CrossChainAddress, _ sdk.Coin, _, _ string) error {
 						return nil
 					}
@@ -180,16 +181,16 @@ func TestNewMessageRoute(t *testing.T) {
 					assert.Len(t, feegrantK.UseGrantedFeesCalls(), 1)
 					assert.Equal(t, routingCtx.FeeGranter, feegrantK.UseGrantedFeesCalls()[0].Granter)
 					assert.Equal(t, routingCtx.Sender, feegrantK.UseGrantedFeesCalls()[0].Grantee)
-					assert.Equal(t, sdk.NewCoins(sdk.NewCoin(exported.NativeAsset, sdk.OneInt())), feegrantK.UseGrantedFeesCalls()[0].Fee)
+					assert.Equal(t, sdk.NewCoins(sdk.NewCoin(exported.NativeAsset, math.OneInt())), feegrantK.UseGrantedFeesCalls()[0].Fee)
 
 					assert.Len(t, bankK.SendCoinsCalls(), 1)
 					assert.Equal(t, routingCtx.FeeGranter, bankK.SendCoinsCalls()[0].FromAddr)
 					assert.Equal(t, types.AxelarIBCAccount, bankK.SendCoinsCalls()[0].ToAddr)
-					assert.Equal(t, sdk.NewCoins(sdk.NewCoin(exported.NativeAsset, sdk.OneInt())), bankK.SendCoinsCalls()[0].Amt)
+					assert.Equal(t, sdk.NewCoins(sdk.NewCoin(exported.NativeAsset, math.OneInt())), bankK.SendCoinsCalls()[0].Amt)
 
 					assert.Len(t, ibcK.SendMessageCalls(), 1)
 					assert.Equal(t, msg.Recipient, ibcK.SendMessageCalls()[0].Recipient)
-					assert.Equal(t, sdk.NewCoin(exported.NativeAsset, sdk.OneInt()), ibcK.SendMessageCalls()[0].Asset)
+					assert.Equal(t, sdk.NewCoin(exported.NativeAsset, math.OneInt()), ibcK.SendMessageCalls()[0].Asset)
 					assert.Equal(t, msg.ID, ibcK.SendMessageCalls()[0].ID)
 				}),
 		).

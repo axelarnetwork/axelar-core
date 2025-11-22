@@ -3,10 +3,11 @@ package utils_test
 import (
 	"testing"
 
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -25,8 +26,8 @@ func TestCounter(t *testing.T) {
 	givenCounter := Given("the counter", func() {
 		encCfg := params.MakeEncodingConfig()
 
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		counter = utils.NewCounter[uint](key.FromUInt(uint64(rand.I64Between(10, 100))), utils.NewNormalizedStore(ctx.KVStore(sdk.NewKVStoreKey("counter")), encCfg.Codec))
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+		counter = utils.NewCounter[uint](key.FromUInt(uint64(rand.I64Between(10, 100))), utils.NewNormalizedStore(ctx.KVStore(store.NewKVStoreKey("counter")), encCfg.Codec))
 	})
 
 	t.Run("Incr", func(t *testing.T) {

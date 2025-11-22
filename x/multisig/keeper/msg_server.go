@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -36,12 +37,12 @@ func (s msgServer) StartKeygen(c context.Context, req *types.StartKeygenRequest)
 
 	snap, err := s.snapshotter.CreateSnapshot(ctx, s.GetParams(ctx).KeygenThreshold)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "unable to create snapshot for keygen")
+		return nil, errorsmod.Wrap(err, "unable to create snapshot for keygen")
 	}
 
 	err = s.createKeygenSession(ctx, req.KeyID, snap)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "unable to start keygen")
+		return nil, errorsmod.Wrap(err, "unable to start keygen")
 	}
 
 	return &types.StartKeygenResponse{}, nil
@@ -55,14 +56,19 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 		return nil, fmt.Errorf("keygen session %s not found", req.KeyID)
 	}
 
-	participant := s.snapshotter.GetOperator(ctx, req.Sender)
-	if participant.Empty() {
-		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender.String())
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender address: %s", err)
 	}
 
-	err := keygenSession.AddKey(ctx.BlockHeight(), participant, req.PubKey)
+	participant := s.snapshotter.GetOperator(ctx, sender)
+	if participant.Empty() {
+		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender)
+	}
+
+	err = keygenSession.AddKey(ctx.BlockHeight(), participant, req.PubKey)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, "unable to add public key for keygen")
+		return nil, errorsmod.Wrap(err, "unable to add public key for keygen")
 	}
 
 	s.setKeygenSession(ctx, keygenSession)
@@ -89,13 +95,18 @@ func (s msgServer) SubmitSignature(c context.Context, req *types.SubmitSignature
 		return nil, fmt.Errorf("signing session %d not found", req.SigID)
 	}
 
-	participant := s.snapshotter.GetOperator(ctx, req.Sender)
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender address: %s", err)
+	}
+
+	participant := s.snapshotter.GetOperator(ctx, sender)
 	if participant.Empty() {
-		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender.String())
+		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender)
 	}
 
 	if err := signingSession.AddSig(ctx.BlockHeight(), participant, req.Signature); err != nil {
-		return nil, sdkerrors.Wrap(err, "unable to add signature for signing")
+		return nil, errorsmod.Wrap(err, "unable to add signature for signing")
 	}
 
 	s.setSigningSession(ctx, signingSession)
@@ -126,11 +137,11 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 	}
 
 	if err := s.AssignKey(ctx, req.Chain, req.KeyID); err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to assign the next key")
+		return nil, errorsmod.Wrap(err, "failed to assign the next key")
 	}
 
 	if err := s.Keeper.RotateKey(ctx, req.Chain); err != nil {
-		return nil, sdkerrors.Wrap(err, "failed to rotate the next key")
+		return nil, errorsmod.Wrap(err, "failed to rotate the next key")
 	}
 
 	return &types.RotateKeyResponse{}, nil
@@ -139,17 +150,38 @@ func (s msgServer) RotateKey(c context.Context, req *types.RotateKeyRequest) (*t
 func (s msgServer) KeygenOptOut(c context.Context, req *types.KeygenOptOutRequest) (*types.KeygenOptOutResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	s.Keeper.KeygenOptOut(ctx, req.Sender)
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender address: %s", err)
+	}
 
-	events.Emit(ctx, &types.KeygenOptOut{Participant: req.Sender})
+	s.Keeper.KeygenOptOut(ctx, sender)
+
+	events.Emit(ctx, &types.KeygenOptOut{Participant: sender})
 	return &types.KeygenOptOutResponse{}, nil
 }
 
 func (s msgServer) KeygenOptIn(c context.Context, req *types.KeygenOptInRequest) (*types.KeygenOptInResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
-	s.Keeper.KeygenOptIn(ctx, req.Sender)
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender address: %s", err)
+	}
 
-	events.Emit(ctx, &types.KeygenOptIn{Participant: req.Sender})
+	s.Keeper.KeygenOptIn(ctx, sender)
+
+	events.Emit(ctx, &types.KeygenOptIn{Participant: sender})
 	return &types.KeygenOptInResponse{}, nil
+}
+
+func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsRequest) (*types.UpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := req.Params.Validate(); err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+	}
+
+	s.setParams(ctx, req.Params)
+	return &types.UpdateParamsResponse{}, nil
 }

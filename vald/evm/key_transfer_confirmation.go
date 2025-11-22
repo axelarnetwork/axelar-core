@@ -3,7 +3,7 @@ package evm
 import (
 	"context"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 	"github.com/ethereum/go-ethereum/common"
 	geth "github.com/ethereum/go-ethereum/core/types"
 
@@ -59,12 +59,12 @@ func (mgr Mgr) processTransferKeyLogs(event *types.ConfirmKeyTransferStarted, lo
 
 		transferOperatorshipEvent, err := DecodeMultisigOperatorshipTransferredEvent(txlog)
 		if err != nil {
-			mgr.logger().Debug(sdkerrors.Wrap(err, "failed decoding operatorship transferred event").Error())
+			mgr.logger().Debug(errorsmod.Wrap(err, "failed decoding operatorship transferred event").Error())
 			continue
 		}
 
 		if err := transferOperatorshipEvent.ValidateBasic(); err != nil {
-			mgr.logger().Debug(sdkerrors.Wrap(err, "invalid event MultisigTransferOperatorship").Error())
+			mgr.logger().Debug(errorsmod.Wrap(err, "invalid event MultisigTransferOperatorship").Error())
 			continue
 		}
 

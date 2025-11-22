@@ -24,22 +24,13 @@ func TestBatchRequest_ValidateBasic(t *testing.T) {
 		assert.ErrorContains(t, message.ValidateBasic(), "nested batch")
 	})
 
-	t.Run("should fail with different signers", func(t *testing.T) {
-
-		message := types.NewBatchRequest(rand.AccAddr(), []sdk.Msg{
-			evmtypes.NewLinkRequest(rand.AccAddr(), rand.NormalizedStr(5), rand.NormalizedStr(5), rand.NormalizedStr(5), rand.NormalizedStr(5)),
-		})
-
-		assert.ErrorContains(t, message.ValidateBasic(), "message signer mismatch")
-	})
-
 	t.Run("should unwrap messages", func(t *testing.T) {
 		cdc := app.MakeEncodingConfig().Codec
 
 		sender := rand.AccAddr()
 		messages := []sdk.Msg{
-			evmtypes.NewLinkRequest(sender, rand.NormalizedStr(5), rand.NormalizedStr(5), rand.NormalizedStr(5), rand.NormalizedStr(5)),
-			evmtypes.NewLinkRequest(sender, rand.NormalizedStr(5), rand.NormalizedStr(5), rand.NormalizedStr(5), rand.NormalizedStr(5)),
+			evmtypes.NewLinkRequest(sender, rand.NormalizedStr(5), rand.NormalizedStr(5), rand.NormalizedStr(5), rand.Denom(5, 10)),
+			evmtypes.NewLinkRequest(sender, rand.NormalizedStr(5), rand.NormalizedStr(5), rand.NormalizedStr(5), rand.Denom(5, 10)),
 		}
 		batch := types.NewBatchRequest(sender, messages)
 

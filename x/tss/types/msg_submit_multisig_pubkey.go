@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -11,7 +12,7 @@ import (
 
 // NewSubmitMultiSigPubKeysRequest constructor for SubmitMultiSigPubKeysRequest
 func NewSubmitMultiSigPubKeysRequest(sender sdk.AccAddress, keyID exported.KeyID, sigKeyPairs []exported.SigKeyPair) *SubmitMultisigPubKeysRequest {
-	return &SubmitMultisigPubKeysRequest{Sender: sender, KeyID: keyID, SigKeyPairs: sigKeyPairs}
+	return &SubmitMultisigPubKeysRequest{Sender: sender.String(), KeyID: keyID, SigKeyPairs: sigKeyPairs}
 }
 
 // Route implements the sdk.Msg interface.
@@ -23,8 +24,8 @@ func (m SubmitMultisigPubKeysRequest) Type() string { return "SubmitMultisigPubK
 
 // ValidateBasic implements the sdk.Msg interface.
 func (m SubmitMultisigPubKeysRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.KeyID.Validate(); err != nil {
@@ -32,7 +33,7 @@ func (m SubmitMultisigPubKeysRequest) ValidateBasic() error {
 	}
 
 	if len(m.SigKeyPairs) == 0 {
-		return sdkerrors.Wrap(ErrTss, "no sig key pairs are given")
+		return errorsmod.Wrap(ErrTss, "no sig key pairs are given")
 	}
 
 	// check uniqueness
@@ -53,9 +54,4 @@ func (m SubmitMultisigPubKeysRequest) ValidateBasic() error {
 // GetSignBytes implements the sdk.Msg interface
 func (m SubmitMultisigPubKeysRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
-}
-
-// GetSigners implements the sdk.Msg interface
-func (m SubmitMultisigPubKeysRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

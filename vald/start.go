@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -18,12 +20,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/gogo/protobuf/proto"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -94,7 +94,11 @@ func GetValdCommand() *cobra.Command {
 			}
 
 			// dynamically adjust gas limit by simulating the tx first
-			txf := tx.NewFactoryCLI(cliCtx, cmd.Flags()).WithSimulateAndExecute(true)
+			txf, err := tx.NewFactoryCLI(cliCtx, cmd.Flags())
+			if err != nil {
+				return err
+			}
+			txf = txf.WithSimulateAndExecute(true)
 
 			return runVald(cliCtx, txf, v)
 		},
@@ -139,7 +143,7 @@ func runVald(cliCtx sdkClient.Context, txf tx.Factory, viper *viper.Viper) error
 
 	valAddr, err := sdk.ValAddressFromBech32(viper.GetString("validator-addr"))
 	if err != nil {
-		return sdkerrors.Wrap(err, "invalid validator operator address")
+		return errorsmod.Wrap(err, "invalid validator operator address")
 	}
 
 	valdHome := filepath.Join(cliCtx.HomeDir, "vald")
@@ -178,13 +182,14 @@ func setPersistentFlags(cmd *cobra.Command) {
 func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr sdk.ValAddress, stateSource ReadWriter) {
 	encCfg := app.MakeEncodingConfig()
 	cdc := encCfg.Amino
+
 	sender, err := clientCtx.Keyring.Key(clientCtx.From)
 	if err != nil {
-		panic(sdkerrors.Wrap(err, "failed to read broadcaster account info from keyring"))
+		panic(errorsmod.Wrap(err, "failed to read broadcaster account info from keyring"))
 	}
 	clientCtx = clientCtx.
-		WithFromAddress(sender.GetAddress()).
-		WithFromName(sender.GetName())
+		WithFromAddress(funcs.Must(sender.GetAddress())).
+		WithFromName(sender.Name)
 
 	bc := createRefundableBroadcaster(txf, clientCtx, axelarCfg)
 
@@ -410,10 +415,12 @@ func createEventBus(client *tendermint.RobustClient, startBlock int64, retries i
 }
 
 func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig) broadcast.Broadcaster {
+	codec := app.MakeEncodingConfig().Codec
+
 	broadcaster := broadcast.WithStateManager(ctx, txf, broadcast.WithResponseTimeout(axelarCfg.BroadcastConfig.MaxTimeout))
 	broadcaster = broadcast.WithRetry(broadcaster, axelarCfg.MaxRetries, axelarCfg.MinSleepBeforeRetry)
-	broadcaster = broadcast.Batched(broadcaster, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit)
-	broadcaster = broadcast.WithRefund(broadcaster)
+	broadcaster = broadcast.Batched(broadcaster, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, codec)
+	broadcaster = broadcast.WithRefund(broadcaster, codec)
 	broadcaster = broadcast.SuppressExecutionErrs(broadcaster)
 
 	return broadcaster
@@ -422,7 +429,7 @@ func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCf
 func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, valAddr sdk.ValAddress) *multisig.Mgr {
 	conn, err := grpc.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout)
 	if err != nil {
-		panic(sdkerrors.Wrap(err, "failed to create multisig manager"))
+		panic(errorsmod.Wrap(err, "failed to create multisig manager"))
 	}
 	log.Debug("successful connection to tofnd gRPC server")
 
@@ -447,7 +454,7 @@ func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axel
 
 	mgr, err := create()
 	if err != nil {
-		panic(sdkerrors.Wrap(err, "failed to create tss manager"))
+		panic(errorsmod.Wrap(err, "failed to create tss manager"))
 	}
 
 	return mgr
@@ -478,7 +485,7 @@ func createEVMMgr(axelarCfg config.ValdConfig, cliCtx sdkClient.Context, b broad
 
 		client, err := createEVMClient(config)
 		if err != nil {
-			err = sdkerrors.Wrap(err, fmt.Sprintf("failed to create an RPC connection for EVM chain %s. Verify your RPC config.", config.Name))
+			err = errorsmod.Wrap(err, fmt.Sprintf("failed to create an RPC connection for EVM chain %s. Verify your RPC config.", config.Name))
 			log.Error(err.Error())
 			panic(err)
 		}

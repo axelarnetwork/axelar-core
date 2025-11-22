@@ -3,8 +3,8 @@ package types
 import (
 	"errors"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewProxiedValidator is the constructor of ProxiedValidator
@@ -19,11 +19,11 @@ func NewProxiedValidator(validator sdk.ValAddress, proxy sdk.AccAddress, active 
 // Validate returns an error if the validator proxy is not valid; nil otherwise
 func (m ProxiedValidator) Validate() error {
 	if err := sdk.VerifyAddressFormat(m.Validator); err != nil {
-		return sdkerrors.Wrap(err, "invalid validator")
+		return errorsmod.Wrap(err, "invalid validator")
 	}
 
 	if err := sdk.VerifyAddressFormat(m.Proxy); err != nil {
-		return sdkerrors.Wrap(err, "invalid proxy")
+		return errorsmod.Wrap(err, "invalid proxy")
 	}
 
 	if m.Validator.Equals(m.Proxy) {

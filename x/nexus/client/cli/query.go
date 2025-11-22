@@ -3,10 +3,10 @@ package cli
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -62,7 +62,7 @@ func getCmdChainMaintainers() *cobra.Command {
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
 			if err := utils.ValidateString(args[0]); err != nil {
-				return sdkerrors.Wrap(err, "invalid chain")
+				return errorsmod.Wrap(err, "invalid chain")
 			}
 
 			res, err := queryClient.ChainMaintainers(cmd.Context(),
@@ -290,7 +290,7 @@ func getCmdAssets() *cobra.Command {
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
 			if err := utils.ValidateString(args[0]); err != nil {
-				return sdkerrors.Wrap(err, "invalid chain")
+				return errorsmod.Wrap(err, "invalid chain")
 			}
 
 			res, err := queryClient.Assets(cmd.Context(),
@@ -325,7 +325,7 @@ func getCmdChainState() *cobra.Command {
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
 			if err := utils.ValidateString(args[0]); err != nil {
-				return sdkerrors.Wrap(err, "invalid chain")
+				return errorsmod.Wrap(err, "invalid chain")
 			}
 
 			res, err := queryClient.ChainState(cmd.Context(),
@@ -360,7 +360,7 @@ func getCmdChainsByAsset() *cobra.Command {
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
 			if err := sdk.ValidateDenom(args[0]); err != nil {
-				return sdkerrors.Wrap(err, "invalid asset")
+				return errorsmod.Wrap(err, "invalid asset")
 			}
 
 			res, err := queryClient.ChainsByAsset(cmd.Context(),

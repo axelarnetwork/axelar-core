@@ -3,10 +3,10 @@ package grpc
 import (
 	"context"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/gogo/protobuf/grpc"
-	"github.com/tendermint/tendermint/libs/log"
+	"github.com/cosmos/gogoproto/grpc"
 	grpc2 "google.golang.org/grpc"
 
 	"github.com/axelarnetwork/axelar-core/utils/errors"
@@ -15,7 +15,7 @@ import (
 // ServerWithSDKErrors wraps around a grpc server to return registered errors
 type ServerWithSDKErrors struct {
 	grpc.Server
-	Err    *sdkerrors.Error
+	Err    *errorsmod.Error
 	Logger func(ctx types.Context) log.Logger
 }
 
@@ -27,7 +27,7 @@ func (r ServerWithSDKErrors) RegisterService(sd *grpc2.ServiceDesc, server inter
 		// use the index to modify the actual method in the range, not just a copy
 		sd.Methods[i].Handler = func(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc2.UnaryServerInterceptor) (interface{}, error) {
 			res, err := method.Handler(srv, ctx, dec, interceptor)
-			if err != nil && !errors.Is[*sdkerrors.Error](err) {
+			if err != nil && !errors.Is[*errorsmod.Error](err) {
 				err = r.Err.Wrap(err.Error())
 				r.Logger(types.UnwrapSDKContext(ctx)).Debug(err.Error())
 			}

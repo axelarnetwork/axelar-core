@@ -5,6 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
+	store "cosmossdk.io/store/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,8 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -45,13 +47,13 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 
 	Given("a nexus keeper", func() {
 		encCfg := app.MakeEncodingConfig()
-		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-		k = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("nexusKey"), store.NewKVStoreKey("tNexusKey"), "nexus")
+		k = nexusKeeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("nexus"), nexusSubspace)
 		q = nexusKeeper.NewGRPCQuerier(k, axelarnetKeeper)
 	}).
 		When("a correct context", func() {
 			store := fake.NewMultiStore()
-			ctx = sdk.NewContext(store, tmproto.Header{}, false, log.TestingLogger())
+			ctx = sdk.NewContext(store, tmproto.Header{}, false, log.NewTestLogger(t))
 		}).
 		When("the keeper is correctly set up", func() {
 			k.SetParams(ctx, types.DefaultParams())
@@ -88,7 +90,7 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 							Address: rand.AccAddr().String(),
 						},
 					))
-				_, err := k.EnqueueForTransfer(ctx, sender, sdk.NewCoin(axelarnet.NativeAsset, sdk.NewInt(rand.PosI64())))
+				_, err := k.EnqueueForTransfer(ctx, sender, sdk.NewCoin(axelarnet.NativeAsset, math.NewInt(rand.PosI64())))
 				assert.NoError(t, err)
 			}
 		}).
@@ -141,13 +143,13 @@ func TestKeeper_Chains(t *testing.T) {
 
 	Given("a nexus keeper", func() {
 		encCfg := app.MakeEncodingConfig()
-		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("nexusKey"), sdk.NewKVStoreKey("tNexusKey"), "nexus")
-		k = nexusKeeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("nexus"), nexusSubspace)
+		nexusSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("nexusKey"), store.NewKVStoreKey("tNexusKey"), "nexus")
+		k = nexusKeeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("nexus"), nexusSubspace)
 		q = nexusKeeper.NewGRPCQuerier(k, axelarnetKeeper)
 	}).
 		When("a correct context", func() {
 			store := fake.NewMultiStore()
-			ctx = sdk.NewContext(store, tmproto.Header{}, false, log.TestingLogger())
+			ctx = sdk.NewContext(store, tmproto.Header{}, false, log.NewTestLogger(t))
 		}).
 		When("the keeper is correctly set up", func() {
 			k.SetChain(ctx, evm.Ethereum)
@@ -191,7 +193,7 @@ func TestKeeper_Message(t *testing.T) {
 	Given("keeper and context", func() {
 
 		cfg := app.MakeEncodingConfig()
-		k, ctx = setup(cfg)
+		k, ctx = setup(cfg, t)
 		q = nexusKeeper.NewGRPCQuerier(k, nil)
 	}).Branch(
 		When("message exists", func() {

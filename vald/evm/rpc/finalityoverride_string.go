@@ -17,8 +17,9 @@ const _FinalityOverride_name = "NoOverrideConfirmation"
 var _FinalityOverride_index = [...]uint8{0, 10, 22}
 
 func (i FinalityOverride) String() string {
-	if i < 0 || i >= FinalityOverride(len(_FinalityOverride_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_FinalityOverride_index)-1 {
 		return "FinalityOverride(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _FinalityOverride_name[_FinalityOverride_index[i]:_FinalityOverride_index[i+1]]
+	return _FinalityOverride_name[_FinalityOverride_index[idx]:_FinalityOverride_index[idx+1]]
 }

@@ -1,9 +1,10 @@
 package types
 
 import (
-	fmt "fmt"
-	time "time"
+	"fmt"
+	"time"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"golang.org/x/exp/maps"
 
@@ -156,15 +157,15 @@ func (m Key) GetParticipants() []sdk.ValAddress {
 }
 
 // GetParticipantsWeight returns the total weight of all participants who have submitted their public keys
-func (m Key) GetParticipantsWeight() sdk.Uint {
-	return slices.Reduce(m.GetParticipants(), sdk.ZeroUint(), func(total sdk.Uint, p sdk.ValAddress) sdk.Uint {
+func (m Key) GetParticipantsWeight() math.Uint {
+	return slices.Reduce(m.GetParticipants(), math.ZeroUint(), func(total math.Uint, p sdk.ValAddress) math.Uint {
 		return total.Add(m.Snapshot.GetParticipantWeight(p))
 	})
 }
 
 // GetMinPassingWeight returns the minimum amount of weights required for the
 // key to sign
-func (m Key) GetMinPassingWeight() sdk.Uint {
+func (m Key) GetMinPassingWeight() math.Uint {
 	return m.Snapshot.CalculateMinPassingWeight(m.SigningThreshold)
 }
 
@@ -176,7 +177,7 @@ func (m Key) GetPubKey(p sdk.ValAddress) (exported.PublicKey, bool) {
 }
 
 // GetWeight returns the weight of the given participant
-func (m Key) GetWeight(p sdk.ValAddress) sdk.Uint {
+func (m Key) GetWeight(p sdk.ValAddress) math.Uint {
 	return m.Snapshot.GetParticipantWeight(p)
 }
 
@@ -191,7 +192,7 @@ func (m Key) GetTimestamp() time.Time {
 }
 
 // GetBondedWeight returns the bonded weight of the key snapshot
-func (m Key) GetBondedWeight() sdk.Uint {
+func (m Key) GetBondedWeight() math.Uint {
 	return m.Snapshot.BondedWeight
 }
 

@@ -12,11 +12,12 @@ import (
 // RegisterLegacyAminoCodec registers concrete types on codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&VoteRequest{}, "vote/Vote", nil)
+	cdc.RegisterConcrete(&UpdateParamsRequest{}, "vote/UpdateParams", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
-	registry.RegisterImplementations((*sdk.Msg)(nil), &VoteRequest{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &VoteRequest{}, &UpdateParamsRequest{})
 	registry.RegisterImplementations((*reward.Refundable)(nil), &VoteRequest{})
 }
 
