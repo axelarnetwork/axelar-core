@@ -152,6 +152,9 @@ var _ types.Nexus = &NexusMock{}
 //			IsChainActivatedFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) bool {
 //				panic("mock out the IsChainActivated method")
 //			},
+//			IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
+//				panic("mock out the IsLinkDepositEnabled method")
+//			},
 //			LinkAddressesFunc: func(ctx sdk.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
 //				panic("mock out the LinkAddresses method")
 //			},
@@ -230,6 +233,9 @@ type NexusMock struct {
 
 	// IsChainActivatedFunc mocks the IsChainActivated method.
 	IsChainActivatedFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) bool
+
+	// IsLinkDepositEnabledFunc mocks the IsLinkDepositEnabled method.
+	IsLinkDepositEnabledFunc func(ctx sdk.Context) bool
 
 	// LinkAddressesFunc mocks the LinkAddresses method.
 	LinkAddressesFunc func(ctx sdk.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error
@@ -387,6 +393,11 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		}
+		// IsLinkDepositEnabled holds details about calls to the IsLinkDepositEnabled method.
+		IsLinkDepositEnabled []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 		// LinkAddresses holds details about calls to the LinkAddresses method.
 		LinkAddresses []struct {
 			// Ctx is the ctx argument value.
@@ -472,6 +483,7 @@ type NexusMock struct {
 	lockGetTransfersForChainPaginated sync.RWMutex
 	lockIsAssetRegistered             sync.RWMutex
 	lockIsChainActivated              sync.RWMutex
+	lockIsLinkDepositEnabled          sync.RWMutex
 	lockLinkAddresses                 sync.RWMutex
 	lockRateLimitTransfer             sync.RWMutex
 	lockRegisterAsset                 sync.RWMutex
@@ -1091,6 +1103,38 @@ func (mock *NexusMock) IsChainActivatedCalls() []struct {
 	mock.lockIsChainActivated.RLock()
 	calls = mock.calls.IsChainActivated
 	mock.lockIsChainActivated.RUnlock()
+	return calls
+}
+
+// IsLinkDepositEnabled calls IsLinkDepositEnabledFunc.
+func (mock *NexusMock) IsLinkDepositEnabled(ctx sdk.Context) bool {
+	if mock.IsLinkDepositEnabledFunc == nil {
+		panic("NexusMock.IsLinkDepositEnabledFunc: method is nil but Nexus.IsLinkDepositEnabled was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockIsLinkDepositEnabled.Lock()
+	mock.calls.IsLinkDepositEnabled = append(mock.calls.IsLinkDepositEnabled, callInfo)
+	mock.lockIsLinkDepositEnabled.Unlock()
+	return mock.IsLinkDepositEnabledFunc(ctx)
+}
+
+// IsLinkDepositEnabledCalls gets all the calls that were made to IsLinkDepositEnabled.
+// Check the length with:
+//
+//	len(mockedNexus.IsLinkDepositEnabledCalls())
+func (mock *NexusMock) IsLinkDepositEnabledCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockIsLinkDepositEnabled.RLock()
+	calls = mock.calls.IsLinkDepositEnabled
+	mock.lockIsLinkDepositEnabled.RUnlock()
 	return calls
 }
 

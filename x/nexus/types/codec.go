@@ -15,6 +15,8 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&DeactivateChainRequest{}, "nexus/DeactivateChain", nil)
 	cdc.RegisterConcrete(&RegisterAssetFeeRequest{}, "nexus/RegisterAssetFee", nil)
 	cdc.RegisterConcrete(&SetTransferRateLimitRequest{}, "nexus/SetTransferRateLimit", nil)
+	cdc.RegisterConcrete(&EnableLinkDepositRequest{}, "nexus/EnableLinkDeposit", nil)
+	cdc.RegisterConcrete(&DisableLinkDepositRequest{}, "nexus/DisableLinkDeposit", nil)
 	cdc.RegisterConcrete(&UpdateParamsRequest{}, "nexus/UpdateParams", nil)
 }
 
@@ -27,6 +29,8 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&DeactivateChainRequest{},
 		&RegisterAssetFeeRequest{},
 		&SetTransferRateLimitRequest{},
+		&EnableLinkDepositRequest{},
+		&DisableLinkDepositRequest{},
 		&UpdateParamsRequest{},
 	)
 }

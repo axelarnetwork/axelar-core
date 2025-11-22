@@ -49,7 +49,9 @@ func TestHandleMsgLink(t *testing.T) {
 	givenMsgServer := Given("an axelarnet msg server", func() {
 		ctx, k, _, _ = setup(t)
 		k.InitGenesis(ctx, types.DefaultGenesisState())
-		nexusK = &mock.NexusMock{}
+		nexusK = &mock.NexusMock{
+			IsLinkDepositEnabledFunc: func(sdk.Context) bool { return true },
+		}
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
 		server = keeper.NewMsgServerImpl(k, nexusK, &mock.BankKeeperMock{}, ibcK)
 	})
@@ -111,6 +113,12 @@ func TestHandleMsgLink(t *testing.T) {
 					}).
 					When2(requestIsMade).
 					Then2(linkFails),
+
+				When("link-deposit protocol is disabled", func() {
+					nexusK.IsLinkDepositEnabledFunc = func(sdk.Context) bool { return false }
+				}).
+					When2(requestIsMade).
+					Then2(linkFails),
 			).Run(t)
 	})
 }
@@ -143,6 +151,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		}))
 
 		nexusK = &mock.NexusMock{
+			IsLinkDepositEnabledFunc: func(sdk.Context) bool { return true },
 			GetChainFunc: func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) {
 				return chain, true
 			},
@@ -271,6 +280,12 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 						_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), req)
 						assert.NoError(t, err)
 					}),
+
+				When("link-deposit protocol is disabled", func() {
+					nexusK.IsLinkDepositEnabledFunc = func(sdk.Context) bool { return false }
+				}).
+					When2(confirmToken).
+					Then2(confirmDepositFails),
 			).Run(t)
 	})
 }

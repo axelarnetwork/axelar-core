@@ -124,6 +124,7 @@ type Nexus interface {
 	SetMessageFailed(ctx sdk.Context, id string) error
 	SetMessageExecuted(ctx sdk.Context, id string) error
 	EnqueueRouteMessage(ctx sdk.Context, id string) error
+	IsLinkDepositEnabled(ctx sdk.Context) bool
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,
