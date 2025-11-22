@@ -100,7 +100,7 @@ func cache[T any](f func(ctx sdk.Context, x T) error) func(ctx sdk.Context, x T)
 			return err
 		}
 		writeCache()
-		ctx.EventManager().EmitEvents(cachedCtx.EventManager().Events())
+
 		return nil
 	}
 }

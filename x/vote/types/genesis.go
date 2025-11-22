@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/vote/exported"
 )
@@ -41,5 +41,5 @@ func (m GenesisState) Validate() error {
 }
 
 func getValidateError(err error) error {
-	return sdkerrors.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
+	return errorsmod.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
 }

@@ -6,13 +6,14 @@ import (
 	"strings"
 	"testing"
 
+	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	ibctypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -38,8 +39,8 @@ func TestGenesis(t *testing.T) {
 
 	givenKeeper := Given("a keeper",
 		func() {
-			subspace := paramstypes.NewSubspace(cfg.Codec, cfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "axelarnet")
-			k = keeper.NewKeeper(cfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace, &mock.ChannelKeeperMock{}, &mock.FeegrantKeeperMock{})
+			subspace := paramstypes.NewSubspace(cfg.Codec, cfg.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "axelarnet")
+			k = keeper.NewKeeper(cfg.Codec, store.NewKVStoreKey(types.StoreKey), subspace, &mock.ChannelKeeperMock{}, &mock.FeegrantKeeperMock{})
 		})
 
 	givenGenesisState := Given("a genesis state",
@@ -48,7 +49,7 @@ func TestGenesis(t *testing.T) {
 			initialGenesis = types.NewGenesisState(types.DefaultParams(), rand.AccAddr(), randomChains(), randomTransferQueue(cfg.Codec, ordered), ordered, randomSeqIDMapping())
 			assert.NoError(t, initialGenesis.Validate())
 
-			ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+			ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 		})
 
 	givenKeeper.

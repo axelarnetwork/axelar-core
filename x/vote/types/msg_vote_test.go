@@ -20,7 +20,7 @@ func TestVoteRequest_ValidateBasic(t *testing.T) {
 
 	t.Run("no vote", func(t *testing.T) {
 		vote := &VoteRequest{
-			Sender: rand.AccAddr(),
+			Sender: rand.AccAddr().String(),
 			PollID: exported.PollID(rand.PosI64()),
 			Vote:   nil,
 		}
@@ -29,7 +29,7 @@ func TestVoteRequest_ValidateBasic(t *testing.T) {
 
 	t.Run("faulty vote type", func(t *testing.T) {
 		vote := &VoteRequest{
-			Sender: rand.AccAddr(),
+			Sender: rand.AccAddr().String(),
 			PollID: exported.PollID(rand.PosI64()),
 			Vote:   types.UnsafePackAny("result"),
 		}

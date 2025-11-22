@@ -29,6 +29,13 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc UpdateParams(UpdateParamsRequest) returns (UpdateParamsResponse) {
+    option (google.api.http) = {
+      post : "/axelar/snapshot/v1beta1/params"
+      body : "*"
+    };
+  }
 }
 
 // QueryService defines the gRPC querier service.
@@ -36,6 +43,18 @@ service QueryService {
   rpc Params(ParamsRequest) returns (ParamsResponse) {
     option (google.api.http) = {
       get : "/axelar/snapshot/v1beta1/params"
+    };
+  }
+  rpc OperatorByProxy(OperatorByProxyRequest)
+      returns (OperatorByProxyResponse) {
+    option (google.api.http) = {
+      get : "/axelar/snapshot/v1beta1/operator"
+    };
+  }
+  rpc ProxyByOperator(ProxyByOperatorRequest)
+      returns (ProxyByOperatorResponse) {
+    option (google.api.http) = {
+      get : "/axelar/snapshot/v1beta1/proxy"
     };
   }
 }

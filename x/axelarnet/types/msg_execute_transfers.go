@@ -1,13 +1,14 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewExecutePendingTransfersRequest creates a message of type ExecutePendingTransfersRequest
 func NewExecutePendingTransfersRequest(sender sdk.AccAddress) *ExecutePendingTransfersRequest {
-	return &ExecutePendingTransfersRequest{Sender: sender}
+	return &ExecutePendingTransfersRequest{Sender: sender.String()}
 }
 
 // Route returns the route for this message
@@ -22,8 +23,8 @@ func (m ExecutePendingTransfersRequest) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m ExecutePendingTransfersRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 	return nil
 }
@@ -32,9 +33,4 @@ func (m ExecutePendingTransfersRequest) ValidateBasic() error {
 func (m ExecutePendingTransfersRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners returns the set of signers for this message
-func (m ExecutePendingTransfersRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

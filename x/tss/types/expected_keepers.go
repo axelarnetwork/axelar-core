@@ -1,6 +1,8 @@
 package types
 
 import (
+	"context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -23,7 +25,7 @@ type Nexus interface {
 // StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
 // actually used by this module
 type StakingKeeper interface {
-	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
+	Validator(ctx context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error)
 }
 
 // MultiSigKeeper provides multisig functionality

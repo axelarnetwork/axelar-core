@@ -3,8 +3,8 @@ package types
 import (
 	"encoding/json"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewGenesisState is the constructor for GenesisState
@@ -36,7 +36,7 @@ func (m GenesisState) Validate() error {
 }
 
 func getValidateError(err error) error {
-	return sdkerrors.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
+	return errorsmod.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
 }
 
 // GetGenesisStateFromAppState returns x/snapshot GenesisState given raw application

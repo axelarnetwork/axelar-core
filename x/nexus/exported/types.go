@@ -4,14 +4,16 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 
@@ -92,7 +94,7 @@ func (m CrossChainAddress) Validate() error {
 	}
 
 	if err := utils.ValidateString(m.Address); err != nil {
-		return sdkerrors.Wrap(err, "invalid address")
+		return errorsmod.Wrap(err, "invalid address")
 	}
 
 	return nil
@@ -132,7 +134,7 @@ func NewCrossChainTransfer(id uint64, recipient CrossChainAddress, asset sdk.Coi
 // Validate performs a stateless check to ensure the Chain object has been initialized correctly
 func (m Chain) Validate() error {
 	if err := m.Name.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain name")
+		return errorsmod.Wrap(err, "invalid chain name")
 	}
 
 	if err := m.KeyType.Validate(); err != nil {
@@ -164,14 +166,14 @@ func NewAsset(denom string, isNative bool) Asset {
 // Validate checks the stateless validity of the asset
 func (m Asset) Validate() error {
 	if err := sdk.ValidateDenom(m.Denom); err != nil {
-		return sdkerrors.Wrap(err, "invalid denomination")
+		return errorsmod.Wrap(err, "invalid denomination")
 	}
 
 	return nil
 }
 
 // NewFeeInfo returns a FeeInfo struct
-func NewFeeInfo(chain ChainName, asset string, feeRate sdk.Dec, minFee sdk.Int, maxFee sdk.Int) FeeInfo {
+func NewFeeInfo(chain ChainName, asset string, feeRate math.LegacyDec, minFee math.Int, maxFee math.Int) FeeInfo {
 	asset = utils.NormalizeString(asset)
 
 	return FeeInfo{Chain: chain, Asset: asset, FeeRate: feeRate, MinFee: minFee, MaxFee: maxFee}
@@ -179,17 +181,17 @@ func NewFeeInfo(chain ChainName, asset string, feeRate sdk.Dec, minFee sdk.Int, 
 
 // ZeroFeeInfo returns a FeeInfo struct with zero fees
 func ZeroFeeInfo(chain ChainName, asset string) FeeInfo {
-	return NewFeeInfo(chain, asset, sdk.ZeroDec(), sdk.ZeroInt(), sdk.ZeroInt())
+	return NewFeeInfo(chain, asset, math.LegacyZeroDec(), math.ZeroInt(), math.ZeroInt())
 }
 
 // Validate checks the stateless validity of fee info
 func (m FeeInfo) Validate() error {
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
+		return errorsmod.Wrap(err, "invalid chain")
 	}
 
 	if err := sdk.ValidateDenom(m.Asset); err != nil {
-		return sdkerrors.Wrap(err, "invalid asset")
+		return errorsmod.Wrap(err, "invalid asset")
 	}
 
 	if m.MinFee.IsNegative() {
@@ -204,7 +206,7 @@ func (m FeeInfo) Validate() error {
 		return fmt.Errorf("fee rate should not be negative")
 	}
 
-	if m.FeeRate.GT(sdk.OneDec()) {
+	if m.FeeRate.GT(math.LegacyOneDec()) {
 		return fmt.Errorf("fee rate should not be greater than one")
 	}
 
@@ -224,7 +226,7 @@ type ChainName string
 // Validate returns an error, if the chain name is empty or too long
 func (c ChainName) Validate() error {
 	if err := utils.ValidateString(string(c)); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain name")
+		return errorsmod.Wrap(err, "invalid chain name")
 	}
 
 	if len(c) > ChainNameLengthMax {
@@ -280,15 +282,15 @@ func NewGeneralMessage(id string, sender CrossChainAddress, recipient CrossChain
 // ValidateBasic validates the general message
 func (m GeneralMessage) ValidateBasic() error {
 	if err := utils.ValidateString(m.ID); err != nil {
-		return sdkerrors.Wrap(err, "invalid general message id")
+		return errorsmod.Wrap(err, "invalid general message id")
 	}
 
 	if err := m.Sender.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid source chain")
+		return errorsmod.Wrap(err, "invalid source chain")
 	}
 
 	if err := m.Recipient.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid destination chain")
+		return errorsmod.Wrap(err, "invalid destination chain")
 	}
 
 	if m.Asset != nil {
@@ -371,31 +373,31 @@ var _ sdk.Msg = &WasmMessage{}
 func (m WasmMessage) ValidateBasic() error {
 
 	if err := utils.ValidateString(m.ID); err != nil {
-		return sdkerrors.Wrap(err, "invalid wasm message id")
+		return errorsmod.Wrap(err, "invalid wasm message id")
 	}
 
 	if err := m.SourceChain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid wasm message source chain name")
+		return errorsmod.Wrap(err, "invalid wasm message source chain name")
 	}
 
 	if err := utils.ValidateString(m.SourceAddress); err != nil {
-		return sdkerrors.Wrap(err, "invalid wasm message source address")
+		return errorsmod.Wrap(err, "invalid wasm message source address")
 	}
 
 	if err := m.DestinationChain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid wasm message destination chain name")
+		return errorsmod.Wrap(err, "invalid wasm message destination chain name")
 	}
 
 	if err := utils.ValidateString(m.DestinationAddress); err != nil {
-		return sdkerrors.Wrap(err, "invalid wasm message destination address")
+		return errorsmod.Wrap(err, "invalid wasm message destination address")
 	}
 
 	if len(m.PayloadHash) != 32 {
-		return fmt.Errorf("invalid wasm message payload hash")
+		return errors.New("invalid wasm message payload hash")
 	}
 
 	if len(m.SourceTxID) != 32 {
-		return fmt.Errorf("invalid wasm message source tx id")
+		return errors.New("invalid wasm message source tx id")
 	}
 
 	return nil

@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	"cosmossdk.io/math"
+	store "cosmossdk.io/store/types"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -31,7 +33,7 @@ import (
 
 func TestMsgServer(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
-	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand2.ValAddr(), sdk.OneUint()) }, 10)
+	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand2.ValAddr(), math.OneUint()) }, 10)
 
 	var (
 		msgServer   types.MsgServiceServer
@@ -45,14 +47,14 @@ func TestMsgServer(t *testing.T) {
 	)
 
 	givenMsgServer := Given("a multisig msg server", func() {
-		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "multisig")
-		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
+		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "multisig")
+		k = keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(types.StoreKey), subspace)
 
-		ctx = rand2.Context(fake.NewMultiStore())
+		ctx = rand2.Context(fake.NewMultiStore(), t)
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		snapshotter = &mock.SnapshotterMock{
 			CreateSnapshotFunc: func(sdk.Context, utils.Threshold) (snapshot.Snapshot, error) {
-				return snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, sdk.NewUint(10)), nil
+				return snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, math.NewUint(10)), nil
 			},
 		}
 		nexusK = &mock2.NexusMock{}
@@ -66,11 +68,11 @@ func TestMsgServer(t *testing.T) {
 	keySessionExists := When("a key session exists", func() {
 		keyID = exported.KeyID(rand.HexStr(5))
 		_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), types.NewStartKeygenRequest(rand2.AccAddr(), keyID))
-		expiresAt = ctx.BlockHeight() + types.DefaultParams().KeygenTimeout
+		expiresAt = ctx.BlockHeight() + 20 // KeygenTimeout from custom params
 
 		assert.NoError(t, err)
 		assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 1)
-		assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod), 0)
+		assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+5), 0) // KeygenGracePeriod from custom params
 	})
 	requestIsMade := When("a request is made", func() {
 		sk := funcs.Must(btcec.NewPrivateKey())
@@ -83,6 +85,23 @@ func TestMsgServer(t *testing.T) {
 
 	t.Run("keygen", func(t *testing.T) {
 		givenMsgServer.
+			Given("params with grace period shorter than timeout", func() {
+				// Set custom params where gracePeriod < timeout for predictable testing
+				customParams := types.Params{
+					KeygenThreshold:    utils.NewThreshold(80, 100),
+					SigningThreshold:   utils.NewThreshold(60, 100),
+					KeygenTimeout:      20,
+					KeygenGracePeriod:  5,
+					SigningTimeout:     20,
+					SigningGracePeriod: 5,
+					ActiveEpochCount:   5,
+				}
+				_, err := msgServer.UpdateParams(sdk.WrapSDKContext(ctx), &types.UpdateParamsRequest{
+					Authority: rand2.AccAddr().String(),
+					Params:    customParams,
+				})
+				assert.NoError(t, err)
+			}).
 			Branch(
 				whenSenderIsProxy.
 					When("the key ID does not exist", func() {
@@ -130,7 +149,7 @@ func TestMsgServer(t *testing.T) {
 					When("key exists", func() {
 						k.SetKey(ctx, types.Key{
 							ID:               keyID,
-							Snapshot:         snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, sdk.NewUint(10)),
+							Snapshot:         snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, math.NewUint(10)),
 							SigningThreshold: types.DefaultParams().SigningThreshold,
 						})
 					}).
@@ -153,15 +172,38 @@ func TestMsgServer(t *testing.T) {
 						}
 					}).
 					Then("should update the keygen expiry", func(t *testing.T) {
-						assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 0)
-						assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod+1), 1)
-						assert.Equal(t, keyID, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod+1)[0].GetKeyID())
+						// With KeygenGracePeriod=5, KeygenTimeout=20, completing at H:
+						// min(H+20, H+5+1) = H+6
+						gracePeriodExpiry := ctx.BlockHeight() + 5 + 1
+						assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 0, "should not be at original expiresAt")
+						assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, gracePeriodExpiry), 1, "should be at grace period expiry")
+						assert.Equal(t, keyID, k.GetKeygenSessionsByExpiry(ctx, gracePeriodExpiry)[0].GetKeyID())
 					}),
 
-				keySessionExists.
+				Given("params with grace period longer than timeout", func() {
+					// Set custom params where gracePeriod > timeout to test expiry stays at timeout
+					customParams := types.Params{
+						KeygenThreshold:    utils.NewThreshold(80, 100),
+						SigningThreshold:   utils.NewThreshold(60, 100),
+						KeygenTimeout:      10,
+						KeygenGracePeriod:  20,
+						SigningTimeout:     10,
+						SigningGracePeriod: 20,
+						ActiveEpochCount:   5,
+					}
+					_, err := msgServer.UpdateParams(sdk.WrapSDKContext(ctx), &types.UpdateParamsRequest{
+						Authority: rand2.AccAddr().String(),
+						Params:    customParams,
+					})
+					assert.NoError(t, err)
+				}).
+					When("a key session exists", func() {
+						keyID = exported.KeyID(rand.HexStr(5))
+						_, err := msgServer.StartKeygen(sdk.WrapSDKContext(ctx), types.NewStartKeygenRequest(rand2.AccAddr(), keyID))
+						expiresAt = ctx.BlockHeight() + 10 // KeygenTimeout
+						assert.NoError(t, err)
+					}).
 					When("all participants submitted the public keys and the grace period goes beyond the expires at", func() {
-						ctx = ctx.WithBlockHeight(ctx.BlockHeight() + types.DefaultParams().KeygenTimeout - types.DefaultParams().KeygenGracePeriod)
-
 						for _, v := range validators {
 							snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return v.Address }
 
@@ -173,7 +215,9 @@ func TestMsgServer(t *testing.T) {
 						}
 					}).
 					Then("should not update the keygen expiry if the grace period goes beyond expires at", func(t *testing.T) {
-						assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 1)
+						// With KeygenGracePeriod=20, KeygenTimeout=10, completing at H:
+						// min(H+10, H+20+1) = H+10
+						assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, expiresAt), 1, "should stay at original expiresAt")
 						assert.Equal(t, keyID, k.GetKeygenSessionsByExpiry(ctx, expiresAt)[0].GetKeyID())
 					}),
 			).Run(t)
@@ -189,13 +233,30 @@ func TestMsgServer(t *testing.T) {
 		participantCount := 3
 		validators := slices.Expand(func(int) sdk.ValAddress { return rand2.ValAddr() }, participantCount)
 		proxies := slices.Expand(func(int) sdk.AccAddress { return rand2.AccAddr() }, participantCount)
-		participants := slices.Map(validators, func(v sdk.ValAddress) snapshot.Participant { return snapshot.NewParticipant(v, sdk.OneUint()) })
+		participants := slices.Map(validators, func(v sdk.ValAddress) snapshot.Participant { return snapshot.NewParticipant(v, math.OneUint()) })
 		keyID := exported.KeyID(rand.HexStr(5))
 		privateKeys := slices.Expand(func(int) *btcec.PrivateKey { return funcs.Must(btcec.NewPrivateKey()) }, participantCount)
 		publicKeys := slices.Map(privateKeys, func(sk *btcec.PrivateKey) exported.PublicKey { return sk.PubKey().SerializeCompressed() })
 		module := rand.AlphaStrBetween(3, 3)
 
 		givenMsgServer.
+			Given("params with grace period shorter than timeout", func() {
+				// Set custom params where gracePeriod < timeout to test early expiry
+				customParams := types.Params{
+					KeygenThreshold:    utils.NewThreshold(80, 100),
+					SigningThreshold:   utils.NewThreshold(60, 100),
+					KeygenTimeout:      20,
+					KeygenGracePeriod:  5,
+					SigningTimeout:     20,
+					SigningGracePeriod: 5,
+					ActiveEpochCount:   5,
+				}
+				_, err := msgServer.UpdateParams(sdk.WrapSDKContext(ctx), &types.UpdateParamsRequest{
+					Authority: rand2.AccAddr().String(),
+					Params:    customParams,
+				})
+				assert.NoError(t, err)
+			}).
 			When("proxies are all set up", func() {
 				snapshotter.GetOperatorFunc = func(_ sdk.Context, p sdk.AccAddress) sdk.ValAddress {
 					for i, proxy := range proxies {
@@ -215,7 +276,7 @@ func TestMsgServer(t *testing.T) {
 				pubKeyIndex := 0
 				key = types.Key{
 					ID:       keyID,
-					Snapshot: snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), participants, sdk.NewUint(uint64(participantCount))),
+					Snapshot: snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), participants, math.NewUint(uint64(participantCount))),
 					PubKeys: slices.ToMap(publicKeys, func(pk exported.PublicKey) string {
 						result := validators[pubKeyIndex]
 						pubKeyIndex++
@@ -272,7 +333,7 @@ func TestMsgServer(t *testing.T) {
 						err := k.Sign(ctx, keyID, rand.Bytes(exported.HashLength), module)
 
 						assert.NoError(t, err)
-						assert.Len(t, k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningTimeout), 1)
+						assert.Len(t, k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+20), 1) // SigningTimeout=20
 					}),
 
 					When("signing session exists", func() {
@@ -298,7 +359,7 @@ func TestMsgServer(t *testing.T) {
 								assert.Error(t, err)
 							}),
 
-							Then("should succeed", func(t *testing.T) {
+							Then("should succeed and update signing expiry", func(t *testing.T) {
 								for i, proxy := range proxies {
 									signature := ecdsa.Sign(privateKeys[i], payloadHash).Serialize()
 									_, err := msgServer.SubmitSignature(sdk.WrapSDKContext(ctx), types.NewSubmitSignatureRequest(proxy, sigID, signature))
@@ -306,15 +367,17 @@ func TestMsgServer(t *testing.T) {
 									assert.NoError(t, err)
 								}
 
-								assert.Len(t, k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningTimeout), 0)
-								actual := k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+types.DefaultParams().SigningGracePeriod+1)
-								assert.Len(t, actual, 1)
+								// With SigningGracePeriod=5, SigningTimeout=20, completing at H:
+								// min(H+20, H+5+1) = H+6
+								gracePeriodExpiry := ctx.BlockHeight() + 5 + 1
+								actual := k.GetSigningSessionsByExpiry(ctx, gracePeriodExpiry)
+								assert.Len(t, actual, 1, "should be at grace period expiry")
 
 								sig, err := actual[0].Result()
 								assert.NoError(t, err)
 								assert.NoError(t, sig.ValidateBasic())
 
-								participantsWeight := sdk.ZeroUint()
+								participantsWeight := math.ZeroUint()
 								for p := range sig.GetSigs() {
 									participantsWeight = participantsWeight.Add(key.GetSnapshot().GetParticipantWeight(funcs.Must(sdk.ValAddressFromBech32(p))))
 								}
@@ -365,4 +428,24 @@ func TestMsgServer(t *testing.T) {
 			).
 			Run(t)
 	})
+}
+
+func TestUpdateParams(t *testing.T) {
+	encCfg := app.MakeEncodingConfig()
+	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "multisig")
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(types.StoreKey), subspace)
+	ctx := rand2.Context(fake.NewMultiStore(), t)
+	k.InitGenesis(ctx, types.DefaultGenesisState())
+
+	server := keeper.NewMsgServer(k, &mock.SnapshotterMock{}, &mock2.StakerMock{}, &mock2.NexusMock{})
+
+	// modify a param and update
+	p := types.DefaultParams()
+	p.KeygenTimeout = p.KeygenTimeout + 1
+
+	_, err := server.UpdateParams(ctx, &types.UpdateParamsRequest{Authority: rand2.AccAddr().String(), Params: p})
+	assert.NoError(t, err)
+
+	got := k.GetParams(ctx)
+	assert.Equal(t, p, got)
 }

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/permission/exported"
 )
@@ -56,7 +56,7 @@ func (m GenesisState) Validate() error {
 }
 
 func getValidateError(err error) error {
-	return sdkerrors.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
+	return errorsmod.Wrapf(err, "genesis state for module %s is invalid", ModuleName)
 }
 
 // GetGenesisStateFromAppState returns x/permission GenesisState given raw application

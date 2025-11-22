@@ -1,14 +1,16 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ibctypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	ibctypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -33,7 +35,7 @@ func TestLockableAsset(t *testing.T) {
 	)
 
 	givenKeeper := Given("the nexus keeper", func() {
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 
 		nexus = &mock.NexusMock{}
 		ibc = &mock.IBCKeeperMock{}
@@ -41,7 +43,7 @@ func TestLockableAsset(t *testing.T) {
 	})
 
 	whenCoinIsNative := When("coin is native", func() {
-		coin = sdk.NewCoin(rand.Denom(5, 10), sdk.NewInt(rand.PosI64()))
+		coin = sdk.NewCoin(rand.Denom(5, 10), math.NewInt(rand.PosI64()))
 		nexus.GetChainByNativeAssetFunc = func(ctx sdk.Context, asset string) (exported.Chain, bool) {
 			if asset == coin.Denom {
 				return axelarnet.Axelarnet, true
@@ -53,7 +55,7 @@ func TestLockableAsset(t *testing.T) {
 	})
 
 	whenCoinIsExternal := When("coin is external", func() {
-		coin = sdk.NewCoin(rand.Denom(5, 10), sdk.NewInt(rand.PosI64()))
+		coin = sdk.NewCoin(rand.Denom(5, 10), math.NewInt(rand.PosI64()))
 		nexus.GetChainByNativeAssetFunc = func(ctx sdk.Context, asset string) (exported.Chain, bool) {
 			return exported.Chain{}, false
 		}
@@ -80,7 +82,7 @@ func TestLockableAsset(t *testing.T) {
 			return path, chain == axelarnet.Axelarnet.Name
 		}
 
-		coin = sdk.NewCoin(trace.GetBaseDenom(), sdk.NewInt(rand.PosI64()))
+		coin = sdk.NewCoin(trace.GetBaseDenom(), math.NewInt(rand.PosI64()))
 	})
 
 	whenCoinIsICS20 := When("coin is ICS20", func() {
@@ -112,7 +114,7 @@ func TestLockableAsset(t *testing.T) {
 			return exported.Chain{}, false
 		}
 
-		coin = sdk.NewCoin(trace.IBCDenom(), sdk.NewInt(rand.PosI64()))
+		coin = sdk.NewCoin(trace.IBCDenom(), math.NewInt(rand.PosI64()))
 	})
 
 	t.Run("NewLockableAsset, GetAsset and GetCoin", func(t *testing.T) {
@@ -186,7 +188,7 @@ func TestLockableAsset(t *testing.T) {
 		givenKeeper.
 			When2(whenCoinIsICS20).
 			Then("should lock the coin", func(t *testing.T) {
-				bank.SendCoinsFunc = func(ctx sdk.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil }
+				bank.SendCoinsFunc = func(ctx context.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil }
 
 				lockableAsset := funcs.Must(newLockableAsset(ctx, nexus, ibc, bank, coin))
 				fromAddr := rand.AccAddr()
@@ -204,7 +206,7 @@ func TestLockableAsset(t *testing.T) {
 		givenKeeper.
 			When2(whenCoinIsNative).
 			Then("should lock the coin", func(t *testing.T) {
-				bank.SendCoinsFunc = func(ctx sdk.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil }
+				bank.SendCoinsFunc = func(ctx context.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil }
 
 				lockableAsset := funcs.Must(newLockableAsset(ctx, nexus, ibc, bank, coin))
 				fromAddr := rand.AccAddr()
@@ -222,10 +224,10 @@ func TestLockableAsset(t *testing.T) {
 		givenKeeper.
 			When2(whenCoinIsExternal).
 			Then("should burn the coin", func(t *testing.T) {
-				bank.SendCoinsFromAccountToModuleFunc = func(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
+				bank.SendCoinsFromAccountToModuleFunc = func(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
 					return nil
 				}
-				bank.BurnCoinsFunc = func(ctx sdk.Context, moduleName string, amt sdk.Coins) error { return nil }
+				bank.BurnCoinsFunc = func(ctx context.Context, moduleName string, amt sdk.Coins) error { return nil }
 
 				lockableAsset := funcs.Must(newLockableAsset(ctx, nexus, ibc, bank, coin))
 				fromAddr := rand.AccAddr()
@@ -248,7 +250,7 @@ func TestLockableAsset(t *testing.T) {
 		givenKeeper.
 			When2(whenCoinIsICS20).
 			Then("should unlock the coin", func(t *testing.T) {
-				bank.SendCoinsFunc = func(ctx sdk.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil }
+				bank.SendCoinsFunc = func(ctx context.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil }
 
 				lockableAsset := funcs.Must(newLockableAsset(ctx, nexus, ibc, bank, coin))
 				toAddr := rand.AccAddr()
@@ -266,7 +268,7 @@ func TestLockableAsset(t *testing.T) {
 		givenKeeper.
 			When2(whenCoinIsNative).
 			Then("should unlock the coin", func(t *testing.T) {
-				bank.SendCoinsFunc = func(ctx sdk.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil }
+				bank.SendCoinsFunc = func(ctx context.Context, fromAddr, toAddr sdk.AccAddress, amt sdk.Coins) error { return nil }
 
 				lockableAsset := funcs.Must(newLockableAsset(ctx, nexus, ibc, bank, coin))
 				toAddr := rand.AccAddr()
@@ -284,8 +286,8 @@ func TestLockableAsset(t *testing.T) {
 		givenKeeper.
 			When2(whenCoinIsExternal).
 			Then("should mint the coin", func(t *testing.T) {
-				bank.MintCoinsFunc = func(ctx sdk.Context, moduleName string, amt sdk.Coins) error { return nil }
-				bank.SendCoinsFromModuleToAccountFunc = func(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
+				bank.MintCoinsFunc = func(ctx context.Context, moduleName string, amt sdk.Coins) error { return nil }
+				bank.SendCoinsFromModuleToAccountFunc = func(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
 					return nil
 				}
 

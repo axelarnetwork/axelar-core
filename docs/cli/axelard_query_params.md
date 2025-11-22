@@ -15,7 +15,6 @@ axelard query params [flags]
 ### Options inherited from parent commands
 
 ```
-      --chain-id string     The network chain ID (default "axelar")
       --home string         directory for config and data (default "$HOME/.axelar")
       --log_format string   The logging format (json|plain) (default "plain")
       --log_level string    The logging level (trace|debug|info|warn|error|fatal|panic) (default "info")
@@ -27,3 +26,4 @@ axelard query params [flags]
 
 - [axelard query](axelard_query.md) - Querying subcommands
 - [axelard query params subspace](axelard_query_params_subspace.md) - Query for raw parameters by subspace and key
+- [axelard query params subspaces](axelard_query_params_subspaces.md) - Query for all registered subspaces and all keys for a subspace

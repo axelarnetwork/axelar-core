@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -8,7 +9,7 @@ import (
 // NewRegisterFeeCollectorRequest is the constructor for RegisterFeeCollector
 func NewRegisterFeeCollectorRequest(sender sdk.AccAddress, feeCollector sdk.AccAddress) *RegisterFeeCollectorRequest {
 	return &RegisterFeeCollectorRequest{
-		Sender:       sender,
+		Sender:       sender.String(),
 		FeeCollector: feeCollector,
 	}
 }
@@ -25,12 +26,12 @@ func (m RegisterFeeCollectorRequest) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m RegisterFeeCollectorRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := sdk.VerifyAddressFormat(m.FeeCollector); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "fee collector").Error())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "fee collector").Error())
 	}
 
 	return nil
@@ -40,9 +41,4 @@ func (m RegisterFeeCollectorRequest) ValidateBasic() error {
 func (m RegisterFeeCollectorRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners returns the set of signers for this message
-func (m RegisterFeeCollectorRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

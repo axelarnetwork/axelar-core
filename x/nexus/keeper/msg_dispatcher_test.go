@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/log"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	wasmvmtypes "github.com/CosmWasm/wasmvm/types"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -34,7 +34,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 	contractAddr := rand.AccAddr()
 
 	givenMessenger := Given("a messenger", func() {
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 		nexus = &mock.NexusMock{
 			LoggerFunc:                    func(ctx sdk.Context) log.Logger { return ctx.Logger() },
 			IsWasmConnectionActivatedFunc: func(sdk.Context) bool { return true },
@@ -50,7 +50,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 			}
 		}).
 		Then("should return error", func(t *testing.T) {
-			_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
+			_, _, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 
 			assert.Error(t, err)
 			assert.True(t, errors.Is(err, wasmtypes.ErrUnknownMsg))
@@ -70,7 +70,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 				}
 			}).
 				Then("should return error", func(t *testing.T) {
-					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
+					_, _, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 
 					assert.ErrorContains(t, err, "gateway is not set")
 					assert.False(t, errors.Is(err, wasmtypes.ErrUnknownMsg))
@@ -85,7 +85,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 				}
 			}).
 				Then("should return error", func(t *testing.T) {
-					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
+					_, _, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 
 					assert.ErrorContains(t, err, "is not the gateway")
 					assert.False(t, errors.Is(err, wasmtypes.ErrUnknownMsg))
@@ -113,7 +113,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 				}
 			}).
 				Then("should return error", func(t *testing.T) {
-					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
+					_, _, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 
 					assert.ErrorContains(t, err, "is not a registered chain")
 					assert.False(t, errors.Is(err, wasmtypes.ErrUnknownMsg))
@@ -135,7 +135,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 					}
 				}).
 				Then("should return error", func(t *testing.T) {
-					_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
+					_, _, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 
 					assert.ErrorContains(t, err, "set msg error")
 					assert.False(t, errors.Is(err, wasmtypes.ErrUnknownMsg))
@@ -187,7 +187,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 			}).
 				Branch(
 					Then("should route the message", func(t *testing.T) {
-						_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
+						_, _, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 						assert.NoError(t, err)
 
 						assert.Len(t, nexus.SetNewMessageCalls(), 1)
@@ -205,7 +205,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 						}
 					}).Then("should be a no op", func(t *testing.T) {
 
-						_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
+						_, _, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 						assert.NoError(t, err)
 
 						assert.Len(t, nexus.SetNewMessageCalls(), 0)
@@ -217,7 +217,7 @@ func TestMessenger_DispatchMsg(t *testing.T) {
 						nexus.RouteMessageFunc = func(_ sdk.Context, id string, _ ...exported.RoutingContext) error { return fmt.Errorf("failed") }
 					}).
 						Then("should set message as processing", func(t *testing.T) {
-							_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
+							_, _, _, err := messenger.DispatchMsg(ctx, contractAddr, "", msg)
 							assert.NoError(t, err)
 
 							assert.Len(t, nexus.SetNewMessageCalls(), 1)
@@ -243,7 +243,7 @@ func TestMessenger_DispatchMsg_WasmConnectionNotActivated(t *testing.T) {
 	contractAddr := rand.AccAddr()
 
 	Given("a messenger", func() {
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 		nexus = &mock.NexusMock{
 			LoggerFunc: func(ctx sdk.Context) log.Logger { return ctx.Logger() },
 		}
@@ -253,7 +253,7 @@ func TestMessenger_DispatchMsg_WasmConnectionNotActivated(t *testing.T) {
 			nexus.IsWasmConnectionActivatedFunc = func(_ sdk.Context) bool { return false }
 		}).
 		Then("should return error", func(t *testing.T) {
-			_, _, err := messenger.DispatchMsg(ctx, contractAddr, "", wasmvmtypes.CosmosMsg{})
+			_, _, _, err := messenger.DispatchMsg(ctx, contractAddr, "", wasmvmtypes.CosmosMsg{})
 
 			assert.ErrorContains(t, err, "wasm connection is not activated")
 		}).

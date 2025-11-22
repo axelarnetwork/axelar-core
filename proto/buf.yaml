@@ -1,0 +1,20 @@
+version: v1
+name: buf.build/axelarnetwork/axelar-core
+deps:
+  - buf.build/cosmos/cosmos-sdk:v0.50.0
+  - buf.build/cosmos/cosmos-proto:04467658e59e44bbb22fe568206e1f70
+  - buf.build/cosmos/gogo-proto:88ef6483f90f478fb938c37dde52ece3
+  - buf.build/googleapis/googleapis:546238c53f7340c6a2a6099fb863bc1b
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT
+    - FILE_LOWER_SNAKE_CASE
+  except:
+    - UNARY_RPC
+    - COMMENT_FIELD
+    - SERVICE_SUFFIX
+    - PACKAGE_VERSION_SUFFIX
+    - RPC_REQUEST_STANDARD_NAME

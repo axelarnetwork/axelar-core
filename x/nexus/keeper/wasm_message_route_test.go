@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
+	"cosmossdk.io/log"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -37,7 +37,7 @@ func TestNewMessageRoute(t *testing.T) {
 	)
 
 	givenMessageRoute := Given("the message route", func() {
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 
 		nexusK = &mock.NexusMock{}
 		nexusK.IsWasmConnectionActivatedFunc = func(_ sdk.Context) bool { return true }
@@ -115,7 +115,7 @@ func TestMessageRoute_WasmConnectionNotActivated(t *testing.T) {
 	)
 
 	Given("the message route", func() {
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 
 		nexusK = &mock.NexusMock{}
 

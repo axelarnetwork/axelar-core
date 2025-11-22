@@ -13,11 +13,13 @@ axelard init [moniker] [flags]
 ### Options
 
 ```
-      --chain-id string   genesis file chain-id, if left blank will be randomly created (default "axelar")
-  -h, --help              help for init
-      --home string       node's home directory (default "$HOME/.axelar")
-  -o, --overwrite         overwrite the genesis.json file
-      --recover           provide seed phrase to recover existing key instead of creating
+      --chain-id string        genesis file chain-id, if left blank will be randomly created (default "axelar")
+      --default-denom string   genesis file default denomination, if left blank default value is 'stake'
+  -h, --help                   help for init
+      --home string            node's home directory (default "$HOME/.axelar")
+      --initial-height int     specify the initial block height at genesis (default 1)
+  -o, --overwrite              overwrite the genesis.json file
+      --recover                provide seed phrase to recover existing key instead of creating
 ```
 
 ### Options inherited from parent commands

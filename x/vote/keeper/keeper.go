@@ -7,12 +7,12 @@ import (
 	"encoding/binary"
 	"fmt"
 
+	"cosmossdk.io/log"
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	gogoprototypes "github.com/gogo/protobuf/types"
-	"github.com/tendermint/tendermint/libs/log"
+	gogoprototypes "github.com/cosmos/gogoproto/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
@@ -34,7 +34,7 @@ const (
 
 // Keeper - the vote module's keeper
 type Keeper struct {
-	storeKey    sdk.StoreKey
+	storeKey    storetypes.StoreKey
 	cdc         codec.BinaryCodec
 	paramSpace  paramtypes.Subspace
 	snapshotter types.Snapshotter
@@ -44,7 +44,7 @@ type Keeper struct {
 }
 
 // NewKeeper - keeper constructor
-func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, paramSpace paramtypes.Subspace, snapshotter types.Snapshotter, staking types.StakingKeeper, rewarder types.Rewarder) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, key storetypes.StoreKey, paramSpace paramtypes.Subspace, snapshotter types.Snapshotter, staking types.StakingKeeper, rewarder types.Rewarder) Keeper {
 	keeper := Keeper{
 		cdc:         cdc,
 		storeKey:    key,

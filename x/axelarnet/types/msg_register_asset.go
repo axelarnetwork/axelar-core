@@ -4,6 +4,8 @@ import (
 	fmt "fmt"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -12,9 +14,9 @@ import (
 )
 
 // NewRegisterAssetRequest is the constructor for RegisterAssetRequest
-func NewRegisterAssetRequest(sender sdk.AccAddress, chain string, asset nexus.Asset, limit sdk.Uint, window time.Duration) *RegisterAssetRequest {
+func NewRegisterAssetRequest(sender sdk.AccAddress, chain string, asset nexus.Asset, limit math.Uint, window time.Duration) *RegisterAssetRequest {
 	return &RegisterAssetRequest{
-		Sender: sender,
+		Sender: sender.String(),
 		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
 		Asset:  asset,
 		Limit:  limit,
@@ -34,12 +36,12 @@ func (m RegisterAssetRequest) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m RegisterAssetRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
+		return errorsmod.Wrap(err, "invalid chain")
 	}
 
 	if err := m.Asset.Validate(); err != nil {
@@ -59,9 +61,4 @@ func (m RegisterAssetRequest) ValidateBasic() error {
 func (m RegisterAssetRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners returns the set of signers for this message
-func (m RegisterAssetRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

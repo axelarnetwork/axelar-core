@@ -3,13 +3,14 @@ package types
 import (
 	"fmt"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 // DefaultParamspace - default parameter namespace
 const (
 	DefaultParamspace = ModuleName
+	blockTimeSpeedUp  = 5
 )
 
 // Parameter keys
@@ -29,7 +30,7 @@ func KeyTable() params.KeyTable {
 // DefaultParams creates the default genesis parameters
 func DefaultParams() Params {
 	return Params{
-		RouteTimeoutWindow:               17000,
+		RouteTimeoutWindow:               17000 * blockTimeSpeedUp,
 		TransferLimit:                    20,
 		EndBlockerLimit:                  50,
 		CallContractsProposalMinDeposits: nil,
@@ -96,7 +97,7 @@ func validateCallContractsProposalMinDeposits(i interface{}) error {
 	}
 
 	if err := val.ValidateBasic(); err != nil {
-		return sdkerrors.Wrap(err, "invalid CallContractsProposalMinDeposits")
+		return errorsmod.Wrap(err, "invalid CallContractsProposalMinDeposits")
 	}
 
 	return nil

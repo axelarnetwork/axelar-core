@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -12,7 +13,7 @@ import (
 // NewConfirmTokenRequest creates a message of type ConfirmTokenRequest
 func NewConfirmTokenRequest(sender sdk.AccAddress, chain string, asset Asset, txID common.Hash) *ConfirmTokenRequest {
 	return &ConfirmTokenRequest{
-		Sender: sender,
+		Sender: sender.String(),
 		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
 		Asset:  asset,
 		TxID:   Hash(txID),
@@ -31,12 +32,12 @@ func (m ConfirmTokenRequest) Type() string {
 
 // ValidateBasic implements sdk.Msg
 func (m ConfirmTokenRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
+		return errorsmod.Wrap(err, "invalid chain")
 	}
 
 	if err := m.Asset.Validate(); err != nil {
@@ -50,9 +51,4 @@ func (m ConfirmTokenRequest) ValidateBasic() error {
 func (m ConfirmTokenRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners implements sdk.Msg
-func (m ConfirmTokenRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

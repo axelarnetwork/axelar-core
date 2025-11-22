@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	"github.com/CosmWasm/wasmd/x/wasm"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
-	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -32,7 +33,7 @@ type Fee struct {
 
 // ValidateBasic validates the fee
 func (f Fee) ValidateBasic() error {
-	amount, ok := sdk.NewIntFromString(f.Amount)
+	amount, ok := math.NewIntFromString(f.Amount)
 	if !ok || !amount.IsPositive() {
 		return fmt.Errorf("invalid fee amount")
 	}
@@ -57,7 +58,7 @@ func validateFee(ctx sdk.Context, n types.Nexus, token sdk.Coin, msgType nexus.M
 		return err
 	}
 
-	afterFee := token.Amount.Sub(funcs.MustOk(sdk.NewIntFromString(fee.Amount)))
+	afterFee := token.Amount.Sub(funcs.MustOk(math.NewIntFromString(fee.Amount)))
 	switch msgType {
 	case nexus.TypeGeneralMessage:
 		if afterFee.IsNegative() {
@@ -123,7 +124,7 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 
 	var msg Message
 	if err := json.Unmarshal([]byte(data.GetMemo()), &msg); err != nil {
-		return channeltypes.NewErrorAcknowledgement(sdkerrors.Wrapf(types.ErrGeneralMessage, "cannot unmarshal memo"))
+		return channeltypes.NewErrorAcknowledgement(errorsmod.Wrapf(types.ErrGeneralMessage, "cannot unmarshal memo"))
 	}
 
 	// extract token from packet
@@ -161,7 +162,7 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 		rateLimitPacket = false
 		err = handleTokenSent(ctx, n, sourceAddress, msg, token)
 	default:
-		err = sdkerrors.Wrapf(types.ErrGeneralMessage, "unrecognized Message type")
+		err = errorsmod.Wrapf(types.ErrGeneralMessage, "unrecognized Message type")
 	}
 
 	if err != nil {
@@ -355,7 +356,7 @@ func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.
 	data := funcs.Must(types.ToICS20Packet(packet))
 
 	// parse the transfer amount
-	amount := funcs.MustOk(sdk.NewIntFromString(data.Amount))
+	amount := funcs.MustOk(math.NewIntFromString(data.Amount))
 
 	var denom string
 	if ibctransfertypes.ReceiverChainIsSource(packet.GetSourcePort(), packet.GetSourceChannel(), data.Denom) {
@@ -398,7 +399,7 @@ func deductFee(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK types.IB
 		return token, nil
 	}
 
-	feeAmount := funcs.MustOk(sdk.NewIntFromString(fee.Amount))
+	feeAmount := funcs.MustOk(math.NewIntFromString(fee.Amount))
 	feeCoin := sdk.NewCoin(token.GetCoin(ctx).Denom, feeAmount)
 	recipient := funcs.Must(sdk.AccAddressFromBech32(fee.Recipient))
 

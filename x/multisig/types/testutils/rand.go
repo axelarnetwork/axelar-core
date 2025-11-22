@@ -3,6 +3,7 @@ package testutils
 import (
 	"time"
 
+	"cosmossdk.io/math"
 	"github.com/btcsuite/btcd/btcec/v2"
 	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -65,17 +66,20 @@ func KeyWithMissingParticipants() types.Key {
 	participantCount := uint64(rand.I64Between(10, 20))
 	missingCount := uint64(rand.I64Between(1, int64(participantCount)))
 	participants := slices.Expand(func(_ int) snapshottypes.Participant {
-		return snapshottypes.Participant{Address: rand.ValAddr(), Weight: sdk.NewUint(uint64(rand.I64Between(1, 100)))}
+		return snapshottypes.Participant{Address: rand.ValAddr(), Weight: math.NewUint(uint64(rand.I64Between(1, 100)))}
 	}, int(participantCount))
 
 	missingParticipants := slices.Expand(func(_ int) snapshottypes.Participant {
-		return snapshottypes.Participant{Address: rand.ValAddr(), Weight: sdk.NewUint(uint64(rand.I64Between(1, 100)))}
+		return snapshottypes.Participant{Address: rand.ValAddr(), Weight: math.NewUint(uint64(rand.I64Between(1, 100)))}
 	}, int(missingCount))
 
 	participants = append(participants, missingParticipants...)
-	weightAdder := func(total sdk.Uint, p snapshottypes.Participant) sdk.Uint { total = total.Add(p.Weight); return total }
-	participantWeight := slices.Reduce(participants, sdk.ZeroUint(), weightAdder)
-	missingParticipantWeight := slices.Reduce(missingParticipants, sdk.ZeroUint(), weightAdder)
+	weightAdder := func(total math.Uint, p snapshottypes.Participant) math.Uint {
+		total = total.Add(p.Weight)
+		return total
+	}
+	participantWeight := slices.Reduce(participants, math.ZeroUint(), weightAdder)
+	missingParticipantWeight := slices.Reduce(missingParticipants, math.ZeroUint(), weightAdder)
 
 	bondedWeight := rand.UintBetween(participantWeight, participantWeight.MulUint64(2))
 	threshold := utils.NewThreshold(rand.I64Between(1, participantWeight.Sub(missingParticipantWeight).BigInt().Int64()), bondedWeight.BigInt().Int64())

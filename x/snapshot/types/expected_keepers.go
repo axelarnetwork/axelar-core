@@ -1,6 +1,9 @@
 package types
 
 import (
+	"context"
+
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -14,16 +17,16 @@ import (
 // StakingKeeper adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
 // actually used by this module
 type StakingKeeper interface {
-	GetLastTotalPower(ctx sdk.Context) (power sdk.Int)
-	IterateBondedValidatorsByPower(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool))
-	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
-	PowerReduction(ctx sdk.Context) sdk.Int
-	BondDenom(ctx sdk.Context) string
+	GetLastTotalPower(ctx context.Context) (math.Int, error)
+	IterateBondedValidatorsByPower(ctx context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error
+	Validator(ctx context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error)
+	PowerReduction(ctx context.Context) math.Int
+	BondDenom(ctx context.Context) (string, error)
 }
 
 // BankKeeper adopts the GetBalance function of the bank keeper that is used by this module
 type BankKeeper interface {
-	SpendableBalance(ctx sdk.Context, address sdk.AccAddress, denom string) sdk.Coin
+	SpendableBalance(ctx context.Context, address sdk.AccAddress, denom string) sdk.Coin
 }
 
 // Nexus provides functionality to manage cross-chain transfers
@@ -35,7 +38,7 @@ type Nexus interface {
 
 // Slasher provides functionality to manage slashing info for a validator
 type Slasher interface {
-	GetValidatorSigningInfo(ctx sdk.Context, address sdk.ConsAddress) (info types.ValidatorSigningInfo, found bool)
-	SignedBlocksWindow(ctx sdk.Context) (res int64)
-	GetValidatorMissedBlockBitArray(ctx sdk.Context, address sdk.ConsAddress, index int64) bool
+	GetValidatorSigningInfo(ctx context.Context, address sdk.ConsAddress) (types.ValidatorSigningInfo, error)
+	SignedBlocksWindow(ctx context.Context) (int64, error)
+	GetMissedBlockBitmapValue(ctx context.Context, addr sdk.ConsAddress, index int64) (bool, error)
 }
