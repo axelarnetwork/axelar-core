@@ -9,6 +9,12 @@ import (
 	"testing"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/bytes"
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
+	tm "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -19,13 +25,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	tx2 "github.com/cosmos/cosmos-sdk/types/tx"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/bytes"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
-	tm "github.com/tendermint/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/sdk-utils/broadcast"
@@ -35,6 +37,7 @@ import (
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
+	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
 	"github.com/axelarnetwork/utils/test/rand"
@@ -53,31 +56,34 @@ func TestStatefulBroadcaster(t *testing.T) {
 
 	givenClientContext := Given("a client context in sync mode", func() {
 		clientMock = &mock2.ClientMock{}
+		encodingConfig := app.MakeEncodingConfig()
 		clientCtx = client.Context{
 			BroadcastMode: flags.BroadcastSync,
 			Client:        clientMock,
-			TxConfig:      app.MakeEncodingConfig().TxConfig,
+			TxConfig:      encodingConfig.TxConfig,
+			Codec:         encodingConfig.Codec,
 		}
 	})
 	txFactory := Given("a tx factory", func() {
+		priv := cryptotypes.PrivKey(ed25519.GenPrivKey())
+		pub := priv.PubKey()
+		record := funcs.Must(keyring.NewLocalRecord("testrecord", priv, pub))
 		accountRetriever = &mock2.AccountRetrieverMock{}
-		keyringInfoMock := &mock2.InfoMock{
-			GetPubKeyFunc: func() cryptotypes.PubKey { return ed25519.GenPrivKey().PubKey() },
-		}
+
 		txf = tx.Factory{}.
 			WithChainID(rand.StrBetween(5, 20)).
 			WithSimulateAndExecute(true).
 			WithAccountRetriever(accountRetriever).
 			WithTxConfig(clientCtx.TxConfig).
 			WithKeybase(&mock2.KeyringMock{
-				KeyFunc: func(string) (keyring.Info, error) {
-					return keyringInfoMock, nil
+				KeyFunc: func(string) (*keyring.Record, error) {
+					return record, nil
 				},
-				SignFunc: func(string, []byte) ([]byte, cryptotypes.PubKey, error) {
+				SignFunc: func(string, []byte, signing.SignMode) ([]byte, cryptotypes.PubKey, error) {
 					return rand.Bytes(10), nil, nil
 				},
-				ListFunc: func() ([]keyring.Info, error) {
-					return []keyring.Info{keyringInfoMock}, nil
+				ListFunc: func() ([]*keyring.Record, error) {
+					return []*keyring.Record{record}, nil
 				},
 			})
 	})
@@ -133,7 +139,7 @@ func TestStatefulBroadcaster(t *testing.T) {
 
 	txsGetExecuted := When("txs get executed correctly", func() {
 		clientMock.TxFunc = func(context.Context, []byte, bool) (*coretypes.ResultTx, error) {
-			expectedResponse = &coretypes.ResultTx{TxResult: abci.ResponseDeliverTx{
+			expectedResponse = &coretypes.ResultTx{TxResult: abci.ExecTxResult{
 				Code: abci.CodeTypeOK,
 				Log:  "some log",
 			}}
@@ -146,7 +152,7 @@ func TestStatefulBroadcaster(t *testing.T) {
 
 	txExecutionFailed := When("tx execution failed", func() {
 		clientMock.TxFunc = func(context.Context, []byte, bool) (*coretypes.ResultTx, error) {
-			expectedResponse = &coretypes.ResultTx{TxResult: abci.ResponseDeliverTx{
+			expectedResponse = &coretypes.ResultTx{TxResult: abci.ExecTxResult{
 				Code: mathRand.Uint32(),
 				Log:  "tx failed",
 			}}
@@ -187,7 +193,7 @@ func TestStatefulBroadcaster(t *testing.T) {
 	returnErrorWithCode := Then("return an error code", func(t *testing.T) {
 		_, err := broadcaster.Broadcast(context.Background(), randomMsgs(msgCount)...)
 		assert.Error(t, err)
-		assert.True(t, errors2.Is[*sdkerrors.Error](err))
+		assert.True(t, errors2.Is[*errorsmod.Error](err))
 	})
 
 	returnError := Then("return an error", func(t *testing.T) {
@@ -262,7 +268,7 @@ func TestWithRefund(t *testing.T) {
 
 	Given("a refunding broadcaster", func() {
 		broadcaster = &mock2.BroadcasterMock{}
-		refunder = broadcast.WithRefund(broadcaster)
+		refunder = broadcast.WithRefund(broadcaster, app.MakeEncodingConfig().Codec)
 	}).
 		When("the response contains the msgs of the tx", func() {
 			broadcaster.BroadcastFunc = func(_ context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
@@ -273,7 +279,7 @@ func TestWithRefund(t *testing.T) {
 		Then("all messages are of type RefundMsgRequest", func(t *testing.T) {
 			res, err := refunder.Broadcast(context.Background(), randomMsgs(3)...)
 			assert.NoError(t, err)
-			for _, msg := range res.Tx.GetCachedValue().(sdk.Tx).GetMsgs() {
+			for _, msg := range res.Tx.GetCachedValue().(sdk.HasMsgs).GetMsgs() {
 				assert.IsType(t, &types.RefundMsgRequest{}, msg)
 			}
 		}).Run(t)
@@ -290,7 +296,7 @@ func TestInBatches(t *testing.T) {
 
 	Given("a batched broadcaster", func() {
 		broadcaster = &mock2.BroadcasterMock{}
-		batched = broadcast.Batched(broadcaster, 1, 5)
+		batched = broadcast.Batched(broadcaster, 1, 5, app.MakeEncodingConfig().Codec)
 	}).Branch(
 		When("trying to broadcast 0 msgs", func() {
 			msgs = []sdk.Msg{}
@@ -434,7 +440,7 @@ func TestWithRetry(t *testing.T) {
 
 		When("the msg execution fails", func() {
 			broadcaster.BroadcastFunc = func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) {
-				return nil, sdkerrors.New("codespace", mathRand.Uint32(), "error")
+				return nil, errorsmod.New("codespace", mathRand.Uint32(), "error")
 			}
 		}).
 			Then("don't retry broadcast", func(t *testing.T) {
@@ -448,7 +454,7 @@ func TestWithRetry(t *testing.T) {
 func TestSuppressExecutionErrs(t *testing.T) {
 	broadcaster := &mock2.BroadcasterMock{
 		BroadcastFunc: func(context.Context, ...sdk.Msg) (*sdk.TxResponse, error) {
-			return nil, sdkerrors.New("codespace", mathRand.Uint32(), "error")
+			return nil, errorsmod.New("codespace", mathRand.Uint32(), "error")
 		}}
 
 	suppressor := broadcast.SuppressExecutionErrs(broadcaster)

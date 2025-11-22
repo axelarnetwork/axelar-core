@@ -4,6 +4,7 @@
 package mock
 
 import (
+	"cosmossdk.io/math"
 	"github.com/axelarnetwork/axelar-core/utils"
 	multisigexported "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	snapshotexported "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
@@ -152,13 +153,13 @@ var _ multisigexported.Key = &KeyMock{}
 //
 //		// make and configure a mocked multisigexported.Key
 //		mockedKey := &KeyMock{
-//			GetBondedWeightFunc: func() sdk.Uint {
+//			GetBondedWeightFunc: func() math.Uint {
 //				panic("mock out the GetBondedWeight method")
 //			},
 //			GetHeightFunc: func() int64 {
 //				panic("mock out the GetHeight method")
 //			},
-//			GetMinPassingWeightFunc: func() sdk.Uint {
+//			GetMinPassingWeightFunc: func() math.Uint {
 //				panic("mock out the GetMinPassingWeight method")
 //			},
 //			GetParticipantsFunc: func() []sdk.ValAddress {
@@ -176,7 +177,7 @@ var _ multisigexported.Key = &KeyMock{}
 //			GetTimestampFunc: func() time.Time {
 //				panic("mock out the GetTimestamp method")
 //			},
-//			GetWeightFunc: func(valAddress sdk.ValAddress) sdk.Uint {
+//			GetWeightFunc: func(valAddress sdk.ValAddress) math.Uint {
 //				panic("mock out the GetWeight method")
 //			},
 //		}
@@ -187,13 +188,13 @@ var _ multisigexported.Key = &KeyMock{}
 //	}
 type KeyMock struct {
 	// GetBondedWeightFunc mocks the GetBondedWeight method.
-	GetBondedWeightFunc func() sdk.Uint
+	GetBondedWeightFunc func() math.Uint
 
 	// GetHeightFunc mocks the GetHeight method.
 	GetHeightFunc func() int64
 
 	// GetMinPassingWeightFunc mocks the GetMinPassingWeight method.
-	GetMinPassingWeightFunc func() sdk.Uint
+	GetMinPassingWeightFunc func() math.Uint
 
 	// GetParticipantsFunc mocks the GetParticipants method.
 	GetParticipantsFunc func() []sdk.ValAddress
@@ -211,7 +212,7 @@ type KeyMock struct {
 	GetTimestampFunc func() time.Time
 
 	// GetWeightFunc mocks the GetWeight method.
-	GetWeightFunc func(valAddress sdk.ValAddress) sdk.Uint
+	GetWeightFunc func(valAddress sdk.ValAddress) math.Uint
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -259,7 +260,7 @@ type KeyMock struct {
 }
 
 // GetBondedWeight calls GetBondedWeightFunc.
-func (mock *KeyMock) GetBondedWeight() sdk.Uint {
+func (mock *KeyMock) GetBondedWeight() math.Uint {
 	if mock.GetBondedWeightFunc == nil {
 		panic("KeyMock.GetBondedWeightFunc: method is nil but Key.GetBondedWeight was just called")
 	}
@@ -313,7 +314,7 @@ func (mock *KeyMock) GetHeightCalls() []struct {
 }
 
 // GetMinPassingWeight calls GetMinPassingWeightFunc.
-func (mock *KeyMock) GetMinPassingWeight() sdk.Uint {
+func (mock *KeyMock) GetMinPassingWeight() math.Uint {
 	if mock.GetMinPassingWeightFunc == nil {
 		panic("KeyMock.GetMinPassingWeightFunc: method is nil but Key.GetMinPassingWeight was just called")
 	}
@@ -480,7 +481,7 @@ func (mock *KeyMock) GetTimestampCalls() []struct {
 }
 
 // GetWeight calls GetWeightFunc.
-func (mock *KeyMock) GetWeight(valAddress sdk.ValAddress) sdk.Uint {
+func (mock *KeyMock) GetWeight(valAddress sdk.ValAddress) math.Uint {
 	if mock.GetWeightFunc == nil {
 		panic("KeyMock.GetWeightFunc: method is nil but Key.GetWeight was just called")
 	}

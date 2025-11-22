@@ -3,12 +3,13 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
+	store "cosmossdk.io/store/types"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -35,7 +36,7 @@ import (
 func TestInitExportGenesis(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
 	chain := evm.Ethereum
-	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand.ValAddr(), sdk.OneUint()) }, 10)
+	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand.ValAddr(), math.OneUint()) }, 10)
 
 	var (
 		msgServer   types.MsgServiceServer
@@ -48,18 +49,18 @@ func TestInitExportGenesis(t *testing.T) {
 	)
 
 	setup := func() {
-		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "multisig")
-		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace)
+		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "multisig")
+		k = keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(types.StoreKey), subspace)
 
 		multisigRounter := types.NewSigRouter()
 		multisigRounter.AddHandler(chain.Module, evmKeeper.NewSigHandler(encCfg.Codec, &evmKeeper.BaseKeeper{}))
 		k.SetSigRouter(multisigRounter)
 
-		ctx = rand.Context(fake.NewMultiStore())
+		ctx = rand.Context(fake.NewMultiStore(), t)
 		k.InitGenesis(ctx, types.DefaultGenesisState())
 		snapshotter = &keeperMock.SnapshotterMock{
 			CreateSnapshotFunc: func(sdk.Context, utils.Threshold) (snapshot.Snapshot, error) {
-				return snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, sdk.NewUint(10)), nil
+				return snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, math.NewUint(10)), nil
 			},
 		}
 		nexusK = &mock.NexusMock{
@@ -69,6 +70,7 @@ func TestInitExportGenesis(t *testing.T) {
 		}
 		pool := rewardmock.RewardPoolMock{
 			ReleaseRewardsFunc: func(valAddress sdk.ValAddress) error { return nil },
+			ClearRewardsFunc:   func(valAddress sdk.ValAddress) {},
 		}
 		rewardK = &mock.RewarderMock{
 			GetPoolFunc: func(ctx sdk.Context, name string) reward.RewardPool { return &pool },
@@ -94,7 +96,10 @@ func TestInitExportGenesis(t *testing.T) {
 			msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), types.NewSubmitPubKeyRequest(rand.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize()))
 		}
 
-		multisig.EndBlocker(ctx.WithBlockHeight(ctx.BlockHeight()+types.DefaultParams().KeygenGracePeriod), abci.RequestEndBlock{}, k, rewardK)
+		// Call EndBlocker for every block until timeout
+		for i := int64(0); i <= types.DefaultParams().KeygenTimeout; i++ {
+			funcs.Must(multisig.EndBlocker(ctx.WithBlockHeight(ctx.BlockHeight()+i), k, rewardK))
+		}
 	})
 
 	whenSigningSessionExists := When("some signing session exists", func() {

@@ -5,11 +5,14 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewRootCmd(t *testing.T) {
+	version.Version = "v1.3.0"
+
 	root, _ := NewRootCmd()
 	t.Run("broadcast flag correctly set", func(t *testing.T) {
 		cmd := root

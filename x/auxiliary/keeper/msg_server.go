@@ -1,11 +1,15 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/auxiliary/types"
@@ -15,20 +19,36 @@ var _ types.MsgServiceServer = msgServer{}
 
 type msgServer struct {
 	router *baseapp.MsgServiceRouter
+	cdc    codec.Codec
 }
 
-func NewMsgServer(msgServiceRouter *baseapp.MsgServiceRouter) types.MsgServiceServer {
+func NewMsgServer(msgServiceRouter *baseapp.MsgServiceRouter, cdc codec.Codec) types.MsgServiceServer {
 	return msgServer{
 		msgServiceRouter,
+		cdc,
 	}
 }
 
 func (s msgServer) Batch(c context.Context, req *types.BatchRequest) (*types.BatchResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	signers, _, err := s.cdc.GetMsgV1Signers(req)
+	if err != nil {
+		return nil, err
+	}
+
 	var results []types.BatchResponse_Response
 
 	for i, message := range req.UnwrapMessages() {
+		msgSigners, _, err := s.cdc.GetMsgV1Signers(message)
+		if err != nil {
+			return nil, err
+		}
+
+		if !equalSigners(signers, msgSigners) {
+			return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "message signer mismatch")
+		}
+
 		var batchResponse types.BatchResponse_Response
 
 		cacheCtx, writeCache := ctx.CacheContext()
@@ -67,4 +87,19 @@ func (s msgServer) processMessage(ctx sdk.Context, message sdk.Msg) (*sdk.Result
 	}
 
 	return res, nil
+}
+
+// equalSigners checks the equality of two slices of sdk  address bytes
+func equalSigners(first, second [][]byte) bool {
+	if len(first) != len(second) {
+		return false
+	}
+
+	for i := range first {
+		if !bytes.Equal(first[i], second[i]) {
+			return false
+		}
+	}
+
+	return true
 }

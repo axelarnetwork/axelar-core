@@ -1,14 +1,17 @@
 package keeper
 
 import (
+	"context"
 	"testing"
 
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
+	store "cosmossdk.io/store/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -19,24 +22,24 @@ import (
 
 const denom = "test"
 
-func setup() (sdk.Context, Keeper, *mock.BankerMock, *mock.DistributorMock, *mock.StakerMock) {
+func setup(t log.TestingT) (sdk.Context, Keeper, *mock.BankerMock, *mock.DistributorMock, *mock.StakerMock) {
 	banker := mock.BankerMock{}
 	distributor := mock.DistributorMock{}
 	staker := mock.StakerMock{}
 
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	encodingConfig := params.MakeEncodingConfig()
-	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "reward")
-	keeper := NewKeeper(encodingConfig.Codec, sdk.NewKVStoreKey(types.StoreKey), subspace, &banker, &distributor, &staker)
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "reward")
+	keeper := NewKeeper(encodingConfig.Codec, store.NewKVStoreKey(types.StoreKey), subspace, &banker, &distributor, &staker)
 
 	return ctx, keeper, &banker, &distributor, &staker
 }
 
 func TestAddReward(t *testing.T) {
-	ctx, keeper, _, _, _ := setup()
+	ctx, keeper, _, _, _ := setup(t)
 	pool := keeper.GetPool(ctx, rand.Str(10))
 	validator := rand.ValAddr()
-	coin1 := sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000000)))
+	coin1 := sdk.NewCoin(denom, math.NewInt(rand.I64Between(10, 10000000)))
 
 	pool.AddReward(validator, coin1)
 	p := pool.(*rewardPool)
@@ -47,7 +50,7 @@ func TestAddReward(t *testing.T) {
 	assert.Equal(t, coin1, p.Rewards[0].Coins[0])
 	assert.Equal(t, p, keeper.GetPool(ctx, p.Name).(*rewardPool))
 
-	coin2 := sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000000)))
+	coin2 := sdk.NewCoin(denom, math.NewInt(rand.I64Between(10, 10000000)))
 	pool.AddReward(validator, coin2)
 	p = pool.(*rewardPool)
 
@@ -60,12 +63,14 @@ func TestAddReward(t *testing.T) {
 
 func TestReleaseRewards(t *testing.T) {
 	t.Run("when validator not found", func(t *testing.T) {
-		ctx, keeper, _, _, staker := setup()
+		ctx, keeper, _, _, staker := setup(t)
 		pool := keeper.GetPool(ctx, rand.Str(10))
 		validator := rand.ValAddr()
-		coin := sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000000)))
+		coin := sdk.NewCoin(denom, math.NewInt(rand.I64Between(10, 10000000)))
 
-		staker.ValidatorFunc = func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI { return nil }
+		staker.ValidatorFunc = func(ctx context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error) {
+			return nil, stakingtypes.ErrNoValidatorFound
+		}
 
 		pool.AddReward(validator, coin)
 		err := pool.ReleaseRewards(validator)
@@ -77,17 +82,19 @@ func TestReleaseRewards(t *testing.T) {
 	})
 
 	t.Run("when validator is found", func(t *testing.T) {
-		ctx, keeper, banker, distributor, staker := setup()
+		ctx, keeper, banker, distributor, staker := setup(t)
 		pool := keeper.GetPool(ctx, rand.Str(10))
 		validator := rand.ValAddr()
-		coin := sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000000)))
+		coin := sdk.NewCoin(denom, math.NewInt(rand.I64Between(10, 10000000)))
 
-		banker.MintCoinsFunc = func(ctx sdk.Context, name string, amt sdk.Coins) error { return nil }
-		banker.SendCoinsFromModuleToModuleFunc = func(ctx sdk.Context, senderModule string, recipientModule string, amt sdk.Coins) error {
+		banker.MintCoinsFunc = func(ctx context.Context, name string, amt sdk.Coins) error { return nil }
+		banker.SendCoinsFromModuleToModuleFunc = func(ctx context.Context, senderModule string, recipientModule string, amt sdk.Coins) error {
 			return nil
 		}
-		staker.ValidatorFunc = func(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI { return stakingtypes.Validator{} }
-		distributor.AllocateTokensToValidatorFunc = func(ctx sdk.Context, val stakingtypes.ValidatorI, tokens sdk.DecCoins) {}
+		staker.ValidatorFunc = func(ctx context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error) {
+			return stakingtypes.Validator{}, nil
+		}
+		distributor.AllocateTokensToValidatorFunc = func(ctx context.Context, val stakingtypes.ValidatorI, tokens sdk.DecCoins) error { return nil }
 
 		pool.AddReward(validator, coin)
 		err := pool.ReleaseRewards(validator)
@@ -111,10 +118,10 @@ func TestReleaseRewards(t *testing.T) {
 }
 
 func TestClearRewards(t *testing.T) {
-	ctx, keeper, _, _, _ := setup()
+	ctx, keeper, _, _, _ := setup(t)
 	pool := keeper.GetPool(ctx, rand.Str(10))
 	validator := rand.ValAddr()
-	coin := sdk.NewCoin(denom, sdk.NewInt(rand.I64Between(10, 10000000)))
+	coin := sdk.NewCoin(denom, math.NewInt(rand.I64Between(10, 10000000)))
 
 	pool.AddReward(validator, coin)
 	pool.ClearRewards(validator)

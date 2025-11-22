@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -17,7 +18,7 @@ func NewRefundMsgRequest(sender sdk.AccAddress, innerMessage sdk.Msg) *RefundMsg
 		panic(err)
 	}
 	return &RefundMsgRequest{
-		Sender:       sender,
+		Sender:       sender.String(),
 		InnerMessage: messageAny,
 	}
 }
@@ -34,8 +35,8 @@ func (m RefundMsgRequest) Type() string {
 
 // ValidateBasic executes a stateless message validation
 func (m RefundMsgRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if m.InnerMessage == nil {
@@ -47,18 +48,12 @@ func (m RefundMsgRequest) ValidateBasic() error {
 		return fmt.Errorf("invalid inner message")
 	}
 
-	if err := innerMessage.ValidateBasic(); err != nil {
+	msg, ok := innerMessage.(sdk.HasValidateBasic)
+	if !ok {
+		return fmt.Errorf("inner message %T does not implement HasValidateBasic", innerMessage)
+	}
+	if err := msg.ValidateBasic(); err != nil {
 		return err
-	}
-
-	signers := innerMessage.GetSigners()
-
-	if len(signers) != 1 {
-		return fmt.Errorf("invalid number of signers for inner message")
-	}
-
-	if !m.GetSigners()[0].Equals(signers[0]) {
-		return fmt.Errorf("refund msg and inner message signers do not match")
 	}
 
 	return nil
@@ -67,11 +62,6 @@ func (m RefundMsgRequest) ValidateBasic() error {
 // GetSignBytes returns the message bytes that need to be signed
 func (m RefundMsgRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
-}
-
-// GetSigners returns the set of signers for this message
-func (m RefundMsgRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }
 
 // UnpackInterfaces implements UnpackInterfacesMessage

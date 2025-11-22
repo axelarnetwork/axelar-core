@@ -1,6 +1,8 @@
 package types
 
 import (
+	"context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -34,7 +36,7 @@ type Snapshotter interface {
 // Staking adopts the methods from "github.com/cosmos/cosmos-sdk/x/staking/exported" that are
 // actually used by this module
 type Staking interface {
-	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
+	Validator(ctx context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error)
 }
 
 // Reward provides access to the reward functionality

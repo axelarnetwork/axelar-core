@@ -3,9 +3,9 @@ package cli
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
@@ -224,7 +224,7 @@ func getCmdBytecode() *cobra.Command {
 					Contract: utils.NormalizeString(contract),
 				})
 			if err != nil {
-				return sdkerrors.Wrapf(err, types.ErrFBytecode, contract)
+				return errorsmod.Wrapf(err, types.ErrFBytecode, contract)
 			}
 
 			return clientCtx.PrintProto(res)

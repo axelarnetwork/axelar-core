@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -11,7 +12,7 @@ import (
 // NewProcessSignTrafficRequest constructor for NewProcessSignTrafficRequest
 func NewProcessSignTrafficRequest(sender sdk.AccAddress, session string, payload tofnd.TrafficOut) *ProcessSignTrafficRequest {
 	return &ProcessSignTrafficRequest{
-		Sender:    sender,
+		Sender:    sender.String(),
 		SessionID: utils.NormalizeString(session),
 		Payload:   payload,
 	}
@@ -26,17 +27,17 @@ func (m ProcessSignTrafficRequest) Type() string { return "SignTraffic" }
 
 // ValidateBasic implements the sdk.Msg interface.
 func (m ProcessSignTrafficRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 	if err := utils.ValidateString(m.SessionID); err != nil {
-		return sdkerrors.Wrap(err, "invalid session ID")
+		return errorsmod.Wrap(err, "invalid session ID")
 	}
 	if !m.Payload.IsBroadcast && len(m.Payload.ToPartyUid) == 0 {
-		return sdkerrors.Wrap(ErrTss, "non-broadcast message must specify recipient")
+		return errorsmod.Wrap(ErrTss, "non-broadcast message must specify recipient")
 	}
 	if m.Payload.IsBroadcast && len(m.Payload.ToPartyUid) != 0 {
-		return sdkerrors.Wrap(ErrTss, "broadcast message must not specify recipient")
+		return errorsmod.Wrap(ErrTss, "broadcast message must not specify recipient")
 	}
 	// TODO enforce a maximum length for m.SessionID?
 	return nil
@@ -45,9 +46,4 @@ func (m ProcessSignTrafficRequest) ValidateBasic() error {
 // GetSignBytes implements the sdk.Msg interface
 func (m ProcessSignTrafficRequest) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
-}
-
-// GetSigners implements the sdk.Msg interface
-func (m ProcessSignTrafficRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

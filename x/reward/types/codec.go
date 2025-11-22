@@ -10,12 +10,14 @@ import (
 // RegisterLegacyAminoCodec registers concrete types on codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&RefundMsgRequest{}, "axelarnet/RefundMsgRequest", nil)
+	cdc.RegisterConcrete(&UpdateParamsRequest{}, "reward/UpdateParams", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
 		&RefundMsgRequest{},
+		&UpdateParamsRequest{},
 	)
 }
 

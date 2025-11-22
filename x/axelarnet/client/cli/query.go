@@ -3,9 +3,9 @@ package cli
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
@@ -48,7 +48,7 @@ func GetCmdPendingIBCTransfersCount() *cobra.Command {
 
 			res, err := queryClient.PendingIBCTransferCount(cmd.Context(), &types.PendingIBCTransferCountRequest{})
 			if err != nil {
-				return errors.Wrap(err, "failed to query pending IBC transfers")
+				return errorsmod.Wrap(err, "failed to query pending IBC transfers")
 			}
 
 			return clientCtx.PrintProto(res)

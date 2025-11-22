@@ -16,11 +16,13 @@ axelard add-genesis-account [address_or_key_name] [coin][,[coin]] [flags]
 ### Options
 
 ```
+      --grpc-addr string         the gRPC endpoint to use for this chain
+      --grpc-insecure            allow gRPC over insecure channels, if not the server must use TLS
       --height int               Use a specific height to query state at (this can error if the node is pruning state)
   -h, --help                     help for add-genesis-account
       --home string              The application home directory (default "$HOME/.axelar")
       --keyring-backend string   Select keyring's backend (os|file|kwallet|pass|test) (default "file")
-      --node string              <host>:<port> to Tendermint RPC interface for this chain (default "tcp://localhost:26657")
+      --node string              <host>:<port> to CometBFT RPC interface for this chain (default "tcp://localhost:26657")
   -o, --output string            Output format (text|json) (default "text")
       --vesting-amount string    amount of coins for vesting accounts
       --vesting-end-time int     schedule end time (unix epoch) for vesting accounts

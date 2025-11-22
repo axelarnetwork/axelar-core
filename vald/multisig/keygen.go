@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/utils/log"
@@ -26,7 +26,7 @@ func (mgr *Mgr) ProcessKeygenStarted(event *types.KeygenStarted) error {
 		return err
 	}
 
-	payloadHash := sha256.Sum256(mgr.ctx.FromAddress)
+	payloadHash := sha256.Sum256([]byte(mgr.ctx.FromAddress.String()))
 	sig, err := mgr.sign(keyUID, payloadHash[:], pubKey)
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func (mgr *Mgr) ProcessKeygenStarted(event *types.KeygenStarted) error {
 
 	msg := types.NewSubmitPubKeyRequest(mgr.ctx.FromAddress, event.GetKeyID(), pubKey, sig)
 	if _, err := mgr.broadcaster.Broadcast(context.Background(), msg); err != nil {
-		return sdkerrors.Wrap(err, "handler goroutine: failure to broadcast outgoing submit pub key message")
+		return errorsmod.Wrap(err, "handler goroutine: failure to broadcast outgoing submit pub key message")
 	}
 
 	return nil

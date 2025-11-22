@@ -7,12 +7,13 @@ import (
 	"strings"
 	"time"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	ibctransfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
-	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
-	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
+	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
@@ -47,15 +48,15 @@ func (m IBCTransfer) Validate() error {
 	}
 
 	if err := utils.ValidateString(m.PortID); err != nil {
-		return sdkerrors.Wrap(err, "invalid port ID")
+		return errorsmod.Wrap(err, "invalid port ID")
 	}
 
 	if err := utils.ValidateString(m.ChannelID); err != nil {
-		return sdkerrors.Wrap(err, "invalid channel ID")
+		return errorsmod.Wrap(err, "invalid channel ID")
 	}
 
 	if err := utils.ValidateString(m.Receiver); err != nil {
-		return sdkerrors.Wrap(err, "invalid receiver")
+		return errorsmod.Wrap(err, "invalid receiver")
 	}
 
 	if err := m.Token.Validate(); err != nil {
@@ -116,11 +117,11 @@ func (m CosmosChain) ValidateBasic() error {
 	}
 
 	if err := m.Name.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid name")
+		return errorsmod.Wrap(err, "invalid name")
 	}
 
 	if err := utils.ValidateString(m.AddrPrefix); err != nil {
-		return sdkerrors.Wrap(err, "invalid address prefix")
+		return errorsmod.Wrap(err, "invalid address prefix")
 	}
 
 	return nil
@@ -163,23 +164,23 @@ func (m *IBCTransfer) SetStatus(status IBCTransfer_Status) error {
 // ValidateBasic returns an error if the given IBCTransfer is invalid; nil otherwise
 func (m IBCTransfer) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(err, "invalid transfer sender")
+		return errorsmod.Wrap(err, "invalid transfer sender")
 	}
 
 	if err := utils.ValidateString(m.Receiver); err != nil {
-		return sdkerrors.Wrap(err, "invalid transfer receiver")
+		return errorsmod.Wrap(err, "invalid transfer receiver")
 	}
 
 	if err := m.Token.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid token")
+		return errorsmod.Wrap(err, "invalid token")
 	}
 
 	if err := host.PortIdentifierValidator(m.PortID); err != nil {
-		return sdkerrors.Wrap(err, "invalid source port ID")
+		return errorsmod.Wrap(err, "invalid source port ID")
 	}
 
 	if err := host.ChannelIdentifierValidator(m.ChannelID); err != nil {
-		return sdkerrors.Wrap(err, "invalid source channel ID")
+		return errorsmod.Wrap(err, "invalid source channel ID")
 	}
 
 	return nil
@@ -202,14 +203,14 @@ const (
 // ValidateIBCPath validates direct IBC paths
 func ValidateIBCPath(path string) error {
 	if err := utils.ValidateString(path); err != nil {
-		return sdkerrors.Wrap(err, "invalid IBC path")
+		return errorsmod.Wrap(err, "invalid IBC path")
 	}
 
 	pathValidator := host.NewPathValidator(func(path string) error {
 		return nil
 	})
 	if err := pathValidator(path); err != nil {
-		return sdkerrors.Wrap(err, "invalid IBC path")
+		return errorsmod.Wrap(err, "invalid IBC path")
 	}
 
 	// we only support direct IBC connections
@@ -230,7 +231,7 @@ func NewIBCPath(port string, channel string) string {
 func ToICS20Packet(packet ibcexported.PacketI) (ibctransfertypes.FungibleTokenPacketData, error) {
 	var data ibctransfertypes.FungibleTokenPacketData
 	if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(packet.GetData(), &data); err != nil {
-		return ibctransfertypes.FungibleTokenPacketData{}, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "cannot unmarshal ICS-20 transfer packet data")
+		return ibctransfertypes.FungibleTokenPacketData{}, errorsmod.Wrapf(sdkerrors.ErrInvalidType, "cannot unmarshal ICS-20 transfer packet data")
 	}
 
 	if err := data.ValidateBasic(); err != nil {
@@ -257,7 +258,7 @@ var (
 // ValidateBasic returns an error if the given Fee is invalid; nil otherwise
 func (f Fee) ValidateBasic() error {
 	if err := sdk.VerifyAddressFormat(f.Recipient); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "fee recipient").Error())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "fee recipient").Error())
 	}
 
 	if !f.Amount.IsValid() || !f.Amount.IsPositive() {
@@ -266,7 +267,7 @@ func (f Fee) ValidateBasic() error {
 
 	if f.RefundRecipient != nil {
 		if err := sdk.VerifyAddressFormat(f.RefundRecipient); err != nil {
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "fee refund recipient").Error())
+			return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "fee refund recipient").Error())
 		}
 	}
 

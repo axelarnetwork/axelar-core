@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -137,14 +138,14 @@ func GetCmdRegisterAssetFee() *cobra.Command {
 				return err
 			}
 
-			feeRate := sdk.MustNewDecFromStr(args[2])
+			feeRate := math.LegacyMustNewDecFromStr(args[2])
 
-			minFee, ok := sdk.NewIntFromString(args[3])
+			minFee, ok := math.NewIntFromString(args[3])
 			if !ok {
 				return fmt.Errorf("invalid value provided for min fee")
 			}
 
-			maxFee, ok := sdk.NewIntFromString(args[4])
+			maxFee, ok := math.NewIntFromString(args[4])
 			if !ok {
 				return fmt.Errorf("invalid value provided for max fee")
 			}

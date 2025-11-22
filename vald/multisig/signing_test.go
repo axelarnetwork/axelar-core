@@ -79,10 +79,6 @@ func TestMgr_ProcessSigningStarted(t *testing.T) {
 					if _, ok := msg.(*types.SubmitSignatureRequest); !ok {
 						return nil, fmt.Errorf("unexpected type of msg %T received", msg)
 					}
-
-					if err := msg.ValidateBasic(); err != nil {
-						return nil, err
-					}
 				}
 
 				return &sdk.TxResponse{}, nil

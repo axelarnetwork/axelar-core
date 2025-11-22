@@ -6,8 +6,6 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/types";
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "axelar/multisig/exported/v1beta1/types.proto";
-import "axelar/multisig/v1beta1/types.proto";
-import "axelar/utils/v1beta1/threshold.proto";
 import "axelar/multisig/v1beta1/params.proto";
 
 option (gogoproto.goproto_getters_all) = false;
@@ -47,7 +45,7 @@ message KeygenParticipant {
   string address = 1;
   bytes weight = 2 [
     (gogoproto.nullable) = false,
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint"
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint"
   ];
   string pub_key = 3;
 }
@@ -64,11 +62,11 @@ message KeyResponse {
   google.protobuf.Timestamp started_at_timestamp = 4
       [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
   bytes threshold_weight = 5 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
   bytes bonded_weight = 6 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
   // Keygen participants in descending order by weight
@@ -93,15 +91,15 @@ message KeygenSessionResponse {
   int64 grace_period = 5;
   multisig.exported.v1beta1.MultisigState state = 6;
   bytes keygen_threshold_weight = 7 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
   bytes signing_threshold_weight = 8 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
   bytes bonded_weight = 9 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Uint",
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
     (gogoproto.nullable) = false
   ];
   // Keygen candidates in descending order by weight

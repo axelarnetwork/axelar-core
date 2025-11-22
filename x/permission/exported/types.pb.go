@@ -5,9 +5,9 @@ package exported
 
 import (
 	fmt "fmt"
-	_ "github.com/gogo/protobuf/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-	descriptor "github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
+	descriptor "github.com/cosmos/gogoproto/protoc-gen-gogo/descriptor"
 	math "math"
 )
 

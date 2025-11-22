@@ -2,11 +2,17 @@ package keeper_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
+	store "cosmossdk.io/store/types"
+	"github.com/cometbft/cometbft/crypto/ed25519"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,9 +20,6 @@ import (
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"golang.org/x/exp/maps"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -75,22 +78,22 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 
 	setup := func() {
 		encCfg := appParams.MakeEncodingConfig()
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		snapSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+		snapSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "snap")
 		validators = genValidators(t, 10, 100)
 		staker = newMockStaker(validators...)
-		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
+		principalAddress = funcs.Must(sdk.ValAddressFromBech32(validators[rand.I64Between(0, 10)].GetOperator()))
 		expectedProxy = rand.AccAddr()
 		bank = &mock.BankKeeperMock{
-			SpendableBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+			SpendableBalanceFunc: func(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin {
 				if addr.Equals(expectedProxy) {
-					return sdk.NewCoin("uaxl", sdk.NewInt(5000000))
+					return sdk.NewCoin("uaxl", math.NewInt(5000000))
 				}
-				return sdk.NewCoin("uaxl", sdk.ZeroInt())
+				return sdk.NewCoin("uaxl", math.ZeroInt())
 			},
 		}
 
-		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &mock.SlasherMock{})
+		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("staking"), snapSubspace, staker, bank, &mock.SlasherMock{})
 		snapshotKeeper.SetParams(ctx, types.DefaultParams())
 	}
 	t.Run("happy path", testutils.Func(func(t *testing.T) {
@@ -127,11 +130,11 @@ func TestKeeper_RegisterProxy(t *testing.T) {
 	t.Run("insufficient funds in proxy", testutils.Func(func(t *testing.T) {
 		setup()
 
-		bank.SpendableBalanceFunc = func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+		bank.SpendableBalanceFunc = func(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin {
 			if addr.Equals(expectedProxy) {
-				return sdk.NewCoin("uaxl", sdk.NewInt(4999999))
+				return sdk.NewCoin("uaxl", math.NewInt(4999999))
 			}
-			return sdk.NewCoin("uaxl", sdk.ZeroInt())
+			return sdk.NewCoin("uaxl", math.ZeroInt())
 		}
 
 		err := snapshotKeeper.ActivateProxy(ctx, principalAddress, expectedProxy)
@@ -153,20 +156,20 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 
 	setup := func() {
 		encCfg := appParams.MakeEncodingConfig()
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
-		snapSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+		snapSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "snap")
 		validators = genValidators(t, 10, 100)
 		staker = newMockStaker(validators...)
-		principalAddress = validators[rand.I64Between(0, 10)].GetOperator()
+		principalAddress = funcs.Must(sdk.ValAddressFromBech32(validators[rand.I64Between(0, 10)].GetOperator()))
 		expectedProxy = rand.AccAddr()
 
 		bank := &mock.BankKeeperMock{
-			SpendableBalanceFunc: func(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
-				return sdk.NewCoin("uaxl", sdk.NewInt(5000000))
+			SpendableBalanceFunc: func(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+				return sdk.NewCoin("uaxl", math.NewInt(5000000))
 			},
 		}
 
-		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("staking"), snapSubspace, staker, bank, &mock.SlasherMock{})
+		snapshotKeeper = keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("staking"), snapSubspace, staker, bank, &mock.SlasherMock{})
 		snapshotKeeper.SetParams(ctx, types.DefaultParams())
 
 		if err := snapshotKeeper.ActivateProxy(ctx, principalAddress, expectedProxy); err != nil {
@@ -200,7 +203,7 @@ func TestKeeper_DeregisterProxy(t *testing.T) {
 
 		var address sdk.ValAddress
 		for {
-			address = validators[rand.I64Between(0, 10)].GetOperator()
+			address = funcs.Must(sdk.ValAddressFromBech32(validators[rand.I64Between(0, 10)].GetOperator()))
 			if !bytes.Equal(principalAddress, address) {
 				break
 			}
@@ -223,13 +226,13 @@ func TestKeeper(t *testing.T) {
 
 	givenKeeper := Given("snapshot keeper", func() {
 		encCfg := appParams.MakeEncodingConfig()
-		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger()).
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t)).
 			WithBlockHeight(rand.PosI64()).
 			WithBlockTime(time.Now())
-		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("paramsKey"), sdk.NewKVStoreKey("tparamsKey"), "snap")
+		subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "snap")
 
 		staking = &mock.StakingKeeperMock{}
-		k = keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("snapshot"), subspace, staking, &mock.BankKeeperMock{}, &mock.SlasherMock{})
+		k = keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("snapshot"), subspace, staking, &mock.BankKeeperMock{}, &mock.SlasherMock{})
 		k.SetParams(ctx, types.DefaultParams())
 	})
 
@@ -237,7 +240,7 @@ func TestKeeper(t *testing.T) {
 		var (
 			candidates []sdk.ValAddress
 			filterFunc func(exported.ValidatorI) bool
-			weightFunc func(consensusPower sdk.Uint) sdk.Uint
+			weightFunc func(consensusPower math.Uint) math.Uint
 			threshold  utils.Threshold
 		)
 
@@ -245,29 +248,32 @@ func TestKeeper(t *testing.T) {
 			addr := rand.ValAddr()
 
 			return &keeperMock.ValidatorIMock{
-				GetOperatorFunc:       func() sdk.ValAddress { return addr },
-				GetConsensusPowerFunc: func(_ sdk.Int) int64 { return int64(100 - i) },
+				GetOperatorFunc:       func() string { return addr.String() },
+				GetConsensusPowerFunc: func(_ math.Int) int64 { return int64(100 - i) },
 			}
 		}, 100)
-		validatorMap := slices.ToMap(validators, func(v stakingtypes.ValidatorI) string { return v.GetOperator().String() })
+		validatorMap := slices.ToMap(validators, func(v stakingtypes.ValidatorI) string { return v.GetOperator() })
 
 		whenAllParamsAreGood := When("all params are good", func() {
-			candidates = slices.Map(validators, stakingtypes.ValidatorI.GetOperator)
+			candidates = slices.Map(validators, func(v stakingtypes.ValidatorI) sdk.ValAddress {
+				return funcs.Must(sdk.ValAddressFromBech32(v.GetOperator()))
+			})
 			filterFunc = func(v exported.ValidatorI) bool { return true }
-			weightFunc = funcs.Identity[sdk.Uint]
+			weightFunc = funcs.Identity[math.Uint]
 			threshold = utilstestutils.RandThreshold()
 
-			staking.ValidatorFunc = func(_ sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
-				return validatorMap[addr.String()]
+			staking.ValidatorFunc = func(_ context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error) {
+				return validatorMap[addr.String()], nil
 			}
-			staking.IterateBondedValidatorsByPowerFunc = func(ctx sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
+			staking.IterateBondedValidatorsByPowerFunc = func(ctx context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error {
 				for i, v := range validators {
 					if fn(int64(i), v) {
-						return
+						return nil
 					}
 				}
+				return nil
 			}
-			staking.PowerReductionFunc = func(ctx sdk.Context) sdk.Int { return sdk.OneInt() }
+			staking.PowerReductionFunc = func(ctx context.Context) math.Int { return math.OneInt() }
 		})
 
 		givenKeeper.
@@ -280,10 +286,10 @@ func TestKeeper(t *testing.T) {
 				assert.Equal(t, ctx.BlockHeight(), actual.Height)
 				assert.Equal(t, ctx.BlockTime(), actual.Timestamp)
 
-				expectedBondedWeight := sdk.ZeroUint()
+				expectedBondedWeight := math.ZeroUint()
 				for addr, v := range validatorMap {
-					weight := sdk.NewUint(uint64(v.GetConsensusPower(sdk.OneInt())))
-					assert.Equal(t, exported.NewParticipant(v.GetOperator(), weight), actual.Participants[addr])
+					weight := math.NewUint(uint64(v.GetConsensusPower(math.OneInt())))
+					assert.Equal(t, exported.NewParticipant(funcs.Must(sdk.ValAddressFromBech32(v.GetOperator())), weight), actual.Participants[addr])
 
 					expectedBondedWeight = expectedBondedWeight.Add(weight)
 				}
@@ -297,7 +303,7 @@ func TestKeeper(t *testing.T) {
 				candidates = []sdk.ValAddress{}
 				slices.ForEach(validators, func(v stakingtypes.ValidatorI) {
 					if rand.Bools(0.5).Next() {
-						candidates = append(candidates, v.GetOperator())
+						candidates = append(candidates, funcs.Must(sdk.ValAddressFromBech32(v.GetOperator())))
 					}
 				})
 				threshold = utils.ZeroThreshold
@@ -314,7 +320,7 @@ func TestKeeper(t *testing.T) {
 		givenKeeper.
 			When2(whenAllParamsAreGood).
 			When("filterFunc filters some candidate out", func() {
-				filterFunc = func(v exported.ValidatorI) bool { return v.GetConsensusPower(sdk.OneInt()) > 90 }
+				filterFunc = func(v exported.ValidatorI) bool { return v.GetConsensusPower(math.OneInt()) > 90 }
 				threshold = utils.ZeroThreshold
 			}).
 			Then("should create a snapshot with only candidates passing the filterFunc", func(t *testing.T) {
@@ -329,8 +335,8 @@ func TestKeeper(t *testing.T) {
 		givenKeeper.
 			When2(whenAllParamsAreGood).
 			When("weightFunc should translate consensus power to weight", func() {
-				weightFunc = func(sdk.Uint) sdk.Uint {
-					return sdk.OneUint()
+				weightFunc = func(math.Uint) math.Uint {
+					return math.OneUint()
 				}
 			}).
 			Then("should create a snapshot with participants having the correct weights", func(t *testing.T) {
@@ -339,16 +345,16 @@ func TestKeeper(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NoError(t, actual.ValidateBasic())
 				assert.True(t, slices.All(maps.Values(actual.Participants), func(p exported.Participant) bool {
-					return p.Weight.Equal(sdk.OneUint())
+					return p.Weight.Equal(math.OneUint())
 				}))
-				assert.Equal(t, sdk.OneUint().MulUint64(uint64(len(actual.Participants))), actual.BondedWeight)
+				assert.Equal(t, math.OneUint().MulUint64(uint64(len(actual.Participants))), actual.BondedWeight)
 			}).
 			Run(t)
 
 		givenKeeper.
 			When2(whenAllParamsAreGood).
 			When("threshold cannot be met", func() {
-				filterFunc = func(v exported.ValidatorI) bool { return v.GetConsensusPower(sdk.OneInt()) > 90 }
+				filterFunc = func(v exported.ValidatorI) bool { return v.GetConsensusPower(math.OneInt()) > 90 }
 				threshold = utils.NewThreshold(956, 5050)
 			}).
 			Then("should return an error", func(t *testing.T) {
@@ -362,8 +368,8 @@ func TestKeeper(t *testing.T) {
 			When2(whenAllParamsAreGood).
 			When("weight func returns zero weights", func() {
 				once := &sync.Once{}
-				weightFunc = func(w sdk.Uint) sdk.Uint {
-					once.Do(func() { w = sdk.ZeroUint() })
+				weightFunc = func(w math.Uint) math.Uint {
+					once.Do(func() { w = math.ZeroUint() })
 					return w
 				}
 			}).
@@ -372,7 +378,7 @@ func TestKeeper(t *testing.T) {
 
 				assert.NoError(t, err)
 				participantsWithNonZeroWeights := slices.Map(validators[1:], func(v stakingtypes.ValidatorI) sdk.ValAddress {
-					return v.GetOperator()
+					return funcs.Must(sdk.ValAddressFromBech32(v.GetOperator()))
 				})
 				assert.ElementsMatch(t, participantsWithNonZeroWeights, slices.Map(maps.Values(s.Participants),
 					func(p exported.Participant) sdk.ValAddress { return p.Address }))
@@ -433,13 +439,13 @@ var _ types.StakingKeeper = mockStaker{}
 
 type mockStaker struct {
 	validators []stakingtypes.ValidatorI
-	totalPower sdk.Int
+	totalPower math.Int
 }
 
 func newMockStaker(validators ...stakingtypes.ValidatorI) *mockStaker {
 	staker := &mockStaker{
 		make([]stakingtypes.ValidatorI, 0),
-		sdk.ZeroInt(),
+		math.ZeroInt(),
 	}
 
 	for _, val := range validators {
@@ -450,32 +456,33 @@ func newMockStaker(validators ...stakingtypes.ValidatorI) *mockStaker {
 	return staker
 }
 
-func (k mockStaker) BondDenom(ctx sdk.Context) string {
-	return "uaxl"
+func (k mockStaker) BondDenom(_ context.Context) (string, error) {
+	return "uaxl", nil
 }
 
-func (k mockStaker) GetLastTotalPower(_ sdk.Context) (power sdk.Int) {
-	return k.totalPower
+func (k mockStaker) GetLastTotalPower(_ context.Context) (math.Int, error) {
+	return k.totalPower, nil
 }
 
-func (k mockStaker) IterateBondedValidatorsByPower(_ sdk.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) {
+func (k mockStaker) IterateBondedValidatorsByPower(_ context.Context, fn func(index int64, validator stakingtypes.ValidatorI) bool) error {
 	for i, val := range k.validators {
 		if fn(int64(i), val) {
-			return
+			return nil
 		}
 	}
-}
-
-func (k mockStaker) Validator(_ sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI {
-	for _, validator := range k.validators {
-		if bytes.Equal(validator.GetOperator(), addr) {
-			return validator
-		}
-	}
-
 	return nil
 }
 
-func (k mockStaker) PowerReduction(ctx sdk.Context) sdk.Int {
+func (k mockStaker) Validator(_ context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error) {
+	for _, validator := range k.validators {
+		if validator.GetOperator() == addr.String() {
+			return validator, nil
+		}
+	}
+
+	return nil, stakingtypes.ErrNoValidatorFound
+}
+
+func (k mockStaker) PowerReduction(_ context.Context) math.Int {
 	return sdk.DefaultPowerReduction
 }

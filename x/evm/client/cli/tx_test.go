@@ -3,13 +3,14 @@ package cli
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEthToWei_IsInteger(t *testing.T) {
-	amount, _ := sdk.NewDecFromStr("3.2")
+	amount, _ := math.LegacyNewDecFromStr("3.2")
 	eth := sdk.DecCoin{
 		Denom:  "eth",
 		Amount: amount,
@@ -21,7 +22,7 @@ func TestEthToWei_IsInteger(t *testing.T) {
 }
 
 func TestGweiToWei_IsNotInteger(t *testing.T) {
-	amount, _ := sdk.NewDecFromStr("3.0000000000002")
+	amount, _ := math.LegacyNewDecFromStr("3.0000000000002")
 	gwei := sdk.DecCoin{
 		Denom:  "gwei",
 		Amount: amount,

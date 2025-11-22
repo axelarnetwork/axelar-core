@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/big"
@@ -9,22 +10,26 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/log"
+	"cosmossdk.io/math"
+	store "cosmossdk.io/store/types"
+	abci "github.com/cometbft/cometbft/abci/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	paramsKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/ethereum/go-ethereum/common"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	evmCrypto "github.com/ethereum/go-ethereum/crypto"
 	evmParams "github.com/ethereum/go-ethereum/params"
-	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/assert"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	"github.com/stretchr/testify/require"
 
 	"github.com/axelarnetwork/axelar-core/app"
+	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
@@ -32,6 +37,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils"
 	utilsMock "github.com/axelarnetwork/axelar-core/utils/mock"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
+	"github.com/axelarnetwork/axelar-core/x/evm"
 	"github.com/axelarnetwork/axelar-core/x/evm/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -39,7 +45,10 @@ import (
 	evmTestUtils "github.com/axelarnetwork/axelar-core/x/evm/types/testutils"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	multisigTestUtils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
+	multisigtypesutils "github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexusutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
+	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	snapshot "github.com/axelarnetwork/axelar-core/x/snapshot/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/funcs"
@@ -49,15 +58,15 @@ import (
 
 var (
 	evmChain    = exported.Ethereum.Name
-	network     = types.Rinkeby
-	networkConf = evmParams.RinkebyChainConfig
+	network     = types.Ganache
+	networkConf = evmParams.AllCliqueProtocolChanges
 	tokenBC     = rand.Bytes(64)
 	burnerBC    = common.Hex2Bytes(types.Burnable)
 	gateway     = "0x37CC4B7E8f9f505CA8126Db8a9d070566ed5DAE7"
 )
 
-func setup() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.NexusMock, *mock.VoterMock, *mock.SnapshotterMock, *mock.MultisigKeeperMock) {
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+func setup(t log.TestingT) (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.NexusMock, *mock.VoterMock, *mock.SnapshotterMock, *mock.MultisigKeeperMock, *mock.PermissionMock) {
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 
 	evmBaseKeeper := &mock.BaseKeeperMock{}
 	nexusKeeper := &mock.NexusMock{}
@@ -66,17 +75,18 @@ func setup() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.N
 	stakingKeeper := &mock.StakingKeeperMock{}
 	slashingKeeper := &mock.SlashingKeeperMock{}
 	multisigKeeper := &mock.MultisigKeeperMock{}
+	permissionKeeper := &mock.PermissionMock{}
 
 	return ctx,
-		keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper),
-		evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, multisigKeeper
+		keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper, permissionKeeper),
+		evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, multisigKeeper, permissionKeeper
 }
 
 func TestSetGateway(t *testing.T) {
 	req := types.NewSetGatewayRequest(rand.AccAddr(), rand.Str(5), evmTestUtils.RandomAddress())
 
 	t.Run("should fail if current key is not set", func(t *testing.T) {
-		ctx, msgServer, _, nexusKeeper, _, _, multisigKeeper := setup()
+		ctx, msgServer, _, nexusKeeper, _, _, multisigKeeper, _ := setup(t)
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			if chain == req.Chain {
@@ -96,7 +106,7 @@ func TestSetGateway(t *testing.T) {
 	})
 
 	t.Run("should fail if gateway is already set", func(t *testing.T) {
-		ctx, msgServer, baseKeeper, nexusKeeper, _, _, multisigKeeper := setup()
+		ctx, msgServer, baseKeeper, nexusKeeper, _, _, multisigKeeper, _ := setup(t)
 		chainKeeper := &mock.ChainKeeperMock{}
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -121,7 +131,7 @@ func TestSetGateway(t *testing.T) {
 	})
 
 	t.Run("should set gateway", func(t *testing.T) {
-		ctx, msgServer, baseKeeper, nexusKeeper, _, _, multisigKeeper := setup()
+		ctx, msgServer, baseKeeper, nexusKeeper, _, _, multisigKeeper, _ := setup(t)
 		chainKeeper := &mock.ChainKeeperMock{}
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -148,9 +158,95 @@ func TestSetGateway(t *testing.T) {
 	})
 }
 
+func TestUpdateParams(t *testing.T) {
+	ctx, msgServer, baseKeeper, _, _, _, _, _ := setup(t)
+
+	ck := &mock.ChainKeeperMock{
+		SetParamsFunc: func(ctx sdk.Context, params types.Params) {},
+	}
+	baseKeeper.ForChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
+		require.Equal(t, chain, exported.Ethereum.Name)
+		return ck, nil
+	}
+
+	p := types.DefaultParams()[0]
+	p.TransferLimit = p.TransferLimit + 1
+	_, err := msgServer.UpdateParams(ctx, &types.UpdateParamsRequest{Authority: rand2.AccAddr().String(), Params: p})
+	assert.NoError(t, err)
+	assert.Len(t, ck.SetParamsCalls(), 1)
+	assert.Equal(t, p, ck.SetParamsCalls()[0].Params)
+}
+
+func TestConfirmTransferKeyFromGovernance(t *testing.T) {
+	// Mocks
+	ctx, msgServer, bk, n, _, _, multisigKeeper, permissionKeeper := setup(t)
+	cdc := params.MakeEncodingConfig().Codec
+	confirmedEventQueue := utils.NewGeneralKVQueue(
+		"q",
+		utils.NewNormalizedStore(ctx.KVStore(store.NewKVStoreKey("q")), cdc),
+		ctx.Logger(),
+		func(value codec.ProtoMarshaler) utils.Key {
+			return utils.KeyFromStr(value.String())
+		},
+	)
+	// Capture the synthetic event produced by ConfirmTransferKey
+	var capturedEvent *types.Event
+	// Chain setup
+	chain := nexus.Chain{Name: nexusutils.RandomChainName(), Module: types.ModuleName}
+	ck := &mock.ChainKeeperMock{
+		LoggerFunc:                 func(sdk.Context) log.Logger { return ctx.Logger() },
+		GetParamsFunc:              func(sdk.Context) types.Params { return types.DefaultParams()[0] },
+		GetConfirmedEventQueueFunc: func(sdk.Context) utils.KVQueue { return confirmedEventQueue },
+		EnqueueConfirmedEventFunc: func(_ sdk.Context, id types.EventID) error {
+			require.NotNil(t, capturedEvent)
+			require.Equal(t, capturedEvent.GetID(), id)
+			confirmedEventQueue.Enqueue(utils.LowerCaseKey(string(id)), capturedEvent)
+			return nil
+		},
+		SetConfirmedEventFunc: func(_ sdk.Context, ev types.Event) error { capturedEvent = &ev; return nil },
+		SetEventCompletedFunc: func(_ sdk.Context, id types.EventID) error { return nil },
+	}
+	bk.ForChainFunc = func(sdk.Context, nexus.ChainName) (types.ChainKeeper, error) { return ck, nil }
+	bk.LoggerFunc = func(sdk.Context) log.Logger { return ctx.Logger() }
+
+	n.GetChainFunc = func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return chain, true }
+	n.GetChainsFunc = func(sdk.Context) []nexus.Chain { return []nexus.Chain{chain} }
+	n.IsChainActivatedFunc = func(sdk.Context, nexus.Chain) bool { return true }
+	n.GetProcessingMessagesFunc = func(sdk.Context, nexus.ChainName, int64) []nexus.GeneralMessage {
+		return []nexus.GeneralMessage{}
+	}
+	// Multisig state: pending rotation and next key
+	nextKeyID := multisigTestUtils.KeyID()
+	key := multisigtypesutils.Key()
+	multisigKeeper.GetNextKeyIDFunc = func(sdk.Context, nexus.ChainName) (multisig.KeyID, bool) { return nextKeyID, true }
+	multisigKeeper.GetKeyFunc = func(sdk.Context, multisig.KeyID) (multisig.Key, bool) { return &key, true }
+	multisigKeeper.RotateKeyFunc = func(sdk.Context, nexus.ChainName) error { return nil }
+
+	chainMgr := rand.AccAddr()
+	permissionKeeper.GetRoleFunc = func(_ sdk.Context, addr sdk.AccAddress) permission.Role {
+		if addr.Equals(chainMgr) {
+			return permission.ROLE_CHAIN_MANAGEMENT
+		}
+		return permission.ROLE_UNRESTRICTED
+	}
+
+	// Force the transfer from governance; this creates and stores a synthetic event
+	_, err := msgServer.ConfirmTransferKey(ctx, &types.ConfirmTransferKeyRequest{
+		Chain:  chain.Name,
+		Sender: chainMgr.String(),
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, capturedEvent, "synthetic event must be captured")
+
+	// EndBlocker should rotate the key
+	_, err = evm.EndBlocker(ctx, bk, n, multisigKeeper)
+	assert.NoError(t, err)
+	assert.Len(t, multisigKeeper.RotateKeyCalls(), 1, "forced confirmation should rotate the key exactly once")
+}
+
 func TestSignCommands(t *testing.T) {
 	setup := func() (sdk.Context, types.MsgServiceServer, *mock.BaseKeeperMock, *mock.MultisigKeeperMock) {
-		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 
 		evmBaseKeeper := &mock.BaseKeeperMock{}
 		nexusKeeper := &mock.NexusMock{}
@@ -159,11 +255,12 @@ func TestSignCommands(t *testing.T) {
 		stakingKeeper := &mock.StakingKeeperMock{}
 		slashingKeeper := &mock.SlashingKeeperMock{}
 		multisigKeeper := &mock.MultisigKeeperMock{}
+		permissionKeeper := &mock.PermissionMock{}
 
 		nexusKeeper.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, true }
 		nexusKeeper.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
 
-		msgServer := keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper)
+		msgServer := keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper, permissionKeeper)
 
 		return ctx, msgServer, evmBaseKeeper, multisigKeeper
 	}
@@ -173,7 +270,7 @@ func TestSignCommands(t *testing.T) {
 
 		expectedCommandIDs := make([]types.CommandID, rand.I64Between(1, 100))
 		for i := range expectedCommandIDs {
-			expectedCommandIDs[i] = types.NewCommandID(rand.Bytes(common.HashLength), sdk.NewInt(0))
+			expectedCommandIDs[i] = types.NewCommandID(rand.Bytes(common.HashLength), math.NewInt(0))
 		}
 		expected := types.CommandBatchMetadata{
 			ID:         rand.Bytes(common.HashLength),
@@ -185,7 +282,7 @@ func TestSignCommands(t *testing.T) {
 		chainKeeper := &mock.ChainKeeperMock{}
 		evmBaseKeeper.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
 		evmBaseKeeper.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) { return chainKeeper, nil }
-		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), true }
+		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (math.Int, bool) { return math.NewInt(0), true }
 		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
 			return types.NonExistentCommand
 		}
@@ -211,7 +308,7 @@ func TestSignCommands(t *testing.T) {
 
 		expectedCommandIDs := make([]types.CommandID, rand.I64Between(1, 100))
 		for i := range expectedCommandIDs {
-			expectedCommandIDs[i] = types.NewCommandID(rand.Bytes(common.HashLength), sdk.NewInt(0))
+			expectedCommandIDs[i] = types.NewCommandID(rand.Bytes(common.HashLength), math.NewInt(0))
 		}
 		commandBatch := types.CommandBatchMetadata{
 			ID:         rand.Bytes(common.HashLength),
@@ -223,7 +320,7 @@ func TestSignCommands(t *testing.T) {
 		chainKeeper := &mock.ChainKeeperMock{}
 		evmBaseKeeper.LoggerFunc = func(ctx sdk.Context) log.Logger { return ctx.Logger() }
 		evmBaseKeeper.ForChainFunc = func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) { return chainKeeper, nil }
-		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (sdk.Int, bool) { return sdk.NewInt(0), true }
+		chainKeeper.GetChainIDFunc = func(ctx sdk.Context) (math.Int, bool) { return math.NewInt(0), true }
 		chainKeeper.GetLatestCommandBatchFunc = func(ctx sdk.Context) types.CommandBatch {
 			return types.NewCommandBatch(commandBatch, func(batch types.CommandBatchMetadata) {
 				assert.Equal(t, types.BatchSigning, batch.Status)
@@ -261,7 +358,7 @@ func TestCreateBurnTokens(t *testing.T) {
 
 	repeats := 20
 	setup := func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 		req = types.NewCreateBurnTokensRequest(rand.AccAddr(), exported.Ethereum.Name.String())
 		keyID = multisigTestUtils.KeyID()
 
@@ -269,8 +366,8 @@ func TestCreateBurnTokens(t *testing.T) {
 			GetConfirmedDepositsPaginatedFunc: func(ctx sdk.Context, pageRequest *query.PageRequest) ([]types.ERC20Deposit, *query.PageResponse, error) {
 				return []types.ERC20Deposit{}, nil, nil
 			},
-			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) (sdk.Int, bool) {
-				return sdk.NewIntFromBigInt(evmParams.AllCliqueProtocolChanges.ChainID), true
+			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) (math.Int, bool) {
+				return math.NewIntFromBigInt(evmParams.AllCliqueProtocolChanges.ChainID), true
 			},
 			DeleteDepositFunc: func(ctx sdk.Context, deposit types.ERC20Deposit) {},
 			SetDepositFunc:    func(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositStatus) {},
@@ -278,8 +375,8 @@ func TestCreateBurnTokens(t *testing.T) {
 				return &types.BurnerInfo{}
 			},
 			EnqueueCommandFunc: func(ctx sdk.Context, cmd types.Command) error { return nil },
-			GetChainIDFunc: func(sdk.Context) (sdk.Int, bool) {
-				return sdk.NewInt(rand.PosI64()), true
+			GetChainIDFunc: func(sdk.Context) (math.Int, bool) {
+				return math.NewInt(rand.PosI64()), true
 			},
 			GetParamsFunc: func(ctx sdk.Context) types.Params {
 				return types.DefaultParams()[0]
@@ -307,8 +404,9 @@ func TestCreateBurnTokens(t *testing.T) {
 		snapshotKeeper = &mock.SnapshotterMock{}
 		stakingKeeper := &mock.StakingKeeperMock{}
 		slashingKeeper := &mock.SlashingKeeperMock{}
+		permissionKeeper := &mock.PermissionMock{}
 
-		server = keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper)
+		server = keeper.NewMsgServerImpl(evmBaseKeeper, nexusKeeper, voteKeeper, snapshotKeeper, stakingKeeper, slashingKeeper, multisigKeeper, permissionKeeper)
 	}
 
 	t.Run("should do nothing if no confirmed deposits exist", testutils.Func(func(t *testing.T) {
@@ -329,7 +427,7 @@ func TestCreateBurnTokens(t *testing.T) {
 		for i := 0; i < depositCount; i++ {
 			deposit := types.ERC20Deposit{
 				TxID:             types.Hash(common.HexToHash(rand.HexStr(common.HashLength))),
-				Amount:           sdk.NewUint(uint64(rand.I64Between(1000, 1000000))),
+				Amount:           math.NewUint(uint64(rand.I64Between(1000, 1000000))),
 				Asset:            rand.Str(5),
 				DestinationChain: axelarnet.Axelarnet.Name,
 				BurnerAddress:    types.Address(common.HexToAddress(rand.HexStr(common.AddressLength))),
@@ -385,21 +483,21 @@ func TestCreateBurnTokens(t *testing.T) {
 
 		deposit1 := types.ERC20Deposit{
 			TxID:             types.Hash(common.HexToHash(rand.HexStr(common.HashLength))),
-			Amount:           sdk.NewUint(uint64(rand.I64Between(1000, 1000000))),
+			Amount:           math.NewUint(uint64(rand.I64Between(1000, 1000000))),
 			Asset:            rand.Str(5),
 			DestinationChain: axelarnet.Axelarnet.Name,
 			BurnerAddress:    types.Address(common.HexToAddress(rand.HexStr(common.AddressLength))),
 		}
 		deposit2 := types.ERC20Deposit{
 			TxID:             types.Hash(common.HexToHash(rand.HexStr(common.HashLength))),
-			Amount:           sdk.NewUint(uint64(rand.I64Between(1000, 1000000))),
+			Amount:           math.NewUint(uint64(rand.I64Between(1000, 1000000))),
 			Asset:            rand.Str(5),
 			DestinationChain: axelarnet.Axelarnet.Name,
 			BurnerAddress:    deposit1.BurnerAddress,
 		}
 		deposit3 := types.ERC20Deposit{
 			TxID:             types.Hash(common.HexToHash(rand.HexStr(common.HashLength))),
-			Amount:           sdk.NewUint(uint64(rand.I64Between(1000, 1000000))),
+			Amount:           math.NewUint(uint64(rand.I64Between(1000, 1000000))),
 			Asset:            rand.Str(5),
 			DestinationChain: axelarnet.Axelarnet.Name,
 			BurnerAddress:    deposit1.BurnerAddress,
@@ -433,18 +531,18 @@ func TestCreateBurnTokens(t *testing.T) {
 
 func TestLink_UnknownChain(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	encCfg := app.MakeEncodingConfig()
 
-	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
-	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
+	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("subspace"), store.NewKVStoreKey("tsubspace"))
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("testKey"), paramsK)
 	k.InitChains(ctx)
 	funcs.MustNoErr(k.CreateChain(ctx, types.Params{
 		Chain:   exported.Ethereum.Name,
 		Network: network,
 		Networks: []types.NetworkInfo{{
 			Name: network,
-			Id:   sdk.NewInt(rand.PosI64()),
+			Id:   math.NewInt(rand.PosI64()),
 		}},
 		ConfirmationHeight:  uint64(minConfHeight),
 		TokenCode:           tokenBC,
@@ -464,8 +562,8 @@ func TestLink_UnknownChain(t *testing.T) {
 		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 		GetChainFunc:         func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false },
 	}
-	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{})
-	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: asset})
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{}, &mock.PermissionMock{})
+	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr().String(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: asset})
 
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(n.IsAssetRegisteredCalls()))
@@ -475,18 +573,18 @@ func TestLink_UnknownChain(t *testing.T) {
 
 func TestLink_NoGateway(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	encCfg := app.MakeEncodingConfig()
 
-	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
-	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
+	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("subspace"), store.NewKVStoreKey("tsubspace"))
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("testKey"), paramsK)
 	k.InitChains(ctx)
 	funcs.MustNoErr(k.CreateChain(ctx, types.Params{
 		Chain:   exported.Ethereum.Name,
 		Network: network,
 		Networks: []types.NetworkInfo{{
 			Name: network,
-			Id:   sdk.NewInt(rand.PosI64()),
+			Id:   math.NewInt(rand.PosI64()),
 		}},
 		ConfirmationHeight:  uint64(minConfHeight),
 		TokenCode:           tokenBC,
@@ -515,8 +613,9 @@ func TestLink_NoGateway(t *testing.T) {
 			return multisigTestUtils.KeyID(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
-	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.AccAddr(), RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
+	permissionKeeper := &mock.PermissionMock{}
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper, permissionKeeper)
+	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.AccAddr().String(), RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(n.IsAssetRegisteredCalls()))
@@ -526,7 +625,7 @@ func TestLink_NoGateway(t *testing.T) {
 
 func TestLink_NoRecipientChain(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	k := newKeeper(ctx, "Ethereum", minConfHeight)
 
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
@@ -546,8 +645,9 @@ func TestLink_NoRecipientChain(t *testing.T) {
 			return multisigTestUtils.KeyID(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
-	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.AccAddr(), RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
+	permissionKeeper := &mock.PermissionMock{}
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper, permissionKeeper)
+	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Chain: evmChain, Sender: rand.AccAddr().String(), RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(n.IsAssetRegisteredCalls()))
@@ -557,7 +657,7 @@ func TestLink_NoRecipientChain(t *testing.T) {
 
 func TestLink_NoRegisteredAsset(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.TestingLogger())
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	k := newKeeper(ctx, "Ethereum", minConfHeight)
 
 	asset := rand.Str(3)
@@ -577,9 +677,9 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 			return multisigTestUtils.KeyID(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper, &mock.PermissionMock{})
 	recipient := nexus.CrossChainAddress{Address: rand.ValAddr().String(), Chain: axelarnet.Axelarnet}
-	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
+	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr().String(), Chain: evmChain, RecipientAddr: recipient.Address, Asset: asset, RecipientChain: recipient.Chain.Name})
 
 	assert.Error(t, err)
 	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
@@ -589,7 +689,7 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 
 func TestLink_Success(t *testing.T) {
 	minConfHeight := rand.I64Between(1, 10)
-	ctx := rand.Context(fake.NewMultiStore())
+	ctx := rand.Context(fake.NewMultiStore(), t)
 	chain := nexus.ChainName("Ethereum")
 	k := newKeeper(ctx, chain, minConfHeight)
 	tokenDetails := createDetails(randomNormalizedStr(10), randomNormalizedStr(3))
@@ -635,8 +735,9 @@ func TestLink_Success(t *testing.T) {
 			return multisigTestUtils.KeyID(), true
 		},
 	}
-	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
-	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: axelarnet.NativeAsset})
+	permissionKeeper := &mock.PermissionMock{}
+	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper, permissionKeeper)
+	_, err = server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr().String(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: axelarnet.NativeAsset})
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(n.IsAssetRegisteredCalls()))
@@ -758,7 +859,7 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 		server         types.MsgServiceServer
 	)
 	setup := func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.NewTestLogger(t))
 
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
@@ -808,20 +909,20 @@ func TestHandleMsgConfirmTokenDeploy(t *testing.T) {
 
 		token = createMockERC20Token(axelarnet.NativeAsset, createDetails(randomNormalizedStr(10), randomNormalizedStr(3)))
 		msg = &types.ConfirmTokenRequest{
-			Sender: rand.AccAddr(),
+			Sender: rand.AccAddr().String(),
 			Chain:  evmChain,
 			TxID:   types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 			Asset:  types.NewAsset(axelarnet.Axelarnet.Name.String(), axelarnet.NativeAsset),
 		}
 		snapshotKeeper := &mock.SnapshotterMock{
-			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
+			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower math.Uint) math.Uint, utils.Threshold) (snapshot.Snapshot, error) {
 				return snapshot.Snapshot{}, nil
 			},
 		}
 		stakingKeeper := &mock.StakingKeeperMock{
-			PowerReductionFunc: func(ctx sdk.Context) sdk.Int { return sdk.OneInt() },
+			PowerReductionFunc: func(context.Context) math.Int { return math.OneInt() },
 		}
-		server = keeper.NewMsgServerImpl(basek, n, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{}, multisigKeeper)
+		server = keeper.NewMsgServerImpl(basek, n, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{}, multisigKeeper, &mock.PermissionMock{})
 	}
 
 	repeats := 20
@@ -894,7 +995,7 @@ func TestAddChain(t *testing.T) {
 	)
 
 	setup := func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.NewTestLogger(t))
 
 		chains := map[nexus.ChainName]nexus.Chain{
 			exported.Ethereum.Name:   exported.Ethereum,
@@ -925,12 +1026,12 @@ func TestAddChain(t *testing.T) {
 		params = types.DefaultParams()[0]
 		params.Chain = name
 		msg = &types.AddChainRequest{
-			Sender: rand.AccAddr(),
+			Sender: rand.AccAddr().String(),
 			Name:   name,
 			Params: params,
 		}
 
-		server = keeper.NewMsgServerImpl(basek, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{})
+		server = keeper.NewMsgServerImpl(basek, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{}, &mock.PermissionMock{})
 	}
 
 	repeats := 20
@@ -973,7 +1074,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 	)
 
 	setup := func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.NewTestLogger(t))
 
 		basek = &mock.BaseKeeperMock{
 			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) {
@@ -1058,20 +1159,20 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		}
 
 		msg = &types.ConfirmDepositRequest{
-			Sender:        rand.AccAddr(),
+			Sender:        rand.AccAddr().String(),
 			Chain:         evmChain,
 			TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 			BurnerAddress: burnerAddress,
 		}
 		snapshotKeeper := &mock.SnapshotterMock{
-			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
+			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower math.Uint) math.Uint, utils.Threshold) (snapshot.Snapshot, error) {
 				return snapshot.Snapshot{}, nil
 			},
 		}
 		stakingKeeper := &mock.StakingKeeperMock{
-			PowerReductionFunc: func(ctx sdk.Context) sdk.Int { return sdk.OneInt() },
+			PowerReductionFunc: func(context.Context) math.Int { return math.OneInt() },
 		}
-		server = keeper.NewMsgServerImpl(basek, n, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{}, multisigKeeper)
+		server = keeper.NewMsgServerImpl(basek, n, v, snapshotKeeper, stakingKeeper, &mock.SlashingKeeperMock{}, multisigKeeper, &mock.PermissionMock{})
 	}
 
 	repeats := 20
@@ -1128,7 +1229,7 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 		setup()
 		errMsg := "failed to initialize poll"
 		v.InitializePollFunc = func(ctx sdk.Context, pollBuilder vote.PollBuilder) (vote.PollID, error) {
-			return 0, fmt.Errorf(errMsg)
+			return 0, errors.New(errMsg)
 		}
 		_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), msg)
 
@@ -1148,7 +1249,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 		server         types.MsgServiceServer
 	)
 	setup := func() {
-		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.TestingLogger())
+		ctx = sdk.NewContext(nil, tmproto.Header{}, false, log.NewTestLogger(t))
 		msg = createMsgSignDeploy(createDetails(randomNormalizedStr(10), randomNormalizedStr(3)))
 
 		basek = &mock.BaseKeeperMock{
@@ -1176,8 +1277,8 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			GetGatewayAddressFunc: func(sdk.Context) (types.Address, bool) {
 				return types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))), true
 			},
-			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) (sdk.Int, bool) {
-				return sdk.NewInt(rand.I64Between(1, 1000)), true
+			GetChainIDByNetworkFunc: func(ctx sdk.Context, network string) (math.Int, bool) {
+				return math.NewInt(rand.I64Between(1, 1000)), true
 			},
 
 			CreateERC20TokenFunc: func(ctx sdk.Context, asset string, details types.TokenDetails, address types.Address) (types.ERC20Token, error) {
@@ -1199,7 +1300,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				return c, ok
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
-			RegisterAssetFunc: func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit sdk.Uint, window time.Duration) error {
+			RegisterAssetFunc: func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit math.Uint, window time.Duration) error {
 				return nil
 			},
 		}
@@ -1209,7 +1310,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 			},
 		}
 
-		server = keeper.NewMsgServerImpl(basek, n, v, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper)
+		server = keeper.NewMsgServerImpl(basek, n, v, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, multisigKeeper, &mock.PermissionMock{})
 	}
 
 	repeats := 20
@@ -1285,7 +1386,7 @@ func TestRetryFailedEvent(t *testing.T) {
 		n   *mock.NexusMock
 	)
 
-	ctx, msgServer, bk, n, _, _, _ := setup()
+	ctx, msgServer, bk, n, _, _, _, _ := setup(t)
 	contractCallQueue := &utilsMock.KVQueueMock{
 		EnqueueFunc: func(key utils.Key, value codec.ProtoMarshaler) {},
 	}
@@ -1378,7 +1479,7 @@ func TestRetryFailedEvent(t *testing.T) {
 }
 
 func TestHandleMsgConfirmGatewayTxs(t *testing.T) {
-	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand2.ValAddr(), sdk.OneUint()) }, 10)
+	validators := slices.Expand(func(int) snapshot.Participant { return snapshot.NewParticipant(rand2.ValAddr(), math.OneUint()) }, 10)
 	txIDs := slices.Expand2(evmTestUtils.RandomHash, int(rand.I64Between(5, 50)))
 	req := types.NewConfirmGatewayTxsRequest(rand.AccAddr(), nexus.ChainName(rand.Str(5)), txIDs)
 
@@ -1395,15 +1496,15 @@ func TestHandleMsgConfirmGatewayTxs(t *testing.T) {
 	)
 
 	givenMsgServer := Given("an EVM msg server", func() {
-		ctx = rand2.Context(fake.NewMultiStore())
+		ctx = rand2.Context(fake.NewMultiStore(), t)
 
 		bk = &mock.BaseKeeperMock{
 			LoggerFunc:   func(ctx sdk.Context) log.Logger { return ctx.Logger() },
 			ForChainFunc: func(sdk.Context, nexus.ChainName) (types.ChainKeeper, error) { return nil, fmt.Errorf("unknown chain") },
 		}
 		snapshotter = &mock.SnapshotterMock{
-			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
-				return snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, sdk.NewUint(10)), nil
+			CreateSnapshotFunc: func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower math.Uint) math.Uint, utils.Threshold) (snapshot.Snapshot, error) {
+				return snapshot.NewSnapshot(ctx.BlockTime(), ctx.BlockHeight(), validators, math.NewUint(10)), nil
 			},
 		}
 		ck = &mock.ChainKeeperMock{
@@ -1419,7 +1520,7 @@ func TestHandleMsgConfirmGatewayTxs(t *testing.T) {
 		v = &mock.VoterMock{}
 		pollID = vote.PollID(0)
 
-		msgServer = keeper.NewMsgServerImpl(bk, n, v, snapshotter, &mock.StakingKeeperMock{}, s, &mock.MultisigKeeperMock{})
+		msgServer = keeper.NewMsgServerImpl(bk, n, v, snapshotter, &mock.StakingKeeperMock{}, s, &mock.MultisigKeeperMock{}, &mock.PermissionMock{})
 	})
 
 	whenChainIsValid := When("chain is set and activated", func() {
@@ -1433,7 +1534,7 @@ func TestHandleMsgConfirmGatewayTxs(t *testing.T) {
 		snapshotter.GetProxyFunc = func(sdk.Context, sdk.ValAddress) (sdk.AccAddress, bool) {
 			return rand2.AccAddr(), true
 		}
-		s.IsTombstonedFunc = func(ctx sdk.Context, consAddr sdk.ConsAddress) bool { return false }
+		s.IsTombstonedFunc = func(context.Context, sdk.ConsAddress) bool { return false }
 	})
 
 	whenPollsAreInitialized := When("polls are initialized", func() {
@@ -1447,7 +1548,7 @@ func TestHandleMsgConfirmGatewayTxs(t *testing.T) {
 		givenMsgServer.Branch(
 			whenChainIsValid.
 				When("failed to create snapshot", func() {
-					snapshotter.CreateSnapshotFunc = func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower sdk.Uint) sdk.Uint, utils.Threshold) (snapshot.Snapshot, error) {
+					snapshotter.CreateSnapshotFunc = func(sdk.Context, []sdk.ValAddress, func(snapshot.ValidatorI) bool, func(consensusPower math.Uint) math.Uint, utils.Threshold) (snapshot.Snapshot, error) {
 						return snapshot.Snapshot{}, fmt.Errorf("failed to create snapshot")
 					}
 				}).
@@ -1516,8 +1617,8 @@ func createSignedTx() *evmTypes.Transaction {
 
 func newKeeper(ctx sdk.Context, chain nexus.ChainName, confHeight int64) types.BaseKeeper {
 	encCfg := app.MakeEncodingConfig()
-	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, sdk.NewKVStoreKey("subspace"), sdk.NewKVStoreKey("tsubspace"))
-	k := keeper.NewKeeper(encCfg.Codec, sdk.NewKVStoreKey("testKey"), paramsK)
+	paramsK := paramsKeeper.NewKeeper(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("subspace"), store.NewKVStoreKey("tsubspace"))
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("testKey"), paramsK)
 	k.InitChains(ctx)
 	funcs.MustNoErr(k.CreateChain(ctx, types.Params{
 		Chain:               exported.Ethereum.Name,
@@ -1531,7 +1632,7 @@ func newKeeper(ctx sdk.Context, chain nexus.ChainName, confHeight int64) types.B
 		CommandsGasLimit:    5000000,
 		Networks: []types.NetworkInfo{{
 			Name: network,
-			Id:   sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10))),
+			Id:   math.NewIntFromUint64(uint64(rand.I64Between(1, 10))),
 		}},
 		EndBlockerLimit: 50,
 		TransferLimit:   50,
@@ -1545,12 +1646,12 @@ func createMsgSignDeploy(details types.TokenDetails) *types.CreateDeployTokenReq
 	account := rand.AccAddr()
 
 	asset := types.NewAsset(axelarnet.Axelarnet.Name.String(), axelarnet.NativeAsset)
-	return types.NewCreateDeployTokenRequest(account, exported.Ethereum.Name.String(), asset, details, types.ZeroAddress, sdk.NewUint(uint64(rand.PosI64())).String())
+	return types.NewCreateDeployTokenRequest(account, exported.Ethereum.Name.String(), asset, details, types.ZeroAddress, math.NewUint(uint64(rand.PosI64())).String())
 }
 
 func createDetails(name, symbol string) types.TokenDetails {
 	decimals := rand.Bytes(1)[0]
-	capacity := sdk.NewIntFromUint64(uint64(rand.PosI64()))
+	capacity := math.NewIntFromUint64(uint64(rand.PosI64()))
 
 	return types.NewTokenDetails(name, symbol, decimals, capacity)
 }
@@ -1561,7 +1662,7 @@ func createMockERC20Token(asset string, details types.TokenDetails) types.ERC20T
 		Details:      details,
 		Status:       types.Initialized,
 		TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
-		ChainID:      sdk.NewIntFromUint64(uint64(rand.I64Between(1, 10))),
+		ChainID:      math.NewIntFromUint64(uint64(rand.I64Between(1, 10))),
 	}
 	return types.CreateERC20Token(
 		func(meta types.ERC20TokenMetadata) {},

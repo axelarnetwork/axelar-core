@@ -3,6 +3,7 @@ package rand
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -70,9 +71,9 @@ func between0And50GreaterThan25LesserThan30OrExactly45Take20(t *testing.T) {
 
 func uintbetween0And10(t *testing.T) {
 	for i := 0; i < 10; i++ {
-		g := UintBetween(sdk.ZeroUint(), sdk.NewUint(10))
-		assert.True(t, g.GTE(sdk.ZeroUint()))
-		assert.True(t, g.LT(sdk.NewUint(10)))
+		g := UintBetween(math.ZeroUint(), math.NewUint(10))
+		assert.True(t, g.GTE(math.ZeroUint()))
+		assert.True(t, g.LT(math.NewUint(10)))
 	}
 }
 

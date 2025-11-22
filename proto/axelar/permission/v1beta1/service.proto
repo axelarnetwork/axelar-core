@@ -36,6 +36,14 @@ service Msg {
       body : "*"
     };
   }
+
+  rpc UpdateParams(axelar.permission.v1beta1.UpdateParamsRequest)
+      returns (axelar.permission.v1beta1.UpdateParamsResponse) {
+    option (google.api.http) = {
+      post : "/axelar/permission/v1beta1/params"
+      body : "*"
+    };
+  }
 }
 
 // Query defines the gRPC querier service.

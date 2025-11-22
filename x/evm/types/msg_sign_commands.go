@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -11,7 +12,7 @@ import (
 // NewSignCommandsRequest creates a message of type SignCommandsRequest
 func NewSignCommandsRequest(sender sdk.AccAddress, chain string) *SignCommandsRequest {
 	return &SignCommandsRequest{
-		Sender: sender,
+		Sender: sender.String(),
 		Chain:  nexus.ChainName(utils.NormalizeString(chain)),
 	}
 }
@@ -28,12 +29,12 @@ func (m SignCommandsRequest) Type() string {
 
 // ValidateBasic implements sdk.Msg
 func (m SignCommandsRequest) ValidateBasic() error {
-	if err := sdk.VerifyAddressFormat(m.Sender); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, sdkerrors.Wrap(err, "sender").Error())
+	if _, err := sdk.AccAddressFromBech32(m.Sender); err != nil {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, errorsmod.Wrap(err, "sender").Error())
 	}
 
 	if err := m.Chain.Validate(); err != nil {
-		return sdkerrors.Wrap(err, "invalid chain")
+		return errorsmod.Wrap(err, "invalid chain")
 	}
 
 	return nil
@@ -43,9 +44,4 @@ func (m SignCommandsRequest) ValidateBasic() error {
 func (m SignCommandsRequest) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(&m)
 	return sdk.MustSortJSON(bz)
-}
-
-// GetSigners implements sdk.Msg
-func (m SignCommandsRequest) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Sender}
 }

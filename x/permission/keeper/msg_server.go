@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/x/permission/exported"
 	"github.com/axelarnetwork/axelar-core/x/permission/types"
@@ -27,8 +28,13 @@ func (s msgServer) UpdateGovernanceKey(c context.Context, req *types.UpdateGover
 	}
 
 	s.setGovernanceKey(ctx, req.GovernanceKey)
+
 	// delete the existing governance account address
-	s.deleteGovAccount(ctx, req.Sender)
+	sender, err := sdk.AccAddressFromBech32(req.Sender)
+	if err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender: %s", err)
+	}
+	s.deleteGovAccount(ctx, sender)
 
 	s.setGovAccount(ctx, types.NewGovAccount(req.GovernanceKey.Address().Bytes(), exported.ROLE_ACCESS_CONTROL))
 
@@ -57,4 +63,15 @@ func (s msgServer) DeregisterController(c context.Context, req *types.Deregister
 	}
 
 	return &types.DeregisterControllerResponse{}, nil
+}
+
+func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsRequest) (*types.UpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	if err := req.Params.Validate(); err != nil {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+	}
+
+	s.setParams(ctx, req.Params)
+	return &types.UpdateParamsResponse{}, nil
 }

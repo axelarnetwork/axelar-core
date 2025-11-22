@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 )
@@ -74,75 +74,75 @@ func (m GenesisState) Validate() error {
 
 	for j, chain := range m.Chains {
 		if err := chain.Params.Validate(); err != nil {
-			return getValidateError(j, sdkerrors.Wrapf(err, "invalid params"))
+			return getValidateError(j, errorsmod.Wrapf(err, "invalid params"))
 		}
 
 		if chain.Gateway.Address.IsZeroAddress() {
 			errStr := "gateway is not set"
 
 			if len(chain.Tokens) > 0 {
-				return getValidateError(j, sdkerrors.Wrap(fmt.Errorf("cannot initialize tokens"), errStr))
+				return getValidateError(j, errorsmod.Wrap(fmt.Errorf("cannot initialize tokens"), errStr))
 			}
 
 			if len(chain.ConfirmedDeposits) > 0 {
-				return getValidateError(j, sdkerrors.Wrap(fmt.Errorf("cannot have confirmed deposits"), errStr))
+				return getValidateError(j, errorsmod.Wrap(fmt.Errorf("cannot have confirmed deposits"), errStr))
 			}
 
 			if len(chain.BurnedDeposits) > 0 {
-				return getValidateError(j, sdkerrors.Wrap(fmt.Errorf("cannot have burned deposits"), errStr))
+				return getValidateError(j, errorsmod.Wrap(fmt.Errorf("cannot have burned deposits"), errStr))
 			}
 
 			if len(chain.BurnerInfos) > 0 {
-				return getValidateError(j, sdkerrors.Wrap(fmt.Errorf("cannot have burned deposits"), errStr))
+				return getValidateError(j, errorsmod.Wrap(fmt.Errorf("cannot have burned deposits"), errStr))
 			}
 		}
 
 		for i, token := range chain.Tokens {
 			if err := token.ValidateBasic(); err != nil {
-				return getValidateError(j, sdkerrors.Wrapf(err, "invalid token %d", i))
+				return getValidateError(j, errorsmod.Wrapf(err, "invalid token %d", i))
 			}
 		}
 
 		for i, info := range chain.BurnerInfos {
 			if err := info.ValidateBasic(); err != nil {
-				return getValidateError(j, sdkerrors.Wrapf(err, "invalid burner info %d", i))
+				return getValidateError(j, errorsmod.Wrapf(err, "invalid burner info %d", i))
 			}
 
 			if err := checkTokenInfo(info, chain.Tokens); err != nil {
-				return getValidateError(j, sdkerrors.Wrapf(err, "invalid burner info %d", i))
+				return getValidateError(j, errorsmod.Wrapf(err, "invalid burner info %d", i))
 			}
 		}
 
 		for i, deposit := range append(chain.ConfirmedDeposits, chain.LegacyConfirmedDeposits...) {
 			if err := deposit.ValidateBasic(); err != nil {
-				return getValidateError(j, sdkerrors.Wrapf(err, "invalid confirmed deposit %d", i))
+				return getValidateError(j, errorsmod.Wrapf(err, "invalid confirmed deposit %d", i))
 			}
 
 			if err := checkBurnerInfo(deposit, chain.BurnerInfos); err != nil {
-				return getValidateError(j, sdkerrors.Wrapf(err, "invalid confirmed deposit %d", i))
+				return getValidateError(j, errorsmod.Wrapf(err, "invalid confirmed deposit %d", i))
 			}
 		}
 
 		for i, deposit := range append(chain.BurnedDeposits, chain.LegacyBurnedDeposits...) {
 			if err := deposit.ValidateBasic(); err != nil {
-				return getValidateError(j, sdkerrors.Wrapf(err, "invalid burned deposit %d", i))
+				return getValidateError(j, errorsmod.Wrapf(err, "invalid burned deposit %d", i))
 			}
 
 			if err := checkBurnerInfo(deposit, chain.BurnerInfos); err != nil {
-				return getValidateError(j, sdkerrors.Wrapf(err, "invalid burned deposit %d", i))
+				return getValidateError(j, errorsmod.Wrapf(err, "invalid burned deposit %d", i))
 			}
 		}
 
 		if err := validateCommandBatches(chain.CommandBatches); err != nil {
-			return getValidateError(j, sdkerrors.Wrapf(err, "invalid command batches"))
+			return getValidateError(j, errorsmod.Wrapf(err, "invalid command batches"))
 		}
 
 		if err := validateCommandBatches(chain.CommandBatches); err != nil {
-			return getValidateError(j, sdkerrors.Wrapf(err, "invalid command batches"))
+			return getValidateError(j, errorsmod.Wrapf(err, "invalid command batches"))
 		}
 
 		if err := chain.CommandQueue.ValidateBasic(); err != nil {
-			return getValidateError(j, sdkerrors.Wrapf(err, "invalid command queue state"))
+			return getValidateError(j, errorsmod.Wrapf(err, "invalid command queue state"))
 		}
 
 		for _, event := range chain.Events {
@@ -155,14 +155,14 @@ func (m GenesisState) Validate() error {
 			}
 
 			if err := event.ValidateBasic(); err != nil {
-				return getValidateError(j, sdkerrors.Wrapf(err, "invalid event %s", event.GetID()))
+				return getValidateError(j, errorsmod.Wrapf(err, "invalid event %s", event.GetID()))
 			}
 
 			eventSeen[string(event.GetID())] = true
 		}
 
 		if err := chain.ConfirmedEventQueue.ValidateBasic(); err != nil {
-			return getValidateError(j, sdkerrors.Wrapf(err, "invalid confirmed event queue state"))
+			return getValidateError(j, errorsmod.Wrapf(err, "invalid confirmed event queue state"))
 		}
 
 	}
@@ -256,5 +256,5 @@ func GetGenesisStateFromAppState(cdc codec.JSONCodec, appState map[string]json.R
 }
 
 func getValidateError(chainIdx int, err error) error {
-	return sdkerrors.Wrapf(sdkerrors.Wrapf(err, "invalid chain %d", chainIdx), "genesis state for module %s is invalid", ModuleName)
+	return errorsmod.Wrapf(errorsmod.Wrapf(err, "invalid chain %d", chainIdx), "genesis state for module %s is invalid", ModuleName)
 }

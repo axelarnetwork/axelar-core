@@ -8,21 +8,24 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v2
+        uses: magnetikonline/action-golang-cache@401702e21cff5562276de84c15d7b083bc22e79f # v2
         with:
-          go-version: 1.23
+          go-version: 1.25
 
       - name: Install Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 # v3
 
       - name: Cache Python
-        uses: actions/cache@v3
+        uses: actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f # v3
         with:
           path: ~/.cache/pip
           key: pip-cache
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Get Bytecode Version
         id: bytecode_version
@@ -43,8 +46,8 @@ jobs:
 
       - name: Install prereqs
         run: |
-          go install golang.org/x/tools/cmd/goimports
-          go install golang.org/x/tools/cmd/stringer
+          go install golang.org/x/tools/cmd/goimports@v0.38.0
+          go install golang.org/x/tools/cmd/stringer@v0.38.0
           go install github.com/matryer/moq
           pip3 install mdformat
 

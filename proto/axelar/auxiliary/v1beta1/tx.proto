@@ -7,16 +7,26 @@ import "gogoproto/gogo.proto";
 import "axelar/permission/exported/v1beta1/types.proto";
 import "cosmos/base/abci/v1beta1/abci.proto";
 import "cosmos_proto/cosmos.proto";
+import "cosmos/msg/v1/msg.proto";
 
 option go_package = "github.com/axelarnetwork/axelar-core/x/auxiliary/types";
 
 message BatchRequest {
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  option (cosmos.msg.v1.signer) = "sender";
 
-  bytes sender = 1 [ (gogoproto.casttype) =
-                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
-  repeated google.protobuf.Any messages = 2
-      [ (gogoproto.nullable) = false,  (cosmos_proto.accepts_interface) = "cosmos.base.v1beta1.Msg" ];
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
+  repeated google.protobuf.Any messages = 2 [
+    (gogoproto.nullable) = false,
+    (cosmos_proto.accepts_interface) = "cosmos.base.v1beta1.Msg"
+  ];
+  string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message BatchResponse {
@@ -26,5 +36,5 @@ message BatchResponse {
       string err = 2;
     }
   }
-  repeated Response responses = 1  [ (gogoproto.nullable) = false ];
+  repeated Response responses = 1 [ (gogoproto.nullable) = false ];
 }

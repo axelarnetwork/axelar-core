@@ -3,8 +3,8 @@ package config
 import (
 	"strings"
 
+	"github.com/cometbft/cometbft/config"
 	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/config"
 )
 
 // Seed is used to unmarshal the seeds.toml file

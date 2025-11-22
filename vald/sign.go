@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"strings"
 
+	errorsmod "cosmossdk.io/errors"
 	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -108,7 +108,7 @@ func GetSignCommand() *cobra.Command {
 			})
 
 			if err != nil {
-				return sdkerrors.Wrapf(err, "failed signing")
+				return errorsmod.Wrapf(err, "failed signing")
 			}
 
 			switch res.GetSignResponse().(type) {
