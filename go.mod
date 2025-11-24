@@ -62,7 +62,7 @@ require (
 	google.golang.org/protobuf v1.36.5
 )
 
-require github.com/axelarnetwork/tm-events v0.0.0-20251121130841-4c4b590f0d06
+require github.com/axelarnetwork/tm-events v0.0.0-20250318181253-c71853c5bb8f
 
 require (
 	cloud.google.com/go v0.115.0 // indirect
