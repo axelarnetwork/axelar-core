@@ -756,6 +756,7 @@ func TestHandleSendToken(t *testing.T) {
 			},
 		}
 		n = &mock.NexusMock{
+			IsLinkDepositEnabledFunc: func(sdk.Context) bool { return true },
 			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
 				return lockableAsset, nil
 			},
@@ -889,6 +890,15 @@ func TestHandleSendToken(t *testing.T) {
 		Then("should return ack success", func(t *testing.T) {
 			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
 		}).
+		Run(t)
+
+	givenPacketWithSendToken.
+		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
+		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
+		When("link-deposit protocol is disabled", func() {
+			n.IsLinkDepositEnabledFunc = func(sdk.Context) bool { return false }
+		}).
+		Then("should return ack error", ackError()).
 		Run(t)
 }
 

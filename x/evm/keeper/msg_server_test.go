@@ -386,7 +386,8 @@ func TestCreateBurnTokens(t *testing.T) {
 			ForChainFunc: func(_ sdk.Context, chain nexus.ChainName) (types.ChainKeeper, error) { return evmChainKeeper, nil },
 		}
 		nexusKeeper = &mock.NexusMock{
-			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
+			IsLinkDepositEnabledFunc: func(sdk.Context) bool { return true },
+			IsChainActivatedFunc:     func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				if chain == req.Chain {
 					return exported.Ethereum, true
@@ -561,6 +562,9 @@ func TestLink_UnknownChain(t *testing.T) {
 	n := &mock.NexusMock{
 		IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
 		GetChainFunc:         func(sdk.Context, nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false },
+		IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
+			return true
+		},
 	}
 	server := keeper.NewMsgServerImpl(k, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{}, &mock.PermissionMock{})
 	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{Sender: rand.AccAddr().String(), Chain: evmChain, RecipientAddr: recipient.Address, RecipientChain: recipient.Chain.Name, Asset: asset})
@@ -607,6 +611,9 @@ func TestLink_NoGateway(t *testing.T) {
 			c, ok := chains[chain]
 			return c, ok
 		},
+		IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
+			return true
+		},
 	}
 	multisigKeeper := &mock.MultisigKeeperMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
@@ -637,6 +644,9 @@ func TestLink_NoRecipientChain(t *testing.T) {
 		GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 			c, ok := chains[chain]
 			return c, ok
+		},
+		IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
+			return true
 		},
 	}
 
@@ -670,6 +680,9 @@ func TestLink_NoRegisteredAsset(t *testing.T) {
 			return c, ok
 		},
 		IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return false },
+		IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
+			return true
+		},
 	}
 
 	multisigKeeper := &mock.MultisigKeeperMock{
@@ -729,6 +742,9 @@ func TestLink_Success(t *testing.T) {
 			return c, ok
 		},
 		IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
+		IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
+			return true
+		},
 	}
 	multisigKeeper := &mock.MultisigKeeperMock{
 		GetCurrentKeyIDFunc: func(ctx sdk.Context, chain nexus.ChainName) (multisig.KeyID, bool) {
@@ -749,6 +765,68 @@ func TestLink_Success(t *testing.T) {
 	expected := &types.BurnerInfo{BurnerAddress: burnAddr, TokenAddress: token.GetAddress(), DestinationChain: recipient.Chain.Name, Symbol: msg.TokenDetails.Symbol, Asset: axelarnet.NativeAsset, Salt: salt}
 	actual := chainKeeper.GetBurnerInfo(ctx, burnAddr)
 	assert.EqualValues(t, expected, actual)
+}
+
+func TestLink_LinkDepositDisabled(t *testing.T) {
+	ctx := rand.Context(fake.NewMultiStore(), t)
+
+	n := &mock.NexusMock{
+		IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool { return false },
+	}
+
+	server := keeper.NewMsgServerImpl(&mock.BaseKeeperMock{}, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{}, &mock.PermissionMock{})
+
+	_, err := server.Link(sdk.WrapSDKContext(ctx), &types.LinkRequest{
+		Sender:         rand.AccAddr().String(),
+		Chain:          nexus.ChainName("Ethereum"),
+		RecipientAddr:  rand.ValAddr().String(),
+		RecipientChain: axelarnet.Axelarnet.Name,
+		Asset:          axelarnet.NativeAsset,
+	})
+
+	assert.Error(t, err)
+	assert.Equal(t, 1, len(n.IsLinkDepositEnabledCalls()))
+	assert.Equal(t, 0, len(n.GetChainCalls()))
+}
+
+func TestConfirmDeposit_LinkDepositDisabled(t *testing.T) {
+	ctx := rand.Context(fake.NewMultiStore(), t)
+
+	n := &mock.NexusMock{
+		IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool { return false },
+	}
+
+	server := keeper.NewMsgServerImpl(&mock.BaseKeeperMock{}, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{}, &mock.PermissionMock{})
+
+	_, err := server.ConfirmDeposit(sdk.WrapSDKContext(ctx), &types.ConfirmDepositRequest{
+		Sender:        rand.AccAddr().String(),
+		Chain:         nexus.ChainName("Ethereum"),
+		TxID:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+		BurnerAddress: types.Address(common.HexToAddress(rand.Str(40))),
+	})
+
+	assert.Error(t, err)
+	assert.Equal(t, 1, len(n.IsLinkDepositEnabledCalls()))
+	assert.Equal(t, 0, len(n.GetChainCalls()))
+}
+
+func TestCreateBurnTokens_LinkDepositDisabled(t *testing.T) {
+	ctx := rand.Context(fake.NewMultiStore(), t)
+
+	n := &mock.NexusMock{
+		IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool { return false },
+	}
+
+	server := keeper.NewMsgServerImpl(&mock.BaseKeeperMock{}, n, &mock.VoterMock{}, &mock.SnapshotterMock{}, &mock.StakingKeeperMock{}, &mock.SlashingKeeperMock{}, &mock.MultisigKeeperMock{}, &mock.PermissionMock{})
+
+	_, err := server.CreateBurnTokens(sdk.WrapSDKContext(ctx), &types.CreateBurnTokensRequest{
+		Sender: rand.AccAddr().String(),
+		Chain:  nexus.ChainName("Ethereum"),
+	})
+
+	assert.Error(t, err)
+	assert.Equal(t, 1, len(n.IsLinkDepositEnabledCalls()))
+	assert.Equal(t, 0, len(n.GetChainCalls()))
 }
 
 func TestDeployTx_DifferentValue_DifferentHash(t *testing.T) {
@@ -1155,6 +1233,9 @@ func TestHandleMsgConfirmDeposit(t *testing.T) {
 			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
 				c, ok := chains[chain]
 				return c, ok
+			},
+			IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
+				return true
 			},
 		}
 

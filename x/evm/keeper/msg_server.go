@@ -219,6 +219,10 @@ func (s msgServer) SetGateway(c context.Context, req *types.SetGatewayRequest) (
 func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	if !s.nexus.IsLinkDepositEnabled(ctx) {
+		return nil, fmt.Errorf("link-deposit protocol is disabled")
+	}
+
 	senderChain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
@@ -346,6 +350,11 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 // ConfirmDeposit handles deposit confirmations
 func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRequest) (*types.ConfirmDepositResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	if !s.nexus.IsLinkDepositEnabled(ctx) {
+		return nil, fmt.Errorf("link-deposit protocol is disabled")
+	}
+
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {
 		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
@@ -566,6 +575,10 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 
 func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnTokensRequest) (*types.CreateBurnTokensResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	if !s.nexus.IsLinkDepositEnabled(ctx) {
+		return nil, fmt.Errorf("link-deposit protocol is disabled")
+	}
 
 	chain, ok := s.nexus.GetChain(ctx, req.Chain)
 	if !ok {

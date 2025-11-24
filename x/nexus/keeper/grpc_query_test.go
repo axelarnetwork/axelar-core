@@ -203,12 +203,14 @@ func TestKeeper_Message(t *testing.T) {
 			destinationChain.Module = evmtypes.ModuleName
 			k.SetChain(ctx, sourceChain)
 			k.SetChain(ctx, destinationChain)
-			id, txID, nonce := k.GenerateMessageID(ctx)
-			msg := exported.GeneralMessage{
+			var txID []byte
+			var nonce uint64
+			id, txID, nonce = k.GenerateMessageID(ctx)
+			msg = exported.GeneralMessage{
 				ID:            id,
 				Sender:        exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
 				Recipient:     exported.CrossChainAddress{Chain: destinationChain, Address: evmtestutils.RandomAddress().Hex()},
-				Status:        exported.Processing,
+				Status:        exported.Approved,
 				PayloadHash:   crypto.Keccak256Hash(rand.Bytes(int(rand.I64Between(1, 100)))).Bytes(),
 				Asset:         nil,
 				SourceTxID:    txID,
@@ -228,6 +230,48 @@ func TestKeeper_Message(t *testing.T) {
 			assert.Error(t, err)
 			assert.Nil(t, response)
 		}),
+	).Run(t)
+
+}
+
+func TestKeeper_LinkDepositEnabled(t *testing.T) {
+	var (
+		ctx sdk.Context
+		k   nexusKeeper.Keeper
+		q   nexusKeeper.Querier
 	)
 
+	Given("keeper and context", func() {
+		cfg := app.MakeEncodingConfig()
+		k, ctx = setup(cfg, t)
+		q = nexusKeeper.NewGRPCQuerier(k, nil)
+	}).Branch(
+		When("no state is set", func() {}).
+			Then("should return enabled by default", func(t *testing.T) {
+				resp, err := q.LinkDepositEnabled(sdk.WrapSDKContext(ctx), &types.LinkDepositEnabledRequest{})
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.True(t, resp.Enabled, "link-deposit should be enabled by default")
+			}),
+
+		When("protocol is disabled", func() {
+			k.SetLinkDepositEnabled(ctx, false)
+		}).Branch(
+			Then("should return disabled", func(t *testing.T) {
+				resp, err := q.LinkDepositEnabled(sdk.WrapSDKContext(ctx), &types.LinkDepositEnabledRequest{})
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.False(t, resp.Enabled, "link-deposit should be disabled")
+			}),
+
+			When("then re-enabled", func() {
+				k.SetLinkDepositEnabled(ctx, true)
+			}).Then("should return enabled", func(t *testing.T) {
+				resp, err := q.LinkDepositEnabled(sdk.WrapSDKContext(ctx), &types.LinkDepositEnabledRequest{})
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.True(t, resp.Enabled, "link-deposit should be enabled after re-enabling")
+			}),
+		),
+	).Run(t)
 }
