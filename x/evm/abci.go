@@ -515,6 +515,11 @@ func handleConfirmedEvent(ctx sdk.Context, event types.Event, bk types.BaseKeepe
 	case *types.Event_ContractCallWithToken:
 		return handleContractCallWithToken(ctx, event, bk, n, m)
 	case *types.Event_TokenSent:
+		// This is the first point where sendToken transfers can be separated from other transfer mechanisms.
+		// sendToken uses direct token transfers without contract calls or address linking.
+		if !n.IsLinkDepositEnabled(ctx) {
+			return fmt.Errorf("direct token transfer is disabled")
+		}
 		return handleTokenSent(ctx, event, bk, n)
 	case *types.Event_Transfer:
 		return handleConfirmDeposit(ctx, event, bk, n)

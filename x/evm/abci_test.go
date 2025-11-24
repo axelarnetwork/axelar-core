@@ -37,7 +37,9 @@ func setup(t log.TestingT) (sdk.Context, *mock.BaseKeeperMock, *mock.NexusMock, 
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
 
 	bk := &mock.BaseKeeperMock{}
-	n := &mock.NexusMock{}
+	n := &mock.NexusMock{
+		IsLinkDepositEnabledFunc: func(sdk.Context) bool { return true },
+	}
 	multisigKeeper := &mock.MultisigKeeperMock{}
 	sourceCk := &mock.ChainKeeperMock{}
 	destinationCk := &mock.ChainKeeperMock{}
@@ -1719,6 +1721,47 @@ func TestHandleConfirmedEvent(t *testing.T) {
 			}
 		}).
 		Then2(shouldSetEventFailed).Run(t)
+
+	tokenSentEventNums := int(rand.I64Between(1, 10))
+	givenConfirmedEventQueue.
+		When("end blocker limit is set", func() {
+			sourceCk.GetParamsFunc = func(ctx sdk.Context) types.Params {
+				return types.Params{EndBlockerLimit: 50}
+			}
+		}).
+		When(fmt.Sprintf("having %d TokenSent events", tokenSentEventNums), func() {
+			count := 0
+			confirmedEventQueue.DequeueFunc = func(value codec.ProtoMarshaler) bool {
+				if count >= tokenSentEventNums {
+					return false
+				}
+				count++
+				event := types.Event{
+					Chain: sourceChainName,
+					TxID:  evmTestUtils.RandomHash(),
+					Index: uint64(rand.PosI64()),
+					Event: &types.Event_TokenSent{
+						TokenSent: &types.EventTokenSent{
+							Sender:             evmTestUtils.RandomAddress(),
+							DestinationChain:   destinationChainName,
+							DestinationAddress: evmTestUtils.RandomAddress().Hex(),
+							Symbol:             rand.Denom(3, 5),
+							Amount:             math.NewUint(uint64(rand.I64Between(1, 10000))),
+						},
+					},
+				}
+				bz, _ := event.Marshal()
+				return value.Unmarshal(bz) == nil
+			}
+		}).
+		When("link-deposit protocol is disabled", func() {
+			n.IsLinkDepositEnabledFunc = func(sdk.Context) bool { return false }
+		}).
+		Then("should set all events failed", func(t *testing.T) {
+			handleConfirmedEvents(ctx, bk, n, multisigKeeper)
+			assert.Len(t, sourceCk.SetEventFailedCalls(), tokenSentEventNums)
+		}).
+		Run(t)
 }
 
 func randTransferKeyEvent(chain nexus.ChainName) types.Event {
