@@ -83,11 +83,13 @@ func GetCmdSetGateway() *cobra.Command {
 }
 
 // GetCmdLink links a cross chain address to an EVM chain address created by Axelar
+// Deprecated: link-deposit protocol is being disabled
 func GetCmdLink() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "link [chain] [recipient chain] [recipient address] [asset name]",
-		Short: "Link a cross chain address to an EVM chain address created by Axelar",
-		Args:  cobra.ExactArgs(4),
+		Use:        "link [chain] [recipient chain] [recipient address] [asset name]",
+		Short:      "Link a cross chain address to an EVM chain address created by Axelar",
+		Deprecated: "link-deposit protocol is being disabled",
+		Args:       cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -130,11 +132,13 @@ func GetCmdConfirmERC20TokenDeployment() *cobra.Command {
 }
 
 // GetCmdConfirmERC20Deposit returns the cli command to confirm an ERC20 deposit
+// Deprecated: link-deposit protocol is being disabled
 func GetCmdConfirmERC20Deposit() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirm-erc20-deposit [chain] [txID] [burnerAddr]",
-		Short: "Confirm ERC20 deposits in an EVM chain transaction to a burner address",
-		Args:  cobra.ExactArgs(3),
+		Use:        "confirm-erc20-deposit [chain] [txID] [burnerAddr]",
+		Short:      "Confirm ERC20 deposits in an EVM chain transaction to a burner address",
+		Deprecated: "link-deposit protocol is being disabled",
+		Args:       cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -297,11 +301,13 @@ func GetCmdCreateDeployToken() *cobra.Command {
 }
 
 // GetCmdCreateBurnTokens returns the cli command to create burn commands for all confirmed token deposits in an EVM chain
+// Deprecated: link-deposit protocol is being disabled
 func GetCmdCreateBurnTokens() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-burn-tokens [chain]",
-		Short: "Create burn commands for all confirmed token deposits in an EVM chain",
-		Args:  cobra.ExactArgs(1),
+		Use:        "create-burn-tokens [chain]",
+		Short:      "Create burn commands for all confirmed token deposits in an EVM chain",
+		Deprecated: "link-deposit protocol is being disabled",
+		Args:       cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
