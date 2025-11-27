@@ -89,7 +89,7 @@ func DefaultParams() []Params {
 			},
 		},
 		VotingThreshold:   utils.Threshold{Numerator: 51, Denominator: 100},
-		VotingGracePeriod: 3 * blockTimeSpeedUp,
+		VotingGracePeriod: 2, // even with increased block speed, a short grace period proved to be sufficient
 		MinVoterCount:     1,
 		CommandsGasLimit:  5000000,
 		EndBlockerLimit:   50,
