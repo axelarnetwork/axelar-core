@@ -58,11 +58,13 @@ func GetTxCmd() *cobra.Command {
 }
 
 // GetCmdLink links a cross chain address to an Axelar chain address
+// Deprecated: link-deposit protocol is being disabled
 func GetCmdLink() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "link [recipient chain] [recipient address] [asset]",
-		Short: "Link a cross chain address to an Axelar address",
-		Args:  cobra.ExactArgs(3),
+		Use:        "link [recipient chain] [recipient address] [asset]",
+		Short:      "Link a cross chain address to an Axelar address",
+		Deprecated: "link-deposit protocol is being disabled",
+		Args:       cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -79,11 +81,13 @@ func GetCmdLink() *cobra.Command {
 }
 
 // GetCmdConfirmDeposit returns the cli command to confirm a deposit
+// Deprecated: link-deposit protocol is being disabled
 func GetCmdConfirmDeposit() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirm-deposit [denom] [burnerAddr]",
-		Short: "Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address",
-		Args:  cobra.ExactArgs(2),
+		Use:        "confirm-deposit [denom] [burnerAddr]",
+		Short:      "Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address",
+		Deprecated: "link-deposit protocol is being disabled",
+		Args:       cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
