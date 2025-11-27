@@ -27,9 +27,7 @@ axelard tx axelarnet [flags]
 - [axelard tx](axelard_tx.md) - Transactions subcommands
 - [axelard tx axelarnet add-cosmos-based-chain](axelard_tx_axelarnet_add-cosmos-based-chain.md) - Add a new cosmos based chain
 - [axelard tx axelarnet call-contract](axelard_tx_axelarnet_call-contract.md) - Call a contract on another chain
-- [axelard tx axelarnet confirm-deposit](axelard_tx_axelarnet_confirm-deposit.md) - Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address
 - [axelard tx axelarnet execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md) - Send all pending transfers to Axelar chain
-- [axelard tx axelarnet link](axelard_tx_axelarnet_link.md) - Link a cross chain address to an Axelar address
 - [axelard tx axelarnet register-asset](axelard_tx_axelarnet_register-asset.md) - Register a new asset to a cosmos based chain
 - [axelard tx axelarnet register-fee-collector](axelard_tx_axelarnet_register-fee-collector.md) - Register axelarnet fee collector account
 - [axelard tx axelarnet retry-ibc-transfer](axelard_tx_axelarnet_retry-ibc-transfer.md) - Retry a failed IBC transfer

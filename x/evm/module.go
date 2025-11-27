@@ -76,7 +76,7 @@ func (AppModuleBasic) GetTxCmd() *cobra.Command {
 
 // GetQueryCmd returns all CLI query commands for this module
 func (AppModuleBasic) GetQueryCmd() *cobra.Command {
-	return cli.GetQueryCmd(types.QuerierRoute)
+	return cli.GetQueryCmd()
 }
 
 // AppModule implements module.AppModule
