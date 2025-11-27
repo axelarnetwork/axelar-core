@@ -3,6 +3,7 @@ timeout_broadcast_tx_commit = "99h"
 
 [broadcast]
 min_sleep_before_retry = "1ns"
+confirmation_polling_interval = "100ms"
 
 [[axelar_bridge_evm]]
 

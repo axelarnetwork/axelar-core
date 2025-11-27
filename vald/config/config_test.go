@@ -29,6 +29,7 @@ func TestConfigAlias(t *testing.T) {
 
 	assert.Equal(t, 99*time.Hour, conf.MaxTimeout)
 	assert.Equal(t, 1*time.Nanosecond, conf.MinSleepBeforeRetry)
+	assert.Equal(t, 100*time.Millisecond, conf.ConfirmationPollingInterval)
 	assert.Len(t, conf.EVMConfig, 2)
 	assert.Equal(t, rpc.Confirmation, conf.EVMConfig[0].FinalityOverride)
 	assert.Equal(t, rpc.NoOverride, conf.EVMConfig[1].FinalityOverride)
