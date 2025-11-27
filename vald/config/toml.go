@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 	"io"
 	"reflect"
 	"strings"
@@ -10,6 +9,8 @@ import (
 	"github.com/BurntSushi/toml"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/mitchellh/mapstructure"
+
+	"github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 )
 
 // WriteTOML encodes the given config into TOML and writes it to the given io.Writer.

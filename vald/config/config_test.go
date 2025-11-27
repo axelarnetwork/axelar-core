@@ -2,7 +2,6 @@ package config
 
 import (
 	"bytes"
-	"github.com/axelarnetwork/axelar-core/app"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 )
