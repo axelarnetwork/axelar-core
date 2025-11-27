@@ -14,9 +14,11 @@ require (
 	cosmossdk.io/x/feegrant v0.1.1
 	cosmossdk.io/x/tx v0.13.7
 	cosmossdk.io/x/upgrade v0.1.4
+	github.com/BurntSushi/toml v1.5.0
 	github.com/CosmWasm/wasmd v0.54.3
 	// Ensure WASMVM_VERSION in the Dockerfile is updated when changing wasmvm version.
 	github.com/CosmWasm/wasmvm/v2 v2.2.4
+	github.com/axelarnetwork/tm-events v0.0.0-20251121130841-4c4b590f0d06
 	github.com/axelarnetwork/utils v0.0.0-20251121135440-7d92b8abb3a7
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/cometbft/cometbft v0.38.19
@@ -61,8 +63,6 @@ require (
 	google.golang.org/grpc v1.70.0
 	google.golang.org/protobuf v1.36.5
 )
-
-require github.com/axelarnetwork/tm-events v0.0.0-20251121130841-4c4b590f0d06
 
 require (
 	cloud.google.com/go v0.115.0 // indirect

@@ -94,7 +94,7 @@ func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcasterOpti
 
 	params := broadcastParams{
 		Timeout:         config.DefaultRPCConfig().TimeoutBroadcastTxCommit,
-		PollingInterval: 2 * time.Second,
+		PollingInterval: 400 * time.Millisecond,
 	}
 	for _, option := range options {
 		params = option(params)
