@@ -32,9 +32,9 @@ func DefaultParams() Params {
 		KeygenThreshold:    utils.NewThreshold(80, 100),
 		SigningThreshold:   utils.NewThreshold(60, 100),
 		KeygenTimeout:      10 * blockTimeSpeedUp,
-		KeygenGracePeriod:  10 * blockTimeSpeedUp,
+		KeygenGracePeriod:  3, // even with increased block speed, a short grace period proved to be sufficient
 		SigningTimeout:     10 * blockTimeSpeedUp,
-		SigningGracePeriod: 10 * blockTimeSpeedUp,
+		SigningGracePeriod: 3, // even with increased block speed, a short grace period proved to be sufficient
 		ActiveEpochCount:   5,
 	}
 }
