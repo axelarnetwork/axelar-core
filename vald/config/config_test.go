@@ -42,6 +42,7 @@ func TestConfig_GoldenFile(t *testing.T) {
 
 // TestConfig_RoundTrip ensures the toml can be decoded back into the expected values
 func TestConfig_RoundTrip(t *testing.T) {
+	app.SetConfig()
 	goldenPath := filepath.Join(testdataPath(t), "golden_config.toml")
 
 	v := viper.New()
