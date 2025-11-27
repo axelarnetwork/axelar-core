@@ -19,9 +19,13 @@ import (
 // TestConfig_GoldenFile ensures that default config values don't get changed accidentally
 // and that new config parameters are not forgotten. If this test fails, review the
 // changes carefully and run with UPDATE_GOLDEN=true to update the golden file.
+// Subsequently, the generated file is read back in to ensure that the decoded config is identical
+// with the original source.
 func TestConfig_GoldenFile(t *testing.T) {
 	app.SetConfig()
 	cfg := testConfig()
+
+	// write to file
 
 	var buf bytes.Buffer
 	require.NoError(t, WriteTOML(&buf, cfg))
@@ -38,12 +42,8 @@ func TestConfig_GoldenFile(t *testing.T) {
 	require.NoError(t, err, "Golden file not found. Run with UPDATE_GOLDEN=true to create it.")
 
 	assert.Equal(t, string(golden), string(serialized), "Config serialization changed. Run with UPDATE_GOLDEN=true to update.")
-}
 
-// TestConfig_RoundTrip ensures the toml can be decoded back into the expected values
-func TestConfig_RoundTrip(t *testing.T) {
-	app.SetConfig()
-	goldenPath := filepath.Join(testdataPath(t), "golden_config.toml")
+	// read from file
 
 	v := viper.New()
 	v.SetConfigFile(goldenPath)
