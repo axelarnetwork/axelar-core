@@ -1,4 +1,6 @@
-name: Upload core binary to Cloudflare R2 bucket
+# Triggered on push to main. Builds axelard binary and uploads to R2 pre-releases/ for internal testing.
+# For production releases, use release-build-and-upload-artifacts.yaml instead.
+name: "CI: Build and push binaries to R2"
 
 on:
   push:

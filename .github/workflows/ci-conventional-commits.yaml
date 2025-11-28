@@ -1,4 +1,5 @@
-name: Ensure Conventional Commit message
+# Verifies that PR titles follow conventional commit format (feat:, fix:, chore:, etc.).
+name: "CI: Conventional commits"
 
 on:
   pull_request:

@@ -1,4 +1,6 @@
-name: Upload Binaries and Docker Image
+# Builds and uploads release artifacts (Docker image to DockerHub, binaries to S3 and R2) for a given tag.
+# Run after creating a release tag with release-create-tag.yaml.
+name: "Release: Build and upload artifacts"
 
 on:
   workflow_dispatch:
