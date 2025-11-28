@@ -1,4 +1,5 @@
-name: Ensure EVM module migration when bytecode changes
+# Ensures that EVM bytecode changes are accompanied by a migration to update on-chain bytecode.
+name: "CI: EVM migration check"
 
 on:
   - pull_request

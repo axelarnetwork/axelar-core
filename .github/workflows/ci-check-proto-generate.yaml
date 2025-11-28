@@ -1,4 +1,5 @@
-name: Check protobuf generated files up-to-date
+# Verifies that protobuf generated files (.pb.go) are up-to-date with the .proto definitions.
+name: "CI: Check proto generate"
 
 on:
   - pull_request
