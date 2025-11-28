@@ -1,4 +1,5 @@
-name: Take testnet snapshot
+# Downloads a testnet snapshot from quicksync and uploads it to S3.
+name: "Ops: Take testnet snapshot"
 
 on:
   workflow_dispatch:

@@ -1,4 +1,5 @@
-name: Check internal dependencies up-to-date
+# Verifies that internal Axelar dependencies (utils, tm-events) are up-to-date.
+name: "CI: Check internal deps"
 
 on:
   pull_request:

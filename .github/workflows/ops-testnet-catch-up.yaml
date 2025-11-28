@@ -1,4 +1,5 @@
-name: Testnet catch up
+# SSHs to a test server, downloads a snapshot, and starts an axelard node to verify it can catch up.
+name: "Ops: Testnet catch up"
 
 on:
   workflow_dispatch:

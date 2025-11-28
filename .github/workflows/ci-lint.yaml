@@ -1,4 +1,4 @@
-name: Linting
+name: "CI: Linting"
 
 on:
   - pull_request
