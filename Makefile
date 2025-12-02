@@ -1,10 +1,7 @@
-PACKAGES=$(shell go list ./... | grep -v '/simulation')
-
 VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT := $(shell git log -1 --format='%H')
 
 DOCKER := $(shell which docker)
-DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf
 HTTPS_GIT := https://github.com/axelarnetwork/axelar-core.git
 PUSH_DOCKER_IMAGE := true
 
@@ -22,11 +19,9 @@ $(info $$IBC_WASM_HOOKS is [${IBC_WASM_HOOKS}])
 $(info $$MAX_WASM_SIZE is [${MAX_WASM_SIZE}])
 $(info $$CGO_ENABLED is [${CGO_ENABLED}])
 
-ifndef $(WASM_CAPABILITIES)
 # Wasm capabilities: https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
+ifndef WASM_CAPABILITIES
 WASM_CAPABILITIES := "iterator,staking,stargate,cosmwasm_1_1,cosmwasm_1_2,cosmwasm_1_3"
-else
-WASM_CAPABILITIES := ""
 endif
 
 ifeq ($(MUSLC), true)
@@ -88,6 +83,31 @@ goimports:
 build: go.sum
 		go build -o ./bin/axelard -mod=readonly $(BUILD_FLAGS) ./cmd/axelard
 
+# Build a statically linked binary by extracting it from the Docker image.
+# Static linking is required for portable binaries that run on any Linux distribution
+# (e.g., Alpine, Ubuntu, CentOS) without depending on system libraries like glibc.
+#
+# We use Docker because static linking with WASM support requires:
+#   1. musl libc (instead of glibc) - Alpine Linux provides this
+#   2. libwasmvm_muslc.a - the statically-linkable CosmWasm VM library
+#
+# Building natively on most Linux distributions (which use glibc) would produce
+# a dynamically linked binary that fails on systems with different glibc versions.
+#
+# Usage:
+#   make build-static                     # Build with defaults (WASM=true)
+#   make build-static WASM=false          # Build without WASM support
+#   make build-static IBC_WASM_HOOKS=true # Build with IBC WASM hooks enabled
+.PHONY: build-static
+build-static: docker-image
+	@mkdir -p ./bin
+	@docker rm -f axelar-extract 2>/dev/null || true
+	@docker create --name axelar-extract axelar/core
+	@docker cp axelar-extract:/usr/local/bin/axelard ./bin/axelard
+	@docker rm axelar-extract
+	@echo "Static binary extracted to ./bin/axelard"
+	@file ./bin/axelard
+
 .PHONY: build-binaries
 build-binaries:  guard-SEMVER
 	./scripts/build-binaries.sh ${SEMVER} '$(BUILD_TAGS)' '$(ldflags)'
@@ -130,7 +150,7 @@ docker-image-local-user:  guard-VERSION guard-GROUP_ID guard-USER_ID
 		--build-arg ARCH="${ARCH}" \
 		-t axelarnet/axelar-core:${VERSION}-local .
 
-.PHONY: build-push-docker-image
+.PHONY: build-push-docker-images
 build-push-docker-images:  guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build \
 		--platform ${PLATFORM} \
@@ -141,23 +161,13 @@ build-push-docker-images:  guard-SEMVER
 		-t axelarnet/axelar-core-${SUFFIX}:${SEMVER} --provenance=false .
 
 
-.PHONY: build-push-docker-image-rosetta
-build-push-docker-images-rosetta: populate-bytecode guard-SEMVER
-	@DOCKER_BUILDKIT=1 docker buildx build -f Dockerfile.rosetta \
-		--platform linux/amd64 \
-		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
-		--build-arg WASM="${WASM}" \
-		--build-arg IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" \
-		-t axelarnet/axelar-core:${SEMVER}-rosetta .
-
-
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
 docker-image-debug:
 	@DOCKER_BUILDKIT=1 docker build --build-arg WASM="${WASM}" --build-arg IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" -t axelar/core-debug -f ./Dockerfile.debug .
 
 # Install all generate prerequisites
-.Phony: prereqs
+.PHONY: prereqs
 prereqs:
 	@which mdformat &>/dev/null 	 ||	pip3 install mdformat
 	@which protoc &>/dev/null 		 || echo "Please install protoc for grpc (https://grpc.io/docs/languages/go/quickstart/)"
@@ -188,7 +198,7 @@ docs:
 	@# ensure docs are canonically formatted
 	@mdformat docs/cli/*
 
-.PHONE: tofnd-client
+.PHONY: tofnd-client
 tofnd-client:
 	@echo -n Generating protobufs...
 	@protoc --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative proto/tss/tofnd/v1beta1/tofnd.proto
