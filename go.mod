@@ -263,3 +263,6 @@ replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.2021
 
 // temporary replacements
 replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.50.14-0.20251027135325-71cefd84b6c7
+
+// remove again when https://github.com/cosmos/rosetta/pull/224 is merged and released
+replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.12-0.20251202144137-de66e995eb8e
