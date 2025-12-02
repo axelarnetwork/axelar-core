@@ -1,4 +1,6 @@
-name: Build and push latest docker image
+# Triggered on push to main. Builds Docker image and pushes to private ECR for internal testing/devnets.
+# For production releases, use release-build-and-upload-artifacts.yaml instead.
+name: "CI: Build and push to ECR"
 
 on:
   push:

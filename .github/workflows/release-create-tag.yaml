@@ -1,4 +1,6 @@
-name: Release
+# Creates a new release tag and release branch (for major/minor releases from main).
+# After this, run release-build-and-upload-artifacts.yaml to build and upload the release.
+name: "Release: Create tag"
 
 on:
   workflow_dispatch:

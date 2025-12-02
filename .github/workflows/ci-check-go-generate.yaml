@@ -1,4 +1,5 @@
-name: Check format and go generated files up-to-date
+# Verifies that go generate output (mocks, stringer, etc.) is up-to-date and code is formatted.
+name: "CI: Check go generate"
 
 on:
   - pull_request

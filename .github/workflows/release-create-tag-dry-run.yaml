@@ -1,4 +1,5 @@
-name: Release (Dry Run)
+# Dry run of release-create-tag.yaml. Shows what tag would be created without actually creating it.
+name: "Release: Create tag (dry run)"
 
 on:
   workflow_dispatch:
