@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	stdlog "log"
@@ -962,7 +963,76 @@ func (app *AxelarApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (
 
 // PreBlocker checks if there is a scheduled upgrade and executes it if it is ready
 func (app *AxelarApp) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
+	// For testing upgrades without governance: inject upgrade plan from upgrade-info.json if present
+	if err := app.scheduleUpgradeFromDisk(ctx); err != nil {
+		return nil, err
+	}
+
 	return app.mm.PreBlock(ctx)
+}
+
+// scheduleUpgradeFromDisk reads upgrade-info.json and schedules the upgrade if
+// the current block height matches the plan height and no plan exists in state.
+// This allows testing upgrades without a governance proposal.
+func (app *AxelarApp) scheduleUpgradeFromDisk(ctx sdk.Context) error {
+	logger := ctx.Logger().With("module", "upgrade-from-disk")
+	upgradeKeeper := GetKeeper[upgradekeeper.Keeper](app.Keepers)
+
+	upgradeInfo, err := upgradeKeeper.ReadUpgradeInfoFromDisk()
+	if err != nil {
+		logger.Debug("failed to read upgrade-info.json", "error", err)
+		return nil
+	}
+
+	if upgradeInfo.Name == "" {
+		logger.Debug("no upgrade plan found in upgrade-info.json")
+		return nil
+	}
+
+	logger.Info("found upgrade plan on disk",
+		"name", upgradeInfo.Name,
+		"planHeight", upgradeInfo.Height,
+		"currentHeight", ctx.BlockHeight(),
+	)
+
+	if upgradeInfo.Height != ctx.BlockHeight() {
+		logger.Debug("upgrade height does not match current block height, skipping",
+			"planHeight", upgradeInfo.Height,
+			"currentHeight", ctx.BlockHeight(),
+		)
+		return nil
+	}
+
+	// Check if there's already a plan in state
+	existingPlan, err := upgradeKeeper.GetUpgradePlan(ctx)
+	if err == nil {
+		logger.Info("upgrade plan already exists in state, skipping injection",
+			"existingPlanName", existingPlan.Name,
+			"existingPlanHeight", existingPlan.Height,
+		)
+		return nil
+	}
+
+	if !errors.Is(err, upgradetypes.ErrNoUpgradePlanFound) {
+		logger.Error("failed to get upgrade plan from state", "error", err)
+		return err
+	}
+
+	logger.Info("no upgrade plan in state, injecting from disk",
+		"name", upgradeInfo.Name,
+		"height", upgradeInfo.Height,
+	)
+
+	if err := upgradeKeeper.ScheduleUpgrade(ctx, upgradeInfo); err != nil {
+		logger.Error("failed to schedule upgrade", "error", err)
+		return err
+	}
+
+	logger.Info("successfully scheduled upgrade from disk",
+		"name", upgradeInfo.Name,
+		"height", upgradeInfo.Height,
+	)
+	return nil
 }
 
 // BeginBlocker calls the BeginBlock() function of every module at the beginning of a new block
