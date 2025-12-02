@@ -101,7 +101,8 @@ build: go.sum
 .PHONY: build-static
 build-static: docker-image
 	@mkdir -p ./bin
-	@docker create --name axelar-extract axelar/core 2>/dev/null || docker rm -f axelar-extract && docker create --name axelar-extract axelar/core
+	@docker rm -f axelar-extract 2>/dev/null || true
+	@docker create --name axelar-extract axelar/core
 	@docker cp axelar-extract:/usr/local/bin/axelard ./bin/axelard
 	@docker rm axelar-extract
 	@echo "Static binary extracted to ./bin/axelard"
