@@ -1,10 +1,14 @@
-name: Check protobuf generated files up-to-date
+# Verifies that internal Axelar dependencies (utils, tm-events) are up-to-date.
+name: "CI: Check internal deps"
 
 on:
-  - pull_request
+  pull_request:
+    branches:
+      - main
+      - releases/**
 
 jobs:
-  check-proto-generate-up-to-date:
+  check-internal-deps-up-to-date:
     runs-on: ubuntu-22.04
     steps:
       - name: Setup Golang with cache
@@ -15,12 +19,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
-      - name: Install prereqs
+      - name: Update internal dependencies
         run: |
-          go install github.com/rakyll/statik
-
-      - name: Generate proto files and docs
-        run: make proto-format proto-gen proto-swagger-gen
+          go get github.com/axelarnetwork/utils@latest
+          go get github.com/axelarnetwork/tm-events@latest
+          go mod tidy
 
       - name: Check for changes
         run: |
