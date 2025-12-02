@@ -1,0 +1,64 @@
+# Triggered on push to main. Builds axelard binary and uploads to R2 pre-releases/ for internal testing.
+# For production releases, use release-build-and-upload-artifacts.yaml instead.
+name: "CI: Build and push binaries to R2"
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Github branch or tag to checkout for compilation
+        required: true
+        default: main
+        type: string
+
+jobs:
+    build-and-upload:
+        name: Build binary and push to R2
+        runs-on: ubuntu-22.04
+        permissions:
+            contents: write
+            packages: write
+            id-token: write
+        steps:
+            - name: Determine checkout ref
+              id: get-checkout-ref
+              run: |
+                if [ "${{ github.event_name }}" == "push" ]; then
+                  ref="main"
+                else
+                  ref="${{ inputs.branch }}"
+                fi
+                echo "ref=$ref" >> $GITHUB_OUTPUT
+
+            - name: Checkout code
+              uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+              with:
+                fetch-depth: "0"
+                path: axelar-core
+                submodules: recursive
+                ref: ${{ steps.get-checkout-ref.outputs.ref }}
+
+            - name: Build axelard binary with version and commit hash
+              id: build-binary
+              run: |
+                cd axelar-core
+                make build
+                semver=$(git describe --tags)
+                commit_hash=$(git rev-parse --short HEAD)
+                echo "Semantic Version of current binary: $semver"
+                cd ..
+                mkdir -p ./$commit_hash/
+                sudo mv axelar-core/bin/axelard ./$commit_hash/axelard-linux-amd64-$semver
+                echo "binary-directory=./$commit_hash" >> $GITHUB_OUTPUT
+
+            - uses: ryand56/r2-upload-action@31453780fdaaf43c8eff7231dd521f8669b48621 # v1.3.2
+              with:
+                r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
+                r2-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_CF }}
+                r2-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CF }}
+                r2-bucket: ${{ secrets.R2_BUCKET }}
+                source-dir: ${{ steps.build-binary.outputs.binary-directory }}
+                destination-dir: ./pre-releases/axelard/

@@ -1,0 +1,28 @@
+name: "CI: Testing and coverage"
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - releases/**
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@777394c89f8ed6fcf1649505277c46c1cd06494d # v4
+        with:
+          go-version: 1.25
+
+      - name: Run test and coverage
+        run: |
+          go test ./... -race -coverprofile=coverage.txt -covermode=atomic
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@428cda1b1c731be3e8bfa389049c3f276d572ffb # v4-beta
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

@@ -1,0 +1,42 @@
+# SSHs to a test server, downloads a snapshot, and starts an axelard node to verify it can catch up.
+name: "Ops: Testnet catch up"
+
+on:
+  workflow_dispatch:
+    inputs:
+      snapshot_version:
+        description: Axelar testnet label to use (e.g. v0.15.0)
+        required: true
+      axelard_version:
+        description: Axelard version to use (e.g "v0.15.0")
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+
+    - name: Execute SSH commmands on remote server
+      uses: JimCronqvist/action-ssh@d95a7435b565a2fedb9bf4100cdeb3342aa3cf16 # master 
+      with:
+        hosts: ${{ secrets.CATCHUP_HOST }}
+        privateKey: ${{ secrets.CATCHUP_SSH_PRIVATE_KEY }}
+        command: |
+          sudo apt-get update -y
+          sudo apt install jq  liblz4-tool awscli -y
+          # clean
+          kill -9 $(pgrep -f "axelard start")
+          rm -rf ~/.axelar_testnet/.core/data
+          # Increase ulimit
+          ulimit -n 16384
+          # Download latest snapshot
+          cd ~/.axelar_testnet/.core
+          aws s3 cp s3://axelar-testnet-snapshots/axelartestnet-${{ github.event.inputs.snapshot_version }}.tar.lz4 .
+          lz4 -d axelartestnet-${{ github.event.inputs.snapshot_version }}.tar.lz4 | tar -xvf -
+          rm *.tar *.lz4
+          cd ~/axelarate-community
+          yes | KEYRING_PASSWORD=my-secret-password ./scripts/node.sh -n testnet -a  ${{ github.event.inputs.axelard_version }}

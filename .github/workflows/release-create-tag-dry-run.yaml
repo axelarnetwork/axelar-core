@@ -1,0 +1,31 @@
+# Dry run of release-create-tag.yaml. Shows what tag would be created without actually creating it.
+name: "Release: Create tag (dry run)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      bumpType:
+        description: Semver bump type to use ("major"/"minor"/"patch")
+        required: true
+        default: patch
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+        with:
+          fetch-depth: '0'
+          submodules: recursive
+
+      - id: release
+        uses: anothrNick/github-tag-action@3840ec22ac98e14d981375e3ae2d8d0392964521 # v1.39.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: ${{ github.event.inputs.bumpType }}
+          TAG_CONTEXT: branch
+          RELEASE_BRANCHES: main,releases.*
+          WITH_V: true
+          DRY_RUN: true
+          VERBOSE: true

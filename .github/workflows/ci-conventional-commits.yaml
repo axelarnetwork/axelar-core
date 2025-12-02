@@ -1,0 +1,26 @@
+# Verifies that PR titles follow conventional commit format (feat:, fix:, chore:, etc.).
+name: "CI: Conventional commits"
+
+on:
+  pull_request:
+
+jobs:
+  ensure-CC:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: semantic-pull-request
+        uses: amannn/action-semantic-pull-request@81acd1c603cf23bd6f6fbe16be9e882cd25cd4e6 # v3.2.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Configure additional validation for the subject based on a regex.
+          # This example ensures the subject doesn't start with an uppercase character.
+          subjectPattern: ^(?![A-Z]).+$
+          # If `subjectPattern` is configured, you can use this property to override
+          # the default error message that is shown when the pattern doesn't match.
+          # The variables `subject` and `title` can be used within the message.
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            doesn't start with an uppercase character.

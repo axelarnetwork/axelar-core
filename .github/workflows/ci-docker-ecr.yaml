@@ -1,0 +1,101 @@
+# Triggered on push to main. Builds Docker image and pushes to private ECR for internal testing/devnets.
+# For production releases, use release-build-and-upload-artifacts.yaml instead.
+name: "CI: Build and push to ECR"
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      buildDebug:
+        description: Whether or build the debug image ("true"/"false")
+        required: true
+        default: "false"
+      wasm:
+        description: Whether to enable wasm ("true"/"false")
+        required: true
+        default: "true"
+      ibc-wasm-hooks:
+        description: Whether to enable ibc wasm hooks ("true"/"false")
+        required: true
+        default: "false"
+
+jobs:
+  build-and-push-latest-docker-image:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-22.04
+    runs-on: ${{ matrix.os }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+
+      - uses: nelonoel/branch-name@1ea5c86cb559a8c4e623da7f188496208232e49f # v1.01
+
+      - name: fetch tags
+        run: |
+          git fetch --unshallow
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1
+        with:
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/ghwf-${{ github.event.repository.name }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2
+
+      - name: Build docker image (normal)
+        # This action can be called automatically, so it is possible that inputs are not set.
+        # Therefore, a default is set in the env section and then the inputs are explicitly checked in the run section
+        # instead of binding them directly in the env section.
+        env:
+          WASM: "true"
+          IBC_WASM_HOOKS: "false"
+        run: |
+          if [ "${{ github.event.inputs.wasm }}" == "false" ]; then
+            export WASM="false"
+          fi
+          if [ "${{ github.event.inputs.ibc-wasm-hooks }}" == "true" ]; then
+            export IBC_WASM_HOOKS="true"
+          fi
+          make docker-image
+
+      - name: Push to ECR (normal)
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: axelar-core
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker image tag axelar/core "${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}"
+          docker push "${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}"
+
+      - name: Build docker image (debug)
+        env:
+          WASM: "true"
+          IBC_WASM_HOOKS: "false"
+        if: github.event.inputs.buildDebug != 'false'
+        run: |
+          if [ "${{ github.event.inputs.wasm }}" == "false" ]; then
+            export WASM="false"
+          fi
+          if [ "${{ github.event.inputs.ibc-wasm-hooks }}" == "true" ]; then
+            export IBC_WASM_HOOKS="true"
+          fi
+          make docker-image-debug
+
+      - name: Push to ECR (debug)
+        if: github.event.inputs.buildDebug != 'false'
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: axelar-core
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker image tag axelar/core "${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}-debug"
+          docker push "${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}-debug"

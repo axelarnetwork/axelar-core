@@ -1,0 +1,82 @@
+# Creates a new release tag and release branch (for major/minor releases from main).
+# After this, run release-build-and-upload-artifacts.yaml to build and upload the release.
+name: "Release: Create tag"
+
+on:
+  workflow_dispatch:
+    inputs:
+      bumpType:
+        description: Semver bump type to use ("major"/"minor"/"patch")
+        required: true
+        default: patch
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+        with:
+          fetch-depth: '0'
+          submodules: recursive
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - id: release
+        uses: anothrNick/github-tag-action@3840ec22ac98e14d981375e3ae2d8d0392964521 # v1.39.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          DEFAULT_BUMP: ${{ github.event.inputs.bumpType }}
+          TAG_CONTEXT: branch
+          RELEASE_BRANCHES: main,releases.*
+          WITH_V: true
+          DRY_RUN: true
+
+      - id: parsed-release
+        uses: booxmedialtd/ws-action-parse-semver@7784200024d6b3fc01253e617ec0168daf603de3 # v1
+        with:
+          input_string: ${{ steps.release.outputs.tag }}
+
+      - name: Generate release
+        run: |
+          new_release_branch=""
+
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            if [ "${{ github.event.inputs.bumpType }}" = "major" ]; then
+              let new_major=${{ steps.parsed-release.outputs.major }}+1
+              new_release_branch="releases/$new_major.0.x"
+            elif [ "${{ github.event.inputs.bumpType }}" = "minor" ]; then
+              let new_minor=${{ steps.parsed-release.outputs.minor }}+1
+              new_release_branch="releases/${{ steps.parsed-release.outputs.major }}.$new_minor.x"
+            else
+              echo "cannot make patch release from main branch"
+              exit 1
+            fi
+          elif [[ "${{ github.ref }}" = refs/heads/releases/* ]]; then
+            if [ "${{ github.event.inputs.bumpType }}" != "patch" ]; then
+              echo "cannot make major/minor release from release branch"
+              exit 1
+            fi
+          else
+            echo "can only release from main or releases/* branches"
+            exit 1
+          fi
+
+          git config --global user.email "cicd@interoplabs.io"
+          git config --global user.name "axelar-cicd-bot"
+
+          git commit --allow-empty -m "${{ steps.release.outputs.new_tag }}"
+          git push
+
+          if [ -n "$new_release_branch" ]; then
+            git checkout -b $new_release_branch
+            git push -u origin $new_release_branch
+          fi
+
+      - name: Bump version and push tag
+        uses: anothrNick/github-tag-action@3840ec22ac98e14d981375e3ae2d8d0392964521 # v1.39.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          DEFAULT_BUMP: ${{ github.event.inputs.bumpType }}
+          TAG_CONTEXT: branch
+          RELEASE_BRANCHES: main,releases.*
+          WITH_V: true
