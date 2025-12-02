@@ -1,4 +1,4 @@
-name: Testing and coverage
+name: "CI: Testing and coverage"
 
 on:
   pull_request:
