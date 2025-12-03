@@ -1023,16 +1023,54 @@ func (app *AxelarApp) scheduleUpgradeFromDisk(ctx sdk.Context) error {
 		"height", upgradeInfo.Height,
 	)
 
-	if err := upgradeKeeper.ScheduleUpgrade(ctx, upgradeInfo); err != nil {
-		logger.Error("failed to schedule upgrade", "error", err)
+	// Write the plan directly to the store instead of using ScheduleUpgrade,
+	// because ScheduleUpgrade calls GetDoneHeight which iterates over "done" keys
+	// and fails on legacy data from pre-v0.50 SDK (different key format).
+	kvStore := ctx.KVStore(app.Keys[upgradetypes.StoreKey])
+
+	// Delete all done keys (which are in legacy format from pre-v0.50 SDK)
+	DeleteUpgradeDoneKeys(kvStore, logger)
+
+	bz, err := app.appCodec.Marshal(&upgradeInfo)
+	if err != nil {
+		logger.Error("failed to marshal upgrade plan", "error", err)
 		return err
 	}
+	kvStore.Set(upgradetypes.PlanKey(), bz)
 
 	logger.Info("successfully scheduled upgrade from disk",
 		"name", upgradeInfo.Name,
 		"height", upgradeInfo.Height,
 	)
 	return nil
+}
+
+// DeleteUpgradeDoneKeys deletes all "done" keys from the upgrade store.
+// This is necessary during SDK upgrades from pre-v0.50 to v0.50+ because
+// the key format changed:
+//   - Pre-v0.50: DoneByte + upgradeName (variable length)
+//   - v0.50+: DoneByte + uint64(height) + upgradeName (10+ bytes minimum)
+//
+// The v0.50 SDK's GetLastCompletedUpgrade and GetDoneHeight functions panic
+// when they encounter keys shorter than 10 bytes.
+//
+// This function deletes ALL done keys because when it's called (during the
+// upgrade block on first run of v0.50+ binary), all existing done keys are
+// from the old SDK format and must be removed.
+func DeleteUpgradeDoneKeys(kvStore store.KVStore, logger sdklogger.Logger) {
+	donePrefix := []byte{upgradetypes.DoneByte}
+	iter := kvStore.Iterator(donePrefix, store.PrefixEndBytes(donePrefix))
+	defer iter.Close()
+
+	var keysToDelete [][]byte
+	for ; iter.Valid(); iter.Next() {
+		keysToDelete = append(keysToDelete, iter.Key())
+	}
+
+	for _, key := range keysToDelete {
+		logger.Info("deleting legacy done key", "keyLength", len(key))
+		kvStore.Delete(key)
+	}
 }
 
 // BeginBlocker calls the BeginBlock() function of every module at the beginning of a new block
