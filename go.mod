@@ -267,4 +267,4 @@ replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.5
 // patches contained in this:
 // https://github.com/cosmos/rosetta/pull/224
 // https://github.com/axelarnetwork/rosetta/pull/2
-replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.12-0.20251204142537-91e778ee8ba0
+replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.12-0.20251204145136-0c04ae4465d8
