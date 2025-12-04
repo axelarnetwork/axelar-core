@@ -1,12 +1,12 @@
 package app
 
 import (
+	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/std"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/axelarnetwork/axelar-core/app/codec"
 	"github.com/axelarnetwork/axelar-core/app/params"
-	sdkclient "github.com/cosmos/cosmos-sdk/client"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
 // MakeEncodingConfig creates an EncodingConfig for testing
