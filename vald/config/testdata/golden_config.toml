@@ -1,4 +1,5 @@
 batch_threshold = 3
+enable_heartbeat = false
 event_notifications_back_off = "1s"
 event_notifications_max_retries = 3
 max_batch_size = 250
