@@ -10,6 +10,7 @@ axelard rosetta [flags]
 
 ```
       --addr string                the address rosetta will bind to (default ":8080")
+      --bech32-prefix string       address bech32 prefix (default "cosmos")
       --blockchain string          the blockchain type (default "app")
       --denom-to-suggest string    default denom for fee suggestion (default "uatom")
       --enable-fee-suggestion      enable default fee suggestion

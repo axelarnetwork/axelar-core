@@ -1,7 +1,9 @@
 package app
 
 import (
+	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/std"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/axelarnetwork/axelar-core/app/codec"
 	"github.com/axelarnetwork/axelar-core/app/params"
@@ -16,6 +18,14 @@ func MakeEncodingConfig() params.EncodingConfig {
 	GetModuleBasics().RegisterInterfaces(encodingConfig.InterfaceRegistry)
 
 	codec.RegisterLegacyMsgInterfaces(encodingConfig.InterfaceRegistry)
+
+	// Register the AccountI interface for rosetta compatibility
+	encodingConfig.InterfaceRegistry.RegisterInterface(
+		"cosmos.auth.v1beta1.AccountI",
+		(*sdkclient.Account)(nil),
+		&authtypes.BaseAccount{},
+		&authtypes.ModuleAccount{},
+	)
 
 	return encodingConfig
 }
