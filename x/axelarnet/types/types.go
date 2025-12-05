@@ -331,8 +331,8 @@ func (minDeposits CallContractProposalMinDeposits) ToMap(ctx sdk.Context, nexus 
 		if chain, ok := nexus.GetChain(ctx, minDeposit.Chain); !ok || !chain.IsFrom(evmtypes.ModuleName) {
 			continue
 		}
-		if strings.HasPrefix(contractAddress, ZERO_X_PREFIX) {
-			minDepositsMap[chain][strings.TrimPrefix(contractAddress, ZERO_X_PREFIX)] = minDeposit.MinDeposits
+		if after, ok := strings.CutPrefix(contractAddress, ZERO_X_PREFIX); ok {
+			minDepositsMap[chain][after] = minDeposit.MinDeposits
 		} else {
 			minDepositsMap[chain][fmt.Sprintf("%s%s", ZERO_X_PREFIX, contractAddress)] = minDeposit.MinDeposits
 		}
