@@ -268,4 +268,6 @@ replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.5
 // https://github.com/cosmos/rosetta/pull/224
 // https://github.com/axelarnetwork/rosetta/pull/2
 // https://github.com/axelarnetwork/rosetta/pull/3
-replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.12-0.20251205190656-37abfbb96cec
+// https://github.com/axelarnetwork/rosetta/commit/37abfbb96cec
+// https://github.com/axelarnetwork/rosetta/commit/7e206badffb5602844b99dfdc5c564aaaa72b25c
+replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.12-0.20251208130131-7e206badffb5
