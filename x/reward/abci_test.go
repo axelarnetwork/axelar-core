@@ -42,7 +42,7 @@ import (
 // The fix uses time-based activation (ValidatorRewardFixActivationTime) to maintain network
 // consistency during the upgrade period. Before activation, the old (buggy) behavior is preserved.
 func TestEndBlocker_ExternalChainVotingInflation(t *testing.T) {
-	// Time after fix activation (Dec 16, 2025 2pm UTC) - correct behavior enabled
+	// Time after fix activation (Dec 17, 2025 2pm UTC) - correct behavior enabled
 	afterFixTime := time.Date(2025, 12, 18, 12, 0, 0, 0, time.UTC)
 	// Time before fix activation - old buggy behavior preserved for network consistency
 	beforeFixTime := time.Date(2025, 12, 15, 12, 0, 0, 0, time.UTC)
