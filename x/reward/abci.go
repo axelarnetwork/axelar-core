@@ -26,8 +26,8 @@ const (
 	MainnetFixActivationTime = "2025-12-17T14:00:00Z"
 	// TestnetFixActivationTime is the activation time for testnet (axelar-testnet-lisbon-3)
 	TestnetFixActivationTime  = "2025-12-16T14:00:00Z"
-	StagenetFixActivationTime = "2025-12-12T18:00:00Z"
-	DevnetFixActivationTime   = "2025-12-12T16:00:00Z"
+	StagenetFixActivationTime = "2025-12-12T15:00:00Z"
+	DevnetFixActivationTime   = "2025-12-12T14:00:00Z"
 )
 
 func getValidatorRewardFixActivationTime(chainID string) string {
