@@ -269,3 +269,5 @@ replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.5
 // https://github.com/axelarnetwork/rosetta/pull/2
 // https://github.com/axelarnetwork/rosetta/pull/3
 replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.12-0.20251205190656-37abfbb96cec
+
+replace github.com/cometbft/cometbft => github.com/cometbft/cometbft v0.38.19-0.20251212010926-c96f26503c04
