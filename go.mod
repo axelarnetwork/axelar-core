@@ -265,7 +265,5 @@ replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.2021
 replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.50.14-0.20251027135325-71cefd84b6c7
 
 // patches contained in this:
-// https://github.com/cosmos/rosetta/pull/224
-// https://github.com/axelarnetwork/rosetta/pull/2
-// https://github.com/axelarnetwork/rosetta/pull/3
-replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.13-0.20251212221652-2bcca22b1e63
+// https://github.com/axelarnetwork/rosetta/compare/release/v0.50.x...axelarnetwork:rosetta:9a91eb47e990d7402601b057a6ad5a3b9e590358
+replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.13-0.20251213000656-9a91eb47e990
