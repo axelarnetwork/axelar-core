@@ -645,11 +645,17 @@ var _ rewardtypes.Staker = &StakerMock{}
 //
 //		// make and configure a mocked rewardtypes.Staker
 //		mockedStaker := &StakerMock{
+//			BondedRatioFunc: func(ctx context.Context) (cosmossdk_io_math.LegacyDec, error) {
+//				panic("mock out the BondedRatio method")
+//			},
 //			IterateBondedValidatorsByPowerFunc: func(ctx context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error {
 //				panic("mock out the IterateBondedValidatorsByPower method")
 //			},
 //			PowerReductionFunc: func(ctx context.Context) cosmossdk_io_math.Int {
 //				panic("mock out the PowerReduction method")
+//			},
+//			StakingTokenSupplyFunc: func(ctx context.Context) (cosmossdk_io_math.Int, error) {
+//				panic("mock out the StakingTokenSupply method")
 //			},
 //			ValidatorFunc: func(ctx context.Context, addr cosmossdktypes.ValAddress) (stakingtypes.ValidatorI, error) {
 //				panic("mock out the Validator method")
@@ -661,17 +667,28 @@ var _ rewardtypes.Staker = &StakerMock{}
 //
 //	}
 type StakerMock struct {
+	// BondedRatioFunc mocks the BondedRatio method.
+	BondedRatioFunc func(ctx context.Context) (cosmossdk_io_math.LegacyDec, error)
+
 	// IterateBondedValidatorsByPowerFunc mocks the IterateBondedValidatorsByPower method.
 	IterateBondedValidatorsByPowerFunc func(ctx context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error
 
 	// PowerReductionFunc mocks the PowerReduction method.
 	PowerReductionFunc func(ctx context.Context) cosmossdk_io_math.Int
 
+	// StakingTokenSupplyFunc mocks the StakingTokenSupply method.
+	StakingTokenSupplyFunc func(ctx context.Context) (cosmossdk_io_math.Int, error)
+
 	// ValidatorFunc mocks the Validator method.
 	ValidatorFunc func(ctx context.Context, addr cosmossdktypes.ValAddress) (stakingtypes.ValidatorI, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// BondedRatio holds details about calls to the BondedRatio method.
+		BondedRatio []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 		// IterateBondedValidatorsByPower holds details about calls to the IterateBondedValidatorsByPower method.
 		IterateBondedValidatorsByPower []struct {
 			// Ctx is the ctx argument value.
@@ -684,6 +701,11 @@ type StakerMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
+		// StakingTokenSupply holds details about calls to the StakingTokenSupply method.
+		StakingTokenSupply []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 		// Validator holds details about calls to the Validator method.
 		Validator []struct {
 			// Ctx is the ctx argument value.
@@ -692,9 +714,43 @@ type StakerMock struct {
 			Addr cosmossdktypes.ValAddress
 		}
 	}
+	lockBondedRatio                    sync.RWMutex
 	lockIterateBondedValidatorsByPower sync.RWMutex
 	lockPowerReduction                 sync.RWMutex
+	lockStakingTokenSupply             sync.RWMutex
 	lockValidator                      sync.RWMutex
+}
+
+// BondedRatio calls BondedRatioFunc.
+func (mock *StakerMock) BondedRatio(ctx context.Context) (cosmossdk_io_math.LegacyDec, error) {
+	if mock.BondedRatioFunc == nil {
+		panic("StakerMock.BondedRatioFunc: method is nil but Staker.BondedRatio was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockBondedRatio.Lock()
+	mock.calls.BondedRatio = append(mock.calls.BondedRatio, callInfo)
+	mock.lockBondedRatio.Unlock()
+	return mock.BondedRatioFunc(ctx)
+}
+
+// BondedRatioCalls gets all the calls that were made to BondedRatio.
+// Check the length with:
+//
+//	len(mockedStaker.BondedRatioCalls())
+func (mock *StakerMock) BondedRatioCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockBondedRatio.RLock()
+	calls = mock.calls.BondedRatio
+	mock.lockBondedRatio.RUnlock()
+	return calls
 }
 
 // IterateBondedValidatorsByPower calls IterateBondedValidatorsByPowerFunc.
@@ -762,6 +818,38 @@ func (mock *StakerMock) PowerReductionCalls() []struct {
 	mock.lockPowerReduction.RLock()
 	calls = mock.calls.PowerReduction
 	mock.lockPowerReduction.RUnlock()
+	return calls
+}
+
+// StakingTokenSupply calls StakingTokenSupplyFunc.
+func (mock *StakerMock) StakingTokenSupply(ctx context.Context) (cosmossdk_io_math.Int, error) {
+	if mock.StakingTokenSupplyFunc == nil {
+		panic("StakerMock.StakingTokenSupplyFunc: method is nil but Staker.StakingTokenSupply was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockStakingTokenSupply.Lock()
+	mock.calls.StakingTokenSupply = append(mock.calls.StakingTokenSupply, callInfo)
+	mock.lockStakingTokenSupply.Unlock()
+	return mock.StakingTokenSupplyFunc(ctx)
+}
+
+// StakingTokenSupplyCalls gets all the calls that were made to StakingTokenSupply.
+// Check the length with:
+//
+//	len(mockedStaker.StakingTokenSupplyCalls())
+func (mock *StakerMock) StakingTokenSupplyCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockStakingTokenSupply.RLock()
+	calls = mock.calls.StakingTokenSupply
+	mock.lockStakingTokenSupply.RUnlock()
 	return calls
 }
 
@@ -1238,5 +1326,149 @@ func (mock *AccountKeeperMock) SetModuleAccountCalls() []struct {
 	mock.lockSetModuleAccount.RLock()
 	calls = mock.calls.SetModuleAccount
 	mock.lockSetModuleAccount.RUnlock()
+	return calls
+}
+
+// Ensure, that MultiSigMock does implement rewardtypes.MultiSig.
+// If this is not the case, regenerate this file with moq.
+var _ rewardtypes.MultiSig = &MultiSigMock{}
+
+// MultiSigMock is a mock implementation of rewardtypes.MultiSig.
+//
+//	func TestSomethingThatUsesMultiSig(t *testing.T) {
+//
+//		// make and configure a mocked rewardtypes.MultiSig
+//		mockedMultiSig := &MultiSigMock{
+//			HasOptedOutFunc: func(ctx cosmossdktypes.Context, participant cosmossdktypes.AccAddress) bool {
+//				panic("mock out the HasOptedOut method")
+//			},
+//		}
+//
+//		// use mockedMultiSig in code that requires rewardtypes.MultiSig
+//		// and then make assertions.
+//
+//	}
+type MultiSigMock struct {
+	// HasOptedOutFunc mocks the HasOptedOut method.
+	HasOptedOutFunc func(ctx cosmossdktypes.Context, participant cosmossdktypes.AccAddress) bool
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// HasOptedOut holds details about calls to the HasOptedOut method.
+		HasOptedOut []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Participant is the participant argument value.
+			Participant cosmossdktypes.AccAddress
+		}
+	}
+	lockHasOptedOut sync.RWMutex
+}
+
+// HasOptedOut calls HasOptedOutFunc.
+func (mock *MultiSigMock) HasOptedOut(ctx cosmossdktypes.Context, participant cosmossdktypes.AccAddress) bool {
+	if mock.HasOptedOutFunc == nil {
+		panic("MultiSigMock.HasOptedOutFunc: method is nil but MultiSig.HasOptedOut was just called")
+	}
+	callInfo := struct {
+		Ctx         cosmossdktypes.Context
+		Participant cosmossdktypes.AccAddress
+	}{
+		Ctx:         ctx,
+		Participant: participant,
+	}
+	mock.lockHasOptedOut.Lock()
+	mock.calls.HasOptedOut = append(mock.calls.HasOptedOut, callInfo)
+	mock.lockHasOptedOut.Unlock()
+	return mock.HasOptedOutFunc(ctx, participant)
+}
+
+// HasOptedOutCalls gets all the calls that were made to HasOptedOut.
+// Check the length with:
+//
+//	len(mockedMultiSig.HasOptedOutCalls())
+func (mock *MultiSigMock) HasOptedOutCalls() []struct {
+	Ctx         cosmossdktypes.Context
+	Participant cosmossdktypes.AccAddress
+} {
+	var calls []struct {
+		Ctx         cosmossdktypes.Context
+		Participant cosmossdktypes.AccAddress
+	}
+	mock.lockHasOptedOut.RLock()
+	calls = mock.calls.HasOptedOut
+	mock.lockHasOptedOut.RUnlock()
+	return calls
+}
+
+// Ensure, that SnapshotterMock does implement rewardtypes.Snapshotter.
+// If this is not the case, regenerate this file with moq.
+var _ rewardtypes.Snapshotter = &SnapshotterMock{}
+
+// SnapshotterMock is a mock implementation of rewardtypes.Snapshotter.
+//
+//	func TestSomethingThatUsesSnapshotter(t *testing.T) {
+//
+//		// make and configure a mocked rewardtypes.Snapshotter
+//		mockedSnapshotter := &SnapshotterMock{
+//			GetProxyFunc: func(ctx cosmossdktypes.Context, operator cosmossdktypes.ValAddress) (cosmossdktypes.AccAddress, bool) {
+//				panic("mock out the GetProxy method")
+//			},
+//		}
+//
+//		// use mockedSnapshotter in code that requires rewardtypes.Snapshotter
+//		// and then make assertions.
+//
+//	}
+type SnapshotterMock struct {
+	// GetProxyFunc mocks the GetProxy method.
+	GetProxyFunc func(ctx cosmossdktypes.Context, operator cosmossdktypes.ValAddress) (cosmossdktypes.AccAddress, bool)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetProxy holds details about calls to the GetProxy method.
+		GetProxy []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// Operator is the operator argument value.
+			Operator cosmossdktypes.ValAddress
+		}
+	}
+	lockGetProxy sync.RWMutex
+}
+
+// GetProxy calls GetProxyFunc.
+func (mock *SnapshotterMock) GetProxy(ctx cosmossdktypes.Context, operator cosmossdktypes.ValAddress) (cosmossdktypes.AccAddress, bool) {
+	if mock.GetProxyFunc == nil {
+		panic("SnapshotterMock.GetProxyFunc: method is nil but Snapshotter.GetProxy was just called")
+	}
+	callInfo := struct {
+		Ctx      cosmossdktypes.Context
+		Operator cosmossdktypes.ValAddress
+	}{
+		Ctx:      ctx,
+		Operator: operator,
+	}
+	mock.lockGetProxy.Lock()
+	mock.calls.GetProxy = append(mock.calls.GetProxy, callInfo)
+	mock.lockGetProxy.Unlock()
+	return mock.GetProxyFunc(ctx, operator)
+}
+
+// GetProxyCalls gets all the calls that were made to GetProxy.
+// Check the length with:
+//
+//	len(mockedSnapshotter.GetProxyCalls())
+func (mock *SnapshotterMock) GetProxyCalls() []struct {
+	Ctx      cosmossdktypes.Context
+	Operator cosmossdktypes.ValAddress
+} {
+	var calls []struct {
+		Ctx      cosmossdktypes.Context
+		Operator cosmossdktypes.ValAddress
+	}
+	mock.lockGetProxy.RLock()
+	calls = mock.calls.GetProxy
+	mock.lockGetProxy.RUnlock()
 	return calls
 }
