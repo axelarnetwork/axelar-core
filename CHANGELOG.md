@@ -2,6 +2,38 @@
 
 ## [Unreleased]
 
+## [v1.3.6](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.3.6)
+
+### Improvements
+
+* [#2317](https://github.com/axelarnetwork/axelar-core/pull/2317) Update rosetta dependency with sub-account balance queries and memo support in transaction metadata
+
+## [v1.3.5](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.3.5)
+
+### Bug Fixes
+
+* Fix validator error check in external chain voting inflation rewards - validators were incorrectly skipped due to inverted error check
+
+### Improvements
+
+* Update rosetta dependency to axelar-core compatible branch
+
+## [v1.3.4](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.3.4)
+
+### Bug Fixes
+
+* [#2312](https://github.com/axelarnetwork/axelar-core/pull/2312) Fix rosetta address encoding issue
+
+### Improvements
+
+* [#2313](https://github.com/axelarnetwork/axelar-core/pull/2313) Deprecate vald heartbeat handler (disabled by default via `enable_heartbeat` config)
+
+## [v1.3.3](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.3.3)
+
+### Bug Fixes
+
+* [#2310](https://github.com/axelarnetwork/axelar-core/pull/2310) Fix rosetta encoding config to include AccountI interface and apply rosetta patches
+
 ## [v1.3.2](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.3.2)
 
 ### Bug Fixes
