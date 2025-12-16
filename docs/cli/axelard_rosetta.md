@@ -10,6 +10,7 @@ axelard rosetta [flags]
 
 ```
       --addr string                the address rosetta will bind to (default ":8080")
+      --bech32-prefix string       address bech32 prefix (default "cosmos")
       --blockchain string          the blockchain type (default "app")
       --denom-to-suggest string    default denom for fee suggestion (default "uatom")
       --enable-fee-suggestion      enable default fee suggestion
@@ -22,6 +23,7 @@ axelard rosetta [flags]
       --plugin string              plugin folder name
       --prices-to-suggest string   default prices for fee suggestion (default "1uatom,1stake")
       --retries int                the number of retries that will be done before quitting (default 5)
+      --symbol-decimals string     symbol decimals mapping (format: base:symbol:decimal, comma-separated, e.g. "uaxl:AXL:6")
       --tendermint string          the CometBFT rpc endpoint, without tcp:// (default "localhost:26657")
 ```
 

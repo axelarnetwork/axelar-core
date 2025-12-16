@@ -230,12 +230,15 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		return false
 	})
 
-	heartbeat := eventBus.Subscribe(func(e tmEvents.ABCIEventWithHeight) bool {
-		event := tmEvents.Map(e)
-		return event.Type == tssTypes.EventTypeHeartBeat &&
-			event.Attributes[sdk.AttributeKeyModule] == tssTypes.ModuleName &&
-			event.Attributes[sdk.AttributeKeyAction] == tssTypes.AttributeValueSend
-	})
+	var heartbeat <-chan tmEvents.ABCIEventWithHeight
+	if axelarCfg.EnableHeartbeat {
+		heartbeat = eventBus.Subscribe(func(e tmEvents.ABCIEventWithHeight) bool {
+			event := tmEvents.Map(e)
+			return event.Type == tssTypes.EventTypeHeartBeat &&
+				event.Attributes[sdk.AttributeKeyModule] == tssTypes.ModuleName &&
+				event.Attributes[sdk.AttributeKeyAction] == tssTypes.AttributeValueSend
+		})
+	}
 
 	evmNewChain := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ChainAdded]())
 	evmDepConf := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ConfirmDepositStarted]())
@@ -296,7 +299,6 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		createJob(blockHeaderSub, processBlockHeader, cancelEventCtx),
 		fetchEvents,
 		failOnTimeout,
-		createJob(heartbeat, tssMgr.ProcessHeartBeatEvent, cancelEventCtx),
 		createJobTyped(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx),
 		createJobTyped(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx),
 		createJobTyped(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx),
@@ -305,6 +307,10 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		createJobTyped(evmGatewayTxsConf, evmMgr.ProcessGatewayTxsConfirmation, cancelEventCtx),
 		createJobTyped(multisigKeygen, multisigMgr.ProcessKeygenStarted, cancelEventCtx),
 		createJobTyped(multisigSigning, multisigMgr.ProcessSigningStarted, cancelEventCtx),
+	}
+
+	if axelarCfg.EnableHeartbeat {
+		js = append(js, createJob(heartbeat, tssMgr.ProcessHeartBeatEvent, cancelEventCtx))
 	}
 
 	slices.ForEach(js, func(job jobs.Job) {
