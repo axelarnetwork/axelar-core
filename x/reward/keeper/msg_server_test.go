@@ -94,7 +94,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 			}),
 			When("failed to execute inner message", func() {
 				sender := rand2.AccAddr()
-				msg = types.NewRefundMsgRequest(sender, votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.Str(3)))))
+				msg = types.NewRefundMsgRequest(sender, votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand2.NormalizedStr(3)))))
 
 				registerTestService(msgServiceRouter, failedHandler)
 
@@ -105,7 +105,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 			When("no pending refund", func() {
 				refundKeeper.GetPendingRefundFunc = func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) { return types.Refund{}, false }
 				sender := rand2.AccAddr()
-				msg = types.NewRefundMsgRequest(sender, votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.Str(3)))))
+				msg = types.NewRefundMsgRequest(sender, votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand2.NormalizedStr(3)))))
 
 				registerTestService(msgServiceRouter, succeededHandler)
 
@@ -118,7 +118,7 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 			When("executed inner message successfully and there is a pending refund", func() {
 				refundKeeper.GetPendingRefundFunc = func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) { return types.Refund{}, false }
 				sender := rand2.AccAddr()
-				msg = types.NewRefundMsgRequest(sender, votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.Str(3)))))
+				msg = types.NewRefundMsgRequest(sender, votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand2.NormalizedStr(3)))))
 
 				refundKeeper.GetPendingRefundFunc = func(sdk.Context, types.RefundMsgRequest) (types.Refund, bool) {
 					return types.Refund{Payer: rand2.AccAddr(), Fees: sdk.NewCoins(sdk.Coin{Denom: "uaxl", Amount: math.NewInt(1000)})}, true
