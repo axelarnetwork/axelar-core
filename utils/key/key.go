@@ -2,10 +2,10 @@ package key
 
 import (
 	"bytes"
+	"crypto/sha3"
 	"fmt"
 	"strings"
 
-	"golang.org/x/crypto/sha3"
 	"golang.org/x/exp/constraints"
 
 	"github.com/axelarnetwork/utils/convert"
