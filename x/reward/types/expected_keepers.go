@@ -12,7 +12,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 )
 
-//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Rewarder Refunder Nexus Distributor Staker Slasher Banker AccountKeeper
+//go:generate moq -pkg mock -out ./mock/expected_keepers.go . Rewarder Refunder Nexus Distributor Staker Slasher Banker AccountKeeper MultiSig Snapshotter
 
 // Rewarder provides reward functionality
 type Rewarder interface {
@@ -47,6 +47,8 @@ type Staker interface {
 	Validator(ctx context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error)
 	PowerReduction(ctx context.Context) math.Int
 	IterateBondedValidatorsByPower(ctx context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error
+	StakingTokenSupply(ctx context.Context) (math.Int, error)
+	BondedRatio(ctx context.Context) (math.LegacyDec, error)
 }
 
 // Slasher provides necessary functions to the validator information

@@ -52,7 +52,6 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/crypto v0.44.0
 	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6
 	golang.org/x/mod v0.30.0
 	golang.org/x/sync v0.18.0
@@ -238,6 +237,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.32.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.17.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
@@ -264,5 +264,8 @@ replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.2021
 // temporary replacements
 replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.50.14-0.20251027135325-71cefd84b6c7
 
-// remove again when https://github.com/cosmos/rosetta/pull/224 is merged and released
-replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.12-0.20251202144137-de66e995eb8e
+// patches contained in this:
+// https://github.com/axelarnetwork/rosetta/compare/release/v0.50.x...axelarnetwork:rosetta:6149820beca95a96d6b397f1056fe6be8cb9c08b
+replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.13-0.20251215230802-6149820beca9
+
+replace github.com/cometbft/cometbft => github.com/cometbft/cometbft v0.38.19-0.20251212010926-c96f26503c04
