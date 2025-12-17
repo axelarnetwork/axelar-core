@@ -2,12 +2,14 @@ package codec_test
 
 import (
 	"encoding/base64"
+	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/axelarnetwork/axelar-core/app"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
 // HistoricalTransaction represents a test case for decoding historical transactions
@@ -81,4 +83,74 @@ func TestBulkHistoricalTransactions(t *testing.T) {
 	// This test can be populated with bulk data from block scanning
 	// Leave empty for now - can be populated as more test cases are discovered
 	t.Skip("Populate this test with bulk transaction data from block scanning")
+}
+
+// TestHistoricalTransactionsGetSigners tests that GetMsgV1Signers works correctly
+// for both historical transactions (using sender_deprecated) and new transactions (using sender).
+// This is a regression test for rosetta compatibility.
+func TestHistoricalTransactionsGetSigners(t *testing.T) {
+	testCases := []struct {
+		Name           string
+		Block          int64
+		TxBase64       string
+		ExpectedSigner string // hex-encoded expected signer address
+	}{
+		// Old format: sender in sender_deprecated field (bytes)
+		{
+			Name:           "Block2777636_ConfirmTransferKeyRequest_SenderDeprecated",
+			Block:          2777636,
+			TxBase64:       "CpcBCpQBCi0vYXhlbGFyLmV2bS52MWJldGExLkNvbmZpcm1UcmFuc2ZlcktleVJlcXVlc3QSYwoUXMoe7FB79JBAKaJQZcqx5BzxkicSCWF2YWxhbmNoZRogpPGKKnEbUFaOjhZG/Izqcp/9D3reU3/GnvbLuPPGKLsgASocbWFzdGVyLWV2bS1hdmFsYW5jaGUtMjc3NzYyMhKUAQpRCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohApdvAGNAZvGRk7YisdOloATew6TjUgC4FbxnCUkjr2uREgQKAggBGMEQEj8KCgoEdWF4bBICMzcQk4ktIi1heGVsYXIxcHUyc3djMG4wdHJmdGxkaHo1N3B5cWt3NmQ4N2hhaG43ZzY5N2MaQGjhbdepSVfV87pD4+PJUICEeAKWST9HM3scVS3/6tpuTW+VB6uhnAd+5PM6NTEyxtdQvDgCxg4HM//mywsxS+k=",
+			ExpectedSigner: "5cca1eec507bf4904029a25065cab1e41cf19227",
+		},
+		{
+			Name:           "Block451_HeartBeatRequest_SenderDeprecated",
+			Block:          451,
+			TxBase64:       "CnUKcwogL3Jld2FyZC52MWJldGExLlJlZnVuZE1zZ1JlcXVlc3QSTwoUKnkaFofQifOcAd8S4mOdnUSccPsSNwodL3Rzcy52MWJldGExLkhlYXJ0QmVhdFJlcXVlc3QSFgoUKnkaFofQifOcAd8S4mOdnUSccPsSZwpQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohAq/NQXF1uAwAk81syNM4LYWL16kn/UsV7MOADy6lVVv+EgQKAggBGAkSEwoNCgR1YXhsEgUxNjQ3ORDkjhQaQNVlqdpVNALeVHpQlM1juQvtv/XDJCEZ89ZzLWI5C1dONm+NFCqBQHExP6dldeOdh8/UZrVACqSOy9moT5+7LzU=",
+			ExpectedSigner: "2a791a1687d089f39c01df12e2639d9d449c70fb",
+		},
+	}
+
+	encodingConfig := app.MakeEncodingConfig()
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			txBytes, err := base64.StdEncoding.DecodeString(tc.TxBase64)
+			require.NoError(t, err)
+
+			tx, err := encodingConfig.TxConfig.TxDecoder()(txBytes)
+			require.NoError(t, err)
+
+			msgs := tx.GetMsgs()
+			require.NotEmpty(t, msgs)
+
+			// Test that GetMsgV1Signers works with sender_deprecated
+			signers, _, err := encodingConfig.Codec.GetMsgV1Signers(msgs[0])
+			require.NoError(t, err, "GetMsgV1Signers should work with sender_deprecated field")
+			require.Len(t, signers, 1, "should have exactly one signer")
+			require.Equal(t, tc.ExpectedSigner, fmt.Sprintf("%x", signers[0]), "signer address mismatch")
+
+			t.Logf("✓ GetMsgV1Signers returned correct signer for block %d", tc.Block)
+		})
+	}
+}
+
+// TestNewSenderFieldGetSigners tests that GetMsgV1Signers works correctly
+// for messages using the new sender field (string format).
+func TestNewSenderFieldGetSigners(t *testing.T) {
+	encodingConfig := app.MakeEncodingConfig()
+
+	// Create a message with the new sender field set
+	senderAddr := sdk.AccAddress("test_sender_address1")
+	msg := &evmtypes.ConfirmGatewayTxsRequest{
+		Sender: senderAddr.String(),
+		Chain:  "ethereum",
+		TxIDs:  []evmtypes.Hash{evmtypes.Hash(make([]byte, 32))},
+	}
+
+	signers, _, err := encodingConfig.Codec.GetMsgV1Signers(msg)
+	require.NoError(t, err, "GetMsgV1Signers should work with new sender field")
+	require.Len(t, signers, 1, "should have exactly one signer")
+	require.Equal(t, senderAddr.Bytes(), signers[0], "signer address should match")
+
+	t.Logf("✓ GetMsgV1Signers works with new sender field format")
 }
