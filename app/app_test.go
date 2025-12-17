@@ -10,7 +10,6 @@ import (
 	"cosmossdk.io/log"
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	abci "github.com/cometbft/cometbft/proto/tendermint/types"
 	abcitypes "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
@@ -139,7 +138,7 @@ func prepareAnteHandler(cfg params.EncodingConfig, t log.TestingT) sdk.AnteHandl
 }
 
 func prepareCtx(t log.TestingT) sdk.Context {
-	return sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t)).
+	return sdk.NewContext(fake.NewMultiStore(), abcitypes.Header{}, false, log.NewTestLogger(t)).
 		WithConsensusParams(abcitypes.ConsensusParams{
 			Block: &abcitypes.BlockParams{MaxGas: 1000000000},
 		})
