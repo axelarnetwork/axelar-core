@@ -3,12 +3,16 @@ package codec_test
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/axelarnetwork/axelar-core/app"
+	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 )
 
@@ -83,6 +87,68 @@ func TestBulkHistoricalTransactions(t *testing.T) {
 	// This test can be populated with bulk data from block scanning
 	// Leave empty for now - can be populated as more test cases are discovered
 	t.Skip("Populate this test with bulk transaction data from block scanning")
+}
+
+// TestLargeBatchTransaction tests decoding a real BatchRequest transaction from
+// block 14646305 that contains 125 nested votes. This transaction requires
+// MaxUnpackAnySubCalls to be set high enough (at least 500) to decode successfully.
+// The batch structure is: BatchRequest -> RefundMsgRequest -> VoteRequest -> VoteEvents
+// Each level requires an UnpackAny call, so 125 votes × 3-4 levels = 375-500 calls.
+//
+// This is a regression test for:
+// 1. MaxUnpackAnySubCalls limit being high enough (tests against "call limit exceeded" error)
+// 2. GetMsgV1Signers working with sender_deprecated field (tests custom signer handlers)
+func TestLargeBatchTransaction(t *testing.T) {
+	// Get the path to the testdata file
+	_, currentFile, _, ok := runtime.Caller(0)
+	require.True(t, ok, "failed to get current file path")
+	testdataPath := filepath.Join(filepath.Dir(currentFile), "testdata", "batch_tx_block_14646305.txt")
+
+	// Read the base64-encoded transaction
+	txBase64Bytes, err := os.ReadFile(testdataPath)
+	require.NoError(t, err, "failed to read testdata file")
+
+	txBytes, err := base64.StdEncoding.DecodeString(string(txBase64Bytes))
+	require.NoError(t, err, "failed to decode base64")
+
+	// Create encoding config - this sets MaxUnpackAnySubCalls
+	encodingConfig := app.MakeEncodingConfig()
+
+	// Decode the transaction - this will fail with "call limit exceeded" if
+	// MaxUnpackAnySubCalls is too low (default 100)
+	tx, err := encodingConfig.TxConfig.TxDecoder()(txBytes)
+	require.NoError(t, err, "failed to decode batch transaction - MaxUnpackAnySubCalls may be too low")
+
+	msgs := tx.GetMsgs()
+	require.Len(t, msgs, 1, "should have exactly one message (BatchRequest)")
+
+	// Verify it's a BatchRequest
+	batchRequest, ok := msgs[0].(*auxiliarytypes.BatchRequest)
+	require.True(t, ok, "expected BatchRequest, got %T", msgs[0])
+
+	// The batch should have ~125 messages (RefundMsgRequest wrapping VoteRequest)
+	require.GreaterOrEqual(t, len(batchRequest.Messages), 100, "batch should have at least 100 messages")
+	t.Logf("BatchRequest contains %d messages", len(batchRequest.Messages))
+
+	// Test that GetMsgV1Signers works for the BatchRequest itself
+	signers, _, err := encodingConfig.Codec.GetMsgV1Signers(batchRequest)
+	require.NoError(t, err, "GetMsgV1Signers should work for BatchRequest with sender_deprecated")
+	require.Len(t, signers, 1, "BatchRequest should have exactly one signer")
+	t.Logf("BatchRequest signer: %x", signers[0])
+
+	// Unpack and test each inner message
+	for i := range batchRequest.Messages {
+		var innerMsg sdk.Msg
+		err := encodingConfig.InterfaceRegistry.UnpackAny(&batchRequest.Messages[i], &innerMsg)
+		require.NoError(t, err, "failed to unpack message %d", i)
+
+		// Test that GetMsgV1Signers works for the inner message
+		innerSigners, _, err := encodingConfig.Codec.GetMsgV1Signers(innerMsg)
+		require.NoError(t, err, "GetMsgV1Signers should work for inner message %d (%T)", i, innerMsg)
+		require.NotEmpty(t, innerSigners, "inner message %d should have at least one signer", i)
+	}
+
+	t.Logf("✓ Successfully decoded and validated BatchRequest with %d nested messages from block 14646305", len(batchRequest.Messages))
 }
 
 // TestHistoricalTransactionsGetSigners tests that GetMsgV1Signers works correctly

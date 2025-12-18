@@ -22,6 +22,19 @@ import (
 func MakeEncodingConfig() EncodingConfig {
 	amino := codec.NewLegacyAmino()
 
+	// MaxUnpackAnySubCalls limits nested Any message unpacking to prevent DoS attacks
+	// (see cosmos-sdk security advisories ASA-2024-0012 and ASA-2024-0013).
+	//
+	// The default limit of 100 is too low for Axelar's BatchRequest transactions,
+	// which can contain up to BatchSizeLimit (250) messages, each with 3-4 levels
+	// of nesting (e.g., RefundMsgRequest -> VoteRequest -> VoteEvents).
+	//
+	// IMPORTANT: This value must be >= BatchSizeLimit * max_nesting_depth.
+	// If vald's BatchSizeLimit (in vald/config/config.go) is changed, this value
+	// must be updated accordingly to prevent transaction decoding failures.
+	// See also: vald/config/config.go BatchSizeLimit
+	types.MaxUnpackAnySubCalls = 1000
+
 	addrCodec := address.Bech32Codec{
 		Bech32Prefix: sdk.GetConfig().GetBech32AccountAddrPrefix(),
 	}
