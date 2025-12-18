@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -33,22 +32,9 @@ import (
 )
 
 // TestEndBlocker_ExternalChainVotingInflation tests the reward distribution for external chain maintainers.
-//
-// Bug context (fixed Dec 2025): The original code in handleExternalChainVotingInflation had an inverted
-// error check: `if err == nil { continue }` instead of `if err != nil { continue }`. This caused:
-// 1. Valid validators (err == nil) to be skipped, so no rewards were ever distributed
-// 2. Invalid validators (err != nil) to proceed, causing nil pointer panics on v.IsBonded()
-//
-// The fix uses time-based activation (ValidatorRewardFixActivationTime) to maintain network
-// consistency during the upgrade period. Before activation, the old (buggy) behavior is preserved.
 func TestEndBlocker_ExternalChainVotingInflation(t *testing.T) {
-	// Time after fix activation (Dec 17, 2025 2pm UTC) - correct behavior enabled
-	afterFixTime := time.Date(2025, 12, 18, 12, 0, 0, 0, time.UTC)
-	// Time before fix activation - old buggy behavior preserved for network consistency
-	beforeFixTime := time.Date(2025, 12, 15, 12, 0, 0, 0, time.UTC)
-
-	t.Run("after fix activation - rewards chain maintainers when validator lookup succeeds", func(t *testing.T) {
-		s := newEndBlockerTestSetup(t, afterFixTime)
+	t.Run("rewards chain maintainers when validator lookup succeeds", func(t *testing.T) {
+		s := newEndBlockerTestSetup(t)
 
 		consKey := ed25519.GenPrivKey().PubKey()
 		validator := funcs.Must(stakingtypes.NewValidator(s.maintainer.String(), consKey, stakingtypes.Description{}))
@@ -65,8 +51,8 @@ func TestEndBlocker_ExternalChainVotingInflation(t *testing.T) {
 		assert.NotEmpty(t, s.rewardPool.AddRewardCalls(), "bonded chain maintainers should receive external chain voting inflation rewards")
 	})
 
-	t.Run("after fix activation - skips maintainer when validator lookup fails", func(t *testing.T) {
-		s := newEndBlockerTestSetup(t, afterFixTime)
+	t.Run("skips maintainer when validator lookup fails", func(t *testing.T) {
+		s := newEndBlockerTestSetup(t)
 
 		s.staker.ValidatorFunc = func(ctx context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error) {
 			return nil, errors.New("validator not found")
@@ -76,27 +62,6 @@ func TestEndBlocker_ExternalChainVotingInflation(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Empty(t, s.rewardPool.AddRewardCalls(), "maintainers with failed validator lookups should be skipped without panic")
-	})
-
-	t.Run("before fix activation - preserves old behavior where valid validators are incorrectly skipped", func(t *testing.T) {
-		// This test documents the pre-fix buggy behavior that is preserved before activation time
-		// for network consistency. The bug was: `if err == nil { continue }` which skipped
-		// all valid validators instead of invalid ones.
-		s := newEndBlockerTestSetup(t, beforeFixTime)
-
-		consKey := ed25519.GenPrivKey().PubKey()
-		validator := funcs.Must(stakingtypes.NewValidator(s.maintainer.String(), consKey, stakingtypes.Description{}))
-		validator.Status = stakingtypes.Bonded
-		validator.Tokens = math.NewInt(1000000000000)
-
-		s.staker.ValidatorFunc = func(ctx context.Context, addr sdk.ValAddress) (stakingtypes.ValidatorI, error) {
-			return validator, nil
-		}
-
-		err := s.runEndBlocker()
-
-		assert.NoError(t, err)
-		assert.Empty(t, s.rewardPool.AddRewardCalls(), "before fix activation: valid validators are incorrectly skipped due to inverted error check (err == nil instead of err != nil)")
 	})
 }
 
@@ -113,10 +78,10 @@ type endBlockerTestSetup struct {
 	maintainer  sdk.ValAddress
 }
 
-func newEndBlockerTestSetup(t *testing.T, blockTime time.Time) *endBlockerTestSetup {
+func newEndBlockerTestSetup(t *testing.T) *endBlockerTestSetup {
 	encCfg := app.MakeEncodingConfig()
 	store := fake.NewMultiStore()
-	ctx := sdk.NewContext(store, tmproto.Header{Height: 100, Time: blockTime, ChainID: "axelar-dojo-1"}, false, log.NewTestLogger(t))
+	ctx := sdk.NewContext(store, tmproto.Header{Height: 100, ChainID: "axelar-dojo-1"}, false, log.NewTestLogger(t))
 
 	maintainer := rand2.ValAddr()
 	chain := nexus.Chain{Name: nexus.ChainName("ethereum")}
