@@ -100,10 +100,7 @@ type Voter interface {
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
-	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
-	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 	EnqueueTransfer(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error)
-	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) (nexus.TransferID, error)
 	GetTransfersForChainPaginated(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, pageRequest *query.PageRequest) ([]nexus.CrossChainTransfer, *query.PageResponse, error)
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
@@ -124,7 +121,6 @@ type Nexus interface {
 	SetMessageFailed(ctx sdk.Context, id string) error
 	SetMessageExecuted(ctx sdk.Context, id string) error
 	EnqueueRouteMessage(ctx sdk.Context, id string) error
-	IsLinkDepositEnabled(ctx sdk.Context) bool
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,

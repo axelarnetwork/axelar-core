@@ -157,14 +157,6 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 		err = handleMessage(ctx, n, b, ibcK, sourceAddress, msg, token)
 	case nexus.TypeGeneralMessageWithToken:
 		err = handleMessageWithToken(ctx, n, b, ibcK, sourceAddress, msg, token)
-	case nexus.TypeSendToken:
-		// toggle to deactivate deprecated transfer mechanism
-		if !n.IsLinkDepositEnabled(ctx) {
-			return channeltypes.NewErrorAcknowledgement(fmt.Errorf("direct token transfer is disabled, use the general-message-with-token format instead"))
-		}
-		// Send token is already rate limited in nexus.EnqueueTransfer
-		rateLimitPacket = false
-		err = handleTokenSent(ctx, n, sourceAddress, msg, token)
 	default:
 		err = errorsmod.Wrapf(types.ErrGeneralMessage, "unrecognized Message type")
 	}
@@ -228,8 +220,7 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 	switch msg.Type {
 	case nexus.TypeGeneralMessage:
 		return nil
-	case nexus.TypeGeneralMessageWithToken, nexus.TypeSendToken:
-
+	case nexus.TypeGeneralMessageWithToken:
 		// if destination chain is not found but has tokens, it should not be allowed to be sent to amplifier
 		if !destChainFound {
 			return fmt.Errorf("unrecognized destination chain %s", destChainName)
@@ -328,31 +319,6 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 	return n.SetNewMessage(ctx, m)
 }
 
-func handleTokenSent(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChainAddress, msg Message, token nexus.LockableAsset) error {
-	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
-	crossChainAddr := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
-
-	if err := token.LockFrom(ctx, types.AxelarIBCAccount); err != nil {
-		return err
-	}
-
-	transferID, err := n.EnqueueTransfer(ctx, sourceAddress.Chain, crossChainAddr, token.GetAsset())
-	if err != nil {
-		return err
-	}
-
-	events.Emit(ctx, &types.TokenSent{
-		TransferID:         transferID,
-		Sender:             sourceAddress.Address,
-		SourceChain:        sourceAddress.Chain.Name,
-		DestinationAddress: crossChainAddr.Address,
-		DestinationChain:   crossChainAddr.Chain.Name,
-		Asset:              token.GetAsset(),
-	})
-
-	return nil
-
-}
 
 // extractTokenFromPacketData get normalized token from ICS20 packet
 // panic if unable to unmarshal packet data

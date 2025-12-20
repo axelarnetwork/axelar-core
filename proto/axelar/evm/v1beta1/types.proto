@@ -42,10 +42,10 @@ message Event {
   Status status = 4;
 
   oneof event {
-    EventTokenSent token_sent = 5;
+    EventTokenSent token_sent = 5 [ deprecated = true ];
     EventContractCall contract_call = 6;
     EventContractCallWithToken contract_call_with_token = 7;
-    EventTransfer transfer = 8;
+    EventTransfer transfer = 8 [ deprecated = true ];
     EventTokenDeployed token_deployed = 9;
     EventMultisigOwnershipTransferred multisig_ownership_transferred = 10
         [ deprecated = true ];
@@ -57,6 +57,8 @@ message Event {
 }
 
 message EventTokenSent {
+  option deprecated = true;
+
   bytes sender = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   string destination_chain = 2
@@ -98,6 +100,8 @@ message EventContractCallWithToken {
 }
 
 message EventTransfer {
+  option deprecated = true;
+
   bytes to = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
   bytes amount = 2 [

@@ -12,7 +12,6 @@ import (
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/ethereum/go-ethereum/common"
 	"golang.org/x/exp/maps"
 
@@ -97,44 +96,16 @@ func excludeJailedOrTombstoned(ctx sdk.Context, slashing types.SlashingKeeper, s
 
 // Deprecated: use ConfirmGatewayTxs instead
 func (s msgServer) ConfirmGatewayTx(c context.Context, req *types.ConfirmGatewayTxRequest) (*types.ConfirmGatewayTxResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
+	request := types.ConfirmGatewayTxsRequest{
+		Chain:  req.Chain,
+		TxIDs:  []types.Hash{req.TxID},
+		Sender: req.Sender,
 	}
+	_, err := s.ConfirmGatewayTxs(c, &request)
 
-	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
-		return nil, err
-	}
-
-	keeper, err := s.ForChain(ctx, chain.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	gatewayAddress, ok := keeper.GetGatewayAddress(ctx)
-	if !ok {
-		return nil, fmt.Errorf("axelar gateway address not set")
-	}
-
-	pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
-	if err != nil {
-		return nil, err
-	}
-
-	height := keeper.GetRequiredConfirmationHeight(ctx)
-
-	events.Emit(ctx, &types.ConfirmGatewayTxStarted{
-		TxID:               req.TxID,
-		Chain:              chain.Name,
-		GatewayAddress:     gatewayAddress,
-		ConfirmationHeight: height,
-		PollParticipants:   pollParticipants,
-	})
-
-	return &types.ConfirmGatewayTxResponse{}, nil
+	return &types.ConfirmGatewayTxResponse{}, err
 }
+
 func (s msgServer) ConfirmGatewayTxs(c context.Context, req *types.ConfirmGatewayTxsRequest) (*types.ConfirmGatewayTxsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -216,92 +187,6 @@ func (s msgServer) SetGateway(c context.Context, req *types.SetGatewayRequest) (
 	return &types.SetGatewayResponse{}, nil
 }
 
-func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	if !s.nexus.IsLinkDepositEnabled(ctx) {
-		return nil, fmt.Errorf("link-deposit protocol is disabled")
-	}
-
-	senderChain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
-	}
-
-	if err := validateChainActivated(ctx, s.nexus, senderChain); err != nil {
-		return nil, err
-	}
-
-	keeper, err := s.ForChain(ctx, senderChain.Name)
-	if err != nil {
-		return nil, err
-	}
-	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
-	if !ok {
-		return nil, fmt.Errorf("axelar gateway address not set")
-	}
-
-	recipientChain, ok := s.nexus.GetChain(ctx, req.RecipientChain)
-	if !ok {
-		return nil, fmt.Errorf("unknown recipient chain")
-	}
-
-	token := keeper.GetERC20TokenByAsset(ctx, req.Asset)
-	found := s.nexus.IsAssetRegistered(ctx, recipientChain, req.Asset)
-	if !found || !token.Is(types.Confirmed) {
-		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
-	}
-
-	salt := keeper.GenerateSalt(ctx, req.RecipientAddr)
-	burnerAddress, err := keeper.GetBurnerAddress(ctx, token, salt, gatewayAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	symbol := token.GetDetails().Symbol
-	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-
-	err = s.nexus.LinkAddresses(ctx,
-		nexus.CrossChainAddress{Chain: senderChain, Address: burnerAddress.Hex()},
-		recipient)
-	if err != nil {
-		return nil, fmt.Errorf("could not link addresses: %s", err.Error())
-	}
-
-	burnerInfo := types.BurnerInfo{
-		BurnerAddress:    burnerAddress,
-		TokenAddress:     token.GetAddress(),
-		DestinationChain: req.RecipientChain,
-		Symbol:           symbol,
-		Asset:            req.Asset,
-		Salt:             salt,
-	}
-	keeper.SetBurnerInfo(ctx, burnerInfo)
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			types.EventTypeLink,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeySourceChain, senderChain.Name.String()),
-			sdk.NewAttribute(types.AttributeKeyDepositAddress, burnerAddress.Hex()),
-			sdk.NewAttribute(types.AttributeKeyDestinationAddress, req.RecipientAddr),
-			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name.String()),
-			sdk.NewAttribute(types.AttributeKeyTokenAddress, token.GetAddress().Hex()),
-			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset),
-		),
-	)
-
-	s.Logger(ctx).Debug(fmt.Sprintf("successfully linked deposit %s on chain %s to recipient %s on chain %s for asset %s", burnerAddress.Hex(), req.Chain, req.RecipientAddr, req.RecipientChain, req.Asset),
-		types.AttributeKeySourceChain, senderChain.Name,
-		types.AttributeKeyDepositAddress, burnerAddress.Hex(),
-		types.AttributeKeyDestinationChain, recipientChain.Name,
-		types.AttributeKeyDestinationAddress, req.RecipientAddr,
-		types.AttributeKeyAsset, req.Asset,
-	)
-
-	return &types.LinkResponse{DepositAddr: burnerAddress.Hex()}, nil
-}
-
 // ConfirmToken handles token deployment confirmation
 func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenRequest) (*types.ConfirmTokenResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
@@ -345,70 +230,6 @@ func (s msgServer) ConfirmToken(c context.Context, req *types.ConfirmTokenReques
 	})
 
 	return &types.ConfirmTokenResponse{}, nil
-}
-
-// ConfirmDeposit handles deposit confirmations
-func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRequest) (*types.ConfirmDepositResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	if !s.nexus.IsLinkDepositEnabled(ctx) {
-		return nil, fmt.Errorf("link-deposit protocol is disabled")
-	}
-
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
-	}
-
-	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
-		return nil, err
-	}
-
-	keeper, err := s.ForChain(ctx, chain.Name)
-	if err != nil {
-		return nil, err
-	}
-	gatewayAddr, ok := keeper.GetGatewayAddress(ctx)
-	if !ok {
-		return nil, fmt.Errorf("gateway address not set for chain %s", chain.Name)
-	}
-
-	burnerInfo := keeper.GetBurnerInfo(ctx, req.BurnerAddress)
-	if burnerInfo == nil {
-		return nil, fmt.Errorf("no burner info found for address %s", req.BurnerAddress.Hex())
-	}
-
-	token := keeper.GetERC20TokenByAsset(ctx, burnerInfo.Asset)
-	if !token.Is(types.Confirmed) {
-		return nil, fmt.Errorf("token %s is not confirmed on %s", token.GetAsset(), chain.Name)
-	}
-
-	burnerAddress, err := keeper.GetBurnerAddress(ctx, token, burnerInfo.Salt, gatewayAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	if burnerAddress != req.BurnerAddress {
-		return nil, fmt.Errorf("provided burner address %s doesn't match expected address %s", req.BurnerAddress.Hex(), burnerAddress.Hex())
-	}
-
-	pollParticipants, err := s.initializePoll(ctx, chain, req.TxID)
-	if err != nil {
-		return nil, err
-	}
-
-	height := keeper.GetRequiredConfirmationHeight(ctx)
-	events.Emit(ctx, &types.ConfirmDepositStarted{
-		TxID:               req.TxID,
-		Chain:              chain.Name,
-		DepositAddress:     req.BurnerAddress,
-		TokenAddress:       burnerInfo.TokenAddress,
-		ConfirmationHeight: height,
-		PollParticipants:   pollParticipants,
-		Asset:              burnerInfo.Asset,
-	})
-
-	return &types.ConfirmDepositResponse{}, nil
 }
 
 // ConfirmTransferKey handles transfer operatorship confirmation
@@ -571,175 +392,6 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 	}
 
 	return &types.CreateDeployTokenResponse{}, nil
-}
-
-func (s msgServer) CreateBurnTokens(c context.Context, req *types.CreateBurnTokensRequest) (*types.CreateBurnTokensResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	if !s.nexus.IsLinkDepositEnabled(ctx) {
-		return nil, fmt.Errorf("link-deposit protocol is disabled")
-	}
-
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
-	}
-
-	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
-		return nil, err
-	}
-
-	keeper, err := s.ForChain(ctx, chain.Name)
-	if err != nil {
-		return nil, err
-	}
-	transferLimit := keeper.GetParams(ctx).TransferLimit
-	pageRequest := &query.PageRequest{
-		Key:        nil,
-		Offset:     0,
-		Limit:      transferLimit,
-		CountTotal: false,
-		Reverse:    false,
-	}
-	deposits, _, err := keeper.GetConfirmedDepositsPaginated(ctx, pageRequest)
-	if err != nil {
-		return nil, err
-	}
-	if len(deposits) == 0 {
-		return &types.CreateBurnTokensResponse{}, nil
-	}
-
-	chainID, ok := keeper.GetChainID(ctx)
-	if !ok {
-		return nil, fmt.Errorf("could not find chain ID for '%s'", chain.Name)
-	}
-
-	keyID, ok := s.multisigKeeper.GetCurrentKeyID(ctx, chain.Name)
-	if !ok {
-		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
-	}
-
-	seen := map[string]bool{}
-	for _, deposit := range deposits {
-		keeper.DeleteDeposit(ctx, deposit)
-		keeper.SetDeposit(ctx, deposit, types.DepositStatus_Burned)
-
-		burnerAddressHex := deposit.BurnerAddress.Hex()
-
-		if seen[burnerAddressHex] {
-			continue
-		}
-
-		burnerInfo := keeper.GetBurnerInfo(ctx, deposit.BurnerAddress)
-		if burnerInfo == nil {
-			return nil, fmt.Errorf("no burner info found for address %s", burnerAddressHex)
-		}
-
-		token := keeper.GetERC20TokenByAsset(ctx, burnerInfo.Asset)
-		if !token.Is(types.Confirmed) {
-			return nil, fmt.Errorf("token %s is not confirmed on %s", token.GetAsset(), chain.Name)
-		}
-
-		cmd := types.NewBurnTokenCommand(chainID, multisig.KeyID(keyID), ctx.BlockHeight(), *burnerInfo, token.IsExternal())
-		if err != nil {
-			return nil, errorsmod.Wrapf(err, "failed to create burn-token command to burn token at address %s for chain %s", burnerAddressHex, chain.Name)
-		}
-
-		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
-			return nil, err
-		}
-
-		events.Emit(ctx, &types.BurnCommand{
-			Chain:            chain.Name,
-			CommandID:        cmd.ID,
-			DestinationChain: deposit.DestinationChain,
-			DepositAddress:   deposit.BurnerAddress.Hex(),
-			Asset:            token.GetAsset(),
-		})
-
-		seen[burnerAddressHex] = true
-	}
-
-	return &types.CreateBurnTokensResponse{}, nil
-}
-
-func (s msgServer) CreatePendingTransfers(c context.Context, req *types.CreatePendingTransfersRequest) (*types.CreatePendingTransfersResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
-	}
-
-	if err := validateChainActivated(ctx, s.nexus, chain); err != nil {
-		return nil, err
-	}
-
-	keeper, err := s.ForChain(ctx, chain.Name)
-	if err != nil {
-		return nil, err
-	}
-	transferLimit := keeper.GetParams(ctx).TransferLimit
-	pageRequest := &query.PageRequest{
-		Key:        nil,
-		Offset:     0,
-		Limit:      transferLimit,
-		CountTotal: false,
-		Reverse:    false,
-	}
-	pendingTransfers, _, err := s.nexus.GetTransfersForChainPaginated(ctx, chain, nexus.Pending, pageRequest)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(pendingTransfers) == 0 {
-		s.Logger(ctx).Debug("no pending transfers found")
-		return &types.CreatePendingTransfersResponse{}, nil
-	}
-
-	keyID, ok := s.multisigKeeper.GetCurrentKeyID(ctx, chain.Name)
-	if !ok {
-		return nil, fmt.Errorf("current key not set for chain %s", chain.Name)
-	}
-
-	for _, transfer := range pendingTransfers {
-		token := keeper.GetERC20TokenByAsset(ctx, transfer.Asset.Denom)
-		if !token.Is(types.Confirmed) {
-			s.Logger(ctx).Debug(fmt.Sprintf("token %s is not confirmed on %s", token.GetAsset(), chain.Name))
-			continue
-		}
-
-		cmd, err := token.CreateMintCommand(multisig.KeyID(keyID), transfer)
-		if err != nil {
-			return nil, errorsmod.Wrapf(err, "failed create mint-token command for transfer %d", transfer.ID)
-		}
-
-		s.Logger(ctx).Info(fmt.Sprintf("minting %s to recipient %s on %s with transfer ID %s and command ID %s", transfer.Asset.String(), transfer.Recipient.Address, transfer.Recipient.Chain.Name, transfer.ID.String(), cmd.ID.Hex()),
-			types.AttributeKeyDestinationChain, transfer.Recipient.Chain.Name,
-			types.AttributeKeyDestinationAddress, transfer.Recipient.Address,
-			sdk.AttributeKeyAmount, transfer.Asset.String(),
-			types.AttributeKeyAsset, transfer.Asset.Denom,
-			types.AttributeKeyTransferID, transfer.ID.String(),
-			types.AttributeKeyCommandsID, cmd.ID.Hex(),
-		)
-
-		if err := keeper.EnqueueCommand(ctx, cmd); err != nil {
-			return nil, err
-		}
-
-		events.Emit(ctx, &types.MintCommand{
-			Chain:              chain.Name,
-			TransferID:         transfer.ID,
-			CommandID:          cmd.ID,
-			DestinationChain:   transfer.Recipient.Chain.Name,
-			DestinationAddress: transfer.Recipient.Address,
-			Asset:              transfer.Asset,
-		})
-
-		s.nexus.ArchivePendingTransfer(ctx, transfer)
-	}
-
-	return &types.CreatePendingTransfersResponse{}, nil
 }
 
 func (s msgServer) CreateTransferOperatorship(c context.Context, req *types.CreateTransferOperatorshipRequest) (*types.CreateTransferOperatorshipResponse, error) {

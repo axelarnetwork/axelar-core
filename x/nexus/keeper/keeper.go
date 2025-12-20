@@ -33,7 +33,6 @@ var (
 	processingMessagePrefix    = key.RegisterStaticKey(types.ModuleName, 5)
 	messageNonceKey            = key.RegisterStaticKey(types.ModuleName, 6)
 	wasmActivation             = key.RegisterStaticKey(types.ModuleName, 7)
-	linkDepositDisabledKey     = key.RegisterStaticKey(types.ModuleName, 8)
 
 	// temporary
 	// TODO: add description about what temporary means
@@ -114,20 +113,4 @@ func (k Keeper) getMessageRouter() types.MessageRouter {
 
 func (k Keeper) getStore(ctx sdk.Context) utils.KVStore {
 	return utils.NewNormalizedStore(ctx.KVStore(k.storeKey), k.cdc)
-}
-
-// IsLinkDepositEnabled returns true if the link-deposit protocol is enabled (default is enabled)
-func (k Keeper) IsLinkDepositEnabled(ctx sdk.Context) bool {
-	// it's a binary check with the default to be enabled, so only need to check if the key exists to disable it
-	return !k.getStore(ctx).HasNew(linkDepositDisabledKey)
-}
-
-// SetLinkDepositEnabled sets whether the link-deposit protocol is enabled
-func (k Keeper) SetLinkDepositEnabled(ctx sdk.Context, enabled bool) {
-	// storage optimization: the default is the key doesn't exist and don't care about the value at all when it exists
-	if enabled {
-		k.getStore(ctx).DeleteNew(linkDepositDisabledKey)
-	} else {
-		k.getStore(ctx).SetRawNew(linkDepositDisabledKey, []byte{})
-	}
 }

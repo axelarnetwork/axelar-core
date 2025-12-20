@@ -157,12 +157,16 @@ message QueryCommandResponse {
   uint32 max_gas_cost = 5;
 }
 
+// Deprecated: BurnerInfoRequest is no longer used.
 message BurnerInfoRequest {
+  option deprecated = true;
   bytes address = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
+// Deprecated: BurnerInfoResponse is no longer used.
 message BurnerInfoResponse {
+  option deprecated = true;
   string chain = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -179,7 +183,9 @@ message GatewayAddressResponse { string address = 1; }
 
 message BytecodeRequest {
   string chain = 1;
-  string contract = 2;
+  // Deprecated: contract is no longer used. The query now only returns token
+  // bytecode.
+  string contract = 2 [ deprecated = true ];
 }
 
 message BytecodeResponse { string bytecode = 1; }

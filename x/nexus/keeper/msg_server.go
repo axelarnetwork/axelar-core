@@ -310,42 +310,6 @@ func (s msgServer) SetTransferRateLimit(c context.Context, req *types.SetTransfe
 	return &types.SetTransferRateLimitResponse{}, nil
 }
 
-// EnableLinkDeposit enables the link-deposit protocol
-func (s msgServer) EnableLinkDeposit(c context.Context, req *types.EnableLinkDepositRequest) (*types.EnableLinkDepositResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	s.SetLinkDepositEnabled(ctx, true)
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			"link_deposit_enabled",
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute("authority", req.Authority),
-		),
-	)
-
-	s.Logger(ctx).Info("link-deposit protocol enabled")
-	return &types.EnableLinkDepositResponse{}, nil
-}
-
-// DisableLinkDeposit disables the link-deposit protocol
-func (s msgServer) DisableLinkDeposit(c context.Context, req *types.DisableLinkDepositRequest) (*types.DisableLinkDepositResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	s.SetLinkDepositEnabled(ctx, false)
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			"link_deposit_disabled",
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute("authority", req.Authority),
-		),
-	)
-
-	s.Logger(ctx).Info("link-deposit protocol disabled")
-	return &types.DisableLinkDepositResponse{}, nil
-}
-
 func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsRequest) (*types.UpdateParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 

@@ -269,16 +269,14 @@ message CreateDeployTokenRequest {
 
 message CreateDeployTokenResponse {}
 
-// CreatePendingTransfersRequest represents a message to trigger the creation of
-// commands handling all pending transfers
+// Deprecated: CreatePendingTransfersRequest is no longer used.
+// The link-deposit protocol has been permanently disabled.
 message CreatePendingTransfersRequest {
+  option deprecated = true;
   option (amino.name) = "evm/CreatePendingTransfers";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward
-  // compatibility. Removing this field would break decoding of historical
-  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -289,7 +287,10 @@ message CreatePendingTransfersRequest {
   string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
-message CreatePendingTransfersResponse {}
+// Deprecated: CreatePendingTransfersResponse is no longer used.
+message CreatePendingTransfersResponse {
+  option deprecated = true;
+}
 
 message CreateTransferOwnershipRequest {
   option deprecated = true;

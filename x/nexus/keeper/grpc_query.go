@@ -308,12 +308,3 @@ func (q Querier) Message(c context.Context, req *types.MessageRequest) (*types.M
 		Message: msg,
 	}, nil
 }
-
-// LinkDepositEnabled queries whether the link-deposit protocol is enabled
-func (q Querier) LinkDepositEnabled(c context.Context, req *types.LinkDepositEnabledRequest) (*types.LinkDepositEnabledResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	enabled := q.keeper.IsLinkDepositEnabled(ctx)
-
-	return &types.LinkDepositEnabledResponse{Enabled: enabled}, nil
-}

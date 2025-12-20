@@ -745,9 +745,6 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			IsChainMaintainerFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, maintainer cosmossdktypes.ValAddress) bool {
 //				panic("mock out the IsChainMaintainer method")
 //			},
-//			IsLinkDepositEnabledFunc: func(ctx cosmossdktypes.Context) bool {
-//				panic("mock out the IsLinkDepositEnabled method")
-//			},
 //			IsWasmConnectionActivatedFunc: func(ctx cosmossdktypes.Context) bool {
 //				panic("mock out the IsWasmConnectionActivated method")
 //			},
@@ -886,9 +883,6 @@ type NexusMock struct {
 
 	// IsChainMaintainerFunc mocks the IsChainMaintainer method.
 	IsChainMaintainerFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, maintainer cosmossdktypes.ValAddress) bool
-
-	// IsLinkDepositEnabledFunc mocks the IsLinkDepositEnabled method.
-	IsLinkDepositEnabledFunc func(ctx cosmossdktypes.Context) bool
 
 	// IsWasmConnectionActivatedFunc mocks the IsWasmConnectionActivated method.
 	IsWasmConnectionActivatedFunc func(ctx cosmossdktypes.Context) bool
@@ -1130,11 +1124,6 @@ type NexusMock struct {
 			// Maintainer is the maintainer argument value.
 			Maintainer cosmossdktypes.ValAddress
 		}
-		// IsLinkDepositEnabled holds details about calls to the IsLinkDepositEnabled method.
-		IsLinkDepositEnabled []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-		}
 		// IsWasmConnectionActivated holds details about calls to the IsWasmConnectionActivated method.
 		IsWasmConnectionActivated []struct {
 			// Ctx is the ctx argument value.
@@ -1310,7 +1299,6 @@ type NexusMock struct {
 	lockIsAssetRegistered             sync.RWMutex
 	lockIsChainActivated              sync.RWMutex
 	lockIsChainMaintainer             sync.RWMutex
-	lockIsLinkDepositEnabled          sync.RWMutex
 	lockIsWasmConnectionActivated     sync.RWMutex
 	lockLinkAddresses                 sync.RWMutex
 	lockLogger                        sync.RWMutex
@@ -2268,38 +2256,6 @@ func (mock *NexusMock) IsChainMaintainerCalls() []struct {
 	mock.lockIsChainMaintainer.RLock()
 	calls = mock.calls.IsChainMaintainer
 	mock.lockIsChainMaintainer.RUnlock()
-	return calls
-}
-
-// IsLinkDepositEnabled calls IsLinkDepositEnabledFunc.
-func (mock *NexusMock) IsLinkDepositEnabled(ctx cosmossdktypes.Context) bool {
-	if mock.IsLinkDepositEnabledFunc == nil {
-		panic("NexusMock.IsLinkDepositEnabledFunc: method is nil but Nexus.IsLinkDepositEnabled was just called")
-	}
-	callInfo := struct {
-		Ctx cosmossdktypes.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockIsLinkDepositEnabled.Lock()
-	mock.calls.IsLinkDepositEnabled = append(mock.calls.IsLinkDepositEnabled, callInfo)
-	mock.lockIsLinkDepositEnabled.Unlock()
-	return mock.IsLinkDepositEnabledFunc(ctx)
-}
-
-// IsLinkDepositEnabledCalls gets all the calls that were made to IsLinkDepositEnabled.
-// Check the length with:
-//
-//	len(mockedNexus.IsLinkDepositEnabledCalls())
-func (mock *NexusMock) IsLinkDepositEnabledCalls() []struct {
-	Ctx cosmossdktypes.Context
-} {
-	var calls []struct {
-		Ctx cosmossdktypes.Context
-	}
-	mock.lockIsLinkDepositEnabled.RLock()
-	calls = mock.calls.IsLinkDepositEnabled
-	mock.lockIsLinkDepositEnabled.RUnlock()
 	return calls
 }
 

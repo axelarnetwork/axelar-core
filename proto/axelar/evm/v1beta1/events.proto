@@ -284,6 +284,8 @@ message ContractCallWithMintApproved {
 }
 
 message TokenSent {
+  option deprecated = true;
+
   string chain = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];

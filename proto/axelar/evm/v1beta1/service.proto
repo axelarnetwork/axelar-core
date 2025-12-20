@@ -36,23 +36,9 @@ service MsgService {
     };
   }
 
-  rpc Link(LinkRequest) returns (LinkResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/link"
-      body : "*"
-    };
-  }
-
   rpc ConfirmToken(ConfirmTokenRequest) returns (ConfirmTokenResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/confirm_token"
-      body : "*"
-    };
-  }
-
-  rpc ConfirmDeposit(ConfirmDepositRequest) returns (ConfirmDepositResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/confirm_deposit"
       body : "*"
     };
   }
@@ -69,22 +55,6 @@ service MsgService {
       returns (CreateDeployTokenResponse) {
     option (google.api.http) = {
       post : "/axelar/evm/create_deploy_token"
-      body : "*"
-    };
-  }
-
-  rpc CreateBurnTokens(CreateBurnTokensRequest)
-      returns (CreateBurnTokensResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/create_burn_tokens"
-      body : "*"
-    };
-  }
-
-  rpc CreatePendingTransfers(CreatePendingTransfersRequest)
-      returns (CreatePendingTransfersResponse) {
-    option (google.api.http) = {
-      post : "/axelar/evm/create_pending_transfers"
       body : "*"
     };
   }
@@ -139,22 +109,11 @@ service QueryService {
         "/axelar/evm/v1beta1/batched_commands/{chain}/{id}";
   }
 
-  // BurnerInfo queries the burner info for the specified address
-  rpc BurnerInfo(BurnerInfoRequest) returns (BurnerInfoResponse) {
-    option (google.api.http).get = "/axelar/evm/v1beta1/burner_info";
-  }
-
   // ConfirmationHeight queries the confirmation height for the specified chain
   rpc ConfirmationHeight(ConfirmationHeightRequest)
       returns (ConfirmationHeightResponse) {
     option (google.api.http).get =
         "/axelar/evm/v1beta1/confirmation_height/{chain}";
-  }
-
-  // DepositState queries the state of the specified deposit
-  rpc DepositState(DepositStateRequest) returns (DepositStateResponse) {
-    option deprecated = true;
-    option (google.api.http).get = "/axelar/evm/v1beta1/deposit_state";
   }
 
   // PendingCommands queries the pending commands for the specified chain

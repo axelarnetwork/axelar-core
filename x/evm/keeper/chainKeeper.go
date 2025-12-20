@@ -891,18 +891,7 @@ func (k chainKeeper) EnqueueConfirmedEvent(ctx sdk.Context, id types.EventID) er
 		return fmt.Errorf("event %s is not confirmed", id)
 	}
 
-	switch event.GetEvent().(type) {
-	// the missing Event_ContractCall is no longer allowed to be enqueued in the
-	// EVM module, it must be routed through the nexus module instead
-	case *types.Event_ContractCallWithToken,
-		*types.Event_TokenSent,
-		*types.Event_Transfer,
-		*types.Event_TokenDeployed,
-		*types.Event_MultisigOperatorshipTransferred:
-		k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(id), &event)
-	default:
-		return fmt.Errorf("unsupported event type %T", event)
-	}
+	k.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(id), &event)
 
 	return nil
 }
