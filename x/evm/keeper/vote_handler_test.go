@@ -3,13 +3,11 @@ package keeper_test
 import (
 	"fmt"
 	mathRand "math/rand"
-	"strings"
 	"testing"
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
 	sdkstore "cosmossdk.io/store/types"
-	"github.com/CosmWasm/wasmd/x/wasm"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -347,66 +345,19 @@ func TestHandleResult(t *testing.T) {
 					assert.Len(t, chaink.EnqueueConfirmedEventCalls(), 5)
 				}),
 
-			When("event is contract call and is sent to a known chain", func() {
+			// Contract call events are also enqueued for processing by the EndBlocker
+			// (routing to nexus happens in EndBlocker, not in the vote handler)
+			When("event is contract call", func() {
 				result.(*types.VoteEvents).Events = randContractCallEvents(exported.Ethereum.Name, exported.Ethereum.Name, 5)
 			}).
 				When("succeeded to set the confirmed event", func() {
 					chaink.SetConfirmedEventFunc = func(_ sdk.Context, _ types.Event) error { return nil }
 				}).
-				When("succeeded to route the general messages", func() {
-					nexusK.EnqueueRouteMessageFunc = func(_ sdk.Context, _ string) error { return nil }
-					chaink.SetEventCompletedFunc = func(sdk.Context, types.EventID) error { return nil }
-				}).
-				Then("should route the general messages", func(t *testing.T) {
-					nexusK.SetNewMessageFunc = func(_ sdk.Context, _ nexus.GeneralMessage) error { return nil }
+				Then("should enqueue the confirmed event", func(t *testing.T) {
+					chaink.EnqueueConfirmedEventFunc = func(_ sdk.Context, _ types.EventID) error { return nil }
 
 					assert.NoError(t, handler.HandleResult(ctx, result))
-					assert.Len(t, nexusK.SetNewMessageCalls(), 5)
-					assert.Len(t, nexusK.EnqueueRouteMessageCalls(), 5)
-					assert.Len(t, chaink.SetEventCompletedCalls(), 5)
-				}),
-
-			When("event is contract call and is sent to a known chain", func() {
-				result.(*types.VoteEvents).Events = randContractCallEvents(exported.Ethereum.Name, exported.Ethereum.Name, 5)
-			}).
-				When("succeeded to set the confirmed event", func() {
-					chaink.SetConfirmedEventFunc = func(_ sdk.Context, _ types.Event) error { return nil }
-				}).
-				When("failed to route the general messages", func() {
-					nexusK.EnqueueRouteMessageFunc = func(_ sdk.Context, _ string) error { return fmt.Errorf("failed") }
-				}).
-				Then("should panic", func(t *testing.T) {
-					nexusK.SetNewMessageFunc = func(_ sdk.Context, _ nexus.GeneralMessage) error { return nil }
-
-					assert.Panics(t, func() { handler.HandleResult(ctx, result) })
-					assert.Len(t, nexusK.SetNewMessageCalls(), 1)
-					assert.Len(t, nexusK.EnqueueRouteMessageCalls(), 1)
-				}),
-
-			When("event is contract call and is sent to an unknown chain", func() {
-				result.(*types.VoteEvents).Events = randContractCallEvents(exported.Ethereum.Name, nexus.ChainName(rand.Str(5)), 5)
-			}).
-				When("succeeded to set the confirmed event", func() {
-					chaink.SetConfirmedEventFunc = func(_ sdk.Context, _ types.Event) error { return nil }
-				}).
-				When("succeeded to route the general messages", func() {
-					nexusK.EnqueueRouteMessageFunc = func(_ sdk.Context, _ string) error { return nil }
-					chaink.SetEventCompletedFunc = func(sdk.Context, types.EventID) error { return nil }
-				}).
-				Then("should set as approved general messages", func(t *testing.T) {
-					nexusK.SetNewMessageFunc = func(_ sdk.Context, _ nexus.GeneralMessage) error { return nil }
-
-					assert.NoError(t, handler.HandleResult(ctx, result))
-					assert.Len(t, nexusK.SetNewMessageCalls(), 5)
-					assert.Len(t, nexusK.EnqueueRouteMessageCalls(), 5)
-					assert.Len(t, chaink.SetEventCompletedCalls(), 5)
-
-					for _, call := range nexusK.SetNewMessageCalls() {
-						assert.Equal(t, wasm.ModuleName, call.M.Recipient.Chain.Module)
-
-						destChainName := call.M.Recipient.Chain.Name.String()
-						assert.Equal(t, strings.ToLower(destChainName), destChainName)
-					}
+					assert.Len(t, chaink.EnqueueConfirmedEventCalls(), 5)
 				}),
 		).
 		Run(t)

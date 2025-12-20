@@ -33,7 +33,7 @@ import (
 // Each confirmed event is routed based on its type:
 //
 //   - ContractCall/ContractCallWithToken → Creates a GeneralMessage in nexus and enqueues
-//     it for routing to the destination chain. Token transfers are rate-limited.
+//     it for routing to the destination chain.
 //
 //   - TokenDeployed → Confirms the token deployment on the source chain, enabling
 //     cross-chain transfers for that token.
@@ -208,13 +208,8 @@ func routeContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Bas
 	if !token.Is(types.Confirmed) {
 		return fmt.Errorf("token with symbol %s not confirmed on source chain", e.Symbol)
 	}
-	asset := token.GetAsset()
 
-	coin := sdk.NewCoin(asset, math.Int(e.Amount))
-	if err := n.RateLimitTransfer(ctx, sourceChain.Name, coin, nexus.TransferDirectionFrom); err != nil {
-		return err
-	}
-
+	coin := sdk.NewCoin(token.GetAsset(), math.Int(e.Amount))
 	return routeEventToNexus(ctx, n, event, &coin)
 }
 
@@ -434,9 +429,7 @@ func deliverPendingMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus,
 				case nexus.TypeGeneralMessage:
 					deliverMessage(ctx, destCk, chainID, keyID, msg)
 				case nexus.TypeGeneralMessageWithToken:
-					if err := deliverMessageWithToken(ctx, destCk, n, chainID, keyID, msg); err != nil {
-						return false, err
-					}
+					deliverMessageWithToken(ctx, destCk, chainID, keyID, msg)
 				default:
 					panic(fmt.Sprintf("unrecognized message type %d", msg.Type()))
 				}
@@ -519,13 +512,8 @@ func deliverMessage(ctx sdk.Context, ck types.ChainKeeper, chainID math.Int, key
 	)
 }
 
-func deliverMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, chainID math.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) error {
+func deliverMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, chainID math.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
 	token := ck.GetERC20TokenByAsset(ctx, msg.Asset.GetDenom())
-
-	if err := n.RateLimitTransfer(ctx, msg.GetDestinationChain(), *msg.Asset, nexus.TransferDirectionTo); err != nil {
-		return err
-	}
-
 	cmd := types.NewApproveContractCallWithMintGeneric(chainID, keyID, common.BytesToHash(msg.SourceTxID), msg.SourceTxIndex, msg, token.GetDetails().Symbol)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
@@ -545,6 +533,4 @@ func deliverMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, n types.Nexu
 		types.AttributeKeyMessageID, msg.ID,
 		types.AttributeKeyCommandsID, cmd.ID,
 	)
-
-	return nil
 }

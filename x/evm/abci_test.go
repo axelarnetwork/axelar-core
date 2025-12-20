@@ -161,9 +161,6 @@ func (s *routingTestSetup) setupConfirmedToken() {
 			Status: types.Confirmed,
 		})
 	}
-	s.nexus.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-		return nil
-	}
 }
 
 // createEventQueueFunc returns a GetConfirmedEventQueueFunc that dequeues the given events
@@ -966,9 +963,6 @@ func newDeliveryTestSetup(t *testing.T) *deliveryTestSetup {
 	// Configure nexus for delivery
 	s.nexus.SetMessageExecutedFunc = func(ctx sdk.Context, id string) error { return nil }
 	s.nexus.SetMessageFailedFunc = func(ctx sdk.Context, id string) error { return nil }
-	s.nexus.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-		return nil
-	}
 
 	// Configure multisig for delivery
 	s.multisig.GetCurrentKeyIDFunc = func(ctx sdk.Context, chainName nexus.ChainName) (multisig.KeyID, bool) {
