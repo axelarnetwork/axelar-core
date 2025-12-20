@@ -20,6 +20,177 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
+// EndBlocker handles cross-chain message flow between EVM chains and the Axelar network.
+// It performs two main operations each block:
+//
+// 1. ROUTING (EVM → Nexus): Process confirmed events from EVM chains
+//
+// Events are confirmed by validators through the vote handler and queued for processing.
+// Routing is intentionally deferred to the EndBlocker rather than being performed when
+// the poll completes, because the last voter to complete a poll should not bear the gas
+// cost of expensive routing operations. This ensures voting remains cheap and predictable.
+//
+// Each confirmed event is routed based on its type:
+//
+//   - ContractCall/ContractCallWithToken → Creates a GeneralMessage in nexus and enqueues
+//     it for routing to the destination chain. Token transfers are rate-limited.
+//
+//   - TokenDeployed → Confirms the token deployment on the source chain, enabling
+//     cross-chain transfers for that token.
+//
+//   - MultisigOperatorshipTransferred → Confirms key rotation on the chain, updating
+//     the active key used for signing outbound transactions.
+//
+// Unsupported event types (TokenSent, Transfer) are marked as failed.
+//
+// 2. DELIVERY (Nexus → EVM): Deliver pending messages to destination EVM chains
+//
+// Messages routed through nexus to EVM destinations are delivered by creating
+// gateway commands:
+//
+//   - GeneralMessage (no asset) → ApproveContractCall command
+//   - GeneralMessage (with asset) → ApproveContractCallWithMint command
+//
+// Commands are signed by the validator set and batched for execution on the
+// destination chain's gateway contract.
+//
+// Error Handling:
+//   - Each event/message is processed in a cached context (RunCached). If processing
+//     fails, the cached writes are discarded but the failure is recorded.
+//   - Failed events emit EVMEventFailed; failed messages emit ContractCallFailed.
+//   - Failures don't block processing of subsequent events/messages.
+//
+// Bounded Computation:
+//   - Processing is limited by EndBlockerLimit per chain per block.
+//   - Remaining events/messages are processed in subsequent blocks.
+//
+// Event Emission:
+//   - Success events (ContractCallApproved, etc.) are emitted inside RunCached,
+//     so they roll back with state if something fails.
+//   - Failure events (EVMEventFailed, ContractCallFailed) are emitted outside
+//     RunCached, so they persist for observability even if the event/message
+//     is retried later.
+func EndBlocker(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) ([]abci.ValidatorUpdate, error) {
+	processConfirmedEvents(ctx, bk, n, m)
+	deliverPendingMessages(ctx, bk, n, m)
+
+	return nil, nil
+}
+
+// ============================================================================
+// ROUTING: EVM → Nexus
+// ============================================================================
+
+func processConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
+	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
+		processConfirmedEventsForChain(ctx, chain, bk, n, m)
+	}
+}
+
+func processConfirmedEventsForChain(ctx sdk.Context, chain nexus.Chain, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
+	ck := funcs.Must(bk.ForChain(ctx, chain.Name))
+	queue := ck.GetConfirmedEventQueue(ctx)
+	endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
+
+	var events []types.Event
+	var event types.Event
+	for int64(len(events)) < endBlockerLimit && queue.Dequeue(&event) {
+		events = append(events, event)
+	}
+
+	for _, event := range events {
+		success := utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
+			if err := processConfirmedEvent(ctx, event, bk, n, m); err != nil {
+				ck.Logger(ctx).Debug(fmt.Sprintf("failed processing event: %s", err.Error()),
+					"chain", chain.Name.String(),
+					"eventID", event.GetID(),
+				)
+
+				return false, err
+			}
+
+			ck.Logger(ctx).Debug("completed processing event",
+				"chain", chain.Name.String(),
+				"eventID", event.GetID(),
+			)
+
+			return true, nil
+		})
+
+		if !success {
+			funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
+			continue
+		}
+
+		funcs.MustNoErr(ck.SetEventCompleted(ctx, event.GetID()))
+	}
+}
+
+func processConfirmedEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) error {
+	if err := validateEvent(ctx, event, bk, n); err != nil {
+		return err
+	}
+
+	switch event.GetEvent().(type) {
+	case *types.Event_ContractCall:
+		return routeContractCall(ctx, event, n)
+	case *types.Event_ContractCallWithToken:
+		return routeContractCallWithToken(ctx, event, bk, n)
+	case *types.Event_TokenDeployed:
+		return applyTokenDeployment(ctx, event, bk, n)
+	case *types.Event_MultisigOperatorshipTransferred:
+		return applyKeyRotation(ctx, event, bk, n, m)
+	default:
+		panic(fmt.Errorf("unsupported event type %T", event))
+	}
+}
+
+func validateEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
+	var destinationChainName nexus.ChainName
+	var contractAddress string
+	switch event := event.GetEvent().(type) {
+	case *types.Event_ContractCall:
+		destinationChainName = event.ContractCall.DestinationChain
+		contractAddress = event.ContractCall.ContractAddress
+	case *types.Event_ContractCallWithToken:
+		destinationChainName = event.ContractCallWithToken.DestinationChain
+		contractAddress = event.ContractCallWithToken.ContractAddress
+	case *types.Event_TokenDeployed, *types.Event_MultisigOperatorshipTransferred:
+		// skip checks for non-gateway tx event
+		return nil
+	default:
+		panic(fmt.Errorf("unsupported event type %T", event))
+	}
+
+	destinationChain, ok := n.GetChain(ctx, destinationChainName)
+	if !ok {
+		return fmt.Errorf("destination chain not found")
+	}
+
+	if !n.IsChainActivated(ctx, destinationChain) {
+		return fmt.Errorf("destination chain de-activated")
+	}
+
+	if !destinationChain.IsFrom(types.ModuleName) {
+		return nil
+	}
+
+	if len(contractAddress) != 0 && !common.IsHexAddress(contractAddress) {
+		return fmt.Errorf("invalid contract address")
+	}
+
+	destinationCk, err := bk.ForChain(ctx, destinationChainName)
+	if err != nil {
+		return fmt.Errorf("destination chain not EVM-compatible")
+	}
+
+	if _, ok := destinationCk.GetGatewayAddress(ctx); !ok {
+		return fmt.Errorf("destination chain gateway not deployed yet")
+	}
+
+	return nil
+}
+
 func routeContractCall(ctx sdk.Context, event types.Event, n types.Nexus) error {
 	return routeEventToNexus(ctx, n, event, nil)
 }
@@ -233,122 +404,69 @@ func applyKeyRotation(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n
 	return nil
 }
 
-func validateEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
-	var destinationChainName nexus.ChainName
-	var contractAddress string
-	switch event := event.GetEvent().(type) {
-	case *types.Event_ContractCall:
-		destinationChainName = event.ContractCall.DestinationChain
-		contractAddress = event.ContractCall.ContractAddress
-	case *types.Event_ContractCallWithToken:
-		destinationChainName = event.ContractCallWithToken.DestinationChain
-		contractAddress = event.ContractCallWithToken.ContractAddress
-	case *types.Event_TokenDeployed, *types.Event_MultisigOperatorshipTransferred:
-		// skip checks for non-gateway tx event
-		return nil
-	default:
-		panic(fmt.Errorf("unsupported event type %T", event))
-	}
+// ============================================================================
+// DELIVERY: Nexus → EVM
+// ============================================================================
 
-	// skip if destination chain is not registered
-	destinationChain, ok := n.GetChain(ctx, destinationChainName)
-	if !ok {
-		return fmt.Errorf("destination chain not found")
-	}
+func deliverPendingMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
+	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
+		destCk := funcs.Must(bk.ForChain(ctx, chain.Name))
+		endBlockerLimit := destCk.GetParams(ctx).EndBlockerLimit
+		msgs := n.GetProcessingMessages(ctx, chain.Name, endBlockerLimit)
 
-	// skip if destination chain is not activated
-	if !n.IsChainActivated(ctx, destinationChain) {
-		return fmt.Errorf("destination chain de-activated")
-	}
+		bk.Logger(ctx).Debug(fmt.Sprintf("delivering %d messages", len(msgs)), types.AttributeKeyChain, chain.Name)
 
-	// skip further destination chain keeper checks if it is not an evm chain
-	if !destinationChain.IsFrom(types.ModuleName) {
-		return nil
-	}
+		for _, msg := range msgs {
+			success := false
+			_ = utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
+				if err := validateMessageForDelivery(ctx, destCk, n, m, chain, msg); err != nil {
+					bk.Logger(ctx).Info(fmt.Sprintf("failed validating message for delivery: %s", err.Error()),
+						types.AttributeKeyChain, msg.GetDestinationChain(),
+						types.AttributeKeyMessageID, msg.ID,
+					)
+					return false, err
+				}
 
-	if len(contractAddress) != 0 && !common.IsHexAddress(contractAddress) {
-		return fmt.Errorf("invalid contract address")
-	}
+				chainID := funcs.MustOk(destCk.GetChainID(ctx))
+				keyID := funcs.MustOk(m.GetCurrentKeyID(ctx, chain.Name))
 
-	destinationCk, err := bk.ForChain(ctx, destinationChainName)
-	if err != nil {
-		return fmt.Errorf("destination chain not EVM-compatible")
-	}
+				switch msg.Type() {
+				case nexus.TypeGeneralMessage:
+					deliverMessage(ctx, destCk, chainID, keyID, msg)
+				case nexus.TypeGeneralMessageWithToken:
+					if err := deliverMessageWithToken(ctx, destCk, n, chainID, keyID, msg); err != nil {
+						return false, err
+					}
+				default:
+					panic(fmt.Sprintf("unrecognized message type %d", msg.Type()))
+				}
 
-	// skip if destination chain has not got gateway set yet
-	if _, ok := destinationCk.GetGatewayAddress(ctx); !ok {
-		return fmt.Errorf("destination chain gateway not deployed yet")
-	}
+				success = true
+				return true, nil
+			})
 
-	return nil
-}
-
-func processConfirmedEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) error {
-	if err := validateEvent(ctx, event, bk, n); err != nil {
-		return err
-	}
-
-	switch event.GetEvent().(type) {
-	case *types.Event_ContractCall:
-		return routeContractCall(ctx, event, n)
-	case *types.Event_ContractCallWithToken:
-		return routeContractCallWithToken(ctx, event, bk, n)
-	case *types.Event_TokenDeployed:
-		return applyTokenDeployment(ctx, event, bk, n)
-	case *types.Event_MultisigOperatorshipTransferred:
-		return applyKeyRotation(ctx, event, bk, n, m)
-	default:
-		panic(fmt.Errorf("unsupported event type %T", event))
-	}
-}
-
-func processConfirmedEventsForChain(ctx sdk.Context, chain nexus.Chain, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
-	ck := funcs.Must(bk.ForChain(ctx, chain.Name))
-	queue := ck.GetConfirmedEventQueue(ctx)
-	endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
-
-	var events []types.Event
-	var event types.Event
-	for int64(len(events)) < endBlockerLimit && queue.Dequeue(&event) {
-		events = append(events, event)
-	}
-
-	for _, event := range events {
-		success := utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
-			if err := processConfirmedEvent(ctx, event, bk, n, m); err != nil {
-				ck.Logger(ctx).Debug(fmt.Sprintf("failed processing event: %s", err.Error()),
-					"chain", chain.Name.String(),
-					"eventID", event.GetID(),
+			if !success {
+				destCk.Logger(ctx).Error("failed delivering message",
+					types.AttributeKeyChain, chain.Name.String(),
+					types.AttributeKeyMessageID, msg.ID,
 				)
 
-				return false, err
+				events.Emit(ctx, &types.ContractCallFailed{
+					Chain:     chain.Name,
+					MessageID: msg.ID,
+				})
+
+				funcs.MustNoErr(n.SetMessageFailed(ctx, msg.ID))
+
+				continue
 			}
 
-			ck.Logger(ctx).Debug("completed processing event",
-				"chain", chain.Name.String(),
-				"eventID", event.GetID(),
-			)
-
-			return true, nil
-		})
-
-		if !success {
-			funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
-			continue
+			funcs.MustNoErr(n.SetMessageExecuted(ctx, msg.ID))
 		}
-
-		funcs.MustNoErr(ck.SetEventCompleted(ctx, event.GetID()))
-	}
-}
-
-func processConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
-	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
-		processConfirmedEventsForChain(ctx, chain, bk, n, m)
 	}
 }
 
 func validateMessageForDelivery(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) error {
-	// TODO refactor to do these checks earlier so we don't fail in the end blocker
 	_, ok := m.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
 		return fmt.Errorf("current key not set")
@@ -429,70 +547,4 @@ func deliverMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, n types.Nexu
 	)
 
 	return nil
-}
-
-func deliverPendingMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
-	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
-		destCk := funcs.Must(bk.ForChain(ctx, chain.Name))
-		endBlockerLimit := destCk.GetParams(ctx).EndBlockerLimit
-		msgs := n.GetProcessingMessages(ctx, chain.Name, endBlockerLimit)
-
-		bk.Logger(ctx).Debug(fmt.Sprintf("delivering %d messages", len(msgs)), types.AttributeKeyChain, chain.Name)
-
-		for _, msg := range msgs {
-			success := false
-			_ = utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
-				if err := validateMessageForDelivery(ctx, destCk, n, m, chain, msg); err != nil {
-					bk.Logger(ctx).Info(fmt.Sprintf("failed validating message for delivery: %s", err.Error()),
-						types.AttributeKeyChain, msg.GetDestinationChain(),
-						types.AttributeKeyMessageID, msg.ID,
-					)
-					return false, err
-				}
-
-				chainID := funcs.MustOk(destCk.GetChainID(ctx))
-				keyID := funcs.MustOk(m.GetCurrentKeyID(ctx, chain.Name))
-
-				switch msg.Type() {
-				case nexus.TypeGeneralMessage:
-					deliverMessage(ctx, destCk, chainID, keyID, msg)
-				case nexus.TypeGeneralMessageWithToken:
-					if err := deliverMessageWithToken(ctx, destCk, n, chainID, keyID, msg); err != nil {
-						return false, err
-					}
-				default:
-					panic(fmt.Sprintf("unrecognized message type %d", msg.Type()))
-				}
-
-				success = true
-				return true, nil
-			})
-
-			if !success {
-				destCk.Logger(ctx).Error("failed delivering message",
-					types.AttributeKeyChain, chain.Name.String(),
-					types.AttributeKeyMessageID, msg.ID,
-				)
-
-				events.Emit(ctx, &types.ContractCallFailed{
-					Chain:     chain.Name,
-					MessageID: msg.ID,
-				})
-
-				funcs.MustNoErr(n.SetMessageFailed(ctx, msg.ID))
-
-				continue
-			}
-
-			funcs.MustNoErr(n.SetMessageExecuted(ctx, msg.ID))
-		}
-	}
-}
-
-// EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) ([]abci.ValidatorUpdate, error) {
-	processConfirmedEvents(ctx, bk, n, m)
-	deliverPendingMessages(ctx, bk, n, m)
-
-	return nil, nil
 }
