@@ -51,6 +51,9 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			DequeueRouteMessageFunc: func(ctx cosmossdktypes.Context) (github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage, bool) {
 //				panic("mock out the DequeueRouteMessage method")
 //			},
+//			EnqueueRouteMessageFunc: func(ctx cosmossdktypes.Context, id string) error {
+//				panic("mock out the EnqueueRouteMessage method")
+//			},
 //			ExportGenesisFunc: func(ctx cosmossdktypes.Context) *nexustypes.GenesisState {
 //				panic("mock out the ExportGenesis method")
 //			},
@@ -153,6 +156,9 @@ type NexusMock struct {
 
 	// DequeueRouteMessageFunc mocks the DequeueRouteMessage method.
 	DequeueRouteMessageFunc func(ctx cosmossdktypes.Context) (github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage, bool)
+
+	// EnqueueRouteMessageFunc mocks the EnqueueRouteMessage method.
+	EnqueueRouteMessageFunc func(ctx cosmossdktypes.Context, id string) error
 
 	// ExportGenesisFunc mocks the ExportGenesis method.
 	ExportGenesisFunc func(ctx cosmossdktypes.Context) *nexustypes.GenesisState
@@ -273,6 +279,13 @@ type NexusMock struct {
 		DequeueRouteMessage []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
+		}
+		// EnqueueRouteMessage holds details about calls to the EnqueueRouteMessage method.
+		EnqueueRouteMessage []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ID is the id argument value.
+			ID string
 		}
 		// ExportGenesis holds details about calls to the ExportGenesis method.
 		ExportGenesis []struct {
@@ -467,6 +480,7 @@ type NexusMock struct {
 	lockDeactivateChain           sync.RWMutex
 	lockDeactivateWasmConnection  sync.RWMutex
 	lockDequeueRouteMessage       sync.RWMutex
+	lockEnqueueRouteMessage       sync.RWMutex
 	lockExportGenesis             sync.RWMutex
 	lockGenerateMessageID         sync.RWMutex
 	lockGetChain                  sync.RWMutex
@@ -731,6 +745,42 @@ func (mock *NexusMock) DequeueRouteMessageCalls() []struct {
 	mock.lockDequeueRouteMessage.RLock()
 	calls = mock.calls.DequeueRouteMessage
 	mock.lockDequeueRouteMessage.RUnlock()
+	return calls
+}
+
+// EnqueueRouteMessage calls EnqueueRouteMessageFunc.
+func (mock *NexusMock) EnqueueRouteMessage(ctx cosmossdktypes.Context, id string) error {
+	if mock.EnqueueRouteMessageFunc == nil {
+		panic("NexusMock.EnqueueRouteMessageFunc: method is nil but Nexus.EnqueueRouteMessage was just called")
+	}
+	callInfo := struct {
+		Ctx cosmossdktypes.Context
+		ID  string
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockEnqueueRouteMessage.Lock()
+	mock.calls.EnqueueRouteMessage = append(mock.calls.EnqueueRouteMessage, callInfo)
+	mock.lockEnqueueRouteMessage.Unlock()
+	return mock.EnqueueRouteMessageFunc(ctx, id)
+}
+
+// EnqueueRouteMessageCalls gets all the calls that were made to EnqueueRouteMessage.
+// Check the length with:
+//
+//	len(mockedNexus.EnqueueRouteMessageCalls())
+func (mock *NexusMock) EnqueueRouteMessageCalls() []struct {
+	Ctx cosmossdktypes.Context
+	ID  string
+} {
+	var calls []struct {
+		Ctx cosmossdktypes.Context
+		ID  string
+	}
+	mock.lockEnqueueRouteMessage.RLock()
+	calls = mock.calls.EnqueueRouteMessage
+	mock.lockEnqueueRouteMessage.RUnlock()
 	return calls
 }
 

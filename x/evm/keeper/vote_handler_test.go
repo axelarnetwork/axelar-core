@@ -2,11 +2,9 @@ package keeper_test
 
 import (
 	"fmt"
-	mathRand "math/rand"
 	"testing"
 
 	"cosmossdk.io/log"
-	"cosmossdk.io/math"
 	sdkstore "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -274,7 +272,7 @@ func TestHandleResult(t *testing.T) {
 			chain := nexus.ChainName(rand.Str(5))
 			result = &types.VoteEvents{
 				Chain:  chain,
-				Events: randTransferEvents(chain, rand.I64Between(5, 10)),
+				Events: randTokenDeployedEvents(chain, rand.I64Between(5, 10)),
 			}
 
 			nexusK.GetChainFunc = func(_ sdk.Context, _ nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false }
@@ -289,7 +287,7 @@ func TestHandleResult(t *testing.T) {
 			chain := nexus.ChainName(rand.Str(5))
 			result = &types.VoteEvents{
 				Chain:  chain,
-				Events: randTransferEvents(chain, rand.I64Between(5, 10)),
+				Events: randTokenDeployedEvents(chain, rand.I64Between(5, 10)),
 			}
 
 			nexusK.GetChainFunc = func(_ sdk.Context, _ nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, true }
@@ -324,7 +322,7 @@ func TestHandleResult(t *testing.T) {
 		}).
 		Branch(
 			When("failed to set the confirmed event", func() {
-				result.(*types.VoteEvents).Events = randTransferEvents(exported.Ethereum.Name, 1)
+				result.(*types.VoteEvents).Events = randTokenDeployedEvents(exported.Ethereum.Name, 1)
 
 				chaink.SetConfirmedEventFunc = func(_ sdk.Context, _ types.Event) error { return fmt.Errorf("failed to set confirmed event") }
 			}).
@@ -333,7 +331,7 @@ func TestHandleResult(t *testing.T) {
 				}),
 
 			When("event is not contract call", func() {
-				result.(*types.VoteEvents).Events = randTransferEvents(exported.Ethereum.Name, 5)
+				result.(*types.VoteEvents).Events = randTokenDeployedEvents(exported.Ethereum.Name, 5)
 			}).
 				When("succeeded to set the confirmed event", func() {
 					chaink.SetConfirmedEventFunc = func(_ sdk.Context, _ types.Event) error { return nil }
@@ -363,20 +361,19 @@ func TestHandleResult(t *testing.T) {
 		Run(t)
 }
 
-func randTransferEvents(chain nexus.ChainName, n int64) []types.Event {
+func randTokenDeployedEvents(chain nexus.ChainName, n int64) []types.Event {
 	events := make([]types.Event, n)
-	burnerAddress := types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength)))
 	for i := int64(0); i < n; i++ {
-		transfer := types.EventTransfer{
-			To:     burnerAddress,
-			Amount: math.NewUint(mathRand.Uint64()),
+		tokenDeployed := types.EventTokenDeployed{
+			Symbol:       rand.StrBetween(3, 10),
+			TokenAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 		}
 		events[i] = types.Event{
 			Chain: chain,
 			TxID:  types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 			Index: uint64(rand.I64Between(1, 50)),
-			Event: &types.Event_Transfer{
-				Transfer: &transfer,
+			Event: &types.Event_TokenDeployed{
+				TokenDeployed: &tokenDeployed,
 			},
 		}
 	}

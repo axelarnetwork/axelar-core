@@ -47,16 +47,6 @@ type ChainKeeper interface {
 	GetTokenByteCode(ctx sdk.Context) []byte
 	SetGateway(ctx sdk.Context, address Address)
 	GetGatewayAddress(ctx sdk.Context) (Address, bool)
-	// Deprecated: Use GetDeposit instead
-	GetLegacyDeposit(ctx sdk.Context, txID Hash, burnerAddr Address) (ERC20Deposit, DepositStatus, bool)
-	GetDeposit(ctx sdk.Context, txID Hash, logIndex uint64) (ERC20Deposit, DepositStatus, bool)
-	GetBurnerInfo(ctx sdk.Context, address Address) *BurnerInfo
-	GenerateSalt(ctx sdk.Context, recipient string) Hash
-	GetBurnerAddress(ctx sdk.Context, token ERC20Token, salt Hash, gatewayAddr Address) (Address, error)
-	SetBurnerInfo(ctx sdk.Context, burnerInfo BurnerInfo)
-	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
-	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositStatus)
-	GetConfirmedDepositsPaginated(ctx sdk.Context, pageRequest *query.PageRequest) ([]ERC20Deposit, *query.PageResponse, error)
 	GetNetworkByID(ctx sdk.Context, id math.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) (math.Int, bool)
 	GetVotingThreshold(ctx sdk.Context) utils.Threshold
@@ -83,8 +73,6 @@ type ChainKeeper interface {
 	EnqueueConfirmedEvent(ctx sdk.Context, eventID EventID) error
 	SetEventCompleted(ctx sdk.Context, eventID EventID) error
 	SetEventFailed(ctx sdk.Context, eventID EventID) error
-
-	GetDepositsByTxID(ctx sdk.Context, txID Hash, status DepositStatus) ([]ERC20Deposit, error)
 }
 
 // ParamsKeeper represents a global paramstore

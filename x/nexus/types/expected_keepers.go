@@ -53,6 +53,7 @@ type Nexus interface {
 	SetMessageExecuted(ctx sdk.Context, id string) error
 	RouteMessage(ctx sdk.Context, id string, routingCtx ...exported.RoutingContext) error
 	DequeueRouteMessage(ctx sdk.Context) (exported.GeneralMessage, bool)
+	EnqueueRouteMessage(ctx sdk.Context, id string) error
 	IsAssetRegistered(ctx sdk.Context, chain exported.Chain, denom string) bool
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain exported.Chain, ok bool)
 	CurrID(ctx sdk.Context) ([32]byte, uint64)

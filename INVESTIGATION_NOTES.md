@@ -260,17 +260,99 @@ However, for consistency with failure events (which are emitted by keeper functi
 
 ## Todos
 
-1. [in_progress] Fix abci_test.go for new function signatures
-2. [pending] Remove dead code paths (Event_TokenSent, Event_Transfer) from EnqueueConfirmedEvent
-3. [pending] Remove burner functions from chainKeeper.go
-4. [pending] Remove deposit functions from chainKeeper.go
-5. [pending] Remove ChainKeeper interface methods from expected_keepers.go
-6. [pending] Deprecate Burnable param in chain params
-7. [pending] Clean up genesis state fields (migration)
+1. [done] Fix abci_test.go for new function signatures
+2. [done] Remove dead code paths (Event_TokenSent, Event_Transfer) from EnqueueConfirmedEvent
+3. [done] Remove burner functions from chainKeeper.go
+4. [done] Remove deposit functions from chainKeeper.go
+5. [done] Remove ChainKeeper interface methods from expected_keepers.go
+6. [won't do] Deprecate Burnable param - still needed for internal token creation
+7. [done] Clean up genesis proto fields (reserved deprecated field numbers)
 8. [pending] Clean up state keys (migration)
 9. [pending] Add RetryFailedMessage endpoint to EVM module (also called by RetryFailedEvent for backwards compat)
 10. [pending] Move axelarnet/wasm destination checks from EVM to nexus (fail during routing)
-11. [pending] Remove rate limiting code from EVM abci
+11. [done] Remove rate limiting code from EVM abci
+
+## Burner/Deposit Cleanup - Open Questions
+
+The "burning" functionality has several distinct aspects that need different treatment:
+
+### 1. Link-Deposit Protocol (being deprecated)
+- User "links" a recipient address
+- System generates a **burner address** (CREATE2 contract)
+- User deposits tokens to burner address
+- System "burns" (collects) tokens from burner → mints on destination
+- **Functions removed:** `GenerateSalt`, `GetBurnerAddress`, `GetBurnerInfo`
+
+### 2. BurnerInfo Storage (`burnerAddrPrefix` - static key 1)
+- Maps burner address → {token, salt, destination, etc.}
+- Tracks existing burner addresses created via link-deposit
+- **Question: Do we have existing data in state that queries need to return?**
+
+### 3. ERC20Deposits Storage (`confirmedDepositPrefix`/`burnedDepositPrefix` - static keys 2,3)
+- Records of tokens deposited to burner addresses
+- Confirmed = waiting to be processed, Burned = already collected
+- **Question: Do we have existing deposits in state?**
+
+### 4. BurnerCode in Token Metadata
+- For **internal tokens** (deployed by Axelar gateway), stores the burner bytecode used at token creation time
+- Used to calculate burner addresses for that specific token
+- **Existing tokens have this stored**
+- **Question: Should existing tokens still show their BurnerCodeHash in queries?**
+
+### 5. BurnerByteCode in Params (`KeyBurnable`)
+- The contract bytecode for new burner deployments
+- Used by `GetBurnerByteCode()`
+- **Still in chain params**
+- **Question: Should this param be deprecated? Requires param migration.**
+
+### 6. BurnToken Command
+- Gateway command to collect tokens from burner addresses
+- Part of command batch system
+- **Question: Are there pending BurnToken commands in any chain's command queue?**
+
+### 7. Legacy Deposit Prefixes (`confirmed_deposit`, `burned_deposit`)
+- Old string-based keys (before static keys)
+- **Question: Is there any data under these old keys?**
+
+### Decisions Made
+
+| Question | Answer | Notes |
+|----------|--------|-------|
+| Keep BurnerCode in Token Metadata? | **YES** | Existing tokens have this, needed for queries |
+| Keep BurnerByteCode in Params? | **YES** | Still used for new internal token creation |
+| Existing BurnerInfo data in state? | **DELETE** | Data will be orphaned; migration to clear later |
+| Existing deposits in state? | **DELETE** | Data will be orphaned; migration to clear later |
+| Pending BurnToken commands? | **N/A** | Commands in queue will execute; no new ones created |
+| Data under legacy deposit keys? | **DELETE** | Data will be orphaned; migration to clear later |
+
+### Current Cleanup Status
+
+**Removed (runtime functions - no new burners/deposits):**
+- `GenerateSalt` - calculated salt for burner address
+- `GetBurnerAddress` - calculated CREATE2 burner address
+- `GetBurnerInfo` - retrieved burner info from state
+- `SetBurnerInfo` - saved burner info to state
+- `getBurnerInfos` - exported all burner infos for genesis
+
+**Removed (deposit functions):**
+- `SetDeposit`, `GetDeposit`, `DeleteDeposit` - deposit CRUD operations
+- `getConfirmedDeposits`, `getBurnedDeposits` - genesis export
+- `GetConfirmedDepositsPaginated` - paginated query
+- `GetDepositsByTxID` - query by tx ID
+- `setLegacyDeposit`, `getLegacyDeposits`, `GetLegacyDeposit` - legacy format support
+
+**Removed (genesis import/export):**
+- BurnerInfos import/export
+- ConfirmedDeposits, BurnedDeposits import/export
+- LegacyConfirmedDeposits, LegacyBurnedDeposits import/export
+
+**Kept (needed for token metadata):**
+- `GetBurnerByteCode()` - reads bytecode from params, used in token creation
+- `BurnerCode` field in `ERC20TokenMetadata` - stored at internal token creation
+- `GetBurnerCode()` / `GetBurnerCodeHash()` methods on `ERC20Token`
+- `BurnerCodeHash` in `TokenInfoResponse` query
+- `validateBurnerCode()` - validates bytecode hash is known version
+- Storage key registrations (for future migration to clear orphaned data)
 
 ## Function Renames in abci.go
 

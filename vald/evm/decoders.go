@@ -18,37 +18,11 @@ import (
 
 // Smart contract event signatures
 var (
-	ERC20TransferSig                = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 	ERC20TokenDeploymentSig         = crypto.Keccak256Hash([]byte("TokenDeployed(string,address)"))
 	MultisigTransferOperatorshipSig = crypto.Keccak256Hash([]byte("OperatorshipTransferred(bytes)"))
 	ContractCallSig                 = crypto.Keccak256Hash([]byte("ContractCall(address,string,string,bytes32,bytes)"))
 	ContractCallWithTokenSig        = crypto.Keccak256Hash([]byte("ContractCallWithToken(address,string,string,bytes32,bytes,string,uint256)"))
-	TokenSentSig                    = crypto.Keccak256Hash([]byte("TokenSent(address,string,string,string,uint256)"))
 )
-
-func DecodeERC20TransferEvent(log *geth.Log) (types.EventTransfer, error) {
-	if len(log.Topics) != 3 || log.Topics[0] != ERC20TransferSig {
-		return types.EventTransfer{}, fmt.Errorf("log is not an ERC20 transfer")
-	}
-
-	uint256Type := funcs.Must(abi.NewType("uint256", "uint256", nil))
-
-	to := common.BytesToAddress(log.Topics[2][:])
-
-	arguments := abi.Arguments{
-		{Type: uint256Type},
-	}
-
-	params, err := arguments.Unpack(log.Data)
-	if err != nil {
-		return types.EventTransfer{}, err
-	}
-
-	return types.EventTransfer{
-		To:     types.Address(to),
-		Amount: math.NewUintFromBigInt(params[0].(*big.Int)),
-	}, nil
-}
 
 func DecodeERC20TokenDeploymentEvent(log *geth.Log) (types.EventTokenDeployed, error) {
 	if len(log.Topics) != 1 || log.Topics[0] != ERC20TokenDeploymentSig {
@@ -124,30 +98,6 @@ func DecodeEventContractCallWithToken(log *geth.Log) (types.EventContractCallWit
 		PayloadHash:      types.Hash(common.BytesToHash(log.Topics[2].Bytes())),
 		Symbol:           params[3].(string),
 		Amount:           math.NewUintFromBigInt(params[4].(*big.Int)),
-	}, nil
-}
-
-func DecodeEventTokenSent(log *geth.Log) (types.EventTokenSent, error) {
-	stringType := funcs.Must(abi.NewType("string", "string", nil))
-	uint256Type := funcs.Must(abi.NewType("uint256", "uint256", nil))
-
-	arguments := abi.Arguments{
-		{Type: stringType},
-		{Type: stringType},
-		{Type: stringType},
-		{Type: uint256Type},
-	}
-	params, err := types.StrictDecode(arguments, log.Data)
-	if err != nil {
-		return types.EventTokenSent{}, err
-	}
-
-	return types.EventTokenSent{
-		Sender:             types.Address(common.BytesToAddress(log.Topics[1].Bytes())),
-		DestinationChain:   nexus.ChainName(params[0].(string)),
-		DestinationAddress: params[1].(string),
-		Symbol:             params[2].(string),
-		Amount:             math.NewUintFromBigInt(params[3].(*big.Int)),
 	}, nil
 }
 

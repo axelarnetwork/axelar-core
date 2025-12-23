@@ -950,21 +950,6 @@ func (m Event) ValidateBasic() error {
 		if err := event.ContractCallWithToken.ValidateBasic(); err != nil {
 			return errorsmod.Wrap(err, "invalid event ContractCallWithToken")
 		}
-	case *Event_TokenSent:
-		if event.TokenSent == nil {
-			return fmt.Errorf("missing event TokenSent")
-		}
-
-		if err := event.TokenSent.ValidateBasic(); err != nil {
-			return errorsmod.Wrap(err, "invalid event TokenSent")
-		}
-	case *Event_Transfer:
-		if event.Transfer == nil {
-			return fmt.Errorf("missing event Transfer")
-		}
-		if err := event.Transfer.ValidateBasic(); err != nil {
-			return errorsmod.Wrap(err, "invalid event Transfer")
-		}
 	case *Event_TokenDeployed:
 		if event.TokenDeployed == nil {
 			return fmt.Errorf("missing event TokenDeployed")
@@ -992,35 +977,6 @@ func (m Event) GetEventType() string {
 }
 
 const maxReceiverLength = 128
-
-// ValidateBasic returns an error if the event token sent is invalid
-func (m EventTokenSent) ValidateBasic() error {
-	if m.Sender.IsZeroAddress() {
-		return fmt.Errorf("invalid sender")
-	}
-
-	if err := m.DestinationChain.Validate(); err != nil {
-		return errorsmod.Wrap(err, "invalid destination chain")
-	}
-
-	if err := utils.ValidateString(m.DestinationAddress); err != nil {
-		return errorsmod.Wrap(err, "invalid destination address")
-	}
-
-	if len(m.DestinationAddress) > maxReceiverLength {
-		return fmt.Errorf("receiver length %d is greater than %d", len(m.DestinationAddress), maxReceiverLength)
-	}
-
-	if err := utils.ValidateString(m.Symbol); err != nil {
-		return errorsmod.Wrap(err, "invalid symbol")
-	}
-
-	if m.Amount.IsZero() {
-		return fmt.Errorf("invalid amount")
-	}
-
-	return nil
-}
 
 // ValidateBasic returns an error if the event contract call is invalid
 func (m EventContractCall) ValidateBasic() error {
@@ -1071,19 +1027,6 @@ func (m EventContractCallWithToken) ValidateBasic() error {
 
 	if err := utils.ValidateString(m.Symbol); err != nil {
 		return errorsmod.Wrap(err, "invalid symbol")
-	}
-
-	if m.Amount.IsZero() {
-		return fmt.Errorf("invalid amount")
-	}
-
-	return nil
-}
-
-// ValidateBasic returns an error if the event transfer is invalid
-func (m EventTransfer) ValidateBasic() error {
-	if m.To.IsZeroAddress() {
-		return fmt.Errorf("invalid sender")
 	}
 
 	if m.Amount.IsZero() {

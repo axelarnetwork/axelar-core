@@ -18,6 +18,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&EnableLinkDepositRequest{}, "nexus/EnableLinkDeposit", nil)
 	cdc.RegisterConcrete(&DisableLinkDepositRequest{}, "nexus/DisableLinkDeposit", nil)
 	cdc.RegisterConcrete(&UpdateParamsRequest{}, "nexus/UpdateParams", nil)
+	cdc.RegisterConcrete(&RetryFailedMessageRequest{}, "nexus/RetryFailedMessage", nil)
 }
 
 // RegisterInterfaces registers types and interfaces with the given registry
@@ -32,6 +33,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 		&EnableLinkDepositRequest{},
 		&DisableLinkDepositRequest{},
 		&UpdateParamsRequest{},
+		&RetryFailedMessageRequest{},
 	)
 }
 

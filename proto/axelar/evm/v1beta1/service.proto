@@ -14,8 +14,10 @@ option (gogoproto.goproto_registration) = true;
 service MsgService {
   rpc SetGateway(SetGatewayRequest) returns (SetGatewayResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/set_gateway"
+      post : "/axelar/evm/v1beta1/set_gateway"
       body : "*"
+      // Deprecated: use /axelar/evm/v1beta1/set_gateway instead
+      additional_bindings : {post : "/axelar/evm/set_gateway" body : "*"}
     };
   }
 
@@ -23,69 +25,100 @@ service MsgService {
   rpc ConfirmGatewayTx(ConfirmGatewayTxRequest)
       returns (ConfirmGatewayTxResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/confirm_gateway_tx"
+      post : "/axelar/evm/v1beta1/confirm_gateway_tx"
       body : "*"
+      // Deprecated: use /axelar/evm/v1beta1/confirm_gateway_tx instead
+      additional_bindings : {post : "/axelar/evm/confirm_gateway_tx" body : "*"}
     };
   }
 
   rpc ConfirmGatewayTxs(ConfirmGatewayTxsRequest)
       returns (ConfirmGatewayTxsResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/confirm_gateway_txs"
+      post : "/axelar/evm/v1beta1/confirm_gateway_txs"
       body : "*"
+      // Deprecated: use /axelar/evm/v1beta1/confirm_gateway_txs instead
+      additional_bindings : {
+        post : "/axelar/evm/confirm_gateway_txs"
+        body : "*"
+      }
     };
   }
 
   rpc ConfirmToken(ConfirmTokenRequest) returns (ConfirmTokenResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/confirm_token"
+      post : "/axelar/evm/v1beta1/confirm_token"
       body : "*"
+      // Deprecated: use /axelar/evm/v1beta1/confirm_token instead
+      additional_bindings : {post : "/axelar/evm/confirm_token" body : "*"}
     };
   }
 
   rpc ConfirmTransferKey(ConfirmTransferKeyRequest)
       returns (ConfirmTransferKeyResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/confirm_transfer_key"
+      post : "/axelar/evm/v1beta1/confirm_transfer_key"
       body : "*"
+      // Deprecated: use /axelar/evm/v1beta1/confirm_transfer_key instead
+      additional_bindings : {
+        post : "/axelar/evm/confirm_transfer_key"
+        body : "*"
+      }
     };
   }
 
   rpc CreateDeployToken(CreateDeployTokenRequest)
       returns (CreateDeployTokenResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/create_deploy_token"
+      post : "/axelar/evm/v1beta1/create_deploy_token"
       body : "*"
+      // Deprecated: use /axelar/evm/v1beta1/create_deploy_token instead
+      additional_bindings : {
+        post : "/axelar/evm/create_deploy_token"
+        body : "*"
+      }
     };
   }
 
   rpc CreateTransferOperatorship(CreateTransferOperatorshipRequest)
       returns (CreateTransferOperatorshipResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/create_transfer_operatorship"
+      post : "/axelar/evm/v1beta1/create_transfer_operatorship"
       body : "*"
+      // Deprecated: use /axelar/evm/v1beta1/create_transfer_operatorship
+      // instead
+      additional_bindings : {
+        post : "/axelar/evm/create_transfer_operatorship"
+        body : "*"
+      }
     };
   }
 
   rpc SignCommands(SignCommandsRequest) returns (SignCommandsResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/sign_commands"
+      post : "/axelar/evm/v1beta1/sign_commands"
       body : "*"
+      // Deprecated: use /axelar/evm/v1beta1/sign_commands instead
+      additional_bindings : {post : "/axelar/evm/sign_commands" body : "*"}
     };
   }
 
   rpc AddChain(AddChainRequest) returns (AddChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/add_chain"
+      post : "/axelar/evm/v1beta1/add_chain"
       body : "*"
+      // Deprecated: use /axelar/evm/v1beta1/add_chain instead
+      additional_bindings : {post : "/axelar/evm/add_chain" body : "*"}
     };
   }
 
   rpc RetryFailedEvent(RetryFailedEventRequest)
       returns (RetryFailedEventResponse) {
     option (google.api.http) = {
-      post : "/axelar/evm/retry-failed-event"
+      post : "/axelar/evm/v1beta1/retry_failed_event"
       body : "*"
+      // Deprecated: use /axelar/evm/v1beta1/retry_failed_event instead
+      additional_bindings : {post : "/axelar/evm/retry-failed-event" body : "*"}
     };
   }
 

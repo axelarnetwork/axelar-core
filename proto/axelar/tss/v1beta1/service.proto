@@ -15,8 +15,10 @@ service MsgService {
   rpc HeartBeat(axelar.tss.v1beta1.HeartBeatRequest)
       returns (axelar.tss.v1beta1.HeartBeatResponse) {
     option (google.api.http) = {
-      post : "/axelar/tss/heartbeat"
+      post : "/axelar/tss/v1beta1/heartbeat"
       body : "*"
+      // Deprecated: use /axelar/tss/v1beta1/heartbeat instead
+      additional_bindings : {post : "/axelar/tss/heartbeat" body : "*"}
     };
   }
 

@@ -320,3 +320,34 @@ func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsReques
 	s.Nexus.SetParams(ctx, req.Params)
 	return &types.UpdateParamsResponse{}, nil
 }
+
+func (s msgServer) RetryFailedMessage(c context.Context, req *types.RetryFailedMessageRequest) (*types.RetryFailedMessageResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	msg, ok := s.GetMessage(ctx, req.ID)
+	if !ok {
+		return nil, fmt.Errorf("message %s not found", req.ID)
+	}
+
+	if !msg.Is(exported.Failed) {
+		return nil, fmt.Errorf("message %s is not in failed status", req.ID)
+	}
+
+	if err := s.EnqueueRouteMessage(ctx, req.ID); err != nil {
+		return nil, err
+	}
+
+	s.Logger(ctx).Info("re-queued failed message for routing",
+		types.AttributeKeyMessageID, req.ID,
+		types.AttributeKeySourceChain, msg.GetSourceChain(),
+		types.AttributeKeyDestinationChain, msg.GetDestinationChain(),
+	)
+
+	funcs.MustNoErr(ctx.EventManager().EmitTypedEvent(&types.MessageRetried{
+		ID:               req.ID,
+		SourceChain:      msg.GetSourceChain(),
+		DestinationChain: msg.GetDestinationChain(),
+	}))
+
+	return &types.RetryFailedMessageResponse{}, nil
+}

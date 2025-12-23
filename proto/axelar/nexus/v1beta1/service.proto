@@ -15,47 +15,72 @@ service MsgService {
   rpc RegisterChainMaintainer(RegisterChainMaintainerRequest)
       returns (RegisterChainMaintainerResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/register_chain_maintainer"
+      post : "/axelar/nexus/v1beta1/register_chain_maintainer"
       body : "*"
+      // Deprecated: use /axelar/nexus/v1beta1/register_chain_maintainer instead
+      additional_bindings : {
+        post : "/axelar/nexus/register_chain_maintainer"
+        body : "*"
+      }
     };
   }
 
   rpc DeregisterChainMaintainer(DeregisterChainMaintainerRequest)
       returns (DeregisterChainMaintainerResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/deregister_chain_maintainer"
+      post : "/axelar/nexus/v1beta1/deregister_chain_maintainer"
       body : "*"
+      // Deprecated: use /axelar/nexus/v1beta1/deregister_chain_maintainer
+      // instead
+      additional_bindings : {
+        post : "/axelar/nexus/deregister_chain_maintainer"
+        body : "*"
+      }
     };
   }
 
   rpc ActivateChain(ActivateChainRequest) returns (ActivateChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/activate_chain"
+      post : "/axelar/nexus/v1beta1/activate_chain"
       body : "*"
+      // Deprecated: use /axelar/nexus/v1beta1/activate_chain instead
+      additional_bindings : {post : "/axelar/nexus/activate_chain" body : "*"}
     };
   }
 
   rpc DeactivateChain(axelar.nexus.v1beta1.DeactivateChainRequest)
       returns (axelar.nexus.v1beta1.DeactivateChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/deactivate_chain"
+      post : "/axelar/nexus/v1beta1/deactivate_chain"
       body : "*"
+      // Deprecated: use /axelar/nexus/v1beta1/deactivate_chain instead
+      additional_bindings : {post : "/axelar/nexus/deactivate_chain" body : "*"}
     };
   }
 
   rpc RegisterAssetFee(RegisterAssetFeeRequest)
       returns (RegisterAssetFeeResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/register_asset_fee"
+      post : "/axelar/nexus/v1beta1/register_asset_fee"
       body : "*"
+      // Deprecated: use /axelar/nexus/v1beta1/register_asset_fee instead
+      additional_bindings : {
+        post : "/axelar/nexus/register_asset_fee"
+        body : "*"
+      }
     };
   }
 
   rpc SetTransferRateLimit(SetTransferRateLimitRequest)
       returns (SetTransferRateLimitResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/set_transfer_rate_limit"
+      post : "/axelar/nexus/v1beta1/set_transfer_rate_limit"
       body : "*"
+      // Deprecated: use /axelar/nexus/v1beta1/set_transfer_rate_limit instead
+      additional_bindings : {
+        post : "/axelar/nexus/set_transfer_rate_limit"
+        body : "*"
+      }
     };
   }
 
@@ -63,6 +88,19 @@ service MsgService {
     option (google.api.http) = {
       post : "/axelar/nexus/v1beta1/params"
       body : "*"
+    };
+  }
+
+  rpc RetryFailedMessage(RetryFailedMessageRequest)
+      returns (RetryFailedMessageResponse) {
+    option (google.api.http) = {
+      post : "/axelar/nexus/v1beta1/retry_failed_message"
+      body : "*"
+      // Deprecated: use /axelar/nexus/v1beta1/retry_failed_message instead
+      additional_bindings : {
+        post : "/axelar/nexus/retry-failed-message"
+        body : "*"
+      }
     };
   }
 }

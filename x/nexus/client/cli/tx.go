@@ -33,6 +33,7 @@ func GetTxCmd() *cobra.Command {
 		GetCmdDeactivateChain(),
 		GetCmdRegisterAssetFee(),
 		GetCmdSetTransferRateLimit(),
+		GetCmdRetryFailedMessage(),
 	)
 
 	return txCmd
@@ -185,6 +186,28 @@ func GetCmdSetTransferRateLimit() *cobra.Command {
 			}
 
 			msg := types.NewSetTransferRateLimitRequest(cliCtx.GetFromAddress(), exported.ChainName(args[0]), limit, window)
+
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
+		},
+	}
+
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdRetryFailedMessage returns the cli command to retry a failed general message
+func GetCmdRetryFailedMessage() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "retry-failed-message [message-id]",
+		Short: "retry routing a failed general message",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewRetryFailedMessageRequest(cliCtx.GetFromAddress(), args[0])
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},

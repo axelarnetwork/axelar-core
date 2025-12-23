@@ -179,3 +179,14 @@ message UpdateParamsRequest {
 }
 
 message UpdateParamsResponse {}
+
+message RetryFailedMessageRequest {
+  option (amino.name) = "nexus/RetryFailedMessage";
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  option (cosmos.msg.v1.signer) = "sender";
+
+  string sender = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string id = 2 [ (gogoproto.customname) = "ID" ];
+}
+
+message RetryFailedMessageResponse {}

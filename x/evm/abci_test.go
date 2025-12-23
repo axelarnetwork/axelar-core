@@ -880,55 +880,6 @@ func TestProcessConfirmedEvents(t *testing.T) {
 			assert.Equal(t, totalEvents, eventIndex, "all events should be dequeued after two blocks")
 		})
 	})
-
-	t.Run("UnsupportedEventTypes", func(t *testing.T) {
-		t.Run("Event_TokenSent is marked failed", func(t *testing.T) {
-			s := newRoutingTestSetup(t)
-			event := types.Event{
-				Chain: s.sourceChain,
-				TxID:  evmTestUtils.RandomHash(),
-				Index: 0,
-				Event: &types.Event_TokenSent{
-					TokenSent: &types.EventTokenSent{
-						Sender:             evmTestUtils.RandomAddress(),
-						DestinationChain:   s.destChain,
-						DestinationAddress: "destination",
-						Symbol:             "AXL",
-						Amount:             math.NewUint(1000),
-					},
-				},
-			}
-			s.queueEvent(event)
-
-			_, err := EndBlocker(s.ctx, s.baseKeeper, s.nexus, s.multisig)
-			assert.NoError(t, err)
-
-			assert.Len(t, s.sourceChainKeeper.SetEventFailedCalls(), 1, "unsupported event should be marked failed")
-			assert.Len(t, s.sourceChainKeeper.SetEventCompletedCalls(), 0)
-		})
-
-		t.Run("Event_Transfer is marked failed", func(t *testing.T) {
-			s := newRoutingTestSetup(t)
-			event := types.Event{
-				Chain: s.sourceChain,
-				TxID:  evmTestUtils.RandomHash(),
-				Index: 0,
-				Event: &types.Event_Transfer{
-					Transfer: &types.EventTransfer{
-						To:     evmTestUtils.RandomAddress(),
-						Amount: math.NewUint(1000),
-					},
-				},
-			}
-			s.queueEvent(event)
-
-			_, err := EndBlocker(s.ctx, s.baseKeeper, s.nexus, s.multisig)
-			assert.NoError(t, err)
-
-			assert.Len(t, s.sourceChainKeeper.SetEventFailedCalls(), 1, "unsupported event should be marked failed")
-			assert.Len(t, s.sourceChainKeeper.SetEventCompletedCalls(), 0)
-		})
-	})
 }
 
 // Delivery test setup - extends routing setup for message delivery tests

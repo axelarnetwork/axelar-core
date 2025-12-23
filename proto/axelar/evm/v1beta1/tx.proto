@@ -288,9 +288,7 @@ message CreatePendingTransfersRequest {
 }
 
 // Deprecated: CreatePendingTransfersResponse is no longer used.
-message CreatePendingTransfersResponse {
-  option deprecated = true;
-}
+message CreatePendingTransfersResponse { option deprecated = true; }
 
 message CreateTransferOwnershipRequest {
   option deprecated = true;
