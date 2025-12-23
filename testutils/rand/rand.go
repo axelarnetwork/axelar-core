@@ -78,7 +78,7 @@ func NormalizedStrBetween(min, shorterThan int) string {
 	return strings.ReplaceAll(NormalizeString(StrBetween(min, shorterThan)), defaultDelimiter, "-")
 }
 
-// I64Gen represents an random integer generator to generate a sequence of integers with the same properties.
+// I64Gen represents a random integer generator to generate a sequence of integers with the same properties.
 // Call Stop when done so dangling goroutines can be cleaned up.
 type I64Gen struct {
 	gen func() int64
@@ -141,7 +141,7 @@ func BytesBetween(lower int, upper int) []byte {
 	return bz
 }
 
-// BoolGen represents an random bool generator.
+// BoolGen represents a random bool generator.
 // Call Stop when done so dangling goroutines can be cleaned up.
 type BoolGen struct {
 	ch    chan bool
@@ -221,7 +221,7 @@ func binSearch(a []int64, search int64) int {
 	}
 }
 
-// StringGen represents an random string generator.
+// StringGen represents a random string generator.
 // Call Stop when done so dangling goroutines can be cleaned up.
 type StringGen struct {
 	lengthGen  I64Gen

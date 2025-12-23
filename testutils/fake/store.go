@@ -168,7 +168,7 @@ func (t TestKVStore) Delete(key []byte) {
 	delete(t.store, string(key))
 }
 
-// Iterator returns an interator over the given key domain
+// Iterator returns an iterator over the given key domain
 func (t TestKVStore) Iterator(start, end []byte) store.Iterator {
 
 	t.mutex.Lock()
