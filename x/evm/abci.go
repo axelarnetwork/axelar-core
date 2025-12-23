@@ -8,11 +8,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/CosmWasm/wasmd/x/wasm"
-
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -265,14 +262,6 @@ func routeEventToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 		)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)
-	}
-
-	if message.Recipient.Chain.Name.Equals(axelarnet.Axelarnet.Name) {
-		return fmt.Errorf("%s is not a supported recipient", axelarnet.Axelarnet.Name)
-	}
-
-	if message.Asset != nil && message.Recipient.Chain.IsFrom(wasm.ModuleName) {
-		return fmt.Errorf("%s is not a supported recipient for calls with asset transfer", wasm.ModuleName)
 	}
 
 	if err := n.SetNewMessage(ctx, message); err != nil {

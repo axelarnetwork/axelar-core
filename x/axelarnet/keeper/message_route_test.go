@@ -107,8 +107,19 @@ func TestNewMessageRoute(t *testing.T) {
 	})
 
 	givenMessageRoute.
+		When("destination is Axelarnet", func() {
+			msg = randMsg(nexus.Processing, randPayload())
+			msg.Recipient.Chain = exported.Axelarnet
+		}).
+		Then("should return error", func(t *testing.T) {
+			assert.ErrorContains(t, route(ctx, nexus.RoutingContext{Payload: randPayload()}, msg), "not a supported destination")
+		}).
+		Run(t)
+
+	givenMessageRoute.
 		When("payload is nil", func() {
 			routingCtx = nexus.RoutingContext{Payload: nil}
+			msg = randMsg(nexus.Processing, nil)
 		}).
 		Then("should return error", func(t *testing.T) {
 			assert.ErrorContains(t, route(ctx, routingCtx, msg), "payload is required")

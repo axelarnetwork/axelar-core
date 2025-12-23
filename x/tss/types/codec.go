@@ -1,31 +1,23 @@
+// Package types provides legacy TSS type registrations for historical transaction decoding.
 package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	reward "github.com/axelarnetwork/axelar-core/x/reward/exported"
 )
 
-// RegisterLegacyAminoCodec registers concrete types on codec
+// RegisterLegacyAminoCodec registers concrete types on codec.
+// These registrations are required to decode historical transactions that used TSS message types.
+// Block explorers and other tools querying historical data depend on these registrations.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&HeartBeatRequest{}, "tss/HeartBeatRequest", nil)
 	cdc.RegisterConcrete(&UpdateParamsRequest{}, "tss/UpdateParams", nil)
 }
 
-// RegisterInterfaces registers types and interfaces with the given registry
-func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
-	registry.RegisterImplementations((*sdk.Msg)(nil),
-		&HeartBeatRequest{},
-		&UpdateParamsRequest{},
-	)
-
-	registry.RegisterImplementations((*reward.Refundable)(nil),
-		&HeartBeatRequest{},
-	)
-}
+// RegisterInterfaces registers types and interfaces with the given registry.
+// No active message types remain as the TSS module's runtime functionality has been removed.
+func RegisterInterfaces(_ cdctypes.InterfaceRegistry) {}
 
 var amino = codec.NewLegacyAmino()
 

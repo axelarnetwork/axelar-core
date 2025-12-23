@@ -16,7 +16,6 @@ import (
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
@@ -34,7 +33,6 @@ import (
 	evmRPC "github.com/axelarnetwork/axelar-core/vald/evm/rpc"
 	"github.com/axelarnetwork/axelar-core/vald/multisig"
 	grpc "github.com/axelarnetwork/axelar-core/vald/tofnd_grpc"
-	"github.com/axelarnetwork/axelar-core/vald/tss"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
@@ -179,9 +177,6 @@ func setPersistentFlags(cmd *cobra.Command) {
 }
 
 func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdConfig, valAddr sdk.ValAddress, stateSource ReadWriter) {
-	encCfg := app.MakeEncodingConfig()
-	cdc := encCfg.Amino
-
 	sender, err := clientCtx.Keyring.Key(clientCtx.From)
 	if err != nil {
 		panic(errorsmod.Wrap(err, "failed to read broadcaster account info from keyring"))
@@ -204,8 +199,6 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		}
 		return cl, nil
 	})
-	tssMgr := createTSSMgr(bc, clientCtx, axelarCfg, valAddr.String(), cdc)
-
 	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, valAddr)
 	multisigMgr := createMultisigMgr(bc, clientCtx, axelarCfg, valAddr)
 
@@ -230,15 +223,6 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		return false
 	})
 
-	var heartbeat <-chan tmEvents.ABCIEventWithHeight
-	if axelarCfg.EnableHeartbeat {
-		heartbeat = eventBus.Subscribe(func(e tmEvents.ABCIEventWithHeight) bool {
-			event := tmEvents.Map(e)
-			return event.Type == tssTypes.EventTypeHeartBeat &&
-				event.Attributes[sdk.AttributeKeyModule] == tssTypes.ModuleName &&
-				event.Attributes[sdk.AttributeKeyAction] == tssTypes.AttributeValueSend
-		})
-	}
 
 	evmNewChain := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ChainAdded]())
 	evmTokConf := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ConfirmTokenStarted]())
@@ -305,9 +289,6 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		createJobTyped(multisigSigning, multisigMgr.ProcessSigningStarted, cancelEventCtx),
 	}
 
-	if axelarCfg.EnableHeartbeat {
-		js = append(js, createJob(heartbeat, tssMgr.ProcessHeartBeatEvent, cancelEventCtx))
-	}
 
 	slices.ForEach(js, func(job jobs.Job) {
 		eGroup.Go(func() error { return job(eventCtx) })
@@ -442,29 +423,6 @@ func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx sdkClient.Conte
 	return multisig.NewMgr(tofnd.NewMultisigClient(conn), cliCtx, valAddr, broadcaster, timeout)
 }
 
-func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx sdkClient.Context, axelarCfg config.ValdConfig, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
-	create := func() (*tss.Mgr, error) {
-		conn, err := tss.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout)
-		if err != nil {
-			return nil, err
-		}
-		log.Debug("successful connection to tofnd gRPC server")
-
-		// creates client to communicate with the external tofnd process service
-		multiSigClient := tofnd.NewMultisigClient(conn)
-
-		tssMgr := tss.NewMgr(multiSigClient, cliCtx, 2*time.Hour, valAddr, broadcaster, cdc)
-
-		return tssMgr, nil
-	}
-
-	mgr, err := create()
-	if err != nil {
-		panic(errorsmod.Wrap(err, "failed to create tss manager"))
-	}
-
-	return mgr
-}
 
 func createEVMClient(config evmTypes.EVMConfig) (evmRPC.Client, error) {
 	return evmRPC.NewClient(config.RPCAddr, config.FinalityOverride)

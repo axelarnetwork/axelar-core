@@ -4,11 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/CosmWasm/wasmd/x/wasm"
-
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -247,20 +244,6 @@ func (d keyRotationTestData) createMockKey() *multisigMock.KeyMock {
 
 func TestProcessConfirmedEvents(t *testing.T) {
 	t.Run("ContractCall", func(t *testing.T) {
-		t.Run("event to 'Axelarnet' is marked failed", func(t *testing.T) {
-			s := newRoutingTestSetup(t)
-			event := s.createContractCallEvent()
-			event.GetContractCall().DestinationChain = axelarnet.Axelarnet.Name
-			s.queueEvent(event)
-
-			_, err := EndBlocker(s.ctx, s.baseKeeper, s.nexus, s.multisig)
-			assert.NoError(t, err)
-
-			assert.Len(t, s.sourceChainKeeper.SetEventFailedCalls(), 1, "event should be marked failed")
-			assert.Len(t, s.sourceChainKeeper.SetEventCompletedCalls(), 0)
-			assert.Len(t, s.nexus.SetNewMessageCalls(), 0)
-		})
-
 		t.Run("event to inactive chain is marked failed", func(t *testing.T) {
 			s := newRoutingTestSetup(t)
 			s.queueEvent(s.createContractCallEvent())
@@ -378,21 +361,6 @@ func TestProcessConfirmedEvents(t *testing.T) {
 	})
 
 	t.Run("ContractCallWithToken", func(t *testing.T) {
-		t.Run("event to 'Axelarnet' is marked failed", func(t *testing.T) {
-			s := newRoutingTestSetup(t)
-			s.setupConfirmedToken()
-			event := s.createContractCallWithTokenEvent()
-			event.GetContractCallWithToken().DestinationChain = axelarnet.Axelarnet.Name
-			s.queueEvent(event)
-
-			_, err := EndBlocker(s.ctx, s.baseKeeper, s.nexus, s.multisig)
-			assert.NoError(t, err)
-
-			assert.Len(t, s.sourceChainKeeper.SetEventFailedCalls(), 1, "event should be marked failed")
-			assert.Len(t, s.sourceChainKeeper.SetEventCompletedCalls(), 0)
-			assert.Len(t, s.nexus.SetNewMessageCalls(), 0)
-		})
-
 		t.Run("event to inactive chain is marked failed", func(t *testing.T) {
 			s := newRoutingTestSetup(t)
 			s.setupConfirmedToken()
@@ -472,29 +440,6 @@ func TestProcessConfirmedEvents(t *testing.T) {
 			assert.Len(t, s.sourceChainKeeper.SetEventFailedCalls(), 1, "event should be marked failed")
 			assert.Len(t, s.sourceChainKeeper.SetEventCompletedCalls(), 0)
 			assert.Len(t, s.nexus.SetNewMessageCalls(), 0)
-		})
-
-		t.Run("event to wasm chain is marked failed", func(t *testing.T) {
-			s := newRoutingTestSetup(t)
-			s.setupConfirmedToken()
-			event := s.createContractCallWithTokenEvent()
-			event.GetContractCallWithToken().DestinationChain = nexus.ChainName("wasm-chain")
-			s.queueEvent(event)
-
-			// Configure wasm chain
-			s.nexus.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-				if chain == nexus.ChainName("wasm-chain") {
-					return nexus.Chain{Name: chain, Module: wasm.ModuleName}, true
-				}
-				return nexus.Chain{Name: chain, Module: types.ModuleName}, true
-			}
-
-			_, err := EndBlocker(s.ctx, s.baseKeeper, s.nexus, s.multisig)
-			assert.NoError(t, err)
-
-			assert.Len(t, s.sourceChainKeeper.SetEventFailedCalls(), 1, "event should be marked failed")
-			assert.Len(t, s.sourceChainKeeper.SetEventCompletedCalls(), 0)
-			assert.Len(t, s.nexus.SetNewMessageCalls(), 0, "no message should be created for wasm with token")
 		})
 
 		t.Run("event to valid chain creates message with asset and enqueues for routing", func(t *testing.T) {
@@ -740,9 +685,19 @@ func TestProcessConfirmedEvents(t *testing.T) {
 	t.Run("Resilience", func(t *testing.T) {
 		t.Run("first event fails but second event still succeeds", func(t *testing.T) {
 			s := newRoutingTestSetup(t)
+			unregisteredChain := nexus.ChainName("unregistered")
 			failingEvent := s.createContractCallEvent()
-			failingEvent.GetContractCall().DestinationChain = axelarnet.Axelarnet.Name // Will fail
-			succeedingEvent := s.createContractCallEvent()                             // Will succeed
+			failingEvent.GetContractCall().DestinationChain = unregisteredChain // Will fail (unregistered)
+			succeedingEvent := s.createContractCallEvent()                      // Will succeed
+
+			// Make the unregistered chain fail lookup
+			originalGetChain := s.nexus.GetChainFunc
+			s.nexus.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+				if chain == unregisteredChain {
+					return nexus.Chain{}, false
+				}
+				return originalGetChain(ctx, chain)
+			}
 
 			s.queueEvents(failingEvent, succeedingEvent)
 
@@ -759,6 +714,7 @@ func TestProcessConfirmedEvents(t *testing.T) {
 			s := newRoutingTestSetup(t)
 			chain1 := nexus.ChainName("chain1")
 			chain2 := nexus.ChainName("chain2")
+			unregisteredDest := nexus.ChainName("unregistered")
 
 			ck1 := &mock.ChainKeeperMock{
 				LoggerFunc:            func(ctx sdk.Context) log.Logger { return ctx.Logger() },
@@ -773,7 +729,7 @@ func TestProcessConfirmedEvents(t *testing.T) {
 				SetEventFailedFunc:    func(ctx sdk.Context, eventID types.EventID) error { return nil },
 			}
 
-			// Chain1 has failing event, Chain2 has succeeding event
+			// Chain1 has failing event (unregistered destination), Chain2 has succeeding event
 			failingEvent := types.Event{
 				Chain: chain1,
 				TxID:  evmTestUtils.RandomHash(),
@@ -781,7 +737,7 @@ func TestProcessConfirmedEvents(t *testing.T) {
 				Event: &types.Event_ContractCall{
 					ContractCall: &types.EventContractCall{
 						Sender:           evmTestUtils.RandomAddress(),
-						DestinationChain: axelarnet.Axelarnet.Name, // Will fail
+						DestinationChain: unregisteredDest, // Will fail (unregistered)
 						ContractAddress:  evmTestUtils.RandomAddress().Hex(),
 						PayloadHash:      types.Hash(evmCrypto.Keccak256Hash(rand.Bytes(100))),
 					},
@@ -819,6 +775,14 @@ func TestProcessConfirmedEvents(t *testing.T) {
 					{Name: chain1, Module: types.ModuleName},
 					{Name: chain2, Module: types.ModuleName},
 				}
+			}
+			// Make the unregistered destination fail lookup
+			originalGetChain := s.nexus.GetChainFunc
+			s.nexus.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+				if chain == unregisteredDest {
+					return nexus.Chain{}, false
+				}
+				return originalGetChain(ctx, chain)
 			}
 
 			_, err := EndBlocker(s.ctx, s.baseKeeper, s.nexus, s.multisig)

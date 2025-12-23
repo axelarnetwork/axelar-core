@@ -74,8 +74,6 @@ import (
 	rewardTypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
-	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/maps"
@@ -146,7 +144,6 @@ func initParamsKeeper(encodingConfig axelarParams.EncodingConfig, key, tkey stor
 	paramsKeeper.Subspace(wasm.ModuleName)
 	paramsKeeper.Subspace(snapTypes.ModuleName)
 	paramsKeeper.Subspace(multisigTypes.ModuleName)
-	paramsKeeper.Subspace(tssTypes.ModuleName)
 	paramsKeeper.Subspace(nexusTypes.ModuleName)
 	paramsKeeper.Subspace(axelarnetTypes.ModuleName)
 	paramsKeeper.Subspace(rewardTypes.ModuleName)
@@ -292,11 +289,6 @@ func initSnapshotKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey,
 		GetKeeper[slashingkeeper.Keeper](keepers),
 	)
 	return &snapK
-}
-
-func initTssKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *tssKeeper.Keeper {
-	tssK := tssKeeper.NewKeeper(appCodec, keys[tssTypes.StoreKey], keepers.getSubspace(tssTypes.ModuleName))
-	return &tssK
 }
 
 func initMultisigKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *multisigKeeper.Keeper {

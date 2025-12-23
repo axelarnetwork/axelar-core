@@ -134,7 +134,6 @@ import (
 	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss"
-	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/vote"
 	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
@@ -261,7 +260,6 @@ func NewAxelarApp(
 	SetKeeper(keepers, initNexusKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initRewardKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initMultisigKeeper(appCodec, keys, keepers))
-	SetKeeper(keepers, initTssKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initSnapshotKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initVoteKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initPermissionKeeper(appCodec, keys, keepers))
@@ -316,6 +314,7 @@ func NewAxelarApp(
 
 	appModules := initAppModules(
 		keepers,
+		keys,
 		bApp,
 		encodingConfig,
 		appOpts,
@@ -502,7 +501,7 @@ func initBaseApp(db dbm.DB, traceStore io.Writer, encodingConfig axelarParams.En
 	return bApp
 }
 
-func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axelarParams.EncodingConfig, appOpts servertypes.AppOptions, axelarnetModule axelarnet.AppModule) []module.AppModule {
+func initAppModules(keepers *KeeperCache, keys map[string]*store.KVStoreKey, bApp *bam.BaseApp, encodingConfig axelarParams.EncodingConfig, appOpts servertypes.AppOptions, axelarnetModule axelarnet.AppModule) []module.AppModule {
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
@@ -572,13 +571,7 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 			GetKeeper[rewardKeeper.Keeper](keepers),
 			GetKeeper[nexusKeeper.Keeper](keepers),
 		),
-		tss.NewAppModule(
-			*GetKeeper[tssKeeper.Keeper](keepers),
-			GetKeeper[snapKeeper.Keeper](keepers),
-			GetKeeper[nexusKeeper.Keeper](keepers),
-			GetKeeper[stakingkeeper.Keeper](keepers),
-			GetKeeper[multisigKeeper.Keeper](keepers),
-		),
+		tss.NewAppModule(keys[tssTypes.StoreKey]),
 		vote.NewAppModule(*GetKeeper[voteKeeper.Keeper](keepers)),
 		nexus.NewAppModule(
 			*GetKeeper[nexusKeeper.Keeper](keepers),
@@ -841,7 +834,6 @@ func orderEndBlockers() []string {
 	endBlockerOrder = append(endBlockerOrder,
 		axelarnetTypes.ModuleName,
 		multisigTypes.ModuleName,
-		tssTypes.ModuleName,
 		evmTypes.ModuleName,
 		nexusTypes.ModuleName,
 		rewardTypes.ModuleName,
