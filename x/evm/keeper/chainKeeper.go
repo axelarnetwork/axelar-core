@@ -24,27 +24,19 @@ import (
 )
 
 var (
-	gatewayKey                       = key.FromStr("gateway")
-	unsignedBatchIDKey               = key.FromStr("unsigned_command_batch_id")
-	latestSignedBatchIDKey           = key.FromStr("latest_signed_command_batch_id")
-	tokenMetadataByAssetPrefix       = "token_deployment_by_asset"
-	tokenMetadataBySymbolPrefix      = key.FromStr("token_deployment_by_symbol")
-	confirmedDepositPrefixDeprecated = "confirmed_deposit" // Deprecated
-	burnedDepositPrefixDeprecated    = "burned_deposit"    // Deprecated
-	commandBatchPrefix               = "batched_commands"
-	commandPrefix                    = "command"
-	eventPrefix                      = utils.KeyFromStr("event")
-	confirmedEventQueueName          = "confirmed_event_queue"
-	commandQueueName                 = "cmd_queue"
+	gatewayKey                  = key.FromStr("gateway")
+	unsignedBatchIDKey          = key.FromStr("unsigned_command_batch_id")
+	latestSignedBatchIDKey      = key.FromStr("latest_signed_command_batch_id")
+	tokenMetadataByAssetPrefix  = "token_deployment_by_asset"
+	tokenMetadataBySymbolPrefix = key.FromStr("token_deployment_by_symbol")
+	commandBatchPrefix          = "batched_commands"
+	commandPrefix               = "command"
+	eventPrefix                 = utils.KeyFromStr("event")
+	confirmedEventQueueName     = "confirmed_event_queue"
+	commandQueueName            = "cmd_queue"
 
-	// DEPRECATED: The following storage keys are deprecated and will be cleaned up in a future migration.
+	// DEPRECATED: The following storage keys are deprecated and cleaned up by Migrate10to11.
 	// They were used for the link-deposit protocol which has been removed.
-	// - burnerAddrPrefix: stored BurnerInfo for deposit addresses (used by SetBurnerInfo, GetBurnerInfo, getBurnerInfos)
-	// - confirmedDepositPrefix: stored confirmed deposits (used by SetDeposit, getConfirmedDeposits)
-	// - burnedDepositPrefix: stored burned deposits (used by SetDeposit, getBurnedDeposits)
-	//
-	// Migration needed: These storage entries should be cleared in a future upgrade.
-	// The data is still exported/imported via genesis for backwards compatibility.
 	burnerAddrPrefix       = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 1)
 	confirmedDepositPrefix = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 2)
 	burnedDepositPrefix    = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 3)
