@@ -71,19 +71,6 @@ service MsgService {
     };
   }
 
-  rpc SetTransferRateLimit(SetTransferRateLimitRequest)
-      returns (SetTransferRateLimitResponse) {
-    option (google.api.http) = {
-      post : "/axelar/nexus/v1beta1/set_transfer_rate_limit"
-      body : "*"
-      // Deprecated: use /axelar/nexus/v1beta1/set_transfer_rate_limit instead
-      additional_bindings : {
-        post : "/axelar/nexus/set_transfer_rate_limit"
-        body : "*"
-      }
-    };
-  }
-
   rpc UpdateParams(UpdateParamsRequest) returns (UpdateParamsResponse) {
     option (google.api.http) = {
       post : "/axelar/nexus/v1beta1/params"
@@ -107,14 +94,6 @@ service MsgService {
 
 // QueryService defines the gRPC querier service.
 service QueryService {
-  // LatestDepositAddress queries the a deposit address by recipient
-  rpc LatestDepositAddress(LatestDepositAddressRequest)
-      returns (LatestDepositAddressResponse) {
-    option (google.api.http).get =
-        "/axelar/nexus/v1beta1/latest_deposit_address/"
-        "{recipient_addr}/{recipient_chain}/{deposit_chain}";
-  }
-
   // TransfersForChain queries transfers by chain
   rpc TransfersForChain(TransfersForChainRequest)
       returns (TransfersForChainResponse) {
@@ -161,26 +140,11 @@ service QueryService {
         "/axelar/nexus/v1beta1/chains_by_asset/{asset}";
   }
 
-  // RecipientAddress queries the recipient address for a given deposit address
-  rpc RecipientAddress(RecipientAddressRequest)
-      returns (RecipientAddressResponse) {
-    option (google.api.http).get = "/axelar/nexus/v1beta1/recipient_address/"
-                                   "{deposit_chain}/{deposit_addr}";
-  }
-
   // ChainMaintainers queries the chain maintainers for a given chain
   rpc ChainMaintainers(ChainMaintainersRequest)
       returns (ChainMaintainersResponse) {
     option (google.api.http).get =
         "/axelar/nexus/v1beta1/chain_maintainers/{chain}";
-  }
-
-  // TransferRateLimit queries the transfer rate limit for a given chain and
-  // asset. If a rate limit is not set, nil is returned.
-  rpc TransferRateLimit(TransferRateLimitRequest)
-      returns (TransferRateLimitResponse) {
-    option (google.api.http).get = "/axelar/nexus/v1beta1/transfer_rate_limit/"
-                                   "{chain}/{asset}";
   }
 
   rpc Message(MessageRequest) returns (MessageResponse) {

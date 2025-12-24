@@ -26,7 +26,7 @@ message GenesisState {
     utils.v1beta1.QueueState confirmed_event_queue = 12
         [ (gogoproto.nullable) = false ];
 
-    // Deprecated: link-deposit protocol removed
+    // Deprecated in v1.4: link-deposit protocol removed
     reserved 2;  // burner_infos
     reserved 4;  // confirmed_deposits
     reserved 5;  // burned_deposits

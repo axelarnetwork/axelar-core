@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"golang.org/x/exp/maps"
 
-	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
@@ -331,10 +330,8 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	mintLimit, err := math.ParseUint(req.DailyMintLimit)
-	if err != nil {
-		return nil, err
-	}
+	// DailyMintLimit is deprecated - always use unlimited (0)
+	mintLimit := math.ZeroUint()
 
 	keeper, err := s.ForChain(ctx, chain.Name)
 	if err != nil {
@@ -384,10 +381,7 @@ func (s msgServer) CreateDeployToken(c context.Context, req *types.CreateDeployT
 		return nil, err
 	}
 
-	if mintLimit.IsZero() {
-		mintLimit = utils.MaxUint
-	}
-	if err = s.nexus.RegisterAsset(ctx, chain, nexus.NewAsset(req.Asset.Name, false), mintLimit, types.DefaultRateLimitWindow); err != nil {
+	if err = s.nexus.RegisterAsset(ctx, chain, nexus.NewAsset(req.Asset.Name, false)); err != nil {
 		return nil, err
 	}
 

@@ -2,7 +2,6 @@ package types
 
 import (
 	"context"
-	"time"
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -45,8 +44,6 @@ type Nexus interface {
 	DeactivateChain(ctx sdk.Context, chain exported.Chain)
 	RegisterFee(ctx sdk.Context, chain exported.Chain, feeInfo exported.FeeInfo) error
 	GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) exported.FeeInfo
-	SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limit sdk.Coin, window time.Duration) error
-	RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection) error
 	GenerateMessageID(ctx sdk.Context) (string, []byte, uint64)
 	SetNewMessage(ctx sdk.Context, msg exported.GeneralMessage) error
 	GetMessage(ctx sdk.Context, id string) (exported.GeneralMessage, bool)

@@ -113,10 +113,6 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 		return 0, err
 	}
 
-	if err := k.RateLimitTransfer(ctx, senderChain.Name, asset, exported.TransferDirectionFrom); err != nil {
-		return 0, err
-	}
-
 	// merging transfers below minimum for the specified recipient
 	insufficientAmountTransfer, found := k.getTransfer(ctx, recipient, asset.Denom, exported.InsufficientAmount)
 	if found {
@@ -150,10 +146,6 @@ func (k Keeper) EnqueueTransfer(ctx sdk.Context, senderChain exported.Chain, rec
 	if fee.IsPositive() {
 		k.AddTransferFee(ctx, fee)
 		asset = asset.Sub(fee)
-	}
-
-	if err := k.RateLimitTransfer(ctx, recipient.Chain.Name, asset, exported.TransferDirectionTo); err != nil {
-		return 0, err
 	}
 
 	// merging transfers for the specified recipient

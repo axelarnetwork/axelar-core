@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"strconv"
 	"testing"
-	"time"
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -21,7 +20,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/exported"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
@@ -61,8 +59,8 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 			k.ActivateChain(ctx, evm.Ethereum)
 			k.SetChain(ctx, axelarnet.Axelarnet)
 			k.ActivateChain(ctx, axelarnet.Axelarnet)
-			funcs.MustNoErr(k.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false), utils.MaxUint, time.Hour))
-			funcs.MustNoErr(k.RegisterAsset(ctx, axelarnet.Axelarnet, exported.NewAsset(axelarnet.NativeAsset, true), utils.MaxUint, time.Hour))
+			funcs.MustNoErr(k.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false)))
+			funcs.MustNoErr(k.RegisterAsset(ctx, axelarnet.Axelarnet, exported.NewAsset(axelarnet.NativeAsset, true)))
 
 			addressValidators := types.NewAddressValidators().
 				AddAddressValidator("evm", func(sdk.Context, exported.CrossChainAddress) error {

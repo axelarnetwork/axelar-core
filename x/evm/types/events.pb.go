@@ -287,6 +287,8 @@ func (*ConfirmKeyTransferStarted) XXX_MessageName() string {
 	return "axelar.evm.v1beta1.ConfirmKeyTransferStarted"
 }
 
+// Deprecated in v0.22: use ConfirmGatewayTxsStarted instead
+//
 // Deprecated: Do not use.
 type ConfirmGatewayTxStarted struct {
 	TxID                      Hash                                                            `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
@@ -1242,6 +1244,8 @@ func (*ContractCallWithMintApproved) XXX_MessageName() string {
 	return "axelar.evm.v1beta1.ContractCallWithMintApproved"
 }
 
+// Deprecated in v1.4: link-deposit protocol removed
+//
 // Deprecated: Do not use.
 type TokenSent struct {
 	Chain              github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName  `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`

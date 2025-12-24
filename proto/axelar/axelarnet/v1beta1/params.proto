@@ -14,14 +14,19 @@ message Params {
   reserved 2; // transaction_fee_rate was removed in v0.15
   uint64 transfer_limit = 3;
   uint64 end_blocker_limit = 4;
+  // Deprecated in v1.4: call_contracts_proposal_min_deposits is no longer used
   repeated CallContractProposalMinDeposit call_contracts_proposal_min_deposits =
       5 [
+        deprecated = true,
         (gogoproto.castrepeated) = "CallContractProposalMinDeposits",
         (gogoproto.nullable) = false
       ];
 }
 
+// Deprecated in v1.4: CallContractProposalMinDeposit is no longer used
 message CallContractProposalMinDeposit {
+  option deprecated = true;
+
   string chain = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];

@@ -2,7 +2,6 @@ package types
 
 import (
 	"context"
-	"time"
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -95,7 +94,7 @@ type Nexus interface {
 	GetChains(ctx sdk.Context) []nexus.Chain
 	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
 	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
-	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit math.Uint, window time.Duration) error
+	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error
 	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain nexus.Chain, ok bool)

@@ -6,7 +6,7 @@ package mock
 import (
 	context "context"
 	"cosmossdk.io/log"
-	cosmossdk_io_math "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	utils "github.com/axelarnetwork/axelar-core/utils"
 	github_com_axelarnetwork_axelar_core_x_nexus_exported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -17,7 +17,6 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	ibctypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	"sync"
-	time "time"
 )
 
 // Ensure, that NexusMock does implement nexustypes.Nexus.
@@ -105,9 +104,6 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 //				panic("mock out the Logger method")
 //			},
-//			RateLimitTransferFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
-//				panic("mock out the RateLimitTransfer method")
-//			},
 //			RegisterFeeFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, feeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo) error {
 //				panic("mock out the RegisterFee method")
 //			},
@@ -125,9 +121,6 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			},
 //			SetParamsFunc: func(ctx cosmossdktypes.Context, p nexustypes.Params)  {
 //				panic("mock out the SetParams method")
-//			},
-//			SetRateLimitFunc: func(ctx cosmossdktypes.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit cosmossdktypes.Coin, window time.Duration) error {
-//				panic("mock out the SetRateLimit method")
 //			},
 //		}
 //
@@ -211,9 +204,6 @@ type NexusMock struct {
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
 
-	// RateLimitTransferFunc mocks the RateLimitTransfer method.
-	RateLimitTransferFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error
-
 	// RegisterFeeFunc mocks the RegisterFee method.
 	RegisterFeeFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, feeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo) error
 
@@ -231,9 +221,6 @@ type NexusMock struct {
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx cosmossdktypes.Context, p nexustypes.Params)
-
-	// SetRateLimitFunc mocks the SetRateLimit method.
-	SetRateLimitFunc func(ctx cosmossdktypes.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit cosmossdktypes.Coin, window time.Duration) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -402,17 +389,6 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
-		// RateLimitTransfer holds details about calls to the RateLimitTransfer method.
-		RateLimitTransfer []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-			// Asset is the asset argument value.
-			Asset cosmossdktypes.Coin
-			// Direction is the direction argument value.
-			Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
-		}
 		// RegisterFee holds details about calls to the RegisterFee method.
 		RegisterFee []struct {
 			// Ctx is the ctx argument value.
@@ -461,17 +437,6 @@ type NexusMock struct {
 			// P is the p argument value.
 			P nexustypes.Params
 		}
-		// SetRateLimit holds details about calls to the SetRateLimit method.
-		SetRateLimit []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// ChainName is the chainName argument value.
-			ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-			// Limit is the limit argument value.
-			Limit cosmossdktypes.Coin
-			// Window is the window argument value.
-			Window time.Duration
-		}
 	}
 	lockActivateChain             sync.RWMutex
 	lockActivateWasmConnection    sync.RWMutex
@@ -498,14 +463,12 @@ type NexusMock struct {
 	lockIsWasmConnectionActivated sync.RWMutex
 	lockLinkAddresses             sync.RWMutex
 	lockLogger                    sync.RWMutex
-	lockRateLimitTransfer         sync.RWMutex
 	lockRegisterFee               sync.RWMutex
 	lockRemoveChainMaintainer     sync.RWMutex
 	lockRouteMessage              sync.RWMutex
 	lockSetMessageExecuted        sync.RWMutex
 	lockSetNewMessage             sync.RWMutex
 	lockSetParams                 sync.RWMutex
-	lockSetRateLimit              sync.RWMutex
 }
 
 // ActivateChain calls ActivateChainFunc.
@@ -1388,50 +1351,6 @@ func (mock *NexusMock) LoggerCalls() []struct {
 	return calls
 }
 
-// RateLimitTransfer calls RateLimitTransferFunc.
-func (mock *NexusMock) RateLimitTransfer(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
-	if mock.RateLimitTransferFunc == nil {
-		panic("NexusMock.RateLimitTransferFunc: method is nil but Nexus.RateLimitTransfer was just called")
-	}
-	callInfo := struct {
-		Ctx       cosmossdktypes.Context
-		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Asset     cosmossdktypes.Coin
-		Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
-	}{
-		Ctx:       ctx,
-		Chain:     chain,
-		Asset:     asset,
-		Direction: direction,
-	}
-	mock.lockRateLimitTransfer.Lock()
-	mock.calls.RateLimitTransfer = append(mock.calls.RateLimitTransfer, callInfo)
-	mock.lockRateLimitTransfer.Unlock()
-	return mock.RateLimitTransferFunc(ctx, chain, asset, direction)
-}
-
-// RateLimitTransferCalls gets all the calls that were made to RateLimitTransfer.
-// Check the length with:
-//
-//	len(mockedNexus.RateLimitTransferCalls())
-func (mock *NexusMock) RateLimitTransferCalls() []struct {
-	Ctx       cosmossdktypes.Context
-	Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-	Asset     cosmossdktypes.Coin
-	Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
-} {
-	var calls []struct {
-		Ctx       cosmossdktypes.Context
-		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Asset     cosmossdktypes.Coin
-		Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
-	}
-	mock.lockRateLimitTransfer.RLock()
-	calls = mock.calls.RateLimitTransfer
-	mock.lockRateLimitTransfer.RUnlock()
-	return calls
-}
-
 // RegisterFee calls RegisterFeeFunc.
 func (mock *NexusMock) RegisterFee(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, feeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo) error {
 	if mock.RegisterFeeFunc == nil {
@@ -1660,50 +1579,6 @@ func (mock *NexusMock) SetParamsCalls() []struct {
 	return calls
 }
 
-// SetRateLimit calls SetRateLimitFunc.
-func (mock *NexusMock) SetRateLimit(ctx cosmossdktypes.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit cosmossdktypes.Coin, window time.Duration) error {
-	if mock.SetRateLimitFunc == nil {
-		panic("NexusMock.SetRateLimitFunc: method is nil but Nexus.SetRateLimit was just called")
-	}
-	callInfo := struct {
-		Ctx       cosmossdktypes.Context
-		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Limit     cosmossdktypes.Coin
-		Window    time.Duration
-	}{
-		Ctx:       ctx,
-		ChainName: chainName,
-		Limit:     limit,
-		Window:    window,
-	}
-	mock.lockSetRateLimit.Lock()
-	mock.calls.SetRateLimit = append(mock.calls.SetRateLimit, callInfo)
-	mock.lockSetRateLimit.Unlock()
-	return mock.SetRateLimitFunc(ctx, chainName, limit, window)
-}
-
-// SetRateLimitCalls gets all the calls that were made to SetRateLimit.
-// Check the length with:
-//
-//	len(mockedNexus.SetRateLimitCalls())
-func (mock *NexusMock) SetRateLimitCalls() []struct {
-	Ctx       cosmossdktypes.Context
-	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-	Limit     cosmossdktypes.Coin
-	Window    time.Duration
-} {
-	var calls []struct {
-		Ctx       cosmossdktypes.Context
-		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Limit     cosmossdktypes.Coin
-		Window    time.Duration
-	}
-	mock.lockSetRateLimit.RLock()
-	calls = mock.calls.SetRateLimit
-	mock.lockSetRateLimit.RUnlock()
-	return calls
-}
-
 // Ensure, that SnapshotterMock does implement nexustypes.Snapshotter.
 // If this is not the case, regenerate this file with moq.
 var _ nexustypes.Snapshotter = &SnapshotterMock{}
@@ -1714,7 +1589,7 @@ var _ nexustypes.Snapshotter = &SnapshotterMock{}
 //
 //		// make and configure a mocked nexustypes.Snapshotter
 //		mockedSnapshotter := &SnapshotterMock{
-//			CreateSnapshotFunc: func(ctx cosmossdktypes.Context, candidates []cosmossdktypes.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint, threshold utils.Threshold) (snapshot.Snapshot, error) {
+//			CreateSnapshotFunc: func(ctx cosmossdktypes.Context, candidates []cosmossdktypes.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower math.Uint) math.Uint, threshold utils.Threshold) (snapshot.Snapshot, error) {
 //				panic("mock out the CreateSnapshot method")
 //			},
 //			GetOperatorFunc: func(ctx cosmossdktypes.Context, proxy cosmossdktypes.AccAddress) cosmossdktypes.ValAddress {
@@ -1731,7 +1606,7 @@ var _ nexustypes.Snapshotter = &SnapshotterMock{}
 //	}
 type SnapshotterMock struct {
 	// CreateSnapshotFunc mocks the CreateSnapshot method.
-	CreateSnapshotFunc func(ctx cosmossdktypes.Context, candidates []cosmossdktypes.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint, threshold utils.Threshold) (snapshot.Snapshot, error)
+	CreateSnapshotFunc func(ctx cosmossdktypes.Context, candidates []cosmossdktypes.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower math.Uint) math.Uint, threshold utils.Threshold) (snapshot.Snapshot, error)
 
 	// GetOperatorFunc mocks the GetOperator method.
 	GetOperatorFunc func(ctx cosmossdktypes.Context, proxy cosmossdktypes.AccAddress) cosmossdktypes.ValAddress
@@ -1750,7 +1625,7 @@ type SnapshotterMock struct {
 			// FilterFunc is the filterFunc argument value.
 			FilterFunc func(snapshot.ValidatorI) bool
 			// WeightFunc is the weightFunc argument value.
-			WeightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint
+			WeightFunc func(consensusPower math.Uint) math.Uint
 			// Threshold is the threshold argument value.
 			Threshold utils.Threshold
 		}
@@ -1775,7 +1650,7 @@ type SnapshotterMock struct {
 }
 
 // CreateSnapshot calls CreateSnapshotFunc.
-func (mock *SnapshotterMock) CreateSnapshot(ctx cosmossdktypes.Context, candidates []cosmossdktypes.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint, threshold utils.Threshold) (snapshot.Snapshot, error) {
+func (mock *SnapshotterMock) CreateSnapshot(ctx cosmossdktypes.Context, candidates []cosmossdktypes.ValAddress, filterFunc func(snapshot.ValidatorI) bool, weightFunc func(consensusPower math.Uint) math.Uint, threshold utils.Threshold) (snapshot.Snapshot, error) {
 	if mock.CreateSnapshotFunc == nil {
 		panic("SnapshotterMock.CreateSnapshotFunc: method is nil but Snapshotter.CreateSnapshot was just called")
 	}
@@ -1783,7 +1658,7 @@ func (mock *SnapshotterMock) CreateSnapshot(ctx cosmossdktypes.Context, candidat
 		Ctx        cosmossdktypes.Context
 		Candidates []cosmossdktypes.ValAddress
 		FilterFunc func(snapshot.ValidatorI) bool
-		WeightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint
+		WeightFunc func(consensusPower math.Uint) math.Uint
 		Threshold  utils.Threshold
 	}{
 		Ctx:        ctx,
@@ -1806,14 +1681,14 @@ func (mock *SnapshotterMock) CreateSnapshotCalls() []struct {
 	Ctx        cosmossdktypes.Context
 	Candidates []cosmossdktypes.ValAddress
 	FilterFunc func(snapshot.ValidatorI) bool
-	WeightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint
+	WeightFunc func(consensusPower math.Uint) math.Uint
 	Threshold  utils.Threshold
 } {
 	var calls []struct {
 		Ctx        cosmossdktypes.Context
 		Candidates []cosmossdktypes.ValAddress
 		FilterFunc func(snapshot.ValidatorI) bool
-		WeightFunc func(consensusPower cosmossdk_io_math.Uint) cosmossdk_io_math.Uint
+		WeightFunc func(consensusPower math.Uint) math.Uint
 		Threshold  utils.Threshold
 	}
 	mock.lockCreateSnapshot.RLock()
@@ -2970,10 +2845,10 @@ var _ nexustypes.StakingKeeper = &StakingKeeperMock{}
 //
 //		// make and configure a mocked nexustypes.StakingKeeper
 //		mockedStakingKeeper := &StakingKeeperMock{
-//			GetLastTotalPowerFunc: func(contextMoqParam context.Context) (cosmossdk_io_math.Int, error) {
+//			GetLastTotalPowerFunc: func(contextMoqParam context.Context) (math.Int, error) {
 //				panic("mock out the GetLastTotalPower method")
 //			},
-//			PowerReductionFunc: func(contextMoqParam context.Context) cosmossdk_io_math.Int {
+//			PowerReductionFunc: func(contextMoqParam context.Context) math.Int {
 //				panic("mock out the PowerReduction method")
 //			},
 //			ValidatorFunc: func(ctx context.Context, addr cosmossdktypes.ValAddress) (stakingtypes.ValidatorI, error) {
@@ -2987,10 +2862,10 @@ var _ nexustypes.StakingKeeper = &StakingKeeperMock{}
 //	}
 type StakingKeeperMock struct {
 	// GetLastTotalPowerFunc mocks the GetLastTotalPower method.
-	GetLastTotalPowerFunc func(contextMoqParam context.Context) (cosmossdk_io_math.Int, error)
+	GetLastTotalPowerFunc func(contextMoqParam context.Context) (math.Int, error)
 
 	// PowerReductionFunc mocks the PowerReduction method.
-	PowerReductionFunc func(contextMoqParam context.Context) cosmossdk_io_math.Int
+	PowerReductionFunc func(contextMoqParam context.Context) math.Int
 
 	// ValidatorFunc mocks the Validator method.
 	ValidatorFunc func(ctx context.Context, addr cosmossdktypes.ValAddress) (stakingtypes.ValidatorI, error)
@@ -3021,7 +2896,7 @@ type StakingKeeperMock struct {
 }
 
 // GetLastTotalPower calls GetLastTotalPowerFunc.
-func (mock *StakingKeeperMock) GetLastTotalPower(contextMoqParam context.Context) (cosmossdk_io_math.Int, error) {
+func (mock *StakingKeeperMock) GetLastTotalPower(contextMoqParam context.Context) (math.Int, error) {
 	if mock.GetLastTotalPowerFunc == nil {
 		panic("StakingKeeperMock.GetLastTotalPowerFunc: method is nil but StakingKeeper.GetLastTotalPower was just called")
 	}
@@ -3053,7 +2928,7 @@ func (mock *StakingKeeperMock) GetLastTotalPowerCalls() []struct {
 }
 
 // PowerReduction calls PowerReductionFunc.
-func (mock *StakingKeeperMock) PowerReduction(contextMoqParam context.Context) cosmossdk_io_math.Int {
+func (mock *StakingKeeperMock) PowerReduction(contextMoqParam context.Context) math.Int {
 	if mock.PowerReductionFunc == nil {
 		panic("StakingKeeperMock.PowerReductionFunc: method is nil but StakingKeeper.PowerReduction was just called")
 	}

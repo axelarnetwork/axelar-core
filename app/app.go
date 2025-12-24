@@ -109,7 +109,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/auxiliary"
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
-	axelarnetclient "github.com/axelarnetwork/axelar-core/x/axelarnet/client"
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	axelarbankkeeper "github.com/axelarnetwork/axelar-core/x/bank/keeper"
@@ -391,13 +390,8 @@ func NewAxelarApp(
 }
 
 func InitICS4Wrapper(keepers *KeeperCache, wasmHooks *ibchooks.WasmHooks) ibchooks.ICS4Middleware {
-	// ICS4Wrapper deals with sending IBC packets. These need to get rate limited when appropriate,
-	// so we wrap the channel keeper (which implements the ICS4Wrapper interface) with a rate limiter.
-	ics4Wrapper := axelarnet.NewRateLimitedICS4Wrapper(
-		GetKeeper[ibckeeper.Keeper](keepers).ChannelKeeper,
-		axelarnet.NewRateLimiter(GetKeeper[axelarnetKeeper.Keeper](keepers), GetKeeper[nexusKeeper.Keeper](keepers)),
-		GetKeeper[axelarnetKeeper.Keeper](keepers),
-	)
+	// ICS4Wrapper deals with sending IBC packets.
+	ics4Wrapper := GetKeeper[ibckeeper.Keeper](keepers).ChannelKeeper
 	// create a middleware to integrate wasm hooks into the ibc pipeline
 	if wasmHooks != nil {
 		return ibchooks.NewICS4Middleware(ics4Wrapper, wasmHooks)
@@ -409,12 +403,10 @@ func InitICS4Wrapper(keepers *KeeperCache, wasmHooks *ibchooks.WasmHooks) ibchoo
 }
 
 func initIBCMiddleware(keepers *KeeperCache, ics4Middleware ibchooks.ICS4Middleware) ibchooks.IBCMiddleware {
-	// IBCModule deals with received IBC packets. These need to get rate limited when appropriate,
-	// so we wrap the transfer module's IBCModule with a rate limiter.
+	// IBCModule deals with received IBC packets.
 	ibcModule := axelarnet.NewAxelarnetIBCModule(
 		transfer.NewIBCModule(*GetKeeper[ibctransferkeeper.Keeper](keepers)),
 		*GetKeeper[axelarnetKeeper.IBCKeeper](keepers),
-		axelarnet.NewRateLimiter(GetKeeper[axelarnetKeeper.Keeper](keepers), GetKeeper[nexusKeeper.Keeper](keepers)),
 		GetKeeper[nexusKeeper.Keeper](keepers),
 		axelarbankkeeper.NewBankKeeper(GetKeeper[bankkeeper.BaseKeeper](keepers)),
 	)
@@ -1044,7 +1036,6 @@ func GetModuleBasics() module.BasicManager {
 		gov.NewAppModuleBasic(
 			[]govclient.ProposalHandler{
 				paramsclient.ProposalHandler,
-				axelarnetclient.ProposalHandler,
 			},
 		),
 		params.AppModuleBasic{},

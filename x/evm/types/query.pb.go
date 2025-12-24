@@ -321,6 +321,8 @@ func (m *KeyAddressResponse_WeightedAddress) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_KeyAddressResponse_WeightedAddress proto.InternalMessageInfo
 
+// Deprecated in v0.19
+//
 // Deprecated: Do not use.
 type QueryTokenAddressResponse struct {
 	Address   string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
@@ -360,6 +362,8 @@ func (m *QueryTokenAddressResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryTokenAddressResponse proto.InternalMessageInfo
 
+// Deprecated in v1.4: link-deposit protocol removed
+//
 // Deprecated: Do not use.
 type QueryDepositStateParams struct {
 	TxID          Hash    `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3,customtype=Hash" json:"tx_id"`
@@ -399,6 +403,8 @@ func (m *QueryDepositStateParams) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryDepositStateParams proto.InternalMessageInfo
 
+// Deprecated in v1.4: link-deposit protocol removed
+//
 // Deprecated: Do not use.
 type DepositStateRequest struct {
 	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName `protobuf:"bytes,1,opt,name=chain,proto3,casttype=github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" json:"chain,omitempty"`
@@ -438,6 +444,8 @@ func (m *DepositStateRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DepositStateRequest proto.InternalMessageInfo
 
+// Deprecated in v1.4: link-deposit protocol removed
+//
 // Deprecated: Do not use.
 type DepositStateResponse struct {
 	Status DepositStatus `protobuf:"varint,2,opt,name=status,proto3,enum=axelar.evm.v1beta1.DepositStatus" json:"status,omitempty"`
@@ -856,7 +864,7 @@ func (m *QueryCommandResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryCommandResponse proto.InternalMessageInfo
 
-// Deprecated: BurnerInfoRequest is no longer used.
+// Deprecated in v1.4: BurnerInfoRequest is no longer used (link-deposit protocol removed)
 //
 // Deprecated: Do not use.
 type BurnerInfoRequest struct {
@@ -896,7 +904,7 @@ func (m *BurnerInfoRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_BurnerInfoRequest proto.InternalMessageInfo
 
-// Deprecated: BurnerInfoResponse is no longer used.
+// Deprecated in v1.4: BurnerInfoResponse is no longer used (link-deposit protocol removed)
 //
 // Deprecated: Do not use.
 type BurnerInfoResponse struct {

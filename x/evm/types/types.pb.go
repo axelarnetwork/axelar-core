@@ -443,6 +443,8 @@ func (*Event) XXX_OneofWrappers() []interface{} {
 	}
 }
 
+// Deprecated in v1.4: link-deposit protocol removed
+//
 // Deprecated: Do not use.
 type EventTokenSent struct {
 	Sender             Address                                                         `protobuf:"bytes,1,opt,name=sender,proto3,customtype=Address" json:"sender"`
@@ -567,6 +569,8 @@ func (m *EventContractCallWithToken) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventContractCallWithToken proto.InternalMessageInfo
 
+// Deprecated in v1.4: link-deposit protocol removed
+//
 // Deprecated: Do not use.
 type EventTransfer struct {
 	To     Address                `protobuf:"bytes,1,opt,name=to,proto3,customtype=Address" json:"to"`
@@ -644,6 +648,8 @@ func (m *EventTokenDeployed) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventTokenDeployed proto.InternalMessageInfo
 
+// Deprecated in v0.20: ownership transfer mechanism was removed
+//
 // Deprecated: Do not use.
 type EventMultisigOwnershipTransferred struct {
 	PreOwners     []Address              `protobuf:"bytes,1,rep,name=pre_owners,json=preOwners,proto3,customtype=Address" json:"pre_owners"`

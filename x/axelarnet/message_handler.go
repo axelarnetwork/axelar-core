@@ -96,7 +96,7 @@ type Message struct {
 }
 
 // OnRecvMessage handles general message from a cosmos chain
-func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, r RateLimiter, packet ibcexported.PacketI) ibcexported.Acknowledgement {
+func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, packet ibcexported.PacketI) ibcexported.Acknowledgement {
 	// The acknowledgement is considered successful if it is a ResultAcknowledgement,
 	// follow ibc transfer convention, put byte(1) in ResultAcknowledgement to indicate success.
 	ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
@@ -113,12 +113,6 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 
 	// Skip if packet not sent to Axelar message sender account.
 	if data.GetReceiver() != types.AxelarIBCAccount.String() {
-		// Rate limit non-GMP IBC transfers
-		// IBC receives are rate limited on the from direction (tokens coming from the source chain).
-		if err := r.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
-			return channeltypes.NewErrorAcknowledgement(err)
-		}
-
 		return ack
 	}
 
@@ -150,8 +144,6 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 		Address: data.GetSender(),
 	}
 
-	rateLimitPacket := true
-
 	switch msg.Type {
 	case nexus.TypeGeneralMessage:
 		err = handleMessage(ctx, n, b, ibcK, sourceAddress, msg, token)
@@ -169,13 +161,6 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 			"sequence", packet.GetSequence(),
 		)
 		return channeltypes.NewErrorAcknowledgement(err)
-	}
-
-	if rateLimitPacket {
-		// IBC receives are rate limited on the from direction (tokens coming from the source chain).
-		if err := r.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
-			return channeltypes.NewErrorAcknowledgement(err)
-		}
 	}
 
 	return ack

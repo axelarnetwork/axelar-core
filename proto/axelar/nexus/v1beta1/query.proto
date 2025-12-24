@@ -112,57 +112,6 @@ message ChainsByAssetResponse {
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
 }
 
-// RecipientAddressRequest represents a message that queries the registered
-// recipient address for a given deposit address
-message RecipientAddressRequest {
-  string deposit_addr = 1;
-  string deposit_chain = 2;
-}
-
-message RecipientAddressResponse {
-  string recipient_addr = 1;
-  string recipient_chain = 2;
-};
-
-// TransferRateLimitRequest represents a message that queries the registered
-// transfer rate limit and current transfer amounts for a given chain and asset
-message TransferRateLimitRequest {
-  string chain = 1;
-  string asset = 2;
-}
-
-message TransferRateLimitResponse { TransferRateLimit transfer_rate_limit = 1; }
-
-message TransferRateLimit {
-  bytes limit = 1 [
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false
-  ];
-  google.protobuf.Duration window = 2
-      [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
-  bytes incoming = 3 [
-    deprecated = true,
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false
-  ];
-  bytes outgoing = 4 [
-    deprecated = true,
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false
-  ];
-  // time_left indicates the time left in the rate limit window
-  google.protobuf.Duration time_left = 5
-      [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
-  bytes from = 6 [
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false
-  ];
-  bytes to = 7 [
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false
-  ];
-}
-
 message MessageRequest { string id = 1 [ (gogoproto.customname) = "ID" ]; }
 
 message MessageResponse {

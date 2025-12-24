@@ -2,7 +2,6 @@ package types
 
 import (
 	"context"
-	"time"
 
 	addresscodec "cosmossdk.io/core/address"
 	"cosmossdk.io/log"
@@ -69,8 +68,6 @@ type Nexus interface {
 	DeactivateChain(ctx sdk.Context, chain nexus.Chain)
 	RegisterFee(ctx sdk.Context, chain nexus.Chain, feeInfo nexus.FeeInfo) error
 	GetFeeInfo(ctx sdk.Context, chain nexus.Chain, asset string) nexus.FeeInfo
-	SetRateLimit(ctx sdk.Context, chainName nexus.ChainName, limit sdk.Coin, window time.Duration) error
-	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error
 	SetNewMessage(ctx sdk.Context, msg nexus.GeneralMessage) error
 	GetMessage(ctx sdk.Context, id string) (nexus.GeneralMessage, bool)
 	SetMessageExecuted(ctx sdk.Context, id string) error
@@ -83,7 +80,7 @@ type Nexus interface {
 	GetTransfersForChainPaginated(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, pageRequest *query.PageRequest) ([]nexus.CrossChainTransfer, *query.PageResponse, error)
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	MarkTransferAsFailed(ctx sdk.Context, transfer nexus.CrossChainTransfer)
-	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit math.Uint, window time.Duration) error
+	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error
 	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
 	GetTransferFees(ctx sdk.Context) sdk.Coins

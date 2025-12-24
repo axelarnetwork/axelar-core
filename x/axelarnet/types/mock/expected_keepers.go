@@ -24,7 +24,6 @@ import (
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"sync"
-	time "time"
 )
 
 // Ensure, that BaseKeeperMock does implement axelarnettypes.BaseKeeper.
@@ -760,10 +759,7 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			NewLockableAssetFunc: func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableAsset, error) {
 //				panic("mock out the NewLockableAsset method")
 //			},
-//			RateLimitTransferFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
-//				panic("mock out the RateLimitTransfer method")
-//			},
-//			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdk_io_math.Uint, window time.Duration) error {
+//			RegisterAssetFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset) error {
 //				panic("mock out the RegisterAsset method")
 //			},
 //			RegisterFeeFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, feeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo) error {
@@ -789,9 +785,6 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			},
 //			SetParamsFunc: func(ctx cosmossdktypes.Context, p nexustypes.Params)  {
 //				panic("mock out the SetParams method")
-//			},
-//			SetRateLimitFunc: func(ctx cosmossdktypes.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit cosmossdktypes.Coin, window time.Duration) error {
-//				panic("mock out the SetRateLimit method")
 //			},
 //			SubTransferFeeFunc: func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin)  {
 //				panic("mock out the SubTransferFee method")
@@ -899,11 +892,8 @@ type NexusMock struct {
 	// NewLockableAssetFunc mocks the NewLockableAsset method.
 	NewLockableAssetFunc func(ctx cosmossdktypes.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.LockableAsset, error)
 
-	// RateLimitTransferFunc mocks the RateLimitTransfer method.
-	RateLimitTransferFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error
-
 	// RegisterAssetFunc mocks the RegisterAsset method.
-	RegisterAssetFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdk_io_math.Uint, window time.Duration) error
+	RegisterAssetFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset) error
 
 	// RegisterFeeFunc mocks the RegisterFee method.
 	RegisterFeeFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, feeInfo github_com_axelarnetwork_axelar_core_x_nexus_exported.FeeInfo) error
@@ -928,9 +918,6 @@ type NexusMock struct {
 
 	// SetParamsFunc mocks the SetParams method.
 	SetParamsFunc func(ctx cosmossdktypes.Context, p nexustypes.Params)
-
-	// SetRateLimitFunc mocks the SetRateLimit method.
-	SetRateLimitFunc func(ctx cosmossdktypes.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit cosmossdktypes.Coin, window time.Duration) error
 
 	// SubTransferFeeFunc mocks the SubTransferFee method.
 	SubTransferFeeFunc func(ctx cosmossdktypes.Context, coin cosmossdktypes.Coin)
@@ -1161,17 +1148,6 @@ type NexusMock struct {
 			// Coin is the coin argument value.
 			Coin cosmossdktypes.Coin
 		}
-		// RateLimitTransfer holds details about calls to the RateLimitTransfer method.
-		RateLimitTransfer []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-			// Asset is the asset argument value.
-			Asset cosmossdktypes.Coin
-			// Direction is the direction argument value.
-			Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
-		}
 		// RegisterAsset holds details about calls to the RegisterAsset method.
 		RegisterAsset []struct {
 			// Ctx is the ctx argument value.
@@ -1180,10 +1156,6 @@ type NexusMock struct {
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// Asset is the asset argument value.
 			Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-			// Limit is the limit argument value.
-			Limit cosmossdk_io_math.Uint
-			// Window is the window argument value.
-			Window time.Duration
 		}
 		// RegisterFee holds details about calls to the RegisterFee method.
 		RegisterFee []struct {
@@ -1247,17 +1219,6 @@ type NexusMock struct {
 			// P is the p argument value.
 			P nexustypes.Params
 		}
-		// SetRateLimit holds details about calls to the SetRateLimit method.
-		SetRateLimit []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// ChainName is the chainName argument value.
-			ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-			// Limit is the limit argument value.
-			Limit cosmossdktypes.Coin
-			// Window is the window argument value.
-			Window time.Duration
-		}
 		// SubTransferFee holds details about calls to the SubTransferFee method.
 		SubTransferFee []struct {
 			// Ctx is the ctx argument value.
@@ -1304,7 +1265,6 @@ type NexusMock struct {
 	lockLogger                        sync.RWMutex
 	lockMarkTransferAsFailed          sync.RWMutex
 	lockNewLockableAsset              sync.RWMutex
-	lockRateLimitTransfer             sync.RWMutex
 	lockRegisterAsset                 sync.RWMutex
 	lockRegisterFee                   sync.RWMutex
 	lockRemoveChainMaintainer         sync.RWMutex
@@ -1314,7 +1274,6 @@ type NexusMock struct {
 	lockSetMessageFailed              sync.RWMutex
 	lockSetNewMessage                 sync.RWMutex
 	lockSetParams                     sync.RWMutex
-	lockSetRateLimit                  sync.RWMutex
 	lockSubTransferFee                sync.RWMutex
 	lockValidateAddress               sync.RWMutex
 }
@@ -2443,72 +2402,24 @@ func (mock *NexusMock) NewLockableAssetCalls() []struct {
 	return calls
 }
 
-// RateLimitTransfer calls RateLimitTransferFunc.
-func (mock *NexusMock) RateLimitTransfer(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset cosmossdktypes.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
-	if mock.RateLimitTransferFunc == nil {
-		panic("NexusMock.RateLimitTransferFunc: method is nil but Nexus.RateLimitTransfer was just called")
-	}
-	callInfo := struct {
-		Ctx       cosmossdktypes.Context
-		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Asset     cosmossdktypes.Coin
-		Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
-	}{
-		Ctx:       ctx,
-		Chain:     chain,
-		Asset:     asset,
-		Direction: direction,
-	}
-	mock.lockRateLimitTransfer.Lock()
-	mock.calls.RateLimitTransfer = append(mock.calls.RateLimitTransfer, callInfo)
-	mock.lockRateLimitTransfer.Unlock()
-	return mock.RateLimitTransferFunc(ctx, chain, asset, direction)
-}
-
-// RateLimitTransferCalls gets all the calls that were made to RateLimitTransfer.
-// Check the length with:
-//
-//	len(mockedNexus.RateLimitTransferCalls())
-func (mock *NexusMock) RateLimitTransferCalls() []struct {
-	Ctx       cosmossdktypes.Context
-	Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-	Asset     cosmossdktypes.Coin
-	Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
-} {
-	var calls []struct {
-		Ctx       cosmossdktypes.Context
-		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Asset     cosmossdktypes.Coin
-		Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
-	}
-	mock.lockRateLimitTransfer.RLock()
-	calls = mock.calls.RateLimitTransfer
-	mock.lockRateLimitTransfer.RUnlock()
-	return calls
-}
-
 // RegisterAsset calls RegisterAssetFunc.
-func (mock *NexusMock) RegisterAsset(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdk_io_math.Uint, window time.Duration) error {
+func (mock *NexusMock) RegisterAsset(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset) error {
 	if mock.RegisterAssetFunc == nil {
 		panic("NexusMock.RegisterAssetFunc: method is nil but Nexus.RegisterAsset was just called")
 	}
 	callInfo := struct {
-		Ctx    cosmossdktypes.Context
-		Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-		Limit  cosmossdk_io_math.Uint
-		Window time.Duration
+		Ctx   cosmossdktypes.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
 	}{
-		Ctx:    ctx,
-		Chain:  chain,
-		Asset:  asset,
-		Limit:  limit,
-		Window: window,
+		Ctx:   ctx,
+		Chain: chain,
+		Asset: asset,
 	}
 	mock.lockRegisterAsset.Lock()
 	mock.calls.RegisterAsset = append(mock.calls.RegisterAsset, callInfo)
 	mock.lockRegisterAsset.Unlock()
-	return mock.RegisterAssetFunc(ctx, chain, asset, limit, window)
+	return mock.RegisterAssetFunc(ctx, chain, asset)
 }
 
 // RegisterAssetCalls gets all the calls that were made to RegisterAsset.
@@ -2516,18 +2427,14 @@ func (mock *NexusMock) RegisterAsset(ctx cosmossdktypes.Context, chain github_co
 //
 //	len(mockedNexus.RegisterAssetCalls())
 func (mock *NexusMock) RegisterAssetCalls() []struct {
-	Ctx    cosmossdktypes.Context
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-	Limit  cosmossdk_io_math.Uint
-	Window time.Duration
+	Ctx   cosmossdktypes.Context
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+	Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
 } {
 	var calls []struct {
-		Ctx    cosmossdktypes.Context
-		Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-		Limit  cosmossdk_io_math.Uint
-		Window time.Duration
+		Ctx   cosmossdktypes.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
 	}
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset
@@ -2832,50 +2739,6 @@ func (mock *NexusMock) SetParamsCalls() []struct {
 	mock.lockSetParams.RLock()
 	calls = mock.calls.SetParams
 	mock.lockSetParams.RUnlock()
-	return calls
-}
-
-// SetRateLimit calls SetRateLimitFunc.
-func (mock *NexusMock) SetRateLimit(ctx cosmossdktypes.Context, chainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit cosmossdktypes.Coin, window time.Duration) error {
-	if mock.SetRateLimitFunc == nil {
-		panic("NexusMock.SetRateLimitFunc: method is nil but Nexus.SetRateLimit was just called")
-	}
-	callInfo := struct {
-		Ctx       cosmossdktypes.Context
-		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Limit     cosmossdktypes.Coin
-		Window    time.Duration
-	}{
-		Ctx:       ctx,
-		ChainName: chainName,
-		Limit:     limit,
-		Window:    window,
-	}
-	mock.lockSetRateLimit.Lock()
-	mock.calls.SetRateLimit = append(mock.calls.SetRateLimit, callInfo)
-	mock.lockSetRateLimit.Unlock()
-	return mock.SetRateLimitFunc(ctx, chainName, limit, window)
-}
-
-// SetRateLimitCalls gets all the calls that were made to SetRateLimit.
-// Check the length with:
-//
-//	len(mockedNexus.SetRateLimitCalls())
-func (mock *NexusMock) SetRateLimitCalls() []struct {
-	Ctx       cosmossdktypes.Context
-	ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-	Limit     cosmossdktypes.Coin
-	Window    time.Duration
-} {
-	var calls []struct {
-		Ctx       cosmossdktypes.Context
-		ChainName github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Limit     cosmossdktypes.Coin
-		Window    time.Duration
-	}
-	mock.lockSetRateLimit.RLock()
-	calls = mock.calls.SetRateLimit
-	mock.lockSetRateLimit.RUnlock()
 	return calls
 }
 

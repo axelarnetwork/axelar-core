@@ -37,7 +37,9 @@ message InsufficientFee {
   cosmos.base.v1beta1.Coin fee = 5 [ (gogoproto.nullable) = false ];
 }
 
+// Deprecated in v1.4: rate limiting has been removed.
 message RateLimitUpdated {
+  option deprecated = true;
   string chain = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];

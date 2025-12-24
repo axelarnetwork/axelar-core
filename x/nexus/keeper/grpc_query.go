@@ -3,11 +3,9 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"time"
 
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -59,29 +57,6 @@ func (q Querier) TransfersForChain(c context.Context, req *types.TransfersForCha
 
 	transfers, pagination, err := q.keeper.GetTransfersForChainPaginated(ctx, chain, req.State, req.Pagination)
 	return &types.TransfersForChainResponse{Transfers: transfers, Pagination: pagination}, err
-}
-
-// LatestDepositAddress returns the deposit address for the provided recipient
-func (q Querier) LatestDepositAddress(c context.Context, req *types.LatestDepositAddressRequest) (*types.LatestDepositAddressResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	recipientChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.RecipientChain))
-	if !ok {
-		return nil, errorsmod.Wrapf(types.ErrNexus, "%s is not a registered chain", req.RecipientChain)
-	}
-
-	depositChain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.DepositChain))
-	if !ok {
-		return nil, errorsmod.Wrapf(types.ErrNexus, "%s is not a registered chain", req.DepositChain)
-	}
-
-	recipientAddress := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-	depositAddress, ok := q.keeper.getLatestDepositAddress(ctx, depositChain.Name, recipientAddress)
-	if !ok {
-		return nil, errorsmod.Wrapf(types.ErrNexus, "no deposit address found for recipient %s on chain %s", req.RecipientAddr, req.RecipientChain)
-	}
-
-	return &types.LatestDepositAddressResponse{DepositAddr: depositAddress.Address}, nil
 }
 
 // FeeInfo returns the fee info for an asset on a specific chain
@@ -224,28 +199,6 @@ func (q Querier) ChainsByAsset(c context.Context, req *types.ChainsByAssetReques
 	return &types.ChainsByAssetResponse{Chains: chainNames}, nil
 }
 
-// RecipientAddress returns the recipient address for a given deposit address
-func (q Querier) RecipientAddress(c context.Context, req *types.RecipientAddressRequest) (*types.RecipientAddressResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.DepositChain))
-	if !ok {
-		return nil, fmt.Errorf("chain %s not found", req.DepositChain)
-	}
-
-	depositAddress := nexus.CrossChainAddress{Chain: chain, Address: req.DepositAddr}
-
-	linkedAddresses, ok := q.keeper.getLinkedAddresses(ctx, depositAddress)
-	if !ok {
-		return nil, errorsmod.Wrapf(types.ErrNexus, "no recipient address found for deposit address %s on chain %s", req.DepositAddr, req.DepositChain)
-	}
-
-	return &types.RecipientAddressResponse{
-		RecipientAddr:  linkedAddresses.RecipientAddress.Address,
-		RecipientChain: linkedAddresses.RecipientAddress.Chain.Name.String(),
-	}, nil
-}
-
 // ChainMaintainers returns the chain maintainers for a given chain
 func (q Querier) ChainMaintainers(c context.Context, req *types.ChainMaintainersRequest) (*types.ChainMaintainersResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
@@ -258,39 +211,6 @@ func (q Querier) ChainMaintainers(c context.Context, req *types.ChainMaintainers
 	maintainers := q.keeper.GetChainMaintainers(ctx, chain)
 
 	return &types.ChainMaintainersResponse{Maintainers: maintainers}, nil
-}
-
-// TransferRateLimit queries the transfer rate limit for a given chain and asset
-func (q Querier) TransferRateLimit(c context.Context, req *types.TransferRateLimitRequest) (*types.TransferRateLimitResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	chain, ok := q.keeper.GetChain(ctx, nexus.ChainName(req.Chain))
-	if !ok {
-		return nil, errorsmod.Wrap(sdkerrors.ErrNotFound, fmt.Errorf("chain %s not found", req.Chain).Error())
-	}
-
-	rateLimit, found := q.keeper.getRateLimit(ctx, chain.Name, req.Asset)
-	if !found {
-		return &types.TransferRateLimitResponse{}, nil
-	}
-
-	fromDirectionEpoch := q.keeper.getCurrentTransferEpoch(ctx, chain.Name, req.Asset, nexus.TransferDirectionFrom, rateLimit.Window)
-	toDirectionEpoch := q.keeper.getCurrentTransferEpoch(ctx, chain.Name, req.Asset, nexus.TransferDirectionTo, rateLimit.Window)
-
-	// time left = (epoch + 1) * window - current time
-	timeLeft := time.Duration(int64(fromDirectionEpoch.Epoch+1)*int64(rateLimit.Window) - ctx.BlockTime().UnixNano())
-
-	return &types.TransferRateLimitResponse{
-		TransferRateLimit: &types.TransferRateLimit{
-			Limit:    rateLimit.Limit.Amount,
-			Window:   rateLimit.Window,
-			Incoming: fromDirectionEpoch.Amount.Amount,
-			Outgoing: toDirectionEpoch.Amount.Amount,
-			TimeLeft: timeLeft,
-			From:     fromDirectionEpoch.Amount.Amount,
-			To:       toDirectionEpoch.Amount.Amount,
-		},
-	}, nil
 }
 
 // Message queries the general message for a given message ID

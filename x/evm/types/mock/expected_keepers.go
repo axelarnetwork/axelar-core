@@ -19,7 +19,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"sync"
-	"time"
 )
 
 // Ensure, that VoterMock does implement types.Voter.
@@ -146,7 +145,7 @@ var _ types.Nexus = &NexusMock{}
 //			IsChainActivatedFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) bool {
 //				panic("mock out the IsChainActivated method")
 //			},
-//			RegisterAssetFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdk_io_math.Uint, window time.Duration) error {
+//			RegisterAssetFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset) error {
 //				panic("mock out the RegisterAsset method")
 //			},
 //			SetChainFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
@@ -214,7 +213,7 @@ type NexusMock struct {
 	IsChainActivatedFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) bool
 
 	// RegisterAssetFunc mocks the RegisterAsset method.
-	RegisterAssetFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdk_io_math.Uint, window time.Duration) error
+	RegisterAssetFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset) error
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
@@ -355,10 +354,6 @@ type NexusMock struct {
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// Asset is the asset argument value.
 			Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-			// Limit is the limit argument value.
-			Limit cosmossdk_io_math.Uint
-			// Window is the window argument value.
-			Window time.Duration
 		}
 		// SetChain holds details about calls to the SetChain method.
 		SetChain []struct {
@@ -955,27 +950,23 @@ func (mock *NexusMock) IsChainActivatedCalls() []struct {
 }
 
 // RegisterAsset calls RegisterAssetFunc.
-func (mock *NexusMock) RegisterAsset(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdk_io_math.Uint, window time.Duration) error {
+func (mock *NexusMock) RegisterAsset(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset) error {
 	if mock.RegisterAssetFunc == nil {
 		panic("NexusMock.RegisterAssetFunc: method is nil but Nexus.RegisterAsset was just called")
 	}
 	callInfo := struct {
-		Ctx    sdk.Context
-		Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-		Limit  cosmossdk_io_math.Uint
-		Window time.Duration
+		Ctx   sdk.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
 	}{
-		Ctx:    ctx,
-		Chain:  chain,
-		Asset:  asset,
-		Limit:  limit,
-		Window: window,
+		Ctx:   ctx,
+		Chain: chain,
+		Asset: asset,
 	}
 	mock.lockRegisterAsset.Lock()
 	mock.calls.RegisterAsset = append(mock.calls.RegisterAsset, callInfo)
 	mock.lockRegisterAsset.Unlock()
-	return mock.RegisterAssetFunc(ctx, chain, asset, limit, window)
+	return mock.RegisterAssetFunc(ctx, chain, asset)
 }
 
 // RegisterAssetCalls gets all the calls that were made to RegisterAsset.
@@ -983,18 +974,14 @@ func (mock *NexusMock) RegisterAsset(ctx sdk.Context, chain github_com_axelarnet
 //
 //	len(mockedNexus.RegisterAssetCalls())
 func (mock *NexusMock) RegisterAssetCalls() []struct {
-	Ctx    sdk.Context
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-	Limit  cosmossdk_io_math.Uint
-	Window time.Duration
+	Ctx   sdk.Context
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+	Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
 } {
 	var calls []struct {
-		Ctx    sdk.Context
-		Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-		Limit  cosmossdk_io_math.Uint
-		Window time.Duration
+		Ctx   sdk.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
 	}
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset

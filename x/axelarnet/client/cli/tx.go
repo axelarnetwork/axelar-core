@@ -2,19 +2,12 @@ package cli
 
 import (
 	"fmt"
-	"os"
 	"strconv"
-	"strings"
-	"time"
 
-	math "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/version"
-	"github.com/cosmos/cosmos-sdk/x/gov/client/cli"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -24,10 +17,6 @@ import (
 
 const (
 	flagIsNativeAsset = "is-native-asset"
-	flagLimit         = "limit"
-	flagWindow        = "window"
-	flagFeeAmount     = "fee-amount"
-	flagFeeRecipient  = "fee-recipient"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -51,7 +40,6 @@ func GetTxCmd() *cobra.Command {
 		GetCmdRegisterFeeCollector(),
 		getRetryIBCTransfer(),
 		getGeneralMessage(),
-		getCmdCallContract(),
 	)
 
 	return axelarTxCmd
@@ -183,32 +171,12 @@ func GetCmdRegisterAsset() *cobra.Command {
 			return err
 		}
 
-		limitArg, err := cmd.Flags().GetString(flagLimit)
-		if err != nil {
-			return err
-		}
-		limit, err := math.ParseUint(limitArg)
-		if err != nil {
-			return err
-		}
-
-		windowArg, err := cmd.Flags().GetString(flagWindow)
-		if err != nil {
-			return err
-		}
-		window, err := time.ParseDuration(windowArg)
-		if err != nil {
-			return err
-		}
-
-		msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, nexus.NewAsset(denom, isNativeAsset), limit, window)
+		msg := types.NewRegisterAssetRequest(cliCtx.GetFromAddress(), chain, nexus.NewAsset(denom, isNativeAsset))
 
 		return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 	}
 
 	cmd.Flags().Bool(flagIsNativeAsset, false, "is it a native asset from cosmos chain")
-	cmd.Flags().String(flagLimit, utils.MaxUint.String(), "rate limit for the asset")
-	cmd.Flags().String(flagWindow, types.DefaultRateLimitWindow.String(), "rate limit window for the asset")
 
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
@@ -323,136 +291,3 @@ func getGeneralMessage() *cobra.Command {
 	return cmd
 }
 
-func getCmdCallContract() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "call-contract [destination chain] [contract address] [hex encoded payload]",
-		Short: "Call a contract on another chain",
-		Args:  cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			payload, err := utils.HexDecode(args[2])
-			if err != nil {
-				return err
-			}
-
-			feeAmount, err := cmd.Flags().GetString(flagFeeAmount)
-			if err != nil {
-				return err
-			}
-
-			feeRecipient, err := cmd.Flags().GetString(flagFeeRecipient)
-			if err != nil {
-				return err
-			}
-
-			var fee *types.Fee = nil
-			if feeAmount != "" && feeRecipient != "" {
-
-				amount, err := sdk.ParseCoinNormalized(feeAmount)
-				if err != nil {
-					return err
-				}
-
-				recipient, err := sdk.AccAddressFromBech32(feeRecipient)
-				if err != nil {
-					return err
-				}
-
-				fee = &types.Fee{
-					Amount:    amount,
-					Recipient: recipient,
-				}
-			} else if feeAmount != "" || feeRecipient != "" {
-				return fmt.Errorf("need both %s and %s", flagFeeAmount, flagFeeRecipient)
-			}
-
-			msg := types.NewCallContractRequest(clientCtx.GetFromAddress(), args[0], args[1], payload, fee)
-
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
-		},
-	}
-	cmd.Flags().String(flagFeeAmount, "", "fee to pay for the contract call")
-	cmd.Flags().String(flagFeeRecipient, "", "recipient of the fee")
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-func NewSubmitCallContractsProposalTxCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "call-contracts [proposal-file]",
-		Args:  cobra.ExactArgs(1),
-		Short: "Submit a call contracts proposal",
-		Long: strings.TrimSpace(
-			fmt.Sprintf(`Submit a call contracts proposal along with an initial deposit.
-The proposal details must be supplied via a JSON file. For values that contains
-objects, only non-empty fields will be updated.
-
-Example:
-$ %s tx gov submit-proposal call-contracts <path/to/proposal.json>
-
-Where proposal.json contains:
-
-{
-  "title": "Call Contracts",
-  "description": "Call contracts on other chains",
-  "contract_calls": [
-    {
-      "chain": "chain",
-      "contract_address": "0x1234",
-      "payload": "MTIzMTIzMTIzNDEyNDEyMzU0ODk3MA=="
-    }
-  ]
-}
-
-IMPORTANT: The payload field must be base64 encoded.
-`,
-				version.AppName,
-			),
-		),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			file, err := os.ReadFile(args[0])
-			if err != nil {
-				return err
-			}
-
-			proposal := types.CallContractsProposal{}
-			if err := clientCtx.Codec.UnmarshalJSON(file, &proposal); err != nil {
-				return err
-			}
-
-			if err := proposal.ValidateBasic(); err != nil {
-				return err
-			}
-
-			depositStr, err := cmd.Flags().GetString(cli.FlagDeposit)
-			if err != nil {
-				return err
-			}
-
-			deposit, err := sdk.ParseCoinsNormalized(depositStr)
-			if err != nil {
-				return err
-			}
-
-			msg, err := govtypes.NewMsgSubmitProposal(&proposal, deposit, clientCtx.GetFromAddress())
-			if err != nil {
-				return err
-			}
-
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
-		},
-	}
-
-	cmd.Flags().String(cli.FlagDeposit, "", "deposit of proposal")
-
-	return cmd
-}

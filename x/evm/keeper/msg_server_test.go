@@ -8,7 +8,6 @@ import (
 	mathRand "math/rand"
 	"strings"
 	"testing"
-	"time"
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -712,7 +711,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 				return c, ok
 			},
 			IsAssetRegisteredFunc: func(sdk.Context, nexus.Chain, string) bool { return true },
-			RegisterAssetFunc: func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit math.Uint, window time.Duration) error {
+			RegisterAssetFunc: func(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error {
 				return nil
 			},
 		}
@@ -734,7 +733,7 @@ func TestHandleMsgCreateDeployToken(t *testing.T) {
 		assert.Equal(t, 1, len(chaink.EnqueueCommandCalls()))
 	}).Repeat(repeats))
 
-	t.Run("should create deploy token with infinite rate limit", testutils.Func(func(t *testing.T) {
+	t.Run("should create deploy token with no daily mint limit", testutils.Func(func(t *testing.T) {
 		setup()
 		msg.DailyMintLimit = "0"
 

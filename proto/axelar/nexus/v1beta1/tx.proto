@@ -117,16 +117,13 @@ message RegisterAssetFeeRequest {
 
 message RegisterAssetFeeResponse {}
 
-// SetTransferRateLimitRequest represents a message to set rate limits on
-// transfers
+// Deprecated in v1.4: rate limiting has been removed.
 message SetTransferRateLimitRequest {
+  option deprecated = true;
   option (amino.name) = "nexus/SetTransferRateLimit";
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward
-  // compatibility. Removing this field would break decoding of historical
-  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -140,13 +137,15 @@ message SetTransferRateLimitRequest {
   string sender = 5 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
-message SetTransferRateLimitResponse {}
+message SetTransferRateLimitResponse { option deprecated = true; }
 
+// Deprecated in v1.4: link-deposit protocol has been removed.
 // EnableLinkDepositRequest enables the link-deposit protocol for cross-chain
 // transfers. The link-deposit protocol allows users to create deposit addresses
 // and confirm deposits for cross-chain asset transfers on both EVM and Cosmos
 // chains.
 message EnableLinkDepositRequest {
+  option deprecated = true;
   option (amino.name) = "nexus/EnableLinkDeposit";
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "authority";
@@ -154,12 +153,14 @@ message EnableLinkDepositRequest {
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
-message EnableLinkDepositResponse {}
+message EnableLinkDepositResponse { option deprecated = true; }
 
+// Deprecated in v1.4: link-deposit protocol has been removed.
 // DisableLinkDepositRequest disables the link-deposit protocol for cross-chain
 // transfers. When disabled, Link, ConfirmDeposit, and CreateBurnTokens
 // operations will be rejected.
 message DisableLinkDepositRequest {
+  option deprecated = true;
   option (amino.name) = "nexus/DisableLinkDeposit";
   option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
   option (cosmos.msg.v1.signer) = "authority";
@@ -167,7 +168,7 @@ message DisableLinkDepositRequest {
   string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
-message DisableLinkDepositResponse {}
+message DisableLinkDepositResponse { option deprecated = true; }
 
 message UpdateParamsRequest {
   option (amino.name) = "nexus/UpdateParams";

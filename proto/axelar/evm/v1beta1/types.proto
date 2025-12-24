@@ -42,11 +42,14 @@ message Event {
   Status status = 4;
 
   oneof event {
+    // Deprecated in v1.4: link-deposit protocol removed
     EventTokenSent token_sent = 5 [ deprecated = true ];
     EventContractCall contract_call = 6;
     EventContractCallWithToken contract_call_with_token = 7;
+    // Deprecated in v1.4: link-deposit protocol removed
     EventTransfer transfer = 8 [ deprecated = true ];
     EventTokenDeployed token_deployed = 9;
+    // Deprecated in v0.20: ownership transfer mechanism was removed
     EventMultisigOwnershipTransferred multisig_ownership_transferred = 10
         [ deprecated = true ];
     EventMultisigOperatorshipTransferred multisig_operatorship_transferred = 11;
@@ -56,6 +59,7 @@ message Event {
   reserved 13; // singlesig_operatorship_transferred was removed in v0.23
 }
 
+// Deprecated in v1.4: link-deposit protocol removed
 message EventTokenSent {
   option deprecated = true;
 
@@ -99,6 +103,7 @@ message EventContractCallWithToken {
   ];
 }
 
+// Deprecated in v1.4: link-deposit protocol removed
 message EventTransfer {
   option deprecated = true;
 
@@ -116,6 +121,7 @@ message EventTokenDeployed {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
+// Deprecated in v0.20: ownership transfer mechanism was removed
 message EventMultisigOwnershipTransferred {
   option deprecated = true;
 

@@ -104,18 +104,6 @@ service MsgService {
     };
   }
 
-  rpc CallContract(CallContractRequest) returns (CallContractResponse) {
-    option (google.api.http) = {
-      post : "/axelar/axelarnet/v1beta1/call_contract"
-      body : "*"
-      // Deprecated: use /axelar/axelarnet/v1beta1/call_contract instead
-      additional_bindings : {
-        post : "/axelar/axelarnet/call_contract"
-        body : "*"
-      }
-    };
-  }
-
   rpc UpdateParams(UpdateParamsRequest) returns (UpdateParamsResponse) {
     option (google.api.http) = {
       post : "/axelar/axelarnet/v1beta1/params"

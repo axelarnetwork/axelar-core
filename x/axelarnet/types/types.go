@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -27,10 +26,6 @@ const (
 	AttributeIBCPath = "ibcPath"
 )
 
-const (
-	// DefaultRateLimitWindow is the default window for rate limits of assets on cosmos chains
-	DefaultRateLimitWindow = 6 * time.Hour
-)
 
 const ZERO_X_PREFIX = "0x"
 
