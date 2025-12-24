@@ -161,14 +161,16 @@ message QueryCommandResponse {
   uint32 max_gas_cost = 5;
 }
 
-// Deprecated in v1.4: BurnerInfoRequest is no longer used (link-deposit protocol removed)
+// Deprecated in v1.4: BurnerInfoRequest is no longer used (link-deposit
+// protocol removed)
 message BurnerInfoRequest {
   option deprecated = true;
   bytes address = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
-// Deprecated in v1.4: BurnerInfoResponse is no longer used (link-deposit protocol removed)
+// Deprecated in v1.4: BurnerInfoResponse is no longer used (link-deposit
+// protocol removed)
 message BurnerInfoResponse {
   option deprecated = true;
   string chain = 1
