@@ -173,3 +173,9 @@ message MessageResponse {
 message ParamsRequest {}
 
 message ParamsResponse { Params params = 1 [ (gogoproto.nullable) = false ]; }
+
+// LinkDepositEnabledRequest represents a message that queries whether the
+// link-deposit protocol is enabled
+message LinkDepositEnabledRequest {}
+
+message LinkDepositEnabledResponse { bool enabled = 1; }

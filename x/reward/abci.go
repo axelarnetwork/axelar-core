@@ -122,7 +122,7 @@ func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n typ
 		var validators []snapshot.ValidatorI
 		for _, maintainer := range maintainers {
 			v, err := s.Validator(ctx, maintainer)
-			if err == nil {
+			if err != nil {
 				continue
 			}
 

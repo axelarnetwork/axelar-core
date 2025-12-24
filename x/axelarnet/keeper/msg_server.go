@@ -128,6 +128,10 @@ func (s msgServer) CallContract(c context.Context, req *types.CallContractReques
 func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	if !s.nexus.IsLinkDepositEnabled(ctx) {
+		return nil, fmt.Errorf("link-deposit protocol is disabled")
+	}
+
 	recipientChain, ok := s.nexus.GetChain(ctx, req.RecipientChain)
 	if !ok {
 		return nil, fmt.Errorf("unknown recipient chain")
@@ -173,6 +177,10 @@ func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkR
 // ConfirmDeposit handles deposit confirmations
 func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRequest) (*types.ConfirmDepositResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	if !s.nexus.IsLinkDepositEnabled(ctx) {
+		return nil, fmt.Errorf("link-deposit protocol is disabled")
+	}
 
 	depositAddr := nexus.CrossChainAddress{Address: req.DepositAddress.String(), Chain: exported.Axelarnet}
 	coin := s.bank.SpendableBalance(ctx, req.DepositAddress, req.Denom)

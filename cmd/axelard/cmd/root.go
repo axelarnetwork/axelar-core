@@ -256,6 +256,13 @@ func initAppConfig() (string, interface{}) {
 	// In simapp, we set the default min gas price.
 	srvCfg.MinGasPrices = minGasPrice
 
+	// With the upgrade to cosmos-sdk v0.50 the default for using IAVL fast nodes has changed.
+	// When a previously "slow" node gets converted into a fast node,
+	// the entire store needs to be reindexed and migration can take hours.
+	// To prevent accidental downtime due to a missed config entry on a validator node,
+	// the default is set to what it was pre v0.50 here
+	srvCfg.IAVLDisableFastNode = true
+
 	axelarAppConfig := AxelarAppConfig{
 		Config: *srvCfg,
 	}

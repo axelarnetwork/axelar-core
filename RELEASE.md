@@ -1,21 +1,99 @@
 # Release Process
 
-This document describes the process to release a new version of `axelard`.
+This document describes the release process for `axelard`.
 
-1. An upgrade test should be performed over the previous release. If a migration is involved, ensure that it's been tested. Ensure that the e2e tests are also successful on the latest commit.
+## Overview
 
-2. A release doc should be created under [here](https://github.com/axelarnetwork/axelar-contract-deployments/tree/main/releases) with the motivation for the release, the actions to be taken for the upgrade, and the tests that need to be performed post-upgrade.
+The release process involves:
+1. Testing the release candidate
+2. Creating a release tag
+3. Building and publishing binaries and Docker images
+4. Updating documentation and announcing the release
+5. Creating governance proposals for consensus-breaking upgrades
 
-3. If the release is a patch, then the change needs to be cherry-picked into the corresponding `releases/*` branch, and a new release is created against that branch.
+## Versioning
 
-4. Run the [Release workflow](./.github/workflows/release.yaml) from the branch being released, and select the appropriate release type. A release commit will be pushed to that branch, and a release tag will be created.
+Axelar follows [semantic versioning](https://semver.org/):
+- **Major releases** (`vX.0.0`): Breaking changes requiring coordinated network upgrades
+- **Minor releases** (`vX.Y.0`): New features, typically consensus-breaking
+- **Patch releases** (`vX.Y.Z`): Bug fixes and non-consensus-breaking changes
 
-5. Run the [Build workflow](./.github/workflows/build-docker-image-and-binaries.yaml) to create a build from the release tag. This workflow will create a [Github release](https://github.com/axelarnetwork/axelar-core/releases) with binaries, and publish a docker image to [Docker Hub](https://hub.docker.com/r/axelarnet/axelar-core/tags).
+### Branching Strategy
 
-6. Update the Github release `Changelog` with the release notes. Detail whether it's a consensus-breaking release, and whether the upgrade is not scheduled yet or it can/should be applied by node operators right away.
+- **Major/Minor releases**: Created from the `main` branch. The release workflow automatically creates a `releases/<major>.<minor>.x` branch (e.g., `releases/1.4.x`).
+- **Patch releases**: Cherry-pick changes into the corresponding `releases/<major>.<minor>.x` branch.
 
-7. If the build steps have changed, e.g. the `go` version, `wasmvm` dependency, node config, this needs to be included in the release notes and announced to node operators. The community [scripts](https://github.com/axelarnetwork/axelarate-community/tree/main) (e.g. [wasmvm version](https://github.com/axelarnetwork/axelarate-community/blob/main/scripts/node.sh#L74)) and axelar-docs might need to be updated as well.
+## Pre-Release Checklist
 
-8. An upgrade doc should be created in [axelar-docs](https://github.com/axelarnetwork/axelar-docs/tree/main/src/content/docs/resources/mainnet/upgrades) based on the release doc. The latest [versions](https://github.com/axelarnetwork/axelar-docs/blob/main/src/config/variables.ts) should be updated once the upgrade is live on the network.
+Before starting a release:
 
-9. A governance proposal is created and announced for a consensus-breaking upgrade. For testnet, the upgrade should be scheduled with at least a 2-business day window. For mainnet, the upgrade should be scheduled with at least a 1-week window.
+- [ ] Upgrade tests pass against the previous release
+- [ ] Any state migrations have been tested
+- [ ] End-to-end tests pass on the release candidate commit
+- [ ] Release documentation prepared in [axelar-contract-deployments/releases](https://github.com/axelarnetwork/axelar-contract-deployments/tree/main/releases)
+
+## Release Steps
+
+### 1. Prepare the Release Branch
+
+For **patch releases**, cherry-pick the required changes into the release branch:
+```bash
+git checkout releases/<major>.<minor>.x
+git cherry-pick <commit-hash>
+git push
+```
+
+For **major/minor releases**, release directly from `main`.
+
+### 2. Dry-Run the Release
+
+Run the **Release: Create tag (dry run)** workflow from the target branch:
+- Select the appropriate release type (major, minor, or patch)
+- Verify the workflow output shows the expected tag (e.g., `v1.4.0`)
+- This step does not create any tags or commits
+
+### 3. Create the Release Tag
+
+After verifying the dry-run output, run the **Release: Create tag** workflow from the same branch:
+- Select the same release type used in the dry-run
+- The workflow creates a release commit, pushes the tag, and for major/minor releases creates the release branch
+
+### 4. Build and Publish
+
+Run the **Release: Build and upload artifacts** workflow:
+- Input the release tag created in step 3 (e.g., `v1.4.0`)
+- Verify the tag matches what was created by the previous workflow
+- The workflow:
+  - Creates a [GitHub release](https://github.com/axelarnetwork/axelar-core/releases) with signed binaries
+  - Publishes Docker images to [Docker Hub](https://hub.docker.com/r/axelarnet/axelar-core/tags)
+
+### 5. Update Release Notes
+
+Edit the GitHub release to add:
+- Summary of changes
+- Whether the release is consensus-breaking
+- Required actions for node operators (if any)
+- Upgrade schedule (if applicable)
+
+### 6. Update Documentation
+
+If build requirements changed (Go version, wasmvm dependency, node config):
+1. Update [axelarate-community scripts](https://github.com/axelarnetwork/axelarate-community/tree/main/scripts)
+2. Create an upgrade guide in [axelar-docs/upgrades](https://github.com/axelarnetwork/axelar-docs/tree/main/src/content/docs/resources/mainnet/upgrades)
+3. Update [version variables](https://github.com/axelarnetwork/axelar-docs/blob/main/src/config/variables.ts) once the upgrade is live
+
+### 7. Governance Proposal (Consensus-Breaking Only)
+
+For consensus-breaking releases:
+- **Testnet**: Schedule with at least 2 business days notice
+- **Mainnet**: Schedule with at least 1 week notice
+
+Create and announce the governance proposal through the appropriate channels.
+
+## Workflow Reference
+
+| Workflow | File | Purpose |
+|----------|------|---------|
+| Release: Create tag (dry run) | `release-create-tag-dry-run.yaml` | Preview the tag that will be created |
+| Release: Create tag | `release-create-tag.yaml` | Create version tag and release commit |
+| Release: Build and upload artifacts | `release-build-and-upload-artifacts.yaml` | Build binaries and Docker images |

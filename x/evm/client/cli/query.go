@@ -23,7 +23,7 @@ const (
 )
 
 // GetQueryCmd returns the cli query commands for this module
-func GetQueryCmd(queryRoute string) *cobra.Command {
+func GetQueryCmd() *cobra.Command {
 	evmQueryCmd := &cobra.Command{
 		Use:                        "evm",
 		Short:                      fmt.Sprintf("Querying commands for the %s module", types.ModuleName),
@@ -35,7 +35,6 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	evmQueryCmd.AddCommand(
 		getCmdAddress(),
 		getCmdAxelarGatewayAddress(),
-		getCmdTokenAddress(queryRoute),
 		getCmdDepositState(),
 		getCmdBytecode(),
 		getCmdQueryBatchedCommands(),
@@ -89,53 +88,13 @@ func getCmdAddress() *cobra.Command {
 	return cmd
 }
 
-// getCmdTokenAddress returns the query for an EVM chain master address that owns the AxelarGateway contract
-func getCmdTokenAddress(queryRoute string) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "token-address [chain]",
-		Short: fmt.Sprintf("Query a token address by by either %s or %s", keeper.BySymbol, keeper.ByAsset),
-		Args:  cobra.ExactArgs(1),
-	}
-
-	symbol := cmd.Flags().String(keeper.BySymbol, "", "lookup token by symbol")
-	asset := cmd.Flags().String(keeper.ByAsset, "", "lookup token by asset name")
-
-	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		cliCtx, err := client.GetClientQueryContext(cmd)
-		if err != nil {
-			return err
-		}
-
-		var bz []byte
-		switch {
-		case *symbol != "" && *asset == "":
-			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressBySymbol, args[0], *symbol))
-		case *symbol == "" && *asset != "":
-			bz, _, err = cliCtx.Query(fmt.Sprintf("custom/%s/%s/%s/%s", queryRoute, keeper.QTokenAddressByAsset, args[0], *asset))
-		default:
-			return fmt.Errorf("lookup must be either by asset name or symbol")
-		}
-
-		if err != nil {
-			return err
-		}
-
-		var res types.QueryTokenAddressResponse
-		types.ModuleCdc.MustUnmarshalLengthPrefixed(bz, &res)
-
-		return cliCtx.PrintProto(&res)
-	}
-
-	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
-}
-
 // getCmdDepositState returns the query for an ERC20 deposit transaction state
+// Deprecated: link-deposit protocol is being disabled
 func getCmdDepositState() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:        "deposit-state [chain] [txID] [burner address]",
 		Short:      "Query the state of a deposit transaction",
-		Deprecated: "will be removed in the future release",
+		Deprecated: "link-deposit protocol is being disabled",
 		Args:       cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientQueryContext(cmd)

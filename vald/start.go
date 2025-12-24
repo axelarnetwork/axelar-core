@@ -13,7 +13,6 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
-	"github.com/cosmos/cosmos-sdk/client"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -231,12 +230,15 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		return false
 	})
 
-	heartbeat := eventBus.Subscribe(func(e tmEvents.ABCIEventWithHeight) bool {
-		event := tmEvents.Map(e)
-		return event.Type == tssTypes.EventTypeHeartBeat &&
-			event.Attributes[sdk.AttributeKeyModule] == tssTypes.ModuleName &&
-			event.Attributes[sdk.AttributeKeyAction] == tssTypes.AttributeValueSend
-	})
+	var heartbeat <-chan tmEvents.ABCIEventWithHeight
+	if axelarCfg.EnableHeartbeat {
+		heartbeat = eventBus.Subscribe(func(e tmEvents.ABCIEventWithHeight) bool {
+			event := tmEvents.Map(e)
+			return event.Type == tssTypes.EventTypeHeartBeat &&
+				event.Attributes[sdk.AttributeKeyModule] == tssTypes.ModuleName &&
+				event.Attributes[sdk.AttributeKeyAction] == tssTypes.AttributeValueSend
+		})
+	}
 
 	evmNewChain := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ChainAdded]())
 	evmDepConf := eventBus.Subscribe(tmEvents.Filter[*evmTypes.ConfirmDepositStarted]())
@@ -297,7 +299,6 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		createJob(blockHeaderSub, processBlockHeader, cancelEventCtx),
 		fetchEvents,
 		failOnTimeout,
-		createJob(heartbeat, tssMgr.ProcessHeartBeatEvent, cancelEventCtx),
 		createJobTyped(evmNewChain, evmMgr.ProcessNewChain, cancelEventCtx),
 		createJobTyped(evmDepConf, evmMgr.ProcessDepositConfirmation, cancelEventCtx),
 		createJobTyped(evmTokConf, evmMgr.ProcessTokenConfirmation, cancelEventCtx),
@@ -306,6 +307,10 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		createJobTyped(evmGatewayTxsConf, evmMgr.ProcessGatewayTxsConfirmation, cancelEventCtx),
 		createJobTyped(multisigKeygen, multisigMgr.ProcessKeygenStarted, cancelEventCtx),
 		createJobTyped(multisigSigning, multisigMgr.ProcessSigningStarted, cancelEventCtx),
+	}
+
+	if axelarCfg.EnableHeartbeat {
+		js = append(js, createJob(heartbeat, tssMgr.ProcessHeartBeatEvent, cancelEventCtx))
 	}
 
 	slices.ForEach(js, func(job jobs.Job) {
@@ -417,7 +422,12 @@ func createEventBus(client *tendermint.RobustClient, startBlock int64, retries i
 func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig) broadcast.Broadcaster {
 	codec := app.MakeEncodingConfig().Codec
 
-	broadcaster := broadcast.WithStateManager(ctx, txf, broadcast.WithResponseTimeout(axelarCfg.BroadcastConfig.MaxTimeout))
+	broadcaster := broadcast.WithStateManager(
+		ctx,
+		txf,
+		broadcast.WithResponseTimeout(axelarCfg.BroadcastConfig.MaxTimeout),
+		broadcast.WithPollingInterval(axelarCfg.BroadcastConfig.ConfirmationPollingInterval),
+	)
 	broadcaster = broadcast.WithRetry(broadcaster, axelarCfg.MaxRetries, axelarCfg.MinSleepBeforeRetry)
 	broadcaster = broadcast.Batched(broadcaster, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, codec)
 	broadcaster = broadcast.WithRefund(broadcaster, codec)
@@ -426,7 +436,7 @@ func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCf
 	return broadcaster
 }
 
-func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, valAddr sdk.ValAddress) *multisig.Mgr {
+func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx sdkClient.Context, axelarCfg config.ValdConfig, valAddr sdk.ValAddress) *multisig.Mgr {
 	conn, err := grpc.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout)
 	if err != nil {
 		panic(errorsmod.Wrap(err, "failed to create multisig manager"))
@@ -436,7 +446,7 @@ func createMultisigMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context,
 	return multisig.NewMgr(tofnd.NewMultisigClient(conn), cliCtx, valAddr, broadcaster, timeout)
 }
 
-func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx client.Context, axelarCfg config.ValdConfig, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
+func createTSSMgr(broadcaster broadcast.Broadcaster, cliCtx sdkClient.Context, axelarCfg config.ValdConfig, valAddr string, cdc *codec.LegacyAmino) *tss.Mgr {
 	create := func() (*tss.Mgr, error) {
 		conn, err := tss.Connect(axelarCfg.TssConfig.Host, axelarCfg.TssConfig.Port, axelarCfg.TssConfig.DialTimeout)
 		if err != nil {

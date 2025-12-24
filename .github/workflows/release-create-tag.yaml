@@ -1,4 +1,6 @@
-name: Tag Release
+# Creates a new release tag and release branch (for major/minor releases from main).
+# After this, run release-build-and-upload-artifacts.yaml to build and upload the release.
+name: "Release: Create tag"
 
 on:
   workflow_dispatch:
@@ -17,11 +19,12 @@ jobs:
         with:
           fetch-depth: '0'
           submodules: recursive
+          token: ${{ secrets.PAT_TOKEN }}
 
       - id: release
         uses: anothrNick/github-tag-action@3840ec22ac98e14d981375e3ae2d8d0392964521 # v1.39.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
           DEFAULT_BUMP: ${{ github.event.inputs.bumpType }}
           TAG_CONTEXT: branch
           RELEASE_BRANCHES: main,releases.*
@@ -58,7 +61,7 @@ jobs:
             exit 1
           fi
 
-          git config --global user.email "cicd@axelar.network"
+          git config --global user.email "cicd@interoplabs.io"
           git config --global user.name "axelar-cicd-bot"
 
           git commit --allow-empty -m "${{ steps.release.outputs.new_tag }}"
@@ -72,7 +75,7 @@ jobs:
       - name: Bump version and push tag
         uses: anothrNick/github-tag-action@3840ec22ac98e14d981375e3ae2d8d0392964521 # v1.39.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
           DEFAULT_BUMP: ${{ github.event.inputs.bumpType }}
           TAG_CONTEXT: branch
           RELEASE_BRANCHES: main,releases.*

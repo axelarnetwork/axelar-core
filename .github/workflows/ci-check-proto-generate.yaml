@@ -1,12 +1,11 @@
-name: Check internal dependencies up-to-date
+# Verifies that protobuf generated files (.pb.go) are up-to-date with the .proto definitions.
+name: "CI: Check proto generate"
 
 on:
-  pull_request:
-    branches:
-      - main
+  - pull_request
 
 jobs:
-  check-internal-deps-up-to-date:
+  check-proto-generate-up-to-date:
     runs-on: ubuntu-22.04
     steps:
       - name: Setup Golang with cache
@@ -17,11 +16,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
-      - name: Update internal dependencies
+      - name: Install prereqs
         run: |
-          go get github.com/axelarnetwork/utils@latest
-          go get github.com/axelarnetwork/tm-events@latest
-          go mod tidy
+          go install github.com/rakyll/statik
+
+      - name: Generate proto files and docs
+        run: make proto-format proto-gen proto-swagger-gen
 
       - name: Check for changes
         run: |

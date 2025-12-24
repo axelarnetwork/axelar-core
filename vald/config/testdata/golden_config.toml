@@ -1,0 +1,36 @@
+batch_threshold = 3
+enable_heartbeat = false
+event_notifications_back_off = "1s"
+event_notifications_max_retries = 3
+max_batch_size = 250
+max_blocks_behind_latest = 50
+max_latest_block_age = "15s"
+no_new_blocks_timeout = "2m0s"
+
+[[axelar_bridge_evm]]
+  finality_override = "confirmation"
+  name = "ethereum"
+  rpc_addr = "https://eth.example.com"
+  start-with-bridge = true
+
+[[axelar_bridge_evm]]
+  name = "avalanche"
+  rpc_addr = "https://avax.example.com"
+  start-with-bridge = true
+
+[[axelar_bridge_evm]]
+  name = "polygon"
+  rpc_addr = "https://polygon.example.com"
+  start-with-bridge = false
+
+[broadcast]
+  confirmation_polling_interval = "400ms"
+  fee_granter = "axelar1w3jhxapdvejk2tt8wfskuar9wgkkzerywgk5r7nu"
+  max_retries = 5
+  max_timeout = "10s"
+  min_sleep_before_retry = "1s"
+
+[tss]
+  tofnd-dial-timeout = "15s"
+  tofnd-host = "localhost"
+  tofnd-port = "50051"

@@ -7,7 +7,16 @@ build the necessary binaries and docker image to run a core node.
 
 _Note:_ For a release build, checkout the release tag via `git checkout vX.Y.Z` first.
 
-Execute `make build` to create the `axelard` binary in the `./bin` folder.
+### Static binary (recommended)
+
+Execute `make build-static` to create a statically linked `axelard` binary in the `./bin` folder.
+This is the recommended option as it produces a portable binary that runs on any Linux distribution
+without glibc compatibility issues. Requires Docker.
+
+### Dynamic binary
+
+Execute `make build` to create a dynamically linked `axelard` binary in the `./bin` folder.
+This binary depends on your system's glibc and may not be portable to other Linux distributions.
 
 ## Creating docker images
 

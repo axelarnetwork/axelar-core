@@ -59,6 +59,22 @@ service MsgService {
     };
   }
 
+  rpc EnableLinkDeposit(EnableLinkDepositRequest)
+      returns (EnableLinkDepositResponse) {
+    option (google.api.http) = {
+      post : "/axelar/nexus/enable_link_deposit"
+      body : "*"
+    };
+  }
+
+  rpc DisableLinkDeposit(DisableLinkDepositRequest)
+      returns (DisableLinkDepositResponse) {
+    option (google.api.http) = {
+      post : "/axelar/nexus/disable_link_deposit"
+      body : "*"
+    };
+  }
+
   rpc UpdateParams(UpdateParamsRequest) returns (UpdateParamsResponse) {
     option (google.api.http) = {
       post : "/axelar/nexus/v1beta1/params"
@@ -153,5 +169,10 @@ service QueryService {
     option (google.api.http) = {
       get : "/axelar/nexus/v1beta1/params"
     };
+  }
+
+  rpc LinkDepositEnabled(LinkDepositEnabledRequest)
+      returns (LinkDepositEnabledResponse) {
+    option (google.api.http).get = "/axelar/nexus/v1beta1/link_deposit_enabled";
   }
 }

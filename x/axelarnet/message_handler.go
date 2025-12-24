@@ -158,6 +158,10 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 	case nexus.TypeGeneralMessageWithToken:
 		err = handleMessageWithToken(ctx, n, b, ibcK, sourceAddress, msg, token)
 	case nexus.TypeSendToken:
+		// toggle to deactivate deprecated transfer mechanism
+		if !n.IsLinkDepositEnabled(ctx) {
+			return channeltypes.NewErrorAcknowledgement(fmt.Errorf("direct token transfer is disabled, use the general-message-with-token format instead"))
+		}
 		// Send token is already rate limited in nexus.EnqueueTransfer
 		rateLimitPacket = false
 		err = handleTokenSent(ctx, n, sourceAddress, msg, token)
