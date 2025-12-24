@@ -864,7 +864,8 @@ func (m *QueryCommandResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryCommandResponse proto.InternalMessageInfo
 
-// Deprecated in v1.4: BurnerInfoRequest is no longer used (link-deposit protocol removed)
+// Deprecated in v1.4: BurnerInfoRequest is no longer used (link-deposit
+// protocol removed)
 //
 // Deprecated: Do not use.
 type BurnerInfoRequest struct {
@@ -904,7 +905,8 @@ func (m *BurnerInfoRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_BurnerInfoRequest proto.InternalMessageInfo
 
-// Deprecated in v1.4: BurnerInfoResponse is no longer used (link-deposit protocol removed)
+// Deprecated in v1.4: BurnerInfoResponse is no longer used (link-deposit
+// protocol removed)
 //
 // Deprecated: Do not use.
 type BurnerInfoResponse struct {

@@ -26,7 +26,6 @@ const (
 	AttributeIBCPath = "ibcPath"
 )
 
-
 const ZERO_X_PREFIX = "0x"
 
 // NewLinkedAddress creates a new address to make a deposit which can be transferred to another blockchain

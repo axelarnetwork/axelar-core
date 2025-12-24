@@ -126,89 +126,6 @@ paths:
               to nexus
       tags:
         - MsgService
-  /axelar/axelarnet/call_contract:
-    post:
-      operationId: CallContract2
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: object
-            properties:
-              sender_deprecated:
-                type: string
-                format: byte
-                description: >-
-                  DEPRECATED: This field is deprecated but must remain to ensure
-                  backward
-
-                  compatibility. Removing this field would break decoding of
-                  historical
-
-                  transactions. DO NOT use in new code.
-              chain:
-                type: string
-              contract_address:
-                type: string
-              payload:
-                type: string
-                format: byte
-              fee:
-                type: object
-                properties:
-                  amount:
-                    type: object
-                    properties:
-                      denom:
-                        type: string
-                      amount:
-                        type: string
-                    description: >-
-                      Coin defines a token with a denomination and an amount.
-
-
-                      NOTE: The amount field is an Int which implements the
-                      custom method
-
-                      signatures required by gogoproto.
-                  recipient:
-                    type: string
-                    format: byte
-                  refund_recipient:
-                    type: string
-                    format: byte
-              sender:
-                type: string
-      tags:
-        - MsgService
   /axelar/axelarnet/execute_pending_transfers:
     post:
       operationId: ExecutePendingTransfers2
@@ -704,89 +621,6 @@ paths:
               to nexus
       tags:
         - MsgService
-  /axelar/axelarnet/v1beta1/call_contract:
-    post:
-      operationId: CallContract
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: object
-            properties:
-              sender_deprecated:
-                type: string
-                format: byte
-                description: >-
-                  DEPRECATED: This field is deprecated but must remain to ensure
-                  backward
-
-                  compatibility. Removing this field would break decoding of
-                  historical
-
-                  transactions. DO NOT use in new code.
-              chain:
-                type: string
-              contract_address:
-                type: string
-              payload:
-                type: string
-                format: byte
-              fee:
-                type: object
-                properties:
-                  amount:
-                    type: object
-                    properties:
-                      denom:
-                        type: string
-                      amount:
-                        type: string
-                    description: >-
-                      Coin defines a token with a denomination and an amount.
-
-
-                      NOTE: The amount field is an Int which implements the
-                      custom method
-
-                      signatures required by gogoproto.
-                  recipient:
-                    type: string
-                    format: byte
-                  refund_recipient:
-                    type: string
-                    format: byte
-              sender:
-                type: string
-      tags:
-        - MsgService
   /axelar/axelarnet/v1beta1/chain_by_ibc_path/{ibc_path}:
     get:
       operationId: ChainByIBCPath
@@ -1012,6 +846,12 @@ paths:
                               the custom method
 
                               signatures required by gogoproto.
+                      title: >-
+                        Deprecated in v1.4: CallContractProposalMinDeposit is no
+                        longer used
+                    title: >-
+                      Deprecated in v1.4: call_contracts_proposal_min_deposits
+                      is no longer used
                 title: Params represent the genesis parameters for the module
         default:
           description: An unexpected error response.
@@ -1115,6 +955,12 @@ paths:
                               the custom method
 
                               signatures required by gogoproto.
+                      title: >-
+                        Deprecated in v1.4: CallContractProposalMinDeposit is no
+                        longer used
+                    title: >-
+                      Deprecated in v1.4: call_contracts_proposal_min_deposits
+                      is no longer used
                 title: Params represent the genesis parameters for the module
       tags:
         - MsgService
@@ -1689,6 +1535,7 @@ paths:
           description: A successful response.
           schema:
             type: object
+            title: 'Deprecated in v0.22: use ConfirmGatewayTxsResponse instead'
         default:
           description: An unexpected error response.
           schema:
@@ -1908,6 +1755,7 @@ paths:
                 format: byte
               sender:
                 type: string
+            title: 'Deprecated in v0.22: use ConfirmGatewayTxsRequest instead'
       tags:
         - MsgService
   /axelar/evm/confirm_gateway_txs:
@@ -2887,6 +2735,11 @@ paths:
                 format: byte
               daily_mint_limit:
                 type: string
+                description: >-
+                  Deprecated in v1.4: daily mint limit is no longer enforced.
+                  This field is
+
+                  ignored and all tokens are deployed with unlimited minting.
               sender:
                 type: string
             title: >-
@@ -5006,6 +4859,7 @@ paths:
           description: A successful response.
           schema:
             type: object
+            title: 'Deprecated in v0.22: use ConfirmGatewayTxsResponse instead'
         default:
           description: An unexpected error response.
           schema:
@@ -5225,6 +5079,7 @@ paths:
                 format: byte
               sender:
                 type: string
+            title: 'Deprecated in v0.22: use ConfirmGatewayTxsRequest instead'
       tags:
         - MsgService
   /axelar/evm/v1beta1/confirm_gateway_txs:
@@ -6420,6 +6275,11 @@ paths:
                 format: byte
               daily_mint_limit:
                 type: string
+                description: >-
+                  Deprecated in v1.4: daily mint limit is no longer enforced.
+                  This field is
+
+                  ignored and all tokens are deployed with unlimited minting.
               sender:
                 type: string
             title: >-
@@ -6919,6 +6779,7 @@ paths:
                       - STATUS_FAILED
                     default: STATUS_UNSPECIFIED
                   token_sent:
+                    title: 'Deprecated in v1.4: link-deposit protocol removed'
                     type: object
                     properties:
                       sender:
@@ -6965,6 +6826,7 @@ paths:
                         type: string
                         format: byte
                   transfer:
+                    title: 'Deprecated in v1.4: link-deposit protocol removed'
                     type: object
                     properties:
                       to:
@@ -6982,6 +6844,9 @@ paths:
                         type: string
                         format: byte
                   multisig_ownership_transferred:
+                    title: >-
+                      Deprecated in v0.20: ownership transfer mechanism was
+                      removed
                     type: object
                     properties:
                       pre_owners:
@@ -10700,82 +10565,6 @@ paths:
                 type: string
       tags:
         - MsgService
-  /axelar/nexus/set_transfer_rate_limit:
-    post:
-      operationId: SetTransferRateLimit2
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: object
-            properties:
-              sender_deprecated:
-                type: string
-                format: byte
-                description: >-
-                  DEPRECATED: This field is deprecated but must remain to ensure
-                  backward
-
-                  compatibility. Removing this field would break decoding of
-                  historical
-
-                  transactions. DO NOT use in new code.
-              chain:
-                type: string
-              limit:
-                type: object
-                properties:
-                  denom:
-                    type: string
-                  amount:
-                    type: string
-                description: >-
-                  Coin defines a token with a denomination and an amount.
-
-
-                  NOTE: The amount field is an Int which implements the custom
-                  method
-
-                  signatures required by gogoproto.
-              window:
-                type: string
-              sender:
-                type: string
-            title: >-
-              SetTransferRateLimitRequest represents a message to set rate
-              limits on
-
-              transfers
-      tags:
-        - MsgService
   /axelar/nexus/v1beta1/activate_chain:
     post:
       operationId: ActivateChain
@@ -11379,55 +11168,6 @@ paths:
           type: string
       tags:
         - QueryService
-  /axelar/nexus/v1beta1/latest_deposit_address/{recipient_addr}/{recipient_chain}/{deposit_chain}:
-    get:
-      summary: LatestDepositAddress queries the a deposit address by recipient
-      operationId: LatestDepositAddress
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              deposit_addr:
-                type: string
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: recipient_addr
-          in: path
-          required: true
-          type: string
-        - name: recipient_chain
-          in: path
-          required: true
-          type: string
-        - name: deposit_chain
-          in: path
-          required: true
-          type: string
-      tags:
-        - QueryService
   /axelar/nexus/v1beta1/message:
     get:
       operationId: Message
@@ -11763,55 +11503,6 @@ paths:
                 title: Params represent the genesis parameters for the module
       tags:
         - MsgService
-  /axelar/nexus/v1beta1/recipient_address/{deposit_chain}/{deposit_addr}:
-    get:
-      summary: >-
-        RecipientAddress queries the recipient address for a given deposit
-        address
-      operationId: RecipientAddress
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              recipient_addr:
-                type: string
-              recipient_chain:
-                type: string
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: deposit_chain
-          in: path
-          required: true
-          type: string
-        - name: deposit_addr
-          in: path
-          required: true
-          type: string
-      tags:
-        - QueryService
   /axelar/nexus/v1beta1/register_asset_fee:
     post:
       operationId: RegisterAssetFee
@@ -11984,82 +11675,6 @@ paths:
                 type: string
       tags:
         - MsgService
-  /axelar/nexus/v1beta1/set_transfer_rate_limit:
-    post:
-      operationId: SetTransferRateLimit
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            type: object
-            properties:
-              sender_deprecated:
-                type: string
-                format: byte
-                description: >-
-                  DEPRECATED: This field is deprecated but must remain to ensure
-                  backward
-
-                  compatibility. Removing this field would break decoding of
-                  historical
-
-                  transactions. DO NOT use in new code.
-              chain:
-                type: string
-              limit:
-                type: object
-                properties:
-                  denom:
-                    type: string
-                  amount:
-                    type: string
-                description: >-
-                  Coin defines a token with a denomination and an amount.
-
-
-                  NOTE: The amount field is an Int which implements the custom
-                  method
-
-                  signatures required by gogoproto.
-              window:
-                type: string
-              sender:
-                type: string
-            title: >-
-              SetTransferRateLimitRequest represents a message to set rate
-              limits on
-
-              transfers
-      tags:
-        - MsgService
   /axelar/nexus/v1beta1/transfer_fee:
     get:
       summary: |-
@@ -12183,74 +11798,6 @@ paths:
           required: true
           type: string
         - name: amount
-          in: path
-          required: true
-          type: string
-      tags:
-        - QueryService
-  /axelar/nexus/v1beta1/transfer_rate_limit/{chain}/{asset}:
-    get:
-      summary: |-
-        TransferRateLimit queries the transfer rate limit for a given chain and
-        asset. If a rate limit is not set, nil is returned.
-      operationId: TransferRateLimit
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              transfer_rate_limit:
-                type: object
-                properties:
-                  limit:
-                    type: string
-                    format: byte
-                  window:
-                    type: string
-                  incoming:
-                    type: string
-                    format: byte
-                  outgoing:
-                    type: string
-                    format: byte
-                  time_left:
-                    type: string
-                    title: time_left indicates the time left in the rate limit window
-                  from:
-                    type: string
-                    format: byte
-                  to:
-                    type: string
-                    format: byte
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type_url:
-                      type: string
-                    value:
-                      type: string
-                      format: byte
-      parameters:
-        - name: chain
-          in: path
-          required: true
-          type: string
-        - name: asset
           in: path
           required: true
           type: string
@@ -60977,54 +60524,7 @@ definitions:
 
             NOTE: The amount field is an Int which implements the custom method
             signatures required by gogoproto.
-  axelar.axelarnet.v1beta1.CallContractRequest:
-    type: object
-    properties:
-      sender_deprecated:
-        type: string
-        format: byte
-        description: >-
-          DEPRECATED: This field is deprecated but must remain to ensure
-          backward
-
-          compatibility. Removing this field would break decoding of historical
-
-          transactions. DO NOT use in new code.
-      chain:
-        type: string
-      contract_address:
-        type: string
-      payload:
-        type: string
-        format: byte
-      fee:
-        type: object
-        properties:
-          amount:
-            type: object
-            properties:
-              denom:
-                type: string
-              amount:
-                type: string
-            description: >-
-              Coin defines a token with a denomination and an amount.
-
-
-              NOTE: The amount field is an Int which implements the custom
-              method
-
-              signatures required by gogoproto.
-          recipient:
-            type: string
-            format: byte
-          refund_recipient:
-            type: string
-            format: byte
-      sender:
-        type: string
-  axelar.axelarnet.v1beta1.CallContractResponse:
-    type: object
+    title: 'Deprecated in v1.4: CallContractProposalMinDeposit is no longer used'
   axelar.axelarnet.v1beta1.ChainByIBCPathResponse:
     type: object
     properties:
@@ -61050,27 +60550,6 @@ definitions:
       pending transfers
   axelar.axelarnet.v1beta1.ExecutePendingTransfersResponse:
     type: object
-  axelar.axelarnet.v1beta1.Fee:
-    type: object
-    properties:
-      amount:
-        type: object
-        properties:
-          denom:
-            type: string
-          amount:
-            type: string
-        description: |-
-          Coin defines a token with a denomination and an amount.
-
-          NOTE: The amount field is an Int which implements the custom method
-          signatures required by gogoproto.
-      recipient:
-        type: string
-        format: byte
-      refund_recipient:
-        type: string
-        format: byte
   axelar.axelarnet.v1beta1.IBCPathResponse:
     type: object
     properties:
@@ -61115,6 +60594,10 @@ definitions:
                   method
 
                   signatures required by gogoproto.
+          title: 'Deprecated in v1.4: CallContractProposalMinDeposit is no longer used'
+        title: >-
+          Deprecated in v1.4: call_contracts_proposal_min_deposits is no longer
+          used
     title: Params represent the genesis parameters for the module
   axelar.axelarnet.v1beta1.ParamsResponse:
     type: object
@@ -61158,6 +60641,12 @@ definitions:
                       custom method
 
                       signatures required by gogoproto.
+              title: >-
+                Deprecated in v1.4: CallContractProposalMinDeposit is no longer
+                used
+            title: >-
+              Deprecated in v1.4: call_contracts_proposal_min_deposits is no
+              longer used
         title: Params represent the genesis parameters for the module
   axelar.axelarnet.v1beta1.PendingIBCTransferCountResponse:
     type: object
@@ -61347,6 +60836,12 @@ definitions:
                       custom method
 
                       signatures required by gogoproto.
+              title: >-
+                Deprecated in v1.4: CallContractProposalMinDeposit is no longer
+                used
+            title: >-
+              Deprecated in v1.4: call_contracts_proposal_min_deposits is no
+              longer used
         title: Params represent the genesis parameters for the module
   axelar.axelarnet.v1beta1.UpdateParamsResponse:
     type: object
@@ -61556,8 +61051,10 @@ definitions:
         format: byte
       sender:
         type: string
+    title: 'Deprecated in v0.22: use ConfirmGatewayTxsRequest instead'
   axelar.evm.v1beta1.ConfirmGatewayTxResponse:
     type: object
+    title: 'Deprecated in v0.22: use ConfirmGatewayTxsResponse instead'
   axelar.evm.v1beta1.ConfirmGatewayTxsRequest:
     type: object
     properties:
@@ -61704,6 +61201,11 @@ definitions:
         format: byte
       daily_mint_limit:
         type: string
+        description: >-
+          Deprecated in v1.4: daily mint limit is no longer enforced. This field
+          is
+
+          ignored and all tokens are deployed with unlimited minting.
       sender:
         type: string
     title: |-
@@ -61774,6 +61276,7 @@ definitions:
           - STATUS_FAILED
         default: STATUS_UNSPECIFIED
       token_sent:
+        title: 'Deprecated in v1.4: link-deposit protocol removed'
         type: object
         properties:
           sender:
@@ -61820,6 +61323,7 @@ definitions:
             type: string
             format: byte
       transfer:
+        title: 'Deprecated in v1.4: link-deposit protocol removed'
         type: object
         properties:
           to:
@@ -61837,6 +61341,7 @@ definitions:
             type: string
             format: byte
       multisig_ownership_transferred:
+        title: 'Deprecated in v0.20: ownership transfer mechanism was removed'
         type: object
         properties:
           pre_owners:
@@ -61945,6 +61450,7 @@ definitions:
       new_threshold:
         type: string
         format: byte
+    title: 'Deprecated in v0.20: ownership transfer mechanism was removed'
   axelar.evm.v1beta1.EventResponse:
     type: object
     properties:
@@ -61968,6 +61474,7 @@ definitions:
               - STATUS_FAILED
             default: STATUS_UNSPECIFIED
           token_sent:
+            title: 'Deprecated in v1.4: link-deposit protocol removed'
             type: object
             properties:
               sender:
@@ -62014,6 +61521,7 @@ definitions:
                 type: string
                 format: byte
           transfer:
+            title: 'Deprecated in v1.4: link-deposit protocol removed'
             type: object
             properties:
               to:
@@ -62031,6 +61539,7 @@ definitions:
                 type: string
                 format: byte
           multisig_ownership_transferred:
+            title: 'Deprecated in v0.20: ownership transfer mechanism was removed'
             type: object
             properties:
               pre_owners:
@@ -62088,6 +61597,7 @@ definitions:
       amount:
         type: string
         format: byte
+    title: 'Deprecated in v1.4: link-deposit protocol removed'
   axelar.evm.v1beta1.EventTransfer:
     type: object
     properties:
@@ -62097,6 +61607,7 @@ definitions:
       amount:
         type: string
         format: byte
+    title: 'Deprecated in v1.4: link-deposit protocol removed'
   axelar.evm.v1beta1.GatewayAddressResponse:
     type: object
     properties:
@@ -63469,11 +62980,6 @@ definitions:
           max_fee:
             type: string
             format: byte
-  axelar.nexus.v1beta1.LatestDepositAddressResponse:
-    type: object
-    properties:
-      deposit_addr:
-        type: string
   axelar.nexus.v1beta1.MaintainerState:
     type: object
     properties:
@@ -63742,13 +63248,6 @@ definitions:
             type: string
             format: uint64
         title: Params represent the genesis parameters for the module
-  axelar.nexus.v1beta1.RecipientAddressResponse:
-    type: object
-    properties:
-      recipient_addr:
-        type: string
-      recipient_chain:
-        type: string
   axelar.nexus.v1beta1.RegisterAssetFeeRequest:
     type: object
     properties:
@@ -63815,42 +63314,6 @@ definitions:
         type: string
   axelar.nexus.v1beta1.RetryFailedMessageResponse:
     type: object
-  axelar.nexus.v1beta1.SetTransferRateLimitRequest:
-    type: object
-    properties:
-      sender_deprecated:
-        type: string
-        format: byte
-        description: >-
-          DEPRECATED: This field is deprecated but must remain to ensure
-          backward
-
-          compatibility. Removing this field would break decoding of historical
-
-          transactions. DO NOT use in new code.
-      chain:
-        type: string
-      limit:
-        type: object
-        properties:
-          denom:
-            type: string
-          amount:
-            type: string
-        description: |-
-          Coin defines a token with a denomination and an amount.
-
-          NOTE: The amount field is an Int which implements the custom method
-          signatures required by gogoproto.
-      window:
-        type: string
-      sender:
-        type: string
-    title: |-
-      SetTransferRateLimitRequest represents a message to set rate limits on
-      transfers
-  axelar.nexus.v1beta1.SetTransferRateLimitResponse:
-    type: object
   axelar.nexus.v1beta1.TransferFeeResponse:
     type: object
     properties:
@@ -63866,55 +63329,6 @@ definitions:
 
           NOTE: The amount field is an Int which implements the custom method
           signatures required by gogoproto.
-  axelar.nexus.v1beta1.TransferRateLimit:
-    type: object
-    properties:
-      limit:
-        type: string
-        format: byte
-      window:
-        type: string
-      incoming:
-        type: string
-        format: byte
-      outgoing:
-        type: string
-        format: byte
-      time_left:
-        type: string
-        title: time_left indicates the time left in the rate limit window
-      from:
-        type: string
-        format: byte
-      to:
-        type: string
-        format: byte
-  axelar.nexus.v1beta1.TransferRateLimitResponse:
-    type: object
-    properties:
-      transfer_rate_limit:
-        type: object
-        properties:
-          limit:
-            type: string
-            format: byte
-          window:
-            type: string
-          incoming:
-            type: string
-            format: byte
-          outgoing:
-            type: string
-            format: byte
-          time_left:
-            type: string
-            title: time_left indicates the time left in the rate limit window
-          from:
-            type: string
-            format: byte
-          to:
-            type: string
-            format: byte
   axelar.nexus.v1beta1.TransfersForChainResponse:
     type: object
     properties:

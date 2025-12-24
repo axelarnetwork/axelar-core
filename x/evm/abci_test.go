@@ -1145,18 +1145,18 @@ func TestDeliverPendingMessages(t *testing.T) {
 			chain2 := nexus.ChainName("chain2")
 
 			ck1 := &mock.ChainKeeperMock{
-				LoggerFunc:                   func(ctx sdk.Context) log.Logger { return ctx.Logger() },
-				GetParamsFunc:                func(ctx sdk.Context) types.Params { return types.Params{EndBlockerLimit: 50} },
-				GetConfirmedEventQueueFunc:   createEventQueueFunc(), // empty queue for routing phase
+				LoggerFunc:                 func(ctx sdk.Context) log.Logger { return ctx.Logger() },
+				GetParamsFunc:              func(ctx sdk.Context) types.Params { return types.Params{EndBlockerLimit: 50} },
+				GetConfirmedEventQueueFunc: createEventQueueFunc(), // empty queue for routing phase
 				// Chain1 has no gateway - will fail
 				GetGatewayAddressFunc: func(ctx sdk.Context) (types.Address, bool) {
 					return types.Address{}, false
 				},
 			}
 			ck2 := &mock.ChainKeeperMock{
-				LoggerFunc:                   func(ctx sdk.Context) log.Logger { return ctx.Logger() },
-				GetParamsFunc:                func(ctx sdk.Context) types.Params { return types.Params{EndBlockerLimit: 50} },
-				GetConfirmedEventQueueFunc:   createEventQueueFunc(), // empty queue for routing phase
+				LoggerFunc:                 func(ctx sdk.Context) log.Logger { return ctx.Logger() },
+				GetParamsFunc:              func(ctx sdk.Context) types.Params { return types.Params{EndBlockerLimit: 50} },
+				GetConfirmedEventQueueFunc: createEventQueueFunc(), // empty queue for routing phase
 				// Chain2 has gateway and can enqueue commands
 				GetGatewayAddressFunc: func(ctx sdk.Context) (types.Address, bool) {
 					return evmTestUtils.RandomAddress(), true

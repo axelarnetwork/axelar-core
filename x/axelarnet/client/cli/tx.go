@@ -290,4 +290,3 @@ func getGeneralMessage() *cobra.Command {
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
-

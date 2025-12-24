@@ -56,7 +56,6 @@ const (
 	BurnerCodeHashV5 = "0x9f217a79e864028081339cfcead3c3d1fe92e237fcbe9468d6bb4d1da7aa6352"
 )
 
-
 func validateBurnerCode(burnerCode []byte) error {
 	burnerCodeHash := crypto.Keccak256Hash(burnerCode).Hex()
 	switch burnerCodeHash {

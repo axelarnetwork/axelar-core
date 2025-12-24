@@ -1,11 +1,12 @@
 package exported
 
 import (
-	errorsmod "cosmossdk.io/errors"
-	"cosmossdk.io/math"
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
+
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	"github.com/btcsuite/btcd/btcec/v2"
 	ec "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 
