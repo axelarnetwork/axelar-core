@@ -212,7 +212,7 @@ proto-all: proto-format proto-lint proto-gen proto-swagger-gen
 
 protoVer=0.14.0
 protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
-protoImage=$(DOCKER) run -u 0 --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
+protoImage=$(DOCKER) run --rm -u $(shell id -u):$(shell id -g) -e HOME=/workspace -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
 
 proto-gen:
 	@echo "Generating Protobuf files"

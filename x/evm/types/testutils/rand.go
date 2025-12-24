@@ -23,7 +23,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/multisig/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
-	votetestutils "github.com/axelarnetwork/axelar-core/x/vote/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -54,53 +53,10 @@ func RandomChain(cdc codec.Codec) types.GenesisState_Chain {
 		CommandBatches:      RandomBatches(),
 		Events:              events,
 		ConfirmedEventQueue: getConfirmedEventQueue(cdc, events),
+		Tokens:              RandomTokens(),
 	}
-
-	chain.Tokens = RandomTokens()
-
-	confirmedTokens := getConfirmedTokens(chain.Tokens)
-	if len(confirmedTokens) == 0 {
-		return chain
-	}
-
-	chain.LegacyConfirmedDeposits = RandomDeposits()
-	chain.LegacyBurnedDeposits = RandomDeposits()
-	chain.ConfirmedDeposits = RandomDeposits()
-	chain.BurnedDeposits = RandomDeposits()
-
-	chain.BurnerInfos = RandomBurnerInfos(len(chain.LegacyConfirmedDeposits) + len(chain.LegacyBurnedDeposits) + len(chain.ConfirmedDeposits) + len(chain.BurnedDeposits))
-
-	correctDepositsAndBurnerInfos(confirmedTokens, chain.LegacyConfirmedDeposits, chain.BurnerInfos)
-	correctDepositsAndBurnerInfos(confirmedTokens, chain.LegacyBurnedDeposits, chain.BurnerInfos[len(chain.LegacyConfirmedDeposits):])
-	correctDepositsAndBurnerInfos(confirmedTokens, chain.ConfirmedDeposits, chain.BurnerInfos[len(chain.LegacyConfirmedDeposits)+len(chain.LegacyBurnedDeposits):])
-	correctDepositsAndBurnerInfos(confirmedTokens, chain.BurnedDeposits, chain.BurnerInfos[len(chain.LegacyConfirmedDeposits)+len(chain.LegacyBurnedDeposits)+len(chain.ConfirmedDeposits):])
 
 	return chain
-}
-
-func correctDepositsAndBurnerInfos(confirmedTokens []types.ERC20TokenMetadata, deposits []types.ERC20Deposit, burnerInfos []types.BurnerInfo) {
-	for i := range deposits {
-		token := confirmedTokens[rand.I64Between(0, int64(len(confirmedTokens)))]
-
-		deposits[i].Asset = token.Asset
-
-		burnerInfos[i].TokenAddress = token.TokenAddress
-		burnerInfos[i].Asset = token.Asset
-		burnerInfos[i].Symbol = token.Details.Symbol
-
-		burnerInfos[i].BurnerAddress = deposits[i].BurnerAddress
-		burnerInfos[i].DestinationChain = deposits[i].DestinationChain
-	}
-}
-
-func getConfirmedTokens(tokens []types.ERC20TokenMetadata) []types.ERC20TokenMetadata {
-	var confirmedTokens []types.ERC20TokenMetadata
-	for _, token := range tokens {
-		if token.Status == types.Confirmed {
-			confirmedTokens = append(confirmedTokens, token)
-		}
-	}
-	return confirmedTokens
 }
 
 // RandomCommandQueue returns a random (valid) command queue state for testing
@@ -160,29 +116,6 @@ func RandomNetwork() types.NetworkInfo {
 	}
 }
 
-// RandomDeposits returns a random (valid) slice of deposits for testing
-func RandomDeposits() []types.ERC20Deposit {
-	depositCount := rand.I64Between(0, 20)
-	var deposits []types.ERC20Deposit
-
-	for i := int64(0); i < depositCount; i++ {
-		deposits = append(deposits, RandomDeposit())
-	}
-	return deposits
-}
-
-// RandomDeposit returns a random (valid) deposit for testing
-func RandomDeposit() types.ERC20Deposit {
-	return types.ERC20Deposit{
-		TxID:             RandomHash(),
-		LogIndex:         uint64(rand.I64Between(0, 100)),
-		Amount:           math.NewUint(uint64(rand.PosI64())),
-		Asset:            rand.Denom(5, 10),
-		DestinationChain: nexus.ChainName(randomNormalizedStr(5, 20)),
-		BurnerAddress:    RandomAddress(),
-	}
-}
-
 // RandomCommand returns a random (valid) command for testing
 func RandomCommand() types.Command {
 	commandType := rand.Of(
@@ -219,14 +152,6 @@ func RandomCommand() types.Command {
 		return types.NewMultisigTransferCommand(chainID, multisigTestutils.KeyID(), key)
 	default:
 		panic(fmt.Sprintf("unknown command type %s", commandType.String()))
-	}
-}
-
-// RandomEventTransfer returns a random (valid) types.EventTransfer
-func RandomEventTransfer() types.EventTransfer {
-	return types.EventTransfer{
-		To:     RandomAddress(),
-		Amount: rand.UintBetween(math.OneUint(), math.NewUint(100000)),
 	}
 }
 
@@ -469,32 +394,5 @@ func RandomGatewayEvent(statuses ...types.Event_Status) types.Event {
 				},
 			},
 		},
-		types.Event{
-			Chain:  nexus.ChainName(randomNormalizedStr(5, 20)),
-			TxID:   RandomHash(),
-			Index:  uint64(rand.PosI64()),
-			Status: rand.Of(statuses...),
-			Event: &types.Event_TokenSent{
-				TokenSent: &types.EventTokenSent{
-					Sender:             RandomAddress(),
-					DestinationChain:   nexus.ChainName(randomNormalizedStr(5, 20)),
-					DestinationAddress: RandomAddress().Hex(),
-					Symbol:             randomNormalizedStr(5, 20),
-					Amount:             math.NewUint(uint64(rand.PosI64())),
-				},
-			},
-		},
 	)
-}
-
-// RandomConfirmDepositStarted generates a random ConfirmDepositStarted event struct
-func RandomConfirmDepositStarted() types.ConfirmDepositStarted {
-	return types.ConfirmDepositStarted{
-		TxID:               RandomHash(),
-		Chain:              nexustestutils.RandomChainName(),
-		DepositAddress:     RandomAddress(),
-		TokenAddress:       RandomAddress(),
-		ConfirmationHeight: uint64(rand.PosI64()),
-		PollParticipants:   votetestutils.RandomPollParticipants(),
-	}
 }

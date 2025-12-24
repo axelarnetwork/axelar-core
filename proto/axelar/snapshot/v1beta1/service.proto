@@ -16,8 +16,13 @@ service MsgService {
   // in a validator account's stead.
   rpc RegisterProxy(RegisterProxyRequest) returns (RegisterProxyResponse) {
     option (google.api.http) = {
-      post : "/axelar/snapshot/register_proxy"
+      post : "/axelar/snapshot/v1beta1/register_proxy"
       body : "*"
+      // Deprecated: use /axelar/snapshot/v1beta1/register_proxy instead
+      additional_bindings : {
+        post : "/axelar/snapshot/register_proxy"
+        body : "*"
+      }
     };
   }
 
@@ -25,8 +30,13 @@ service MsgService {
   rpc DeactivateProxy(DeactivateProxyRequest)
       returns (DeactivateProxyResponse) {
     option (google.api.http) = {
-      post : "/axelar/snapshot/deactivate_proxy"
+      post : "/axelar/snapshot/v1beta1/deactivate_proxy"
       body : "*"
+      // Deprecated: use /axelar/snapshot/v1beta1/deactivate_proxy instead
+      additional_bindings : {
+        post : "/axelar/snapshot/deactivate_proxy"
+        body : "*"
+      }
     };
   }
 

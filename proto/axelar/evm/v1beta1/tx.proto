@@ -36,6 +36,7 @@ message SetGatewayRequest {
 
 message SetGatewayResponse {}
 
+// Deprecated in v0.22: use ConfirmGatewayTxsRequest instead
 message ConfirmGatewayTxRequest {
   option (amino.name) = "evm/ConfirmGatewayTxRequest";
   option deprecated = true;
@@ -61,6 +62,7 @@ message ConfirmGatewayTxRequest {
   string sender = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
+// Deprecated in v0.22: use ConfirmGatewayTxsResponse instead
 message ConfirmGatewayTxResponse { option deprecated = true; }
 
 message ConfirmGatewayTxsRequest {
@@ -263,22 +265,22 @@ message CreateDeployTokenRequest {
       [ (gogoproto.customtype) = "cosmossdk.io/math.Int", deprecated = true ];
   bytes address = 6
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
-  string daily_mint_limit = 7;
+  // Deprecated in v1.4: daily mint limit is no longer enforced. This field is
+  // ignored and all tokens are deployed with unlimited minting.
+  string daily_mint_limit = 7 [ deprecated = true ];
   string sender = 8 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
 message CreateDeployTokenResponse {}
 
-// CreatePendingTransfersRequest represents a message to trigger the creation of
-// commands handling all pending transfers
+// Deprecated in v1.4: CreatePendingTransfersRequest is no longer used.
+// The link-deposit protocol has been removed.
 message CreatePendingTransfersRequest {
+  option deprecated = true;
   option (amino.name) = "evm/CreatePendingTransfers";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
 
-  // DEPRECATED: This field is deprecated but must remain to ensure backward
-  // compatibility. Removing this field would break decoding of historical
-  // transactions. DO NOT use in new code.
   bytes sender_deprecated = 1 [
     (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
     deprecated = true
@@ -289,8 +291,10 @@ message CreatePendingTransfersRequest {
   string sender = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
-message CreatePendingTransfersResponse {}
+// Deprecated in v1.4: CreatePendingTransfersResponse is no longer used.
+message CreatePendingTransfersResponse { option deprecated = true; }
 
+// Deprecated in v0.20: ownership transfer mechanism was removed
 message CreateTransferOwnershipRequest {
   option deprecated = true;
 
@@ -315,6 +319,7 @@ message CreateTransferOwnershipRequest {
   string sender = 4 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
+// Deprecated in v0.20: ownership transfer mechanism was removed
 message CreateTransferOwnershipResponse { option deprecated = true; }
 
 message CreateTransferOperatorshipRequest {

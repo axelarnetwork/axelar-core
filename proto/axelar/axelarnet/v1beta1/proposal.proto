@@ -8,9 +8,10 @@ import "amino/amino.proto";
 option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
 option (gogoproto.goproto_getters_all) = false;
 
-// CallContractsProposal is a gov Content type for calling contracts on other
-// chains
+// Deprecated in v1.4: CallContractsProposal is no longer supported.
+// Use the new governance proposal flow instead.
 message CallContractsProposal {
+  option deprecated = true;
   option (amino.name) = "axelarnet/CallContractsProposal";
   option (gogoproto.goproto_stringer) = false;
 
@@ -19,7 +20,9 @@ message CallContractsProposal {
   repeated ContractCall contract_calls = 3 [ (gogoproto.nullable) = false ];
 }
 
+// Deprecated in v1.4: ContractCall is no longer supported
 message ContractCall {
+  option deprecated = true;
   option (gogoproto.goproto_stringer) = false;
 
   string chain = 1

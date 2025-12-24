@@ -3,7 +3,6 @@ package evm
 import (
 	"fmt"
 
-	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
-	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -19,189 +17,200 @@ import (
 	"github.com/axelarnetwork/utils/slices"
 )
 
-func handleTokenSent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
-	e := event.GetEvent().(*types.Event_TokenSent).TokenSent
-	if e == nil {
-		panic(fmt.Errorf("event is nil"))
-	}
+// EndBlocker handles cross-chain message flow between EVM chains and the Axelar network.
+// It performs two main operations each block:
+//
+// 1. ROUTING (EVM → Nexus): Process confirmed events from EVM chains
+//
+// Events are confirmed by validators through the vote handler and queued for processing.
+// Routing is intentionally deferred to the EndBlocker rather than being performed when
+// the poll completes, because the last voter to complete a poll should not bear the gas
+// cost of expensive routing operations. This ensures voting remains cheap and predictable.
+//
+// Each confirmed event is routed based on its type:
+//
+//   - ContractCall/ContractCallWithToken → Creates a GeneralMessage in nexus and enqueues
+//     it for routing to the destination chain.
+//
+//   - TokenDeployed → Confirms the token deployment on the source chain, enabling
+//     cross-chain transfers for that token.
+//
+//   - MultisigOperatorshipTransferred → Confirms key rotation on the chain, updating
+//     the active key used for signing outbound transactions.
+//
+// Unsupported event types (TokenSent, Transfer) are marked as failed.
+//
+// 2. DELIVERY (Nexus → EVM): Deliver pending messages to destination EVM chains
+//
+// Messages routed through nexus to EVM destinations are delivered by creating
+// gateway commands:
+//
+//   - GeneralMessage (no asset) → ApproveContractCall command
+//   - GeneralMessage (with asset) → ApproveContractCallWithMint command
+//
+// Commands are signed by the validator set and batched for execution on the
+// destination chain's gateway contract.
+//
+// Error Handling:
+//   - Each event/message is processed in a cached context (RunCached). If processing
+//     fails, the cached writes are discarded but the failure is recorded.
+//   - Failed events emit EVMEventFailed; failed messages emit ContractCallFailed.
+//   - Failures don't block processing of subsequent events/messages.
+//
+// Bounded Computation:
+//   - Processing is limited by EndBlockerLimit per chain per block.
+//   - Remaining events/messages are processed in subsequent blocks.
+//
+// Event Emission:
+//   - Success events (ContractCallApproved, etc.) are emitted inside RunCached,
+//     so they roll back with state if something fails.
+//   - Failure events (EVMEventFailed, ContractCallFailed) are emitted outside
+//     RunCached, so they persist for observability even if the event/message
+//     is retried later.
+func EndBlocker(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) ([]abci.ValidatorUpdate, error) {
+	processConfirmedEvents(ctx, bk, n, m)
+	deliverPendingMessages(ctx, bk, n, m)
 
-	sourceChain := funcs.MustOk(n.GetChain(ctx, event.Chain))
-	destinationChain := funcs.MustOk(n.GetChain(ctx, e.DestinationChain))
-	sourceCk := funcs.Must(bk.ForChain(ctx, sourceChain.Name))
-
-	token := sourceCk.GetERC20TokenBySymbol(ctx, e.Symbol)
-	if !token.Is(types.Confirmed) {
-		return fmt.Errorf("token with symbol %s not confirmed on source chain", e.Symbol)
-	}
-	asset := token.GetAsset()
-
-	// check erc20 token status if destination is an evm chain
-	if destinationCk, err := bk.ForChain(ctx, destinationChain.Name); err == nil {
-		if token := destinationCk.GetERC20TokenByAsset(ctx, asset); !token.Is(types.Confirmed) {
-			return fmt.Errorf("token with asset %s not confirmed on destination chain", e.Symbol)
-		}
-	}
-
-	recipient := nexus.CrossChainAddress{Chain: destinationChain, Address: e.DestinationAddress}
-	amount := sdk.NewCoin(asset, math.Int(e.Amount))
-	transferID, err := n.EnqueueTransfer(ctx, sourceChain, recipient, amount)
-	if err != nil {
-		return errorsmod.Wrap(err, "failed enqueuing transfer for event")
-	}
-	bk.Logger(ctx).Debug(fmt.Sprintf("enqueued transfer for event from chain %s", sourceChain.Name),
-		"chain", destinationChain.Name,
-		"eventID", event.GetID(),
-		"transferID", transferID.String(),
-	)
-
-	events.Emit(ctx, &types.TokenSent{
-		Chain:              event.Chain,
-		EventID:            event.GetID(),
-		TransferID:         transferID,
-		Sender:             e.Sender.Hex(),
-		DestinationChain:   e.DestinationChain,
-		DestinationAddress: e.DestinationAddress,
-		Asset:              amount,
-	})
-
-	return nil
+	return nil, nil
 }
 
-func handleContractCall(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
-	e := event.GetContractCall()
-	if e == nil {
-		panic(fmt.Errorf("event is nil"))
+// ============================================================================
+// ROUTING: EVM → Nexus
+// ============================================================================
+
+func processConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
+	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
+		processConfirmedEventsForChain(ctx, chain, bk, n, m)
+	}
+}
+
+func processConfirmedEventsForChain(ctx sdk.Context, chain nexus.Chain, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
+	ck := funcs.Must(bk.ForChain(ctx, chain.Name))
+	queue := ck.GetConfirmedEventQueue(ctx)
+	endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
+
+	var events []types.Event
+	var event types.Event
+	for int64(len(events)) < endBlockerLimit && queue.Dequeue(&event) {
+		events = append(events, event)
 	}
 
-	destinationChain := funcs.MustOk(n.GetChain(ctx, e.DestinationChain))
-	switch destinationChain.Module {
-	case types.ModuleName:
-		handleContractCallToEVM(ctx, bk, multisig, n, destinationChain.Name, event)
+	for _, event := range events {
+		success := utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
+			if err := processConfirmedEvent(ctx, event, bk, n, m); err != nil {
+				ck.Logger(ctx).Debug(fmt.Sprintf("failed processing event: %s", err.Error()),
+					"chain", chain.Name.String(),
+					"eventID", event.GetID(),
+				)
+
+				return false, err
+			}
+
+			ck.Logger(ctx).Debug("completed processing event",
+				"chain", chain.Name.String(),
+				"eventID", event.GetID(),
+			)
+
+			return true, nil
+		})
+
+		if !success {
+			funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
+			continue
+		}
+
+		funcs.MustNoErr(ck.SetEventCompleted(ctx, event.GetID()))
+	}
+}
+
+func processConfirmedEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) error {
+	if err := validateEvent(ctx, event, bk, n); err != nil {
+		return err
+	}
+
+	switch event.GetEvent().(type) {
+	case *types.Event_ContractCall:
+		return routeContractCall(ctx, event, n)
+	case *types.Event_ContractCallWithToken:
+		return routeContractCallWithToken(ctx, event, bk, n)
+	case *types.Event_TokenDeployed:
+		return applyTokenDeployment(ctx, event, bk, n)
+	case *types.Event_MultisigOperatorshipTransferred:
+		return applyKeyRotation(ctx, event, bk, n, m)
+	default:
+		panic(fmt.Errorf("unsupported event type %T", event))
+	}
+}
+
+func validateEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
+	var destinationChainName nexus.ChainName
+	var contractAddress string
+	switch event := event.GetEvent().(type) {
+	case *types.Event_ContractCall:
+		destinationChainName = event.ContractCall.DestinationChain
+		contractAddress = event.ContractCall.ContractAddress
+	case *types.Event_ContractCallWithToken:
+		destinationChainName = event.ContractCallWithToken.DestinationChain
+		contractAddress = event.ContractCallWithToken.ContractAddress
+	case *types.Event_TokenDeployed, *types.Event_MultisigOperatorshipTransferred:
+		// skip checks for non-gateway tx event
 		return nil
 	default:
-		// set as general message in nexus, so the dest module can handle the message
-		return setMessageToNexus(ctx, n, event, nil)
-	}
-}
-
-func handleContractCallToEVM(ctx sdk.Context, bk types.BaseKeeper, multisig types.MultisigKeeper, n types.Nexus, destinationChain nexus.ChainName, event types.Event) {
-	e := event.GetContractCall()
-	if e == nil {
-		panic(fmt.Errorf("event is nil"))
+		panic(fmt.Errorf("unsupported event type %T", event))
 	}
 
-	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain))
-	cmd := types.NewApproveContractCallCommand(
-		funcs.MustOk(destinationCk.GetChainID(ctx)),
-		funcs.MustOk(multisig.GetCurrentKeyID(ctx, destinationChain)),
-		funcs.MustOk(n.GetChain(ctx, event.Chain)).Name,
-		event.TxID,
-		event.Index,
-		*e,
-	)
-	funcs.MustNoErr(destinationCk.EnqueueCommand(ctx, cmd))
-	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Type),
-		"chain", destinationChain,
-		"eventID", event.GetID(),
-		"commandID", cmd.ID.Hex(),
-	)
+	destinationChain, ok := n.GetChain(ctx, destinationChainName)
+	if !ok {
+		return fmt.Errorf("destination chain not found")
+	}
 
-	events.Emit(ctx, &types.ContractCallApproved{
-		Chain:            event.Chain,
-		EventID:          event.GetID(),
-		CommandID:        cmd.ID,
-		Sender:           e.Sender.Hex(),
-		DestinationChain: e.DestinationChain,
-		ContractAddress:  e.ContractAddress,
-		PayloadHash:      e.PayloadHash,
-	})
+	if !n.IsChainActivated(ctx, destinationChain) {
+		return fmt.Errorf("destination chain de-activated")
+	}
+
+	if !destinationChain.IsFrom(types.ModuleName) {
+		return nil
+	}
+
+	if len(contractAddress) != 0 && !common.IsHexAddress(contractAddress) {
+		return fmt.Errorf("invalid contract address")
+	}
+
+	destinationCk, err := bk.ForChain(ctx, destinationChainName)
+	if err != nil {
+		return fmt.Errorf("destination chain not EVM-compatible")
+	}
+
+	if _, ok := destinationCk.GetGatewayAddress(ctx); !ok {
+		return fmt.Errorf("destination chain gateway not deployed yet")
+	}
+
+	return nil
 }
 
-func handleContractCallWithToken(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
+func routeContractCall(ctx sdk.Context, event types.Event, n types.Nexus) error {
+	return routeEventToNexus(ctx, n, event, nil)
+}
+
+func routeContractCallWithToken(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
 	e := event.GetContractCallWithToken()
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
 	}
 
 	sourceChain := funcs.MustOk(n.GetChain(ctx, event.Chain))
-	destinationChain := funcs.MustOk(n.GetChain(ctx, e.DestinationChain))
-
 	sourceCk := funcs.Must(bk.ForChain(ctx, sourceChain.Name))
+
 	token := sourceCk.GetERC20TokenBySymbol(ctx, e.Symbol)
 	if !token.Is(types.Confirmed) {
 		return fmt.Errorf("token with symbol %s not confirmed on source chain", e.Symbol)
 	}
-	asset := token.GetAsset()
 
-	if err := n.RateLimitTransfer(ctx, sourceChain.Name, sdk.NewCoin(asset, math.Int(e.Amount)), nexus.TransferDirectionFrom); err != nil {
-		return err
-	}
-
-	switch destinationChain.Module {
-	case types.ModuleName:
-		return handleContractCallWithTokenToEVM(ctx, event, bk, n, multisig, sourceChain.Name, destinationChain.Name, asset)
-	default:
-		coin := sdk.NewCoin(asset, math.Int(e.Amount))
-		// set as general message in nexus, so the dest module can handle the message
-		return setMessageToNexus(ctx, n, event, &coin)
-	}
+	coin := sdk.NewCoin(token.GetAsset(), math.Int(e.Amount))
+	return routeEventToNexus(ctx, n, event, &coin)
 }
 
-func handleContractCallWithTokenToEVM(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper, sourceChain, destinationChain nexus.ChainName, asset string) error {
-	e := event.GetContractCallWithToken()
-	if e == nil {
-		panic(fmt.Errorf("event is nil"))
-	}
-
-	destinationCk := funcs.Must(bk.ForChain(ctx, destinationChain))
-
-	destinationToken := destinationCk.GetERC20TokenByAsset(ctx, asset)
-	if !destinationToken.Is(types.Confirmed) {
-		return fmt.Errorf("token with asset %s not confirmed on destination chain", e.Symbol)
-	}
-
-	if !common.IsHexAddress(e.ContractAddress) {
-		return fmt.Errorf("invalid contract address %s", e.ContractAddress)
-	}
-
-	coin := sdk.NewCoin(asset, math.Int(e.Amount))
-
-	if err := n.RateLimitTransfer(ctx, destinationChain, coin, nexus.TransferDirectionTo); err != nil {
-		return err
-	}
-
-	cmd := types.NewApproveContractCallWithMintCommand(
-		funcs.MustOk(destinationCk.GetChainID(ctx)),
-		funcs.MustOk(multisig.GetCurrentKeyID(ctx, destinationChain)),
-		sourceChain,
-		event.TxID,
-		event.Index,
-		*e,
-		e.Amount,
-		destinationToken.GetDetails().Symbol,
-	)
-	funcs.MustNoErr(destinationCk.EnqueueCommand(ctx, cmd))
-	bk.Logger(ctx).Debug(fmt.Sprintf("created %s command for event", cmd.Type),
-		"chain", destinationChain,
-		"eventID", event.GetID(),
-		"commandID", cmd.ID.Hex(),
-	)
-
-	events.Emit(ctx, &types.ContractCallWithMintApproved{
-		Chain:            event.Chain,
-		EventID:          event.GetID(),
-		CommandID:        cmd.ID,
-		Sender:           e.Sender.Hex(),
-		DestinationChain: e.DestinationChain,
-		ContractAddress:  e.ContractAddress,
-		PayloadHash:      e.PayloadHash,
-		Asset:            coin,
-	})
-
-	return nil
-}
-
-func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset *sdk.Coin) error {
+func routeEventToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset *sdk.Coin) error {
 	sourceChain := funcs.MustOk(n.GetChain(ctx, event.Chain))
 
 	var message nexus.GeneralMessage
@@ -255,86 +264,14 @@ func setMessageToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 		return fmt.Errorf("unsupported event type %T", event)
 	}
 
-	if message.Recipient.Chain.Name.Equals(axelarnet.Axelarnet.Name) {
-		return fmt.Errorf("%s is not a supported recipient", axelarnet.Axelarnet.Name)
-	}
-
-	return n.SetNewMessage(ctx, message)
-}
-
-func handleConfirmDeposit(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
-	e := event.GetEvent().(*types.Event_Transfer).Transfer
-	if e == nil {
-		panic(fmt.Errorf("event is nil"))
-	}
-
-	chain := funcs.MustOk(n.GetChain(ctx, event.Chain))
-	ck := funcs.Must(bk.ForChain(ctx, event.Chain))
-
-	// get deposit address
-	burnerInfo := ck.GetBurnerInfo(ctx, e.To)
-	if burnerInfo == nil {
-		return fmt.Errorf("no burner info found for address %s", e.To.Hex())
-	}
-
-	depositAddr := nexus.CrossChainAddress{Chain: chain, Address: e.To.Hex()}
-	recipient, ok := n.GetRecipient(ctx, depositAddr)
-	if !ok {
-		return fmt.Errorf("cross-chain sender has no recipient %s", e.To.Hex())
-	}
-
-	// this check is only needed for historical reason.
-	if _, _, ok := ck.GetLegacyDeposit(ctx, event.TxID, burnerInfo.BurnerAddress); ok {
-		return fmt.Errorf("%s deposit %s-%s already exists", chain.Name.String(), event.TxID.Hex(), burnerInfo.BurnerAddress.Hex())
-	}
-
-	amount := sdk.NewCoin(burnerInfo.Asset, math.NewIntFromBigInt(e.Amount.BigInt()))
-	transferID, err := n.EnqueueForTransfer(ctx, depositAddr, amount)
-	if err != nil {
+	if err := n.SetNewMessage(ctx, message); err != nil {
 		return err
 	}
 
-	// set confirmed deposit
-	erc20Deposit := types.ERC20Deposit{
-		TxID:             event.TxID,
-		LogIndex:         event.Index,
-		Amount:           e.Amount,
-		Asset:            burnerInfo.Asset,
-		DestinationChain: burnerInfo.DestinationChain,
-		BurnerAddress:    burnerInfo.BurnerAddress,
-	}
-	if _, _, ok := ck.GetDeposit(ctx, erc20Deposit.TxID, erc20Deposit.LogIndex); ok {
-		panic(fmt.Errorf("%s deposit %s-%d already exists", chain.Name.String(), erc20Deposit.TxID.Hex(), erc20Deposit.LogIndex))
-	}
-	ck.SetDeposit(ctx, erc20Deposit, types.DepositStatus_Confirmed)
-	ck.Logger(ctx).Info(fmt.Sprintf("confirmed deposit to %s with amount %s", e.To.Hex(), e.Amount),
-		"chain", chain.Name,
-		"depositAddress", depositAddr.Address,
-		"eventID", event.GetID(),
-		"txID", event.TxID.Hex(),
-	)
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeDepositConfirmation,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
-			sdk.NewAttribute(types.AttributeKeySourceChain, chain.Name.String()),
-			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name.String()),
-			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
-			sdk.NewAttribute(types.AttributeKeyAmount, e.Amount.String()),
-			sdk.NewAttribute(types.AttributeKeyAsset, burnerInfo.Asset),
-			sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddr.Address),
-			sdk.NewAttribute(types.AttributeKeyTokenAddress, burnerInfo.TokenAddress.Hex()),
-			sdk.NewAttribute(types.AttributeKeyTxID, event.TxID.Hex()),
-			sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()),
-			sdk.NewAttribute(types.AttributeKeyEventID, string(event.GetID())),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
-		))
-
-	return nil
+	return n.EnqueueRouteMessage(ctx, message.ID)
 }
 
-func handleTokenDeployed(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
+func applyTokenDeployment(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
 	e := event.GetEvent().(*types.Event_TokenDeployed).TokenDeployed
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
@@ -378,7 +315,7 @@ func handleTokenDeployed(ctx sdk.Context, event types.Event, bk types.BaseKeeper
 	return nil
 }
 
-func handleMultisigTransferKey(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
+func applyKeyRotation(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, multisig types.MultisigKeeper) error {
 	e := event.GetEvent().(*types.Event_MultisigOperatorshipTransferred).MultisigOperatorshipTransferred
 	if e == nil {
 		panic(fmt.Errorf("event is nil"))
@@ -451,134 +388,67 @@ func handleMultisigTransferKey(ctx sdk.Context, event types.Event, bk types.Base
 	return nil
 }
 
-func validateEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
-	var destinationChainName nexus.ChainName
-	var contractAddress string
-	switch event := event.GetEvent().(type) {
-	case *types.Event_ContractCall:
-		destinationChainName = event.ContractCall.DestinationChain
-		contractAddress = event.ContractCall.ContractAddress
-	case *types.Event_ContractCallWithToken:
-		destinationChainName = event.ContractCallWithToken.DestinationChain
-		contractAddress = event.ContractCallWithToken.ContractAddress
-	case *types.Event_TokenSent:
-		destinationChainName = event.TokenSent.DestinationChain
-	case *types.Event_Transfer, *types.Event_TokenDeployed,
-		*types.Event_MultisigOperatorshipTransferred:
-		// skip checks for non-gateway tx event
-		return nil
-	default:
-		panic(fmt.Errorf("unsupported event type %T", event))
-	}
+// ============================================================================
+// DELIVERY: Nexus → EVM
+// ============================================================================
 
-	// skip if destination chain is not registered
-	destinationChain, ok := n.GetChain(ctx, destinationChainName)
-	if !ok {
-		return fmt.Errorf("destination chain not found")
-	}
+func deliverPendingMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
+	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
+		destCk := funcs.Must(bk.ForChain(ctx, chain.Name))
+		endBlockerLimit := destCk.GetParams(ctx).EndBlockerLimit
+		msgs := n.GetProcessingMessages(ctx, chain.Name, endBlockerLimit)
 
-	// skip if destination chain is not activated
-	if !n.IsChainActivated(ctx, destinationChain) {
-		return fmt.Errorf("destination chain de-activated")
-	}
+		bk.Logger(ctx).Debug(fmt.Sprintf("delivering %d messages", len(msgs)), types.AttributeKeyChain, chain.Name)
 
-	// skip further destination chain keeper checks if it is not an evm chain
-	if !destinationChain.IsFrom(types.ModuleName) {
-		return nil
-	}
+		for _, msg := range msgs {
+			success := false
+			_ = utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
+				if err := validateMessageForDelivery(ctx, destCk, n, m, chain, msg); err != nil {
+					bk.Logger(ctx).Info(fmt.Sprintf("failed validating message for delivery: %s", err.Error()),
+						types.AttributeKeyChain, msg.GetDestinationChain(),
+						types.AttributeKeyMessageID, msg.ID,
+					)
+					return false, err
+				}
 
-	if len(contractAddress) != 0 && !common.IsHexAddress(contractAddress) {
-		return fmt.Errorf("invalid contract address")
-	}
+				chainID := funcs.MustOk(destCk.GetChainID(ctx))
+				keyID := funcs.MustOk(m.GetCurrentKeyID(ctx, chain.Name))
 
-	destinationCk, err := bk.ForChain(ctx, destinationChainName)
-	if err != nil {
-		return fmt.Errorf("destination chain not EVM-compatible")
-	}
+				switch msg.Type() {
+				case nexus.TypeGeneralMessage:
+					deliverMessage(ctx, destCk, chainID, keyID, msg)
+				case nexus.TypeGeneralMessageWithToken:
+					deliverMessageWithToken(ctx, destCk, chainID, keyID, msg)
+				default:
+					panic(fmt.Sprintf("unrecognized message type %d", msg.Type()))
+				}
 
-	// skip if destination chain has not got gateway set yet
-	if _, ok := destinationCk.GetGatewayAddress(ctx); !ok {
-		return fmt.Errorf("destination chain gateway not deployed yet")
-	}
+				success = true
+				return true, nil
+			})
 
-	return nil
-}
-
-func handleConfirmedEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) error {
-	if err := validateEvent(ctx, event, bk, n); err != nil {
-		return err
-	}
-
-	switch event.GetEvent().(type) {
-	case *types.Event_ContractCall:
-		return handleContractCall(ctx, event, bk, n, m)
-	case *types.Event_ContractCallWithToken:
-		return handleContractCallWithToken(ctx, event, bk, n, m)
-	case *types.Event_TokenSent:
-		// This is the first point where sendToken transfers can be separated from other transfer mechanisms.
-		// sendToken uses direct token transfers without contract calls or address linking.
-		if !n.IsLinkDepositEnabled(ctx) {
-			return fmt.Errorf("direct token transfer is disabled")
-		}
-		return handleTokenSent(ctx, event, bk, n)
-	case *types.Event_Transfer:
-		return handleConfirmDeposit(ctx, event, bk, n)
-	case *types.Event_TokenDeployed:
-		return handleTokenDeployed(ctx, event, bk, n)
-	case *types.Event_MultisigOperatorshipTransferred:
-		return handleMultisigTransferKey(ctx, event, bk, n, m)
-	default:
-		panic(fmt.Errorf("unsupported event type %T", event))
-	}
-}
-
-func handleConfirmedEventsForChain(ctx sdk.Context, chain nexus.Chain, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
-	ck := funcs.Must(bk.ForChain(ctx, chain.Name))
-	queue := ck.GetConfirmedEventQueue(ctx)
-	endBlockerLimit := ck.GetParams(ctx).EndBlockerLimit
-
-	var events []types.Event
-	var event types.Event
-	for int64(len(events)) < endBlockerLimit && queue.Dequeue(&event) {
-		events = append(events, event)
-	}
-
-	for _, event := range events {
-		success := utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
-			if err := handleConfirmedEvent(ctx, event, bk, n, m); err != nil {
-				ck.Logger(ctx).Debug(fmt.Sprintf("failed handling event: %s", err.Error()),
-					"chain", chain.Name.String(),
-					"eventID", event.GetID(),
+			if !success {
+				destCk.Logger(ctx).Error("failed delivering message",
+					types.AttributeKeyChain, chain.Name.String(),
+					types.AttributeKeyMessageID, msg.ID,
 				)
 
-				return false, err
+				events.Emit(ctx, &types.ContractCallFailed{
+					Chain:     chain.Name,
+					MessageID: msg.ID,
+				})
+
+				funcs.MustNoErr(n.SetMessageFailed(ctx, msg.ID))
+
+				continue
 			}
 
-			ck.Logger(ctx).Debug("completed handling event",
-				"chain", chain.Name.String(),
-				"eventID", event.GetID(),
-			)
-
-			return true, nil
-		})
-
-		if !success {
-			funcs.MustNoErr(ck.SetEventFailed(ctx, event.GetID()))
-			continue
+			funcs.MustNoErr(n.SetMessageExecuted(ctx, msg.ID))
 		}
-
-		funcs.MustNoErr(ck.SetEventCompleted(ctx, event.GetID()))
 	}
 }
 
-func handleConfirmedEvents(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
-	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
-		handleConfirmedEventsForChain(ctx, chain, bk, n, m)
-	}
-}
-
-func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) error {
-	// TODO refactor to do these checks earlier so we don't fail in the end blocker
+func validateMessageForDelivery(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m types.MultisigKeeper, chain nexus.Chain, msg nexus.GeneralMessage) error {
 	_, ok := m.GetCurrentKeyID(ctx, chain.Name)
 	if !ok {
 		return fmt.Errorf("current key not set")
@@ -610,7 +480,7 @@ func validateMessage(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, m typ
 	}
 }
 
-func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID math.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
+func deliverMessage(ctx sdk.Context, ck types.ChainKeeper, chainID math.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
 	cmd := types.NewApproveContractCallCommandGeneric(chainID, keyID, common.HexToAddress(msg.GetDestinationAddress()), common.BytesToHash(msg.PayloadHash), common.BytesToHash(msg.SourceTxID), msg.GetSourceChain(), msg.GetSourceAddress(), msg.SourceTxIndex, msg.ID)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
@@ -624,20 +494,15 @@ func handleMessage(ctx sdk.Context, ck types.ChainKeeper, chainID math.Int, keyI
 		PayloadHash:      types.Hash(common.BytesToHash(msg.PayloadHash)),
 	})
 
-	ck.Logger(ctx).Debug("completed handling general message",
+	ck.Logger(ctx).Debug("delivered message",
 		types.AttributeKeyChain, msg.GetDestinationChain(),
 		types.AttributeKeyMessageID, msg.ID,
 		types.AttributeKeyCommandsID, cmd.ID,
 	)
 }
 
-func handleMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus, chainID math.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) error {
+func deliverMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, chainID math.Int, keyID multisig.KeyID, msg nexus.GeneralMessage) {
 	token := ck.GetERC20TokenByAsset(ctx, msg.Asset.GetDenom())
-
-	if err := n.RateLimitTransfer(ctx, msg.GetDestinationChain(), *msg.Asset, nexus.TransferDirectionTo); err != nil {
-		return err
-	}
-
 	cmd := types.NewApproveContractCallWithMintGeneric(chainID, keyID, common.BytesToHash(msg.SourceTxID), msg.SourceTxIndex, msg, token.GetDetails().Symbol)
 	funcs.MustNoErr(ck.EnqueueCommand(ctx, cmd))
 
@@ -652,77 +517,9 @@ func handleMessageWithToken(ctx sdk.Context, ck types.ChainKeeper, n types.Nexus
 		Asset:            *msg.Asset,
 	})
 
-	ck.Logger(ctx).Debug("completed handling general message with token",
+	ck.Logger(ctx).Debug("delivered message with token",
 		types.AttributeKeyChain, msg.GetDestinationChain(),
 		types.AttributeKeyMessageID, msg.ID,
 		types.AttributeKeyCommandsID, cmd.ID,
 	)
-
-	return nil
-}
-
-func handleMessages(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) {
-	for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
-		destCk := funcs.Must(bk.ForChain(ctx, chain.Name))
-		endBlockerLimit := destCk.GetParams(ctx).EndBlockerLimit
-		msgs := n.GetProcessingMessages(ctx, chain.Name, endBlockerLimit)
-
-		bk.Logger(ctx).Debug(fmt.Sprintf("handling %d general messages", len(msgs)), types.AttributeKeyChain, chain.Name)
-
-		for _, msg := range msgs {
-			success := false
-			_ = utils.RunCached(ctx, bk, func(ctx sdk.Context) (bool, error) {
-				if err := validateMessage(ctx, destCk, n, m, chain, msg); err != nil {
-					bk.Logger(ctx).Info(fmt.Sprintf("failed validating message: %s", err.Error()),
-						types.AttributeKeyChain, msg.GetDestinationChain(),
-						types.AttributeKeyMessageID, msg.ID,
-					)
-					return false, err
-				}
-
-				chainID := funcs.MustOk(destCk.GetChainID(ctx))
-				keyID := funcs.MustOk(m.GetCurrentKeyID(ctx, chain.Name))
-
-				switch msg.Type() {
-				case nexus.TypeGeneralMessage:
-					handleMessage(ctx, destCk, chainID, keyID, msg)
-				case nexus.TypeGeneralMessageWithToken:
-					if err := handleMessageWithToken(ctx, destCk, n, chainID, keyID, msg); err != nil {
-						return false, err
-					}
-				default:
-					panic(fmt.Sprintf("unrecognized message type %d", msg.Type()))
-				}
-
-				success = true
-				return true, nil
-			})
-
-			if !success {
-				destCk.Logger(ctx).Error("failed handling general message",
-					types.AttributeKeyChain, chain.Name.String(),
-					types.AttributeKeyMessageID, msg.ID,
-				)
-
-				events.Emit(ctx, &types.ContractCallFailed{
-					Chain:     chain.Name,
-					MessageID: msg.ID,
-				})
-
-				funcs.MustNoErr(n.SetMessageFailed(ctx, msg.ID))
-
-				continue
-			}
-
-			funcs.MustNoErr(n.SetMessageExecuted(ctx, msg.ID))
-		}
-	}
-}
-
-// EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, bk types.BaseKeeper, n types.Nexus, m types.MultisigKeeper) ([]abci.ValidatorUpdate, error) {
-	handleConfirmedEvents(ctx, bk, n, m)
-	handleMessages(ctx, bk, n, m)
-
-	return nil, nil
 }

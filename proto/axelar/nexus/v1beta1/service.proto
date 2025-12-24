@@ -15,63 +15,59 @@ service MsgService {
   rpc RegisterChainMaintainer(RegisterChainMaintainerRequest)
       returns (RegisterChainMaintainerResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/register_chain_maintainer"
+      post : "/axelar/nexus/v1beta1/register_chain_maintainer"
       body : "*"
+      // Deprecated: use /axelar/nexus/v1beta1/register_chain_maintainer instead
+      additional_bindings : {
+        post : "/axelar/nexus/register_chain_maintainer"
+        body : "*"
+      }
     };
   }
 
   rpc DeregisterChainMaintainer(DeregisterChainMaintainerRequest)
       returns (DeregisterChainMaintainerResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/deregister_chain_maintainer"
+      post : "/axelar/nexus/v1beta1/deregister_chain_maintainer"
       body : "*"
+      // Deprecated: use /axelar/nexus/v1beta1/deregister_chain_maintainer
+      // instead
+      additional_bindings : {
+        post : "/axelar/nexus/deregister_chain_maintainer"
+        body : "*"
+      }
     };
   }
 
   rpc ActivateChain(ActivateChainRequest) returns (ActivateChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/activate_chain"
+      post : "/axelar/nexus/v1beta1/activate_chain"
       body : "*"
+      // Deprecated: use /axelar/nexus/v1beta1/activate_chain instead
+      additional_bindings : {post : "/axelar/nexus/activate_chain" body : "*"}
     };
   }
 
   rpc DeactivateChain(axelar.nexus.v1beta1.DeactivateChainRequest)
       returns (axelar.nexus.v1beta1.DeactivateChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/deactivate_chain"
+      post : "/axelar/nexus/v1beta1/deactivate_chain"
       body : "*"
+      // Deprecated: use /axelar/nexus/v1beta1/deactivate_chain instead
+      additional_bindings : {post : "/axelar/nexus/deactivate_chain" body : "*"}
     };
   }
 
   rpc RegisterAssetFee(RegisterAssetFeeRequest)
       returns (RegisterAssetFeeResponse) {
     option (google.api.http) = {
-      post : "/axelar/nexus/register_asset_fee"
+      post : "/axelar/nexus/v1beta1/register_asset_fee"
       body : "*"
-    };
-  }
-
-  rpc SetTransferRateLimit(SetTransferRateLimitRequest)
-      returns (SetTransferRateLimitResponse) {
-    option (google.api.http) = {
-      post : "/axelar/nexus/set_transfer_rate_limit"
-      body : "*"
-    };
-  }
-
-  rpc EnableLinkDeposit(EnableLinkDepositRequest)
-      returns (EnableLinkDepositResponse) {
-    option (google.api.http) = {
-      post : "/axelar/nexus/enable_link_deposit"
-      body : "*"
-    };
-  }
-
-  rpc DisableLinkDeposit(DisableLinkDepositRequest)
-      returns (DisableLinkDepositResponse) {
-    option (google.api.http) = {
-      post : "/axelar/nexus/disable_link_deposit"
-      body : "*"
+      // Deprecated: use /axelar/nexus/v1beta1/register_asset_fee instead
+      additional_bindings : {
+        post : "/axelar/nexus/register_asset_fee"
+        body : "*"
+      }
     };
   }
 
@@ -81,18 +77,23 @@ service MsgService {
       body : "*"
     };
   }
+
+  rpc RetryFailedMessage(RetryFailedMessageRequest)
+      returns (RetryFailedMessageResponse) {
+    option (google.api.http) = {
+      post : "/axelar/nexus/v1beta1/retry_failed_message"
+      body : "*"
+      // Deprecated: use /axelar/nexus/v1beta1/retry_failed_message instead
+      additional_bindings : {
+        post : "/axelar/nexus/retry-failed-message"
+        body : "*"
+      }
+    };
+  }
 }
 
 // QueryService defines the gRPC querier service.
 service QueryService {
-  // LatestDepositAddress queries the a deposit address by recipient
-  rpc LatestDepositAddress(LatestDepositAddressRequest)
-      returns (LatestDepositAddressResponse) {
-    option (google.api.http).get =
-        "/axelar/nexus/v1beta1/latest_deposit_address/"
-        "{recipient_addr}/{recipient_chain}/{deposit_chain}";
-  }
-
   // TransfersForChain queries transfers by chain
   rpc TransfersForChain(TransfersForChainRequest)
       returns (TransfersForChainResponse) {
@@ -139,26 +140,11 @@ service QueryService {
         "/axelar/nexus/v1beta1/chains_by_asset/{asset}";
   }
 
-  // RecipientAddress queries the recipient address for a given deposit address
-  rpc RecipientAddress(RecipientAddressRequest)
-      returns (RecipientAddressResponse) {
-    option (google.api.http).get = "/axelar/nexus/v1beta1/recipient_address/"
-                                   "{deposit_chain}/{deposit_addr}";
-  }
-
   // ChainMaintainers queries the chain maintainers for a given chain
   rpc ChainMaintainers(ChainMaintainersRequest)
       returns (ChainMaintainersResponse) {
     option (google.api.http).get =
         "/axelar/nexus/v1beta1/chain_maintainers/{chain}";
-  }
-
-  // TransferRateLimit queries the transfer rate limit for a given chain and
-  // asset. If a rate limit is not set, nil is returned.
-  rpc TransferRateLimit(TransferRateLimitRequest)
-      returns (TransferRateLimitResponse) {
-    option (google.api.http).get = "/axelar/nexus/v1beta1/transfer_rate_limit/"
-                                   "{chain}/{asset}";
   }
 
   rpc Message(MessageRequest) returns (MessageResponse) {
@@ -169,10 +155,5 @@ service QueryService {
     option (google.api.http) = {
       get : "/axelar/nexus/v1beta1/params"
     };
-  }
-
-  rpc LinkDepositEnabled(LinkDepositEnabledRequest)
-      returns (LinkDepositEnabledResponse) {
-    option (google.api.http).get = "/axelar/nexus/v1beta1/link_deposit_enabled";
   }
 }

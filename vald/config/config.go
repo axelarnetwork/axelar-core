@@ -37,10 +37,6 @@ type ValdConfig struct {
 	// This is a safety mechanism to detect and recover from stalled states. Once at least
 	// one block has been seen, vald will panic if it does not see another before the timeout expires.
 	NoNewBlockPanicTimeout time.Duration `mapstructure:"no_new_blocks_timeout"`
-	// EnableHeartbeat enables the heartbeat handler, which responds to heartbeat events
-	// emitted by the network. This allows external tools to monitor whether vald is
-	// responsive. This feature is deprecated and disabled by default.
-	EnableHeartbeat bool `mapstructure:"enable_heartbeat"`
 	// EVMConfig contains the configuration for each EVM chain bridge.
 	EVMConfig []evm.EVMConfig `mapstructure:"axelar_bridge_evm"`
 }
@@ -58,7 +54,6 @@ func DefaultValdConfig() ValdConfig {
 		EventNotificationsMaxRetries: 3,
 		EventNotificationsBackOff:    1 * time.Second,
 		NoNewBlockPanicTimeout:       2 * time.Minute,
-		EnableHeartbeat:              false,
 	}
 }
 

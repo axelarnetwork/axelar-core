@@ -14,30 +14,44 @@ option (gogoproto.goproto_registration) = true;
 service MsgService {
   rpc StartKeygen(StartKeygenRequest) returns (StartKeygenResponse) {
     option (google.api.http) = {
-      post : "/axelar/multisig/start_keygen"
+      post : "/axelar/multisig/v1beta1/start_keygen"
       body : "*"
+      // Deprecated: use /axelar/multisig/v1beta1/start_keygen instead
+      additional_bindings : {post : "/axelar/multisig/start_keygen" body : "*"}
     };
   }
 
   rpc SubmitPubKey(SubmitPubKeyRequest) returns (SubmitPubKeyResponse) {
     option (google.api.http) = {
-      post : "/axelar/multisig/submit_pub_key"
+      post : "/axelar/multisig/v1beta1/submit_pub_key"
       body : "*"
+      // Deprecated: use /axelar/multisig/v1beta1/submit_pub_key instead
+      additional_bindings : {
+        post : "/axelar/multisig/submit_pub_key"
+        body : "*"
+      }
     };
   }
 
   rpc SubmitSignature(SubmitSignatureRequest)
       returns (SubmitSignatureResponse) {
     option (google.api.http) = {
-      post : "/axelar/multisig/submit_signature"
+      post : "/axelar/multisig/v1beta1/submit_signature"
       body : "*"
+      // Deprecated: use /axelar/multisig/v1beta1/submit_signature instead
+      additional_bindings : {
+        post : "/axelar/multisig/submit_signature"
+        body : "*"
+      }
     };
   }
 
   rpc RotateKey(RotateKeyRequest) returns (RotateKeyResponse) {
     option (google.api.http) = {
-      post : "/axelar/multisig/rotate_key"
+      post : "/axelar/multisig/v1beta1/rotate_key"
       body : "*"
+      // Deprecated: use /axelar/multisig/v1beta1/rotate_key instead
+      additional_bindings : {post : "/axelar/multisig/rotate_key" body : "*"}
     };
   }
 

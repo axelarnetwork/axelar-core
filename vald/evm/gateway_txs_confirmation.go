@@ -1,12 +1,16 @@
 package evm
 
 import (
+	"bytes"
 	"context"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
+	geth "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/slices"
@@ -48,4 +52,64 @@ func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStart
 	_, err = mgr.broadcaster.Broadcast(context.TODO(), votes...)
 
 	return err
+}
+
+// processGatewayTxLogs extracts events from gateway transaction logs
+func (mgr Mgr) processGatewayTxLogs(chain nexus.ChainName, gatewayAddress types.Address, logs []*geth.Log) []types.Event {
+	var events []types.Event
+	for i, txlog := range logs {
+		if !bytes.Equal(gatewayAddress.Bytes(), txlog.Address.Bytes()) {
+			continue
+		}
+
+		if len(txlog.Topics) == 0 {
+			continue
+		}
+
+		switch txlog.Topics[0] {
+		case ContractCallSig:
+			gatewayEvent, err := DecodeEventContractCall(txlog)
+			if err != nil {
+				mgr.logger().Debug(errorsmod.Wrap(err, "decode event ContractCall failed").Error())
+				continue
+			}
+
+			if err := gatewayEvent.ValidateBasic(); err != nil {
+				mgr.logger().Debug(errorsmod.Wrap(err, "invalid event ContractCall").Error())
+				continue
+			}
+
+			events = append(events, types.Event{
+				Chain: chain,
+				TxID:  types.Hash(txlog.TxHash),
+				Index: uint64(i),
+				Event: &types.Event_ContractCall{
+					ContractCall: &gatewayEvent,
+				},
+			})
+		case ContractCallWithTokenSig:
+			gatewayEvent, err := DecodeEventContractCallWithToken(txlog)
+			if err != nil {
+				mgr.logger().Debug(errorsmod.Wrap(err, "decode event ContractCallWithToken failed").Error())
+				continue
+			}
+
+			if err := gatewayEvent.ValidateBasic(); err != nil {
+				mgr.logger().Debug(errorsmod.Wrap(err, "invalid event ContractCallWithToken").Error())
+				continue
+			}
+
+			events = append(events, types.Event{
+				Chain: chain,
+				TxID:  types.Hash(txlog.TxHash),
+				Index: uint64(i),
+				Event: &types.Event_ContractCallWithToken{
+					ContractCallWithToken: &gatewayEvent,
+				},
+			})
+		default:
+		}
+	}
+
+	return events
 }

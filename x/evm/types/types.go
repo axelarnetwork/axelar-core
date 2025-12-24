@@ -10,7 +10,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -55,11 +54,6 @@ const (
 	BurnerCodeHashV4 = "0x701d8db26f2d668fee8acf2346199a6b63b0173f212324d1c5a04b4d4de95666"
 	// BurnerCodeHashV5 is the hash of the bytecode of burner v5
 	BurnerCodeHashV5 = "0x9f217a79e864028081339cfcead3c3d1fe92e237fcbe9468d6bb4d1da7aa6352"
-)
-
-const (
-	// DefaultRateLimitWindow is the default rate limit window, also used by the gateway
-	DefaultRateLimitWindow = 6 * time.Hour
 )
 
 func validateBurnerCode(burnerCode []byte) error {
@@ -950,21 +944,6 @@ func (m Event) ValidateBasic() error {
 		if err := event.ContractCallWithToken.ValidateBasic(); err != nil {
 			return errorsmod.Wrap(err, "invalid event ContractCallWithToken")
 		}
-	case *Event_TokenSent:
-		if event.TokenSent == nil {
-			return fmt.Errorf("missing event TokenSent")
-		}
-
-		if err := event.TokenSent.ValidateBasic(); err != nil {
-			return errorsmod.Wrap(err, "invalid event TokenSent")
-		}
-	case *Event_Transfer:
-		if event.Transfer == nil {
-			return fmt.Errorf("missing event Transfer")
-		}
-		if err := event.Transfer.ValidateBasic(); err != nil {
-			return errorsmod.Wrap(err, "invalid event Transfer")
-		}
 	case *Event_TokenDeployed:
 		if event.TokenDeployed == nil {
 			return fmt.Errorf("missing event TokenDeployed")
@@ -992,35 +971,6 @@ func (m Event) GetEventType() string {
 }
 
 const maxReceiverLength = 128
-
-// ValidateBasic returns an error if the event token sent is invalid
-func (m EventTokenSent) ValidateBasic() error {
-	if m.Sender.IsZeroAddress() {
-		return fmt.Errorf("invalid sender")
-	}
-
-	if err := m.DestinationChain.Validate(); err != nil {
-		return errorsmod.Wrap(err, "invalid destination chain")
-	}
-
-	if err := utils.ValidateString(m.DestinationAddress); err != nil {
-		return errorsmod.Wrap(err, "invalid destination address")
-	}
-
-	if len(m.DestinationAddress) > maxReceiverLength {
-		return fmt.Errorf("receiver length %d is greater than %d", len(m.DestinationAddress), maxReceiverLength)
-	}
-
-	if err := utils.ValidateString(m.Symbol); err != nil {
-		return errorsmod.Wrap(err, "invalid symbol")
-	}
-
-	if m.Amount.IsZero() {
-		return fmt.Errorf("invalid amount")
-	}
-
-	return nil
-}
 
 // ValidateBasic returns an error if the event contract call is invalid
 func (m EventContractCall) ValidateBasic() error {
@@ -1071,19 +1021,6 @@ func (m EventContractCallWithToken) ValidateBasic() error {
 
 	if err := utils.ValidateString(m.Symbol); err != nil {
 		return errorsmod.Wrap(err, "invalid symbol")
-	}
-
-	if m.Amount.IsZero() {
-		return fmt.Errorf("invalid amount")
-	}
-
-	return nil
-}
-
-// ValidateBasic returns an error if the event transfer is invalid
-func (m EventTransfer) ValidateBasic() error {
-	if m.To.IsZeroAddress() {
-		return fmt.Errorf("invalid sender")
 	}
 
 	if m.Amount.IsZero() {

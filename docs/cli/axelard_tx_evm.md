@@ -30,7 +30,6 @@ axelard tx evm [flags]
 - [axelard tx evm confirm-gateway-txs](axelard_tx_evm_confirm-gateway-txs.md) - Confirm gateway transactions in an EVM chain
 - [axelard tx evm confirm-transfer-operatorship](axelard_tx_evm_confirm-transfer-operatorship.md) - Confirm a transfer operatorship in an EVM chain transaction
 - [axelard tx evm create-deploy-token](axelard_tx_evm_create-deploy-token.md) - Create a deploy token command with the AxelarGateway contract
-- [axelard tx evm create-pending-transfers](axelard_tx_evm_create-pending-transfers.md) - Create commands for handling all pending transfers to an EVM chain
 - [axelard tx evm retry-event](axelard_tx_evm_retry-event.md) - Retry a failed event
 - [axelard tx evm set-gateway](axelard_tx_evm_set-gateway.md) - Set the gateway address for the given evm chain
 - [axelard tx evm sign-commands](axelard_tx_evm_sign-commands.md) - Sign pending commands for an EVM chain contract

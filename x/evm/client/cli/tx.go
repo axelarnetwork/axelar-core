@@ -42,7 +42,6 @@ func GetTxCmd() *cobra.Command {
 		GetCmdConfirmTransferOperatorship(),
 		GetCmdCreateConfirmGatewayTx(),
 		GetCmdCreateConfirmGatewayTxs(),
-		GetCmdCreatePendingTransfers(),
 		GetCmdCreateDeployToken(),
 		GetCmdCreateBurnTokens(),
 		GetCmdCreateTransferOperatorship(),
@@ -225,27 +224,6 @@ func GetCmdCreateConfirmGatewayTxs() *cobra.Command {
 			})
 
 			msg := types.NewConfirmGatewayTxsRequest(cliCtx.GetFromAddress(), chain, txIDs)
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdCreatePendingTransfers returns the cli command to create commands for handling all pending token transfers to an EVM chain
-func GetCmdCreatePendingTransfers() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "create-pending-transfers [chain]",
-		Short: "Create commands for handling all pending transfers to an EVM chain",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewCreatePendingTransfersRequest(cliCtx.GetFromAddress(), args[0])
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},

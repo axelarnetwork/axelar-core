@@ -165,31 +165,28 @@ func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error
 // ConsensusVersion implements AppModule/ConsensusVersion.
 func (AppModule) ConsensusVersion() uint64 { return 8 }
 
-// AxelarnetIBCModule is an IBCModule that adds rate limiting and gmp processing to the ibc middleware
+// AxelarnetIBCModule is an IBCModule that adds GMP processing to the ibc middleware
 type AxelarnetIBCModule struct {
 	porttypes.IBCModule
-	keeper      keeper.Keeper
-	nexus       types.Nexus
-	ibcK        keeper.IBCKeeper
-	bank        types.BankKeeper
-	rateLimiter RateLimiter
+	keeper keeper.Keeper
+	nexus  types.Nexus
+	ibcK   keeper.IBCKeeper
+	bank   types.BankKeeper
 }
 
 // NewAxelarnetIBCModule creates a new AxelarnetIBCModule instance
 func NewAxelarnetIBCModule(
 	transferModule porttypes.IBCModule,
 	ibcK keeper.IBCKeeper,
-	rateLimiter RateLimiter,
 	nexus types.Nexus,
 	bank types.BankKeeper,
 ) AxelarnetIBCModule {
 	return AxelarnetIBCModule{
-		IBCModule:   transferModule,
-		keeper:      ibcK.Keeper,
-		nexus:       nexus,
-		ibcK:        ibcK,
-		bank:        bank,
-		rateLimiter: rateLimiter,
+		IBCModule: transferModule,
+		keeper:    ibcK.Keeper,
+		nexus:     nexus,
+		ibcK:      ibcK,
+		bank:      bank,
 	}
 }
 
@@ -208,7 +205,7 @@ func (m AxelarnetIBCModule) OnRecvPacket(
 		return ack
 	}
 
-	return OnRecvMessage(ctx, m.keeper, m.ibcK, m.nexus, m.bank, m.rateLimiter, packet)
+	return OnRecvMessage(ctx, m.keeper, m.ibcK, m.nexus, m.bank, packet)
 }
 
 // OnAcknowledgementPacket implements the IBCModule interface
@@ -240,12 +237,6 @@ func (m AxelarnetIBCModule) OnAcknowledgementPacket(
 	case *channeltypes.Acknowledgement_Result:
 		return setRoutedPacketCompleted(ctx, m.keeper, m.nexus, port, channel, sequence)
 	default:
-		// AckError causes a refund of the token (i.e unlock from the escrow address/mint of token depending on whether it's native to chain).
-		// Hence, it's rate limited on the from direction (tokens coming from the source chain).
-		if err := m.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(port, channel)); err != nil {
-			return err
-		}
-
 		return m.setRoutedPacketFailed(ctx, packet, m.bank)
 	}
 }
@@ -258,16 +249,6 @@ func (m AxelarnetIBCModule) OnTimeoutPacket(
 ) error {
 	err := m.IBCModule.OnTimeoutPacket(ctx, packet, relayer)
 	if err != nil {
-		return err
-	}
-
-	// IBC timeout packets, by convention, use the source port/channel to represent native chain -> counterparty chain channel id
-	// https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics#definitions
-	port, channel := packet.GetSourcePort(), packet.GetSourceChannel()
-
-	// Timeout causes a refund of the token (i.e unlock from the escrow address/mint of token depending on whether it's native to chain).
-	// Hence, it's rate limited on the from direction (tokens coming from source chain).
-	if err := m.rateLimiter.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(port, channel)); err != nil {
 		return err
 	}
 

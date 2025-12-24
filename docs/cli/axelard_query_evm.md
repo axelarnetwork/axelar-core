@@ -27,8 +27,7 @@ axelard query evm [flags]
 - [axelard query](axelard_query.md) - Querying subcommands
 - [axelard query evm address](axelard_query_evm_address.md) - Returns the EVM address
 - [axelard query evm batched-commands](axelard_query_evm_batched-commands.md) - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
-- [axelard query evm burner-info](axelard_query_evm_burner-info.md) - Get information about a burner address
-- [axelard query evm bytecode](axelard_query_evm_bytecode.md) - Fetch the bytecode of an EVM contract [contract] for chain [chain]
+- [axelard query evm bytecode](axelard_query_evm_bytecode.md) - Fetch the token bytecode for chain [chain]
 - [axelard query evm chains](axelard_query_evm_chains.md) - Return the supported EVM chains by status
 - [axelard query evm command](axelard_query_evm_command.md) - Get information about an EVM gateway command given a chain and the command ID
 - [axelard query evm confirmation-height](axelard_query_evm_confirmation-height.md) - Returns the minimum confirmation height for the given chain

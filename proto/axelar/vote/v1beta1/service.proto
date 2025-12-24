@@ -14,8 +14,10 @@ option (gogoproto.goproto_registration) = true;
 service MsgService {
   rpc Vote(VoteRequest) returns (VoteResponse) {
     option (google.api.http) = {
-      post : "/axelar/vote/vote"
+      post : "/axelar/vote/v1beta1/vote"
       body : "*"
+      // Deprecated: use /axelar/vote/v1beta1/vote instead
+      additional_bindings : {post : "/axelar/vote/vote" body : "*"}
     };
   }
 

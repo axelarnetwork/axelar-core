@@ -1,32 +1,65 @@
 package keeper
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
 
-// Migrate9to10 returns the handler that performs in-place store migrations
-func Migrate9to10(bk *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
+// Migrate10to11 removes deprecated link-deposit protocol state from all EVM chains.
+// This cleans up burnerAddr, confirmedDeposit, and burnedDeposit entries.
+func Migrate10to11(bk *BaseKeeper, n types.Nexus) func(ctx sdk.Context) error {
 	return func(ctx sdk.Context) error {
 		for _, chain := range slices.Filter(n.GetChains(ctx), types.IsEVMChain) {
 			ck := funcs.Must(bk.ForChain(ctx, chain.Name)).(chainKeeper)
-
-			params := ck.GetParams(ctx)
-			// assert: there is exactly one set of default params
-			defaultParams := types.DefaultParams()[0]
-
-			params.VotingGracePeriod = defaultParams.VotingGracePeriod
-			params.RevoteLockingPeriod = defaultParams.RevoteLockingPeriod
-
-			ck.SetParams(ctx, params)
+			deleted := deleteDeprecatedState(ctx, ck)
+			ctx.Logger().Info(fmt.Sprintf("deleted %d deprecated link-deposit keys from %s chain store", deleted, chain.Name))
 		}
 
 		return nil
 	}
+}
+
+// deleteDeprecatedState removes all entries with deprecated key prefixes from the chain store.
+// These prefixes were used by the link-deposit protocol which has been removed.
+func deleteDeprecatedState(ctx sdk.Context, ck chainKeeper) int {
+	store := ck.getStore(ctx)
+	totalDeleted := 0
+
+	// Delete entries for each deprecated prefix:
+	// - Static key prefixes (1, 2, 3) used by the current key system
+	// - Legacy string prefixes ("confirmed_deposit", "burned_deposit") from older code
+	deprecatedPrefixes := []key.Key{
+		burnerAddrPrefix,
+		confirmedDepositPrefix,
+		burnedDepositPrefix,
+		key.FromStr("confirmed_deposit"),
+		key.FromStr("burned_deposit"),
+	}
+
+	for _, prefix := range deprecatedPrefixes {
+		iter := store.IteratorNew(prefix)
+		defer utils.CloseLogError(iter, ck.Logger(ctx))
+
+		var keysToDelete [][]byte
+		for ; iter.Valid(); iter.Next() {
+			keysToDelete = append(keysToDelete, iter.Key())
+		}
+
+		for _, k := range keysToDelete {
+			store.DeleteRaw(k)
+		}
+
+		totalDeleted += len(keysToDelete)
+	}
+
+	return totalDeleted
 }
 
 // AlwaysMigrateBytecode migrates contracts bytecode for all evm chains (CRUCIAL, DO NOT DELETE AND ALWAYS REGISTER)

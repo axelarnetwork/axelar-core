@@ -31,7 +31,6 @@ func GetQueryCmd() *cobra.Command {
 
 	queryCmd.AddCommand(
 		getCmdChainMaintainers(),
-		getCmdLatestDepositAddress(),
 		getCmdTransfersForChain(),
 		getCmdFee(),
 		getCmdTransferFee(),
@@ -39,8 +38,6 @@ func GetQueryCmd() *cobra.Command {
 		getCmdAssets(),
 		getCmdChainState(),
 		getCmdChainsByAsset(),
-		getCmdRecipientAddress(),
-		getCmdTransferRateLimit(),
 		getCmdMessage(),
 		getParams(),
 	)
@@ -70,38 +67,6 @@ func getCmdChainMaintainers() *cobra.Command {
 					Chain: args[0],
 				},
 			)
-			if err != nil {
-				return err
-			}
-
-			return clientCtx.PrintProto(res)
-		},
-	}
-
-	flags.AddQueryFlagsToCmd(cmd)
-
-	return cmd
-}
-
-func getCmdLatestDepositAddress() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "latest-deposit-address [deposit chain] [recipient chain] [recipient address]",
-		Short: "Query for account by address",
-		Args:  cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			queryClient := types.NewQueryServiceClient(clientCtx)
-
-			res, err := queryClient.LatestDepositAddress(cmd.Context(),
-				&types.LatestDepositAddressRequest{
-					DepositChain:   args[0],
-					RecipientChain: args[1],
-					RecipientAddr:  args[2],
-				})
 			if err != nil {
 				return err
 			}
@@ -368,70 +333,6 @@ func getCmdChainsByAsset() *cobra.Command {
 					Asset: args[0],
 				},
 			)
-			if err != nil {
-				return err
-			}
-
-			return clientCtx.PrintProto(res)
-		},
-	}
-
-	flags.AddQueryFlagsToCmd(cmd)
-
-	return cmd
-}
-
-func getCmdRecipientAddress() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "recipient-address [chain] [address]",
-		Short: "Returns the recipient address corresponding to the given deposit address",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			queryClient := types.NewQueryServiceClient(clientCtx)
-			chainName := nexus.ChainName(args[0])
-			if err := chainName.Validate(); err != nil {
-				return err
-			}
-
-			res, err := queryClient.RecipientAddress(cmd.Context(), &types.RecipientAddressRequest{
-				DepositAddr:  args[1],
-				DepositChain: chainName.String(),
-			})
-			if err != nil {
-				return err
-			}
-
-			return clientCtx.PrintProto(res)
-		},
-	}
-
-	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
-}
-
-func getCmdTransferRateLimit() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "transfer-rate-limit [chain] [asset]",
-		Short: "Returns the transfer rate limit for a given chain and asset",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			queryClient := types.NewQueryServiceClient(clientCtx)
-
-			res, err := queryClient.TransferRateLimit(cmd.Context(),
-				&types.TransferRateLimitRequest{
-					Chain: args[0],
-					Asset: args[1],
-				})
 			if err != nil {
 				return err
 			}

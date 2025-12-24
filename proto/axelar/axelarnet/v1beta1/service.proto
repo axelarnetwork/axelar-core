@@ -12,78 +12,95 @@ option (gogoproto.goproto_registration) = true;
 
 // Msg defines the axelarnet Msg service.
 service MsgService {
-  rpc Link(LinkRequest) returns (LinkResponse) {
-    option (google.api.http) = {
-      post : "/axelar/axelarnet/link"
-      body : "*"
-    };
-  }
-
-  rpc ConfirmDeposit(ConfirmDepositRequest) returns (ConfirmDepositResponse) {
-    option (google.api.http) = {
-      post : "/axelar/axelarnet/confirm_deposit"
-      body : "*"
-    };
-  }
-
   rpc ExecutePendingTransfers(ExecutePendingTransfersRequest)
       returns (ExecutePendingTransfersResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/execute_pending_transfers"
+      post : "/axelar/axelarnet/v1beta1/execute_pending_transfers"
       body : "*"
+      // Deprecated: use /axelar/axelarnet/v1beta1/execute_pending_transfers
+      // instead
+      additional_bindings : {
+        post : "/axelar/axelarnet/execute_pending_transfers"
+        body : "*"
+      }
     };
   }
 
   rpc AddCosmosBasedChain(AddCosmosBasedChainRequest)
       returns (AddCosmosBasedChainResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/add_cosmos_based_chain"
+      post : "/axelar/axelarnet/v1beta1/add_cosmos_based_chain"
       body : "*"
+      // Deprecated: use /axelar/axelarnet/v1beta1/add_cosmos_based_chain
+      // instead
+      additional_bindings : {
+        post : "/axelar/axelarnet/add_cosmos_based_chain"
+        body : "*"
+      }
     };
   }
 
   rpc RegisterAsset(RegisterAssetRequest) returns (RegisterAssetResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/register_asset"
+      post : "/axelar/axelarnet/v1beta1/register_asset"
       body : "*"
+      // Deprecated: use /axelar/axelarnet/v1beta1/register_asset instead
+      additional_bindings : {
+        post : "/axelar/axelarnet/register_asset"
+        body : "*"
+      }
     };
   }
 
   rpc RouteIBCTransfers(RouteIBCTransfersRequest)
       returns (RouteIBCTransfersResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/route_ibc_transfers"
+      post : "/axelar/axelarnet/v1beta1/route_ibc_transfers"
       body : "*"
+      // Deprecated: use /axelar/axelarnet/v1beta1/route_ibc_transfers instead
+      additional_bindings : {
+        post : "/axelar/axelarnet/route_ibc_transfers"
+        body : "*"
+      }
     };
   }
 
   rpc RegisterFeeCollector(RegisterFeeCollectorRequest)
       returns (RegisterFeeCollectorResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/register_fee_collector"
+      post : "/axelar/axelarnet/v1beta1/register_fee_collector"
       body : "*"
+      // Deprecated: use /axelar/axelarnet/v1beta1/register_fee_collector
+      // instead
+      additional_bindings : {
+        post : "/axelar/axelarnet/register_fee_collector"
+        body : "*"
+      }
     };
   }
 
   rpc RetryIBCTransfer(RetryIBCTransferRequest)
       returns (RetryIBCTransferResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/retry_ibc_transfer"
+      post : "/axelar/axelarnet/v1beta1/retry_ibc_transfer"
       body : "*"
+      // Deprecated: use /axelar/axelarnet/v1beta1/retry_ibc_transfer instead
+      additional_bindings : {
+        post : "/axelar/axelarnet/retry_ibc_transfer"
+        body : "*"
+      }
     };
   }
 
   rpc RouteMessage(RouteMessageRequest) returns (RouteMessageResponse) {
     option (google.api.http) = {
-      post : "/axelar/axelarnet/route_message"
+      post : "/axelar/axelarnet/v1beta1/route_message"
       body : "*"
-    };
-  }
-
-  rpc CallContract(CallContractRequest) returns (CallContractResponse) {
-    option (google.api.http) = {
-      post : "/axelar/axelarnet/call_contract"
-      body : "*"
+      // Deprecated: use /axelar/axelarnet/v1beta1/route_message instead
+      additional_bindings : {
+        post : "/axelar/axelarnet/route_message"
+        body : "*"
+      }
     };
   }
 

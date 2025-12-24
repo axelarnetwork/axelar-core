@@ -84,18 +84,6 @@
       }
     },
     {
-      "url": "./tmp-swagger-gen/axelar/tss/v1beta1/query.swagger.json"
-    },
-    {
-      "url": "./tmp-swagger-gen/axelar/tss/v1beta1/service.swagger.json",
-      "operationIds": {
-        "rename": {
-          "Params": "TSSParams",
-          "UpdateParams": "TSSUpdateParams"
-        }
-      }
-    },
-    {
       "url": "./tmp-swagger-gen/axelar/permission/v1beta1/query.swagger.json"
     },
     {

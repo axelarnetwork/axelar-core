@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	errorsmod "cosmossdk.io/errors"
-	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -145,50 +144,6 @@ func (m MaintainerState) CountIncorrectVotes(window int) uint64 {
 
 // GetAddress returns the address of the maintainer
 func (m MaintainerState) GetAddress() sdk.ValAddress { return m.Address }
-
-// ValidateBasic returns an error if the type is invalid
-func (m RateLimit) ValidateBasic() error {
-	if err := m.Chain.Validate(); err != nil {
-		return err
-	}
-
-	if err := m.Limit.Validate(); err != nil {
-		return err
-	}
-
-	if m.Window.Nanoseconds() <= 0 {
-		return fmt.Errorf("rate limit window must be positive")
-	}
-
-	return nil
-}
-
-// ValidateBasic returns an error if the type is invalid
-func (m TransferEpoch) ValidateBasic() error {
-	if err := m.Chain.Validate(); err != nil {
-		return err
-	}
-
-	if err := m.Amount.Validate(); err != nil {
-		return err
-	}
-
-	if err := m.Direction.ValidateBasic(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// NewTransferEpoch returns a new transfer epoch
-func NewTransferEpoch(chain exported.ChainName, asset string, epoch uint64, direction exported.TransferDirection) TransferEpoch {
-	return TransferEpoch{
-		Chain:     chain,
-		Amount:    sdk.NewCoin(asset, math.ZeroInt()),
-		Epoch:     epoch,
-		Direction: direction,
-	}
-}
 
 // CoinType on can be ICS20 token, native asset, or wrapped asset from external chains
 type CoinType int

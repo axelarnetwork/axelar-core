@@ -22,3 +22,4 @@
 *.DS_Store
 /contract-artifacts
 /client/docs/node_modules/
+.cache

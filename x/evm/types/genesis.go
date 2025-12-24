@@ -44,18 +44,13 @@ func DefaultChains() []GenesisState_Chain {
 	var chains []GenesisState_Chain
 	for _, params := range DefaultParams() {
 		chain := GenesisState_Chain{
-			Params:                  params,
-			BurnerInfos:             nil,
-			CommandQueue:            utils.QueueState{},
-			LegacyConfirmedDeposits: nil,
-			LegacyBurnedDeposits:    nil,
-			ConfirmedDeposits:       nil,
-			BurnedDeposits:          nil,
-			CommandBatches:          nil,
-			Gateway:                 Gateway{},
-			Tokens:                  nil,
-			Events:                  nil,
-			ConfirmedEventQueue:     utils.QueueState{},
+			Params:              params,
+			CommandQueue:        utils.QueueState{},
+			CommandBatches:      nil,
+			Gateway:             Gateway{},
+			Tokens:              nil,
+			Events:              nil,
+			ConfirmedEventQueue: utils.QueueState{},
 		}
 		chains = append(chains, chain)
 	}
@@ -77,64 +72,14 @@ func (m GenesisState) Validate() error {
 			return getValidateError(j, errorsmod.Wrapf(err, "invalid params"))
 		}
 
-		if chain.Gateway.Address.IsZeroAddress() {
-			errStr := "gateway is not set"
-
-			if len(chain.Tokens) > 0 {
-				return getValidateError(j, errorsmod.Wrap(fmt.Errorf("cannot initialize tokens"), errStr))
-			}
-
-			if len(chain.ConfirmedDeposits) > 0 {
-				return getValidateError(j, errorsmod.Wrap(fmt.Errorf("cannot have confirmed deposits"), errStr))
-			}
-
-			if len(chain.BurnedDeposits) > 0 {
-				return getValidateError(j, errorsmod.Wrap(fmt.Errorf("cannot have burned deposits"), errStr))
-			}
-
-			if len(chain.BurnerInfos) > 0 {
-				return getValidateError(j, errorsmod.Wrap(fmt.Errorf("cannot have burned deposits"), errStr))
-			}
+		if chain.Gateway.Address.IsZeroAddress() && len(chain.Tokens) > 0 {
+			return getValidateError(j, errorsmod.Wrap(fmt.Errorf("cannot initialize tokens"), "gateway is not set"))
 		}
 
 		for i, token := range chain.Tokens {
 			if err := token.ValidateBasic(); err != nil {
 				return getValidateError(j, errorsmod.Wrapf(err, "invalid token %d", i))
 			}
-		}
-
-		for i, info := range chain.BurnerInfos {
-			if err := info.ValidateBasic(); err != nil {
-				return getValidateError(j, errorsmod.Wrapf(err, "invalid burner info %d", i))
-			}
-
-			if err := checkTokenInfo(info, chain.Tokens); err != nil {
-				return getValidateError(j, errorsmod.Wrapf(err, "invalid burner info %d", i))
-			}
-		}
-
-		for i, deposit := range append(chain.ConfirmedDeposits, chain.LegacyConfirmedDeposits...) {
-			if err := deposit.ValidateBasic(); err != nil {
-				return getValidateError(j, errorsmod.Wrapf(err, "invalid confirmed deposit %d", i))
-			}
-
-			if err := checkBurnerInfo(deposit, chain.BurnerInfos); err != nil {
-				return getValidateError(j, errorsmod.Wrapf(err, "invalid confirmed deposit %d", i))
-			}
-		}
-
-		for i, deposit := range append(chain.BurnedDeposits, chain.LegacyBurnedDeposits...) {
-			if err := deposit.ValidateBasic(); err != nil {
-				return getValidateError(j, errorsmod.Wrapf(err, "invalid burned deposit %d", i))
-			}
-
-			if err := checkBurnerInfo(deposit, chain.BurnerInfos); err != nil {
-				return getValidateError(j, errorsmod.Wrapf(err, "invalid burned deposit %d", i))
-			}
-		}
-
-		if err := validateCommandBatches(chain.CommandBatches); err != nil {
-			return getValidateError(j, errorsmod.Wrapf(err, "invalid command batches"))
 		}
 
 		if err := validateCommandBatches(chain.CommandBatches); err != nil {
@@ -206,42 +151,6 @@ func validateCommandBatches(batches []CommandBatchMetadata) error {
 	}
 
 	return nil
-}
-
-func checkBurnerInfo(deposit ERC20Deposit, burnerInfos []BurnerInfo) error {
-	for _, info := range burnerInfos {
-		if bytes.Equal(deposit.BurnerAddress.Bytes(), info.BurnerAddress.Bytes()) {
-			if info.Asset != deposit.Asset {
-				return fmt.Errorf("expected asset %s, got %s", info.Asset, deposit.Asset)
-			}
-
-			if info.DestinationChain != deposit.DestinationChain {
-				return fmt.Errorf("expected destination address %s, got %s", info.DestinationChain, deposit.DestinationChain)
-			}
-
-			return nil
-		}
-	}
-
-	return fmt.Errorf("burner info for address %s not found", deposit.BurnerAddress.Hex())
-}
-
-func checkTokenInfo(info BurnerInfo, tokens []ERC20TokenMetadata) error {
-	for _, token := range tokens {
-		if bytes.Equal(info.TokenAddress.Bytes(), token.TokenAddress.Bytes()) {
-			if token.Asset != info.Asset {
-				return fmt.Errorf("expected asset %s, got %s", token.Asset, info.Asset)
-			}
-
-			if token.Details.Symbol != info.Symbol {
-				return fmt.Errorf("expected symbol %s, got %s", token.Details.Symbol, info.Symbol)
-			}
-
-			return nil
-		}
-	}
-
-	return fmt.Errorf("token with address %s not found", info.TokenAddress.Hex())
 }
 
 // GetGenesisStateFromAppState returns x/evm GenesisState given raw application

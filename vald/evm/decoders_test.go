@@ -1,7 +1,6 @@
 package evm_test
 
 import (
-	"math/big"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -9,32 +8,9 @@ import (
 	geth "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/vald/evm"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 )
-
-func TestDecodeEventTokenSent(t *testing.T) {
-	log := &geth.Log{
-		Topics: []common.Hash{
-			common.HexToHash("0x651d93f66c4329630e8d0f62488eff599e3be484da587335e8dc0fcf46062726"),
-			common.HexToHash("0x00000000000000000000000068b93045fe7d8794a7caf327e7f855cd6cd03bb8"),
-		},
-		Data: common.Hex2Bytes("000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000001200000000000000000000000000000000000000000000000000000000000989680000000000000000000000000000000000000000000000000000000000000000a657468657265756d2d3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a30783538656134313033656439353564434262646338613066456261626133393542366534346431354600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f657468657265756d2d312d7561786c0000000000000000000000000000000000"),
-	}
-
-	expected := types.EventTokenSent{
-		Sender:             types.Address(common.HexToAddress("0x68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8")),
-		DestinationChain:   "ethereum-2",
-		DestinationAddress: "0x58ea4103ed955dCBbdc8a0fEbaba395B6e44d15F",
-		Symbol:             "ethereum-1-uaxl",
-		Amount:             math.NewUint(10000000),
-	}
-	actual, err := evm.DecodeEventTokenSent(log)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, actual)
-}
 
 func TestDecodeEventContractCall(t *testing.T) {
 	log := &geth.Log{
@@ -96,56 +72,4 @@ func TestDecodeTokenDeployEvent_CorrectData(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSymbol, tokenDeployed.Symbol)
 	assert.Equal(t, types.Address(expectedAddr), tokenDeployed.TokenAddress)
-}
-
-func TestDecodeErc20TransferEvent_NotErc20Transfer(t *testing.T) {
-	l := geth.Log{
-		Topics: []common.Hash{
-			common.BytesToHash(rand.Bytes(common.HashLength)),
-			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
-			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
-		},
-		Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
-	}
-
-	_, err := evm.DecodeERC20TransferEvent(&l)
-	assert.Error(t, err)
-}
-
-func TestDecodeErc20TransferEvent_InvalidErc20Transfer(t *testing.T) {
-	erc20TransferEventSig := common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
-
-	l := geth.Log{
-		Topics: []common.Hash{
-			erc20TransferEventSig,
-			common.BytesToHash(common.LeftPadBytes(common.BytesToAddress(rand.Bytes(common.AddressLength)).Bytes(), common.HashLength)),
-		},
-		Data: common.LeftPadBytes(big.NewInt(2).Bytes(), common.HashLength),
-	}
-
-	_, err := evm.DecodeERC20TransferEvent(&l)
-
-	assert.Error(t, err)
-}
-
-func TestDecodeErc20TransferEvent_CorrectData(t *testing.T) {
-	erc20TransferEventSig := common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
-	expectedFrom := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	expectedTo := common.BytesToAddress(rand.Bytes(common.AddressLength))
-	expectedAmount := math.NewUint(uint64(rand.I64Between(1, 10000)))
-
-	l := geth.Log{
-		Topics: []common.Hash{
-			erc20TransferEventSig,
-			common.BytesToHash(common.LeftPadBytes(expectedFrom.Bytes(), common.HashLength)),
-			common.BytesToHash(common.LeftPadBytes(expectedTo.Bytes(), common.HashLength)),
-		},
-		Data: common.LeftPadBytes(expectedAmount.BigInt().Bytes(), common.HashLength),
-	}
-
-	transfer, err := evm.DecodeERC20TransferEvent(&l)
-
-	assert.NoError(t, err)
-	assert.Equal(t, types.Address(expectedTo), transfer.To)
-	assert.Equal(t, expectedAmount, transfer.Amount)
 }
