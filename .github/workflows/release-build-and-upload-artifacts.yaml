@@ -8,11 +8,7 @@ on:
       tag:
         description: Github tag to release binaries for (reusing an existing tag will make the pipeline fail)
         required: true
-        default: latest
-      wasm:
-        description: Whether to enable wasm ("true"/"false")
-        required: true
-        default: "true"
+        default: vX.Y.Z
       ibc-wasm-hooks:
         description: Whether to enable ibc wasm hooks ("true"/"false")
         required: true
@@ -65,7 +61,7 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform }}
           SEMVER: ${{ github.event.inputs.tag }}
-          WASM: ${{ github.event.inputs.wasm }}
+          WASM: "true"
           IBC_WASM_HOOKS: ${{ github.event.inputs.ibc-wasm-hooks }}
 
   combine-sign:
@@ -162,7 +158,7 @@ jobs:
           ARCH: ${{ matrix.arch }}
           OS_TYPE: ${{ matrix.os }}
           SEMVER: ${{ github.event.inputs.tag }}
-          WASM: ${{ github.event.inputs.wasm }}
+          WASM: "true"
           IBC_WASM_HOOKS: ${{ github.event.inputs.ibc-wasm-hooks }}
         run: |
           OS=$(echo "$OS_TYPE" | sed -e 's/ubuntu-22.04/linux/; s/macos-latest/darwin/')
@@ -233,6 +229,7 @@ jobs:
           tag: ${{ github.event.inputs.tag }}
           overwrite: true
           file_glob: true
+          body: "[TODO] Release notes will be added and announced later. No action required at the moment."
 
       - name: Upload binaries to S3
         env:
