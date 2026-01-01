@@ -1,0 +1,28 @@
+syntax = "proto3";
+package axelar.multisig.exported.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/exported";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+enum MultisigState {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  MULTISIG_STATE_UNSPECIFIED = 0
+      [ (gogoproto.enumvalue_customname) = "NonExistent" ];
+  MULTISIG_STATE_PENDING = 1 [ (gogoproto.enumvalue_customname) = "Pending" ];
+  MULTISIG_STATE_COMPLETED = 2
+      [ (gogoproto.enumvalue_customname) = "Completed" ];
+}
+
+enum KeyState {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  KEY_STATE_UNSPECIFIED = 0 [ (gogoproto.enumvalue_customname) = "Inactive" ];
+  KEY_STATE_ASSIGNED = 1 [ (gogoproto.enumvalue_customname) = "Assigned" ];
+  KEY_STATE_ACTIVE = 2 [ (gogoproto.enumvalue_customname) = "Active" ];
+}

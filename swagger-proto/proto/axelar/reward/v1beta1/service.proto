@@ -1,0 +1,51 @@
+syntax = "proto3";
+package axelar.reward.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/reward/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "axelar/reward/v1beta1/tx.proto";
+import "axelar/reward/v1beta1/query.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the reward Msg service.
+service MsgService {
+  rpc RefundMsg(RefundMsgRequest) returns (RefundMsgResponse) {
+    option (google.api.http) = {
+      post : "/axelar/reward/v1beta1/refund_message"
+      body : "*"
+      // Deprecated: use /axelar/reward/v1beta1/refund_message instead
+      additional_bindings : {post : "/axelar/reward/refund_message" body : "*"}
+    };
+  }
+
+  rpc UpdateParams(UpdateParamsRequest) returns (UpdateParamsResponse) {
+    option (google.api.http) = {
+      post : "/axelar/reward/v1beta1/params"
+      body : "*"
+    };
+  }
+}
+
+// QueryService defines the gRPC querier service.
+service QueryService {
+  rpc InflationRate(InflationRateRequest) returns (InflationRateResponse) {
+    option (google.api.http) = {
+      get : "/axelar/reward/v1beta1/inflation_rate/{validator}",
+      additional_bindings : {
+        get : "/axelar/reward/v1beta1/inflation_rate" // query network inflation
+                                                      // rate, without having to
+                                                      // pass empty validator
+                                                      // `.../inflation_rate//`
+      }
+    };
+  }
+
+  rpc Params(ParamsRequest) returns (ParamsResponse) {
+    option (google.api.http) = {
+      get : "/axelar/reward/v1beta1/params"
+    };
+  }
+}

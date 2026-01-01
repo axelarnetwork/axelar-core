@@ -1,0 +1,19 @@
+syntax = "proto3";
+package axelar.utils.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/utils";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message QueueState {
+  option (gogoproto.stable_marshaler) = true;
+
+  message Item {
+    bytes key = 1;
+    bytes value = 2;
+  }
+
+  map<string, Item> items = 1 [ (gogoproto.nullable) = false ];
+}

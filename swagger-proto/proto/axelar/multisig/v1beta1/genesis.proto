@@ -1,0 +1,20 @@
+syntax = "proto3";
+package axelar.multisig.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/multisig/v1beta1/params.proto";
+import "axelar/multisig/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// GenesisState represents the genesis state
+message GenesisState {
+  Params params = 1 [ (gogoproto.nullable) = false ];
+
+  repeated KeygenSession keygen_sessions = 2 [ (gogoproto.nullable) = false ];
+  repeated SigningSession signing_sessions = 3 [ (gogoproto.nullable) = false ];
+  repeated Key keys = 4 [ (gogoproto.nullable) = false ];
+  repeated KeyEpoch key_epochs = 5 [ (gogoproto.nullable) = false ];
+}

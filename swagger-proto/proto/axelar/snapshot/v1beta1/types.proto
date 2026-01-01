@@ -1,0 +1,16 @@
+syntax = "proto3";
+package axelar.snapshot.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/snapshot/types";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message ProxiedValidator {
+  bytes validator = 1 [ (gogoproto.casttype) =
+                            "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  bytes proxy = 2 [ (gogoproto.casttype) =
+                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bool active = 3;
+}

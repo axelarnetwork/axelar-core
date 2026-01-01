@@ -1,0 +1,65 @@
+syntax = "proto3";
+package axelar.nexus.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/nexus/types";
+
+import "google/protobuf/duration.proto";
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "axelar/nexus/exported/v1beta1/types.proto";
+import "axelar/utils/v1beta1/bitmap.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message MaintainerState {
+  bytes address = 1 [ (gogoproto.casttype) =
+                          "github.com/cosmos/cosmos-sdk/types.ValAddress" ];
+  axelar.utils.v1beta1.Bitmap missing_votes = 2
+      [ (gogoproto.nullable) = false ];
+  axelar.utils.v1beta1.Bitmap incorrect_votes = 3
+      [ (gogoproto.nullable) = false ];
+  string chain = 4
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
+
+// ChainState represents the state of a registered blockchain
+message ChainState {
+  reserved 4; // total was removed in v0.13
+  reserved 2; // maintainers was removed in v0.24
+
+  axelar.nexus.exported.v1beta1.Chain chain = 1
+      [ (gogoproto.nullable) = false ];
+  bool activated = 3;
+  repeated axelar.nexus.exported.v1beta1.Asset assets = 5
+      [ (gogoproto.nullable) = false ];
+  repeated MaintainerState maintainer_states = 6
+      [ (gogoproto.nullable) = false, deprecated = true ];
+}
+
+message LinkedAddresses {
+  axelar.nexus.exported.v1beta1.CrossChainAddress deposit_address = 1
+      [ (gogoproto.nullable) = false ];
+  axelar.nexus.exported.v1beta1.CrossChainAddress recipient_address = 2
+      [ (gogoproto.nullable) = false ];
+}
+
+message RateLimit {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  cosmos.base.v1beta1.Coin limit = 2 [ (gogoproto.nullable) = false ];
+  google.protobuf.Duration window = 3
+      [ (gogoproto.stdduration) = true, (gogoproto.nullable) = false ];
+}
+
+message TransferEpoch {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  cosmos.base.v1beta1.Coin amount = 2 [ (gogoproto.nullable) = false ];
+  uint64 epoch = 3;
+  axelar.nexus.exported.v1beta1.TransferDirection direction =
+      4; // indicates whether the rate tracking is for transfers going
+         // to that chain or coming from it
+}

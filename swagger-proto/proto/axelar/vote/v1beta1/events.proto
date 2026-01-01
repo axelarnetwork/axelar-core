@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package axelar.vote.v1beta1;
+option go_package = "github.com/axelarnetwork/axelar-core/x/vote/types";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message Voted {
+  string module = 1;
+  string action = 2;
+  string poll = 3;
+  string voter = 4;
+  string state = 5;
+}

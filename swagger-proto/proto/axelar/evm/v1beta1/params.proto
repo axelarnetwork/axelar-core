@@ -1,0 +1,37 @@
+syntax = "proto3";
+package axelar.evm.v1beta1;
+option go_package = "github.com/axelarnetwork/axelar-core/x/evm/types";
+
+import "axelar/utils/v1beta1/threshold.proto";
+import "axelar/evm/v1beta1/types.proto";
+import "gogoproto/gogo.proto";
+import "axelar/nexus/exported/v1beta1/types.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// Params is the parameter set for this module
+message Params {
+  string chain = 1
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  uint64 confirmation_height = 2;
+  string network = 3;
+  reserved 4; // gateway_code was removed in v0.16
+  bytes token_code = 5;
+  bytes burnable = 6;
+  int64 revote_locking_period = 7;
+  repeated evm.v1beta1.NetworkInfo networks = 8
+      [ (gogoproto.nullable) = false ];
+  utils.v1beta1.Threshold voting_threshold = 9 [ (gogoproto.nullable) = false ];
+  int64 min_voter_count = 10;
+  uint32 commands_gas_limit = 11;
+  reserved 12; // transaction_fee_rate was removed in v0.15
+  int64 voting_grace_period = 13;
+  int64 end_blocker_limit = 14;
+  uint64 transfer_limit = 15;
+}
+
+message PendingChain {
+  Params params = 1 [ (gogoproto.nullable) = false ];
+  nexus.exported.v1beta1.Chain chain = 2 [ (gogoproto.nullable) = false ];
+}

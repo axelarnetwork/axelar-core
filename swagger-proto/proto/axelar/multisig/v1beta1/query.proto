@@ -1,0 +1,112 @@
+syntax = "proto3";
+package axelar.multisig.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/types";
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+import "axelar/multisig/exported/v1beta1/types.proto";
+import "axelar/multisig/v1beta1/params.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+message KeyIDRequest { string chain = 1; }
+
+// KeyIDResponse contains the key ID of the key assigned to a given chain.
+message KeyIDResponse {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+}
+
+message NextKeyIDRequest { string chain = 1; }
+
+// NextKeyIDResponse contains the key ID for the next rotation on the given
+// chain
+message NextKeyIDResponse {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+}
+
+message KeyRequest {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+}
+
+message KeygenParticipant {
+  string address = 1;
+  bytes weight = 2 [
+    (gogoproto.nullable) = false,
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint"
+  ];
+  string pub_key = 3;
+}
+
+// KeyResponse contains the key corresponding to a given key id.
+message KeyResponse {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+  multisig.exported.v1beta1.KeyState state = 2;
+  int64 started_at = 3;
+  google.protobuf.Timestamp started_at_timestamp = 4
+      [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
+  bytes threshold_weight = 5 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
+    (gogoproto.nullable) = false
+  ];
+  bytes bonded_weight = 6 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
+    (gogoproto.nullable) = false
+  ];
+  // Keygen participants in descending order by weight
+  repeated KeygenParticipant participants = 7 [ (gogoproto.nullable) = false ];
+}
+
+message KeygenSessionRequest {
+  string key_id = 1 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+}
+
+// KeygenSessionResponse contains the keygen session info for a given key ID.
+message KeygenSessionResponse {
+  int64 started_at = 1;
+  google.protobuf.Timestamp started_at_timestamp = 2
+      [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
+  int64 expires_at = 3;
+  int64 completed_at = 4;
+  int64 grace_period = 5;
+  multisig.exported.v1beta1.MultisigState state = 6;
+  bytes keygen_threshold_weight = 7 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
+    (gogoproto.nullable) = false
+  ];
+  bytes signing_threshold_weight = 8 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
+    (gogoproto.nullable) = false
+  ];
+  bytes bonded_weight = 9 [
+    (gogoproto.customtype) = "cosmossdk.io/math.Uint",
+    (gogoproto.nullable) = false
+  ];
+  // Keygen candidates in descending order by weight
+  repeated KeygenParticipant participants = 10 [ (gogoproto.nullable) = false ];
+}
+
+// ParamsRequest represents a message that queries the params
+message ParamsRequest {}
+
+message ParamsResponse { Params params = 1 [ (gogoproto.nullable) = false ]; }

@@ -1,0 +1,24 @@
+syntax = "proto3";
+package axelar.permission.exported.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/permission/exported";
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/descriptor.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+enum Role {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  ROLE_UNSPECIFIED = 0;
+  ROLE_UNRESTRICTED = 1;
+  ROLE_CHAIN_MANAGEMENT = 2;
+  ROLE_ACCESS_CONTROL = 3;
+}
+
+extend google.protobuf.MessageOptions {
+  permission.exported.v1beta1.Role permission_role =
+      50000; // 50000-99999 reserved for use withing individual organizations
+}

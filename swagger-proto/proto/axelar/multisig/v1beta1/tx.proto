@@ -1,0 +1,148 @@
+syntax = "proto3";
+package axelar.multisig.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/types";
+option (gogoproto.goproto_getters_all) = false;
+
+import "gogoproto/gogo.proto";
+import "axelar/multisig/v1beta1/params.proto";
+import "axelar/permission/exported/v1beta1/types.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/msg/v1/msg.proto";
+import "amino/amino.proto";
+
+message StartKeygenRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  option (cosmos.msg.v1.signer) = "sender";
+
+  string sender = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 3 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
+}
+
+message StartKeygenResponse {}
+
+message SubmitPubKeyRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  option (cosmos.msg.v1.signer) = "sender";
+
+  string sender = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string key_id = 2 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+  bytes pub_key = 3 [
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.PublicKey"
+  ];
+  bytes signature = 4 [ (gogoproto.casttype) = "Signature" ];
+
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 5 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
+}
+
+message SubmitPubKeyResponse {}
+
+message SubmitSignatureRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  option (cosmos.msg.v1.signer) = "sender";
+
+  string sender = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 sig_id = 2 [ (gogoproto.customname) = "SigID" ];
+  bytes signature = 3 [ (gogoproto.casttype) = "Signature" ];
+
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 4 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
+}
+
+message SubmitSignatureResponse {}
+
+message RotateKeyRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  option (cosmos.msg.v1.signer) = "sender";
+
+  string sender = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string chain = 2
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string key_id = 3 [
+    (gogoproto.customname) = "KeyID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/multisig/exported.KeyID"
+  ];
+
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 4 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
+}
+
+message RotateKeyResponse {}
+
+message KeygenOptOutRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  option (cosmos.msg.v1.signer) = "sender";
+
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
+  string sender = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+}
+
+message KeygenOptOutResponse {}
+
+message KeygenOptInRequest {
+  option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
+  option (cosmos.msg.v1.signer) = "sender";
+
+  // DEPRECATED: This field is deprecated but must remain to ensure backward
+  // compatibility. Removing this field would break decoding of historical
+  // transactions. DO NOT use in new code.
+  bytes sender_deprecated = 1 [
+    (gogoproto.casttype) = "github.com/cosmos/cosmos-sdk/types.AccAddress",
+    deprecated = true
+  ];
+  string sender = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+}
+
+message KeygenOptInResponse {}
+
+message UpdateParamsRequest {
+  option (amino.name) = "multisig/UpdateParams";
+  option (permission.exported.v1beta1.permission_role) = ROLE_CHAIN_MANAGEMENT;
+  option (cosmos.msg.v1.signer) = "authority";
+
+  string authority = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  Params params = 2 [ (gogoproto.nullable) = false ];
+}
+
+message UpdateParamsResponse {}

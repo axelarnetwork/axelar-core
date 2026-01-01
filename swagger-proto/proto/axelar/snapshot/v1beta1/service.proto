@@ -1,0 +1,70 @@
+syntax = "proto3";
+package axelar.snapshot.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/snapshot/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "axelar/snapshot/v1beta1/tx.proto";
+import "axelar/snapshot/v1beta1/query.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the snapshot Msg service.
+service MsgService {
+  // RegisterProxy defines a method for registering a proxy account that can act
+  // in a validator account's stead.
+  rpc RegisterProxy(RegisterProxyRequest) returns (RegisterProxyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/snapshot/v1beta1/register_proxy"
+      body : "*"
+      // Deprecated: use /axelar/snapshot/v1beta1/register_proxy instead
+      additional_bindings : {
+        post : "/axelar/snapshot/register_proxy"
+        body : "*"
+      }
+    };
+  }
+
+  // DeactivateProxy defines a method for deregistering a proxy account.
+  rpc DeactivateProxy(DeactivateProxyRequest)
+      returns (DeactivateProxyResponse) {
+    option (google.api.http) = {
+      post : "/axelar/snapshot/v1beta1/deactivate_proxy"
+      body : "*"
+      // Deprecated: use /axelar/snapshot/v1beta1/deactivate_proxy instead
+      additional_bindings : {
+        post : "/axelar/snapshot/deactivate_proxy"
+        body : "*"
+      }
+    };
+  }
+
+  rpc UpdateParams(UpdateParamsRequest) returns (UpdateParamsResponse) {
+    option (google.api.http) = {
+      post : "/axelar/snapshot/v1beta1/params"
+      body : "*"
+    };
+  }
+}
+
+// QueryService defines the gRPC querier service.
+service QueryService {
+  rpc Params(ParamsRequest) returns (ParamsResponse) {
+    option (google.api.http) = {
+      get : "/axelar/snapshot/v1beta1/params"
+    };
+  }
+  rpc OperatorByProxy(OperatorByProxyRequest)
+      returns (OperatorByProxyResponse) {
+    option (google.api.http) = {
+      get : "/axelar/snapshot/v1beta1/operator"
+    };
+  }
+  rpc ProxyByOperator(ProxyByOperatorRequest)
+      returns (ProxyByOperatorResponse) {
+    option (google.api.http) = {
+      get : "/axelar/snapshot/v1beta1/proxy"
+    };
+  }
+}

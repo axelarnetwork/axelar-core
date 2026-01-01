@@ -1,0 +1,21 @@
+syntax = "proto3";
+package axelar.multisig.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/multisig/types";
+
+import "gogoproto/gogo.proto";
+import "axelar/utils/v1beta1/threshold.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// Params represent the genesis parameters for the module
+message Params {
+  utils.v1beta1.Threshold keygen_threshold = 1 [ (gogoproto.nullable) = false ];
+  utils.v1beta1.Threshold signing_threshold = 2
+      [ (gogoproto.nullable) = false ];
+  int64 keygen_timeout = 3;
+  int64 keygen_grace_period = 4;
+  int64 signing_timeout = 5;
+  int64 signing_grace_period = 6;
+  uint64 active_epoch_count = 7;
+}

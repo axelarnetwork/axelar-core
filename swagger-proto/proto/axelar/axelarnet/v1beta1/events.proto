@@ -1,0 +1,137 @@
+syntax = "proto3";
+package axelar.axelarnet.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/axelarnet/types";
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option (gogoproto.messagename_all) = true;
+
+message IBCTransferSent {
+  uint64 id = 1 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  string receipient = 2 [ deprecated = true ];
+  cosmos.base.v1beta1.Coin asset = 3 [ (gogoproto.nullable) = false ];
+  uint64 sequence = 4;
+  string port_id = 5 [ (gogoproto.customname) = "PortID" ];
+  string channel_id = 6 [ (gogoproto.customname) = "ChannelID" ];
+  string recipient = 7;
+}
+
+message IBCTransferCompleted {
+  uint64 id = 1 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  uint64 sequence = 2;
+  string port_id = 3 [ (gogoproto.customname) = "PortID" ];
+  string channel_id = 4 [ (gogoproto.customname) = "ChannelID" ];
+}
+
+message IBCTransferFailed {
+  uint64 id = 1 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  uint64 sequence = 2;
+  string port_id = 3 [ (gogoproto.customname) = "PortID" ];
+  string channel_id = 4 [ (gogoproto.customname) = "ChannelID" ];
+}
+
+message IBCTransferRetried {
+  uint64 id = 1 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  string receipient = 2 [ deprecated = true ];
+  cosmos.base.v1beta1.Coin asset = 3 [ (gogoproto.nullable) = false ];
+  uint64 sequence = 4;
+  string port_id = 5 [ (gogoproto.customname) = "PortID" ];
+  string channel_id = 6 [ (gogoproto.customname) = "ChannelID" ];
+  string recipient = 7;
+}
+
+message AxelarTransferCompleted {
+  uint64 id = 1 [
+    (gogoproto.customname) = "ID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  string receipient = 2 [ deprecated = true ];
+  cosmos.base.v1beta1.Coin asset = 3 [ (gogoproto.nullable) = false ];
+  string recipient = 4;
+}
+
+message FeeCollected {
+  bytes collector = 1 [ (gogoproto.casttype) =
+                            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  cosmos.base.v1beta1.Coin fee = 2 [ (gogoproto.nullable) = false ];
+}
+
+message FeePaid {
+  string message_id = 1 [ (gogoproto.customname) = "MessageID" ];
+  bytes recipient = 2 [ (gogoproto.casttype) =
+                            "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  cosmos.base.v1beta1.Coin fee = 3 [ (gogoproto.nullable) = false ];
+  string refund_recipient = 4;
+  string asset = 5; // registered asset name in nexus
+  string source_chain = 6
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string destination_chain = 7
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+}
+
+message ContractCallSubmitted {
+  string message_id = 1 [ (gogoproto.customname) = "MessageID" ];
+  string sender = 2;
+  string source_chain = 3
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string destination_chain = 4
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string contract_address = 5;
+  bytes payload = 6;
+  bytes payload_hash = 7;
+}
+
+message ContractCallWithTokenSubmitted {
+  string message_id = 1 [ (gogoproto.customname) = "MessageID" ];
+  string sender = 2;
+  string source_chain = 3
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string destination_chain = 4
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string contract_address = 5;
+  bytes payload = 6;
+  bytes payload_hash = 7;
+  cosmos.base.v1beta1.Coin asset = 8 [ (gogoproto.nullable) = false ];
+}
+
+message TokenSent {
+  uint64 transfer_id = 1 [
+    (gogoproto.customname) = "TransferID",
+    (gogoproto.casttype) =
+        "github.com/axelarnetwork/axelar-core/x/nexus/exported.TransferID"
+  ];
+  string sender = 2;
+  string source_chain = 3
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string destination_chain = 4
+      [ (gogoproto.casttype) =
+            "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
+  string destination_address = 5;
+  cosmos.base.v1beta1.Coin asset = 6 [ (gogoproto.nullable) = false ];
+}
