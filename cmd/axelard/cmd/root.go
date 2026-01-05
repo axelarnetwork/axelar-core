@@ -142,7 +142,10 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	temp := tempDir()
 	// cleanup temp dir after we are done with the tempApp, so we don't leave behind a
 	// new temporary directory for every invocation. See https://github.com/CosmWasm/wasmd/issues/2017
-	defer funcs.MustNoErr(os.RemoveAll(temp))
+	defer func() {
+		// this needs to be wrapped in a closure to prevent the os.RemoveAll call from being executed immediately
+		funcs.MustNoErr(os.RemoveAll(temp))
+	}()
 
 	tempApp := app.NewAxelarApp(
 		log.NewNopLogger(),
