@@ -230,7 +230,7 @@ func TestNewSenderFieldGetSigners(t *testing.T) {
 func TestStartKeygenRequestSignerCompatibility(t *testing.T) {
 	// Real transaction from block 5261918 - StartKeygenRequest with binary sender
 	txBase64 := "Cl4KXAorL2F4ZWxhci5tdWx0aXNpZy52MWJldGExLlN0YXJ0S2V5Z2VuUmVxdWVzdBItChSBaKDUma3gqtwLm6QUI+/thBw2nBIVZXZtLWF2YWxhbmNoZS01MjYxOTE3EpUBClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEC3uu7/OVfu9J22a/dtzqYGevpKAfqh0pidPfRMd2reogSBAoCCAEYPBJBCgwKBHVheGwSBDkyNTYQotpQIi1heGVsYXIxcHUyc3djMG4wdHJmdGxkaHo1N3B5cWt3NmQ4N2hhaG43ZzY5N2MaQM7Ta+TxGK3DBD/k1Vf62+Vi4sASHpGOzpC5B1a6U4zCJaZ5dheAWsq8KWB8nIpEQgkxdOcDLIvjQIwIxd/v9DY="
-	expectedSigner := "8168a0d499ada0aadc0b9ba41423efed841c369c"
+	expectedSigner := "8168a0d499ade0aadc0b9ba41423efed841c369c"
 
 	encodingConfig := app.MakeEncodingConfig()
 
