@@ -53,7 +53,6 @@ func TestHistoricalTransactions(t *testing.T) {
 			ExpectedMsg: "/axelar.evm.v1beta1.ConfirmTransferKeyRequest",
 			TxBase64:    "CpcBCpQBCi0vYXhlbGFyLmV2bS52MWJldGExLkNvbmZpcm1UcmFuc2ZlcktleVJlcXVlc3QSYwoUXMoe7FB79JBAKaJQZcqx5BzxkicSCWF2YWxhbmNoZRogpPGKKnEbUFaOjhZG/Izqcp/9D3reU3/GnvbLuPPGKLsgASocbWFzdGVyLWV2bS1hdmFsYW5jaGUtMjc3NzYyMhKUAQpRCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohApdvAGNAZvGRk7YisdOloATew6TjUgC4FbxnCUkjr2uREgQKAggBGMEQEj8KCgoEdWF4bBICMzcQk4ktIi1heGVsYXIxcHUyc3djMG4wdHJmdGxkaHo1N3B5cWt3NmQ4N2hhaG43ZzY5N2MaQGjhbdepSVfV87pD4+PJUICEeAKWST9HM3scVS3/6tpuTW+VB6uhnAd+5PM6NTEyxtdQvDgCxg4HM//mywsxS+k=",
 		},
-		// Add more test cases here as you find blocks with deprecated message types
 	}
 
 	// Create encoding config once for all tests
@@ -219,4 +218,35 @@ func TestNewSenderFieldGetSigners(t *testing.T) {
 	require.Equal(t, senderAddr.Bytes(), signers[0], "signer address should match")
 
 	t.Logf("✓ GetMsgV1Signers works with new sender field format")
+}
+
+// TestStartKeygenRequestSignerCompatibility is a regression test for historical StartKeygenRequest
+// transactions that have binary AccAddress bytes in the sender string field (not bech32).
+// This causes UTF-8 validation errors when protoreflect tries to access the field.
+//
+// Background: StartKeygenRequest historically had field 1 as `string sender` with gogoproto
+// casttype to AccAddress, which stored raw binary bytes. When the SDK v0.50 upgrade changed
+// to using protoreflect for GetSigners, it validates UTF-8 on string fields, causing failures.
+func TestStartKeygenRequestSignerCompatibility(t *testing.T) {
+	// Real transaction from block 5261918 - StartKeygenRequest with binary sender
+	txBase64 := "Cl4KXAorL2F4ZWxhci5tdWx0aXNpZy52MWJldGExLlN0YXJ0S2V5Z2VuUmVxdWVzdBItChSBaKDUma3gqtwLm6QUI+/thBw2nBIVZXZtLWF2YWxhbmNoZS01MjYxOTE3EpUBClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEC3uu7/OVfu9J22a/dtzqYGevpKAfqh0pidPfRMd2reogSBAoCCAEYPBJBCgwKBHVheGwSBDkyNTYQotpQIi1heGVsYXIxcHUyc3djMG4wdHJmdGxkaHo1N3B5cWt3NmQ4N2hhaG43ZzY5N2MaQM7Ta+TxGK3DBD/k1Vf62+Vi4sASHpGOzpC5B1a6U4zCJaZ5dheAWsq8KWB8nIpEQgkxdOcDLIvjQIwIxd/v9DY="
+	expectedSigner := "8168a0d499ada0aadc0b9ba41423efed841c369c"
+
+	encodingConfig := app.MakeEncodingConfig()
+
+	txBytes, err := base64.StdEncoding.DecodeString(txBase64)
+	require.NoError(t, err)
+
+	tx, err := encodingConfig.TxConfig.TxDecoder()(txBytes)
+	require.NoError(t, err)
+
+	msgs := tx.GetMsgs()
+	require.NotEmpty(t, msgs)
+	require.Equal(t, "/axelar.multisig.v1beta1.StartKeygenRequest", sdk.MsgTypeURL(msgs[0]))
+
+	// This is the critical test - GetMsgV1Signers should work for historical transactions
+	signers, _, err := encodingConfig.Codec.GetMsgV1Signers(msgs[0])
+	require.NoError(t, err, "GetMsgV1Signers should handle historical StartKeygenRequest with binary sender")
+	require.Len(t, signers, 1)
+	require.Equal(t, expectedSigner, fmt.Sprintf("%x", signers[0]))
 }
