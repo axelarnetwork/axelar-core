@@ -75,18 +75,39 @@ type codecWrapper struct {
 	*codec.ProtoCodec
 }
 
-// GetMsgV1Signers extracts signers from a message, with fallback handling for
-// historical transactions that fail UTF-8 validation.
+// GetMsgV1Signers extracts signers from a gogoproto message.
+// For gogoproto messages, this wraps them in Any and delegates to GetMsgAnySigners.
+// We must override this to ensure our GetMsgAnySigners override is called (Go's
+// method promotion doesn't apply to internal calls within embedded types).
 func (c *codecWrapper) GetMsgV1Signers(msg proto.Message) ([][]byte, googleproto.Message, error) {
-	signers, v2Msg, err := c.ProtoCodec.GetMsgV1Signers(msg)
+	// Try as googleproto message first (won't work for gogoproto)
+	if msgV2, ok := msg.(googleproto.Message); ok {
+		signers, err := c.InterfaceRegistry().SigningContext().GetSigners(msgV2)
+		return signers, msgV2, err
+	}
+	// Wrap in Any and call our GetMsgAnySigners
+	a, err := types.NewAnyWithValue(msg)
+	if err != nil {
+		return nil, nil, err
+	}
+	return c.GetMsgAnySigners(a)
+}
+
+// GetMsgAnySigners extracts signers from a packed Any message, with fallback handling
+// for historical transactions that fail UTF-8 validation during unpacking.
+func (c *codecWrapper) GetMsgAnySigners(msg *types.Any) ([][]byte, googleproto.Message, error) {
+	signers, v2Msg, err := c.ProtoCodec.GetMsgAnySigners(msg)
 	if err == nil {
 		return signers, v2Msg, nil
 	}
 
-	// Fallback: extract signer directly from gogoproto message for StartKeygenRequest
-	// with binary data in the sender field (historical transactions pre-migration)
-	if req, ok := any(msg).(*multisigtypes.StartKeygenRequest); ok && req.Sender != "" {
-		return [][]byte{[]byte(req.Sender)}, nil, nil
+	// Fallback: handle StartKeygenRequest with binary sender field.
+	// Unmarshal using gogoproto which doesn't validate UTF-8 on string fields.
+	if msg.TypeUrl == "/axelar.multisig.v1beta1.StartKeygenRequest" {
+		var req multisigtypes.StartKeygenRequest
+		if unmarshalErr := c.ProtoCodec.Unmarshal(msg.Value, &req); unmarshalErr == nil && req.Sender != "" {
+			return [][]byte{[]byte(req.Sender)}, nil, nil
+		}
 	}
 
 	return nil, nil, err
