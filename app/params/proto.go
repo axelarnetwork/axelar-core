@@ -1,6 +1,10 @@
 package params
 
 import (
+	"fmt"
+	"maps"
+
+	coreaddress "cosmossdk.io/core/address"
 	"cosmossdk.io/x/tx/signing"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/address"
@@ -11,43 +15,229 @@ import (
 	googleproto "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
+	multisigtypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexusExported "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
-// MakeEncodingConfig creates an EncodingConfig for an amino based test configuration.
+// MakeEncodingConfig creates an EncodingConfig for the application.
 func MakeEncodingConfig() EncodingConfig {
 	amino := codec.NewLegacyAmino()
+
+	// MaxUnpackAnySubCalls limits nested Any message unpacking to prevent DoS attacks
+	// (see cosmos-sdk security advisories ASA-2024-0012 and ASA-2024-0013).
+	//
+	// The default limit of 100 is too low for Axelar's BatchRequest transactions,
+	// which can contain up to BatchSizeLimit (250) messages, each with 3-4 levels
+	// of nesting (e.g., RefundMsgRequest -> VoteRequest -> VoteEvents).
+	//
+	// IMPORTANT: This value must be >= BatchSizeLimit * max_nesting_depth.
+	// If vald's BatchSizeLimit (in vald/config/config.go) is changed, this value
+	// must be updated accordingly to prevent transaction decoding failures.
+	// See also: vald/config/config.go BatchSizeLimit
+	types.MaxUnpackAnySubCalls = 1000
+
+	addrCodec := address.Bech32Codec{
+		Bech32Prefix: sdk.GetConfig().GetBech32AccountAddrPrefix(),
+	}
 
 	interfaceRegistry := funcs.Must(types.NewInterfaceRegistryWithOptions(types.InterfaceRegistryOptions{
 		ProtoFiles: proto.HybridResolver,
 		SigningOptions: signing.Options{
-			AddressCodec: address.Bech32Codec{
-				Bech32Prefix: sdk.GetConfig().GetBech32AccountAddrPrefix(),
-			},
-			ValidatorAddressCodec: address.Bech32Codec{
-				Bech32Prefix: sdk.GetConfig().GetBech32ValidatorAddrPrefix(),
-			},
-			CustomGetSigners: customGetSigners(),
+			AddressCodec:          addrCodec,
+			ValidatorAddressCodec: address.Bech32Codec{Bech32Prefix: sdk.GetConfig().GetBech32ValidatorAddrPrefix()},
+			CustomGetSigners:      customGetSigners(addrCodec),
 		},
 	}))
 
 	marshaler := codec.NewProtoCodec(interfaceRegistry)
+	wrappedCodec := &codecWrapper{ProtoCodec: marshaler}
 	txCfg := tx.NewTxConfig(marshaler, tx.DefaultSignModes)
 
 	return EncodingConfig{
 		InterfaceRegistry: interfaceRegistry,
-		Codec:             marshaler,
+		Codec:             wrappedCodec,
 		TxConfig:          txCfg,
 		Amino:             amino,
 	}
 }
 
-// There is no signer for wasm generated messages, so this returns an empty slice.
-func customGetSigners() map[protoreflect.FullName]signing.GetSignersFunc {
+// codecWrapper wraps ProtoCodec to handle historical transactions that fail
+// protoreflect's UTF-8 validation during gogoproto→googleproto conversion.
+//
+// Background: Historical multisig.StartKeygenRequest transactions stored raw
+// AccAddress bytes in a proto string field. The SDK's GetMsgV1Signers converts
+// gogoproto messages to googleproto, which validates UTF-8 on string fields.
+// This validation fails for these historical transactions before any custom
+// signer handler can be invoked. The wrapper catches these errors and extracts
+// the signer directly from the gogoproto message.
+type codecWrapper struct {
+	*codec.ProtoCodec
+}
+
+// GetMsgV1Signers extracts signers from a gogoproto message.
+// For gogoproto messages, this wraps them in Any and delegates to GetMsgAnySigners.
+// We must override this to ensure our GetMsgAnySigners override is called (Go's
+// method promotion doesn't apply to internal calls within embedded types).
+func (c *codecWrapper) GetMsgV1Signers(msg proto.Message) ([][]byte, googleproto.Message, error) {
+	// Try as googleproto message first (won't work for gogoproto)
+	if msgV2, ok := msg.(googleproto.Message); ok {
+		signers, err := c.InterfaceRegistry().SigningContext().GetSigners(msgV2)
+		return signers, msgV2, err
+	}
+	// Wrap in Any and call our GetMsgAnySigners
+	a, err := types.NewAnyWithValue(msg)
+	if err != nil {
+		return nil, nil, err
+	}
+	return c.GetMsgAnySigners(a)
+}
+
+// GetMsgAnySigners extracts signers from a packed Any message, with fallback handling
+// for historical transactions that fail UTF-8 validation during unpacking.
+func (c *codecWrapper) GetMsgAnySigners(msg *types.Any) ([][]byte, googleproto.Message, error) {
+	signers, v2Msg, err := c.ProtoCodec.GetMsgAnySigners(msg)
+	if err == nil {
+		return signers, v2Msg, nil
+	}
+
+	// Fallback: handle StartKeygenRequest with binary sender field.
+	// Unmarshal using gogoproto which doesn't validate UTF-8 on string fields.
+	if msg.TypeUrl == "/axelar.multisig.v1beta1.StartKeygenRequest" {
+		var req multisigtypes.StartKeygenRequest
+		if unmarshalErr := c.ProtoCodec.Unmarshal(msg.Value, &req); unmarshalErr == nil && req.Sender != "" {
+			return [][]byte{[]byte(req.Sender)}, nil, nil
+		}
+	}
+
+	return nil, nil, err
+}
+
+// customGetSigners returns custom signer extraction functions for messages that need
+// special handling beyond the default protoreflect-based signer extraction.
+func customGetSigners(addrCodec coreaddress.Codec) map[protoreflect.FullName]signing.GetSignersFunc {
+	signers := map[protoreflect.FullName]signing.GetSignersFunc{}
+
+	maps.Copy(signers, wasmMessageSigners())
+	maps.Copy(signers, senderDeprecatedSigners(addrCodec))
+
+	return signers
+}
+
+// wasmMessageSigners returns GetSignersFunc for WasmMessage.
+// WasmMessage is generated by wasm contracts and has no signer.
+func wasmMessageSigners() map[protoreflect.FullName]signing.GetSignersFunc {
 	return map[protoreflect.FullName]signing.GetSignersFunc{
 		protoreflect.FullName(proto.MessageName(&nexusExported.WasmMessage{})): func(msg googleproto.Message) ([][]byte, error) {
 			return [][]byte{}, nil
 		},
 	}
+}
+
+// senderDeprecatedSigners returns GetSignersFunc for messages that have both
+// "sender" (string) and "sender_deprecated" (bytes) fields. This is needed for backward
+// compatibility with historical transactions that used the deprecated sender field.
+func senderDeprecatedSigners(addrCodec coreaddress.Codec) map[protoreflect.FullName]signing.GetSignersFunc {
+	getSigners := func(msg googleproto.Message) ([][]byte, error) {
+		m := msg.ProtoReflect()
+		desc := m.Descriptor()
+
+		// Try the new sender field first (string type)
+		if senderField := desc.Fields().ByName("sender"); senderField != nil {
+			if senderStr := m.Get(senderField).String(); senderStr != "" {
+				addrBz, err := addrCodec.StringToBytes(senderStr)
+				if err != nil {
+					return nil, fmt.Errorf("invalid sender address: %w", err)
+				}
+				return [][]byte{addrBz}, nil
+			}
+		}
+
+		// Fall back to sender_deprecated field (bytes type)
+		if senderDepField := desc.Fields().ByName("sender_deprecated"); senderDepField != nil {
+			if senderBytes := m.Get(senderDepField).Bytes(); len(senderBytes) > 0 {
+				return [][]byte{senderBytes}, nil
+			}
+		}
+
+		return nil, fmt.Errorf("no sender found in message %s", desc.FullName())
+	}
+
+	// Messages with sender_deprecated field for backward compatibility
+	// These messages have both "sender" (new, string) and "sender_deprecated" (old, bytes) fields
+	messageNames := []string{
+		// auxiliary
+		"axelar.auxiliary.v1beta1.BatchRequest",
+		// axelarnet
+		"axelar.axelarnet.v1beta1.LinkRequest",
+		"axelar.axelarnet.v1beta1.ConfirmDepositRequest",
+		"axelar.axelarnet.v1beta1.ExecutePendingTransfersRequest",
+		"axelar.axelarnet.v1beta1.RegisterIBCPathRequest",
+		"axelar.axelarnet.v1beta1.AddCosmosBasedChainRequest",
+		"axelar.axelarnet.v1beta1.RegisterAssetRequest",
+		"axelar.axelarnet.v1beta1.RouteIBCTransfersRequest",
+		"axelar.axelarnet.v1beta1.RegisterFeeCollectorRequest",
+		"axelar.axelarnet.v1beta1.RetryIBCTransferRequest",
+		"axelar.axelarnet.v1beta1.RouteMessageRequest",
+		"axelar.axelarnet.v1beta1.CallContractRequest",
+		// evm
+		"axelar.evm.v1beta1.SetGatewayRequest",
+		"axelar.evm.v1beta1.ConfirmGatewayTxRequest",
+		"axelar.evm.v1beta1.ConfirmGatewayTxsRequest",
+		"axelar.evm.v1beta1.ConfirmDepositRequest",
+		"axelar.evm.v1beta1.ConfirmTokenRequest",
+		"axelar.evm.v1beta1.ConfirmTransferKeyRequest",
+		"axelar.evm.v1beta1.LinkRequest",
+		"axelar.evm.v1beta1.CreateBurnTokensRequest",
+		"axelar.evm.v1beta1.CreateDeployTokenRequest",
+		"axelar.evm.v1beta1.CreatePendingTransfersRequest",
+		"axelar.evm.v1beta1.CreateTransferOwnershipRequest",
+		"axelar.evm.v1beta1.CreateTransferOperatorshipRequest",
+		"axelar.evm.v1beta1.SignCommandsRequest",
+		"axelar.evm.v1beta1.AddChainRequest",
+		"axelar.evm.v1beta1.RetryFailedEventRequest",
+		// multisig
+		"axelar.multisig.v1beta1.StartKeygenRequest",
+		"axelar.multisig.v1beta1.SubmitPubKeyRequest",
+		"axelar.multisig.v1beta1.SubmitSignatureRequest",
+		"axelar.multisig.v1beta1.RotateKeyRequest",
+		"axelar.multisig.v1beta1.KeygenOptOutRequest",
+		"axelar.multisig.v1beta1.KeygenOptInRequest",
+		// nexus
+		"axelar.nexus.v1beta1.RegisterChainMaintainerRequest",
+		"axelar.nexus.v1beta1.DeregisterChainMaintainerRequest",
+		"axelar.nexus.v1beta1.ActivateChainRequest",
+		"axelar.nexus.v1beta1.DeactivateChainRequest",
+		"axelar.nexus.v1beta1.RegisterAssetFeeRequest",
+		"axelar.nexus.v1beta1.SetTransferRateLimitRequest",
+		// permission
+		"axelar.permission.v1beta1.UpdateGovernanceKeyRequest",
+		"axelar.permission.v1beta1.RegisterControllerRequest",
+		"axelar.permission.v1beta1.DeregisterControllerRequest",
+		// reward
+		"axelar.reward.v1beta1.RefundMsgRequest",
+		// snapshot
+		"axelar.snapshot.v1beta1.RegisterProxyRequest",
+		"axelar.snapshot.v1beta1.DeactivateProxyRequest",
+		// tss
+		"axelar.tss.v1beta1.StartKeygenRequest",
+		"axelar.tss.v1beta1.RotateKeyRequest",
+		"axelar.tss.v1beta1.ProcessKeygenTrafficRequest",
+		"axelar.tss.v1beta1.ProcessSignTrafficRequest",
+		"axelar.tss.v1beta1.VotePubKeyRequest",
+		"axelar.tss.v1beta1.VoteSigRequest",
+		"axelar.tss.v1beta1.HeartBeatRequest",
+		"axelar.tss.v1beta1.RegisterExternalKeysRequest",
+		"axelar.tss.v1beta1.SubmitMultisigPubKeysRequest",
+		"axelar.tss.v1beta1.SubmitMultisigSignaturesRequest",
+		// vote
+		"axelar.vote.v1beta1.VoteRequest",
+	}
+
+	signers := make(map[protoreflect.FullName]signing.GetSignersFunc, len(messageNames))
+	for _, name := range messageNames {
+		signers[protoreflect.FullName(name)] = getSigners
+	}
+
+	return signers
 }
