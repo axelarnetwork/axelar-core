@@ -9,7 +9,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/app/params"
 )
 
-// MakeEncodingConfig creates an EncodingConfig for testing
+// MakeEncodingConfig creates an EncodingConfig for the application
 func MakeEncodingConfig() params.EncodingConfig {
 	encodingConfig := params.MakeEncodingConfig()
 	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
