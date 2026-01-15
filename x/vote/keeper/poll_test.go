@@ -259,7 +259,7 @@ func TestPoll(t *testing.T) {
 
 				voteResult, err := poll.Vote(voters[3], ctx.BlockHeight()+2, &evmtypes.VoteEvents{})
 
-				assert.NoError(t, err)
+				assert.ErrorContains(t, err, "poll completed")
 				assert.EqualValues(t, exported.NoVote, voteResult)
 				assert.EqualValues(t, exported.Completed, poll.GetState())
 			}).

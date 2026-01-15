@@ -124,7 +124,7 @@ func (p *poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMar
 	}
 
 	if p.Is(exported.Completed) {
-		return exported.NoVote, nil
+		return exported.NoVote, fmt.Errorf("poll completed")
 	}
 
 	p.voteBeforeCompletion(voter, blockHeight, data)
