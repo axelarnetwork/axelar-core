@@ -163,14 +163,8 @@ func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n typ
 		var validators []snapshot.ValidatorI
 		for _, maintainer := range maintainers {
 			v, err := s.Validator(ctx, maintainer)
-			if isValidatorRewardFixActive(ctx.ChainID(), ctx.BlockTime()) {
-				if err != nil {
-					continue
-				}
-			} else {
-				if err == nil {
-					continue
-				}
+			if err != nil {
+				continue
 			}
 
 			if !v.IsBonded() {
