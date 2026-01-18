@@ -11,6 +11,9 @@ jobs:
   test:
     runs-on: ubuntu-22.04
     steps:
+      - name: Configure git for cometbft-sec-tachyon
+        run: git config --global url."https://${{ secrets.COMETBFT_TACHYON_PAT }}@github.com/axelarnetwork/cometbft-sec-tachyon".insteadOf "https://github.com/axelarnetwork/cometbft-sec-tachyon"
+
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
