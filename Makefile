@@ -154,6 +154,7 @@ docker-image-local-user:  guard-VERSION guard-GROUP_ID guard-USER_ID
 .PHONY: build-push-docker-images
 build-push-docker-images:  guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build \
+		--secret id=cometbft-tachyon-pat,env=COMETBFT_TACHYON_PAT \
 		--platform ${PLATFORM} \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
 		--build-arg WASM="${WASM}" \

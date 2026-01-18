@@ -66,6 +66,7 @@ jobs:
           SEMVER: ${{ github.event.inputs.tag }}
           WASM: "true"
           IBC_WASM_HOOKS: ${{ github.event.inputs.ibc-wasm-hooks }}
+          COMETBFT_TACHYON_PAT: ${{ secrets.COMETBFT_TACHYON_PAT }}
 
   combine-sign:
     needs: release-docker
