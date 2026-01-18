@@ -51,9 +51,6 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2
 
-      - name: Configure git for cometbft-sec-tachyon
-        run: git config --global url."https://${{ secrets.COMETBFT_TACHYON_PAT }}@github.com/axelarnetwork/cometbft-sec-tachyon".insteadOf "https://github.com/axelarnetwork/cometbft-sec-tachyon"
-
       - name: Build docker image (normal)
         # This action can be called automatically, so it is possible that inputs are not set.
         # Therefore, a default is set in the env section and then the inputs are explicitly checked in the run section
@@ -61,6 +58,7 @@ jobs:
         env:
           WASM: "true"
           IBC_WASM_HOOKS: "false"
+          COMETBFT_TACHYON_PAT: ${{ secrets.COMETBFT_TACHYON_PAT }}
         run: |
           if [ "${{ github.event.inputs.wasm }}" == "false" ]; then
             export WASM="false"

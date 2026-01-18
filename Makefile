@@ -134,6 +134,7 @@ debug:  go.sum
 .PHONY: docker-image
 docker-image:
 	@DOCKER_BUILDKIT=1 docker build \
+		--secret id=cometbft-tachyon-pat,env=COMETBFT_TACHYON_PAT \
 		--build-arg WASM="${WASM}" \
 		--build-arg IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" \
 		--build-arg ARCH="${ARCH}" \
