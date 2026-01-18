@@ -268,4 +268,4 @@ replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.5
 // https://github.com/axelarnetwork/rosetta/compare/release/v0.50.x...axelarnetwork:rosetta:6149820beca95a96d6b397f1056fe6be8cb9c08b
 replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.13-0.20260114132051-460a573dd773
 
-replace github.com/cometbft/cometbft => github.com/cometbft/cometbft v0.38.19-0.20251212010926-c96f26503c04
+replace github.com/cometbft/cometbft => github.com/axelarnetwork/cometbft-sec-tachyon v0.38.21-0.20260113214209-9ac677707f85
