@@ -1,6 +1,10 @@
 package reward
 
 import (
+	"os"
+	"strings"
+	"time"
+
 	"cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,6 +18,43 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
+
+// Activation times for the validator reward fix per chain.
+// Can be overridden via VALIDATOR_REWARD_FIX_ACTIVATION_TIME environment variable (RFC3339 format).
+const (
+	// MainnetFixActivationTime is the activation time for mainnet (axelar-dojo-1)
+	MainnetFixActivationTime = "2025-12-17T14:00:00Z"
+	// TestnetFixActivationTime is the activation time for testnet (axelar-testnet-lisbon-3)
+	TestnetFixActivationTime  = "2025-12-16T14:00:00Z"
+	StagenetFixActivationTime = "2025-12-12T15:00:00Z"
+	DevnetFixActivationTime   = "2025-12-12T14:00:00Z"
+)
+
+func getValidatorRewardFixActivationTime(chainID string) string {
+	if envVal := os.Getenv("VALIDATOR_REWARD_FIX_ACTIVATION_TIME"); envVal != "" {
+		return envVal
+	}
+
+	if strings.Contains(chainID, "devnet") {
+		return DevnetFixActivationTime
+	}
+	if strings.HasPrefix(chainID, "axelar-stagenet") {
+		return StagenetFixActivationTime
+	}
+	if strings.HasPrefix(chainID, "axelar-testnet") {
+		return TestnetFixActivationTime
+	}
+	// Default to mainnet activation time for axelar-dojo-1 and any unknown chain
+	return MainnetFixActivationTime
+}
+
+func isValidatorRewardFixActive(chainID string, blockTime time.Time) bool {
+	activationTime, err := time.Parse(time.RFC3339, getValidatorRewardFixActivationTime(chainID))
+	if err != nil {
+		return true // if parsing fails, activate the fix
+	}
+	return !blockTime.Before(activationTime)
+}
 
 // EndBlocker is called at the end of every block, process external chain voting inflation
 func EndBlocker(ctx sdk.Context, k types.Rewarder, n types.Nexus, m mintkeeper.Keeper, s types.Staker, slasher types.Slasher, msig types.MultiSig, ss types.Snapshotter) ([]abci.ValidatorUpdate, error) {
@@ -122,8 +163,14 @@ func handleExternalChainVotingInflation(ctx sdk.Context, k types.Rewarder, n typ
 		var validators []snapshot.ValidatorI
 		for _, maintainer := range maintainers {
 			v, err := s.Validator(ctx, maintainer)
-			if err != nil {
-				continue
+			if isValidatorRewardFixActive(ctx.ChainID(), ctx.BlockTime()) {
+				if err != nil {
+					continue
+				}
+			} else {
+				if err == nil {
+					continue
+				}
 			}
 
 			if !v.IsBonded() {
