@@ -31,9 +31,7 @@ WORKDIR axelar
 
 COPY ./go.mod .
 COPY ./go.sum .
-RUN --mount=type=secret,id=cometbft-tachyon-pat \
-    git config --global url."https://$(cat /run/secrets/cometbft-tachyon-pat)@github.com/axelarnetwork/cometbft-sec-tachyon".insteadOf "https://github.com/axelarnetwork/cometbft-sec-tachyon" && \
-    go mod download
+RUN go mod download
 
 # Use a compatible libwasmvm
 # Alpine Linux requires static linking against muslc: https://github.com/CosmWasm/wasmd/blob/v0.34.1/INTEGRATION.md#prerequisites
