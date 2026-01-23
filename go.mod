@@ -21,7 +21,7 @@ require (
 	github.com/axelarnetwork/tm-events v0.0.0-20251121130841-4c4b590f0d06
 	github.com/axelarnetwork/utils v0.0.0-20251121135440-7d92b8abb3a7
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
-	github.com/cometbft/cometbft v0.38.19
+	github.com/cometbft/cometbft v0.38.21
 	github.com/cometbft/cometbft-db v0.14.1
 	github.com/cosmos/cosmos-db v1.1.1
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
@@ -267,5 +267,3 @@ replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.5
 // patches contained in this:
 // https://github.com/axelarnetwork/rosetta/compare/release/v0.50.x...axelarnetwork:rosetta:6149820beca95a96d6b397f1056fe6be8cb9c08b
 replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.13-0.20260114132051-460a573dd773
-
-replace github.com/cometbft/cometbft => github.com/cometbft/cometbft v0.38.19-0.20251212010926-c96f26503c04
