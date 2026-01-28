@@ -22,6 +22,9 @@ jobs:
           path: ~/.cache/pip
           key: pip-cache
 
+      - name: Configure git for cometbft-sec-tachyon
+        run: git config --global url."https://${{ secrets.COMETBFT_TACHYON_PAT }}@github.com/axelarnetwork/cometbft-sec-tachyon".insteadOf "https://github.com/axelarnetwork/cometbft-sec-tachyon"
+
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
         with:
@@ -33,15 +36,15 @@ jobs:
         run: echo ::set-output name=VERSION::$(cat contract-version.json | jq -r '.gateway')
 
       - name: Download Gateway Bytecode
-        run : |
+        run: |
           wget "https://github.com/axelarnetwork/axelar-cgp-solidity/releases/download/${{ steps.bytecode_version.outputs.VERSION }}/Bytecode-${{ steps.bytecode_version.outputs.VERSION }}.zip"
 
       - name: Create folder contract-artifacts
-        run : |
+        run: |
           [ ! -d contract-artifacts ] && mkdir contract-artifacts
 
       - name: Unzip Bytecode
-        run : |
+        run: |
           unzip Bytecode-${{ steps.bytecode_version.outputs.VERSION }}.zip  -d ./contract-artifacts
           rm Bytecode-${{ steps.bytecode_version.outputs.VERSION }}.zip
 

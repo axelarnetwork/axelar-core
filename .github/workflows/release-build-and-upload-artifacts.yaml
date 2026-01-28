@@ -40,6 +40,9 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CICD_RSA_KEY }}
 
+      - name: Configure git for cometbft-sec-tachyon
+        run: git config --global url."https://${{ secrets.COMETBFT_TACHYON_PAT }}@github.com/axelarnetwork/cometbft-sec-tachyon".insteadOf "https://github.com/axelarnetwork/cometbft-sec-tachyon"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@27d0a4f181a40b142cce983c5393082c365d1480 # v1
 
@@ -63,6 +66,7 @@ jobs:
           SEMVER: ${{ github.event.inputs.tag }}
           WASM: "true"
           IBC_WASM_HOOKS: ${{ github.event.inputs.ibc-wasm-hooks }}
+          COMETBFT_TACHYON_PAT: ${{ secrets.COMETBFT_TACHYON_PAT }}
 
   combine-sign:
     needs: release-docker
@@ -140,6 +144,9 @@ jobs:
           fetch-depth: '0'
           ref: ${{ github.event.inputs.tag }}
           submodules: recursive
+
+      - name: Configure git for cometbft-sec-tachyon
+        run: git config --global url."https://${{ secrets.COMETBFT_TACHYON_PAT }}@github.com/axelarnetwork/cometbft-sec-tachyon".insteadOf "https://github.com/axelarnetwork/cometbft-sec-tachyon"
 
       - name: Setup Golang with cache
         uses: magnetikonline/action-golang-cache@401702e21cff5562276de84c15d7b083bc22e79f # v2

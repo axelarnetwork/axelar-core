@@ -58,6 +58,7 @@ jobs:
         env:
           WASM: "true"
           IBC_WASM_HOOKS: "false"
+          COMETBFT_TACHYON_PAT: ${{ secrets.COMETBFT_TACHYON_PAT }}
         run: |
           if [ "${{ github.event.inputs.wasm }}" == "false" ]; then
             export WASM="false"
@@ -80,6 +81,7 @@ jobs:
         env:
           WASM: "true"
           IBC_WASM_HOOKS: "false"
+          COMETBFT_TACHYON_PAT: ${{ secrets.COMETBFT_TACHYON_PAT }}
         if: github.event.inputs.buildDebug != 'false'
         run: |
           if [ "${{ github.event.inputs.wasm }}" == "false" ]; then

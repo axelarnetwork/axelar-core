@@ -15,6 +15,12 @@ type ValdConfig struct {
 	BroadcastConfig `mapstructure:"broadcast"`
 	// BatchSizeLimit is the maximum number of messages to include in a single batch when
 	// the broadcaster merges multiple broadcast requests under high traffic.
+	//
+	// IMPORTANT: This value affects the cosmos-sdk's MaxUnpackAnySubCalls limit.
+	// Each batched message can have 3-4 levels of nested Any fields that require unpacking.
+	// If this limit is increased, MaxUnpackAnySubCalls in app/params/proto.go must also
+	// be increased to at least BatchSizeLimit * 4, otherwise transaction decoding will fail.
+	// See also: app/params/proto.go MaxUnpackAnySubCalls
 	BatchSizeLimit int `mapstructure:"max_batch_size"`
 	// BatchThreshold is the minimum number of pending broadcast requests in the queue
 	// before the broadcaster starts merging them into batches. Below this threshold,
