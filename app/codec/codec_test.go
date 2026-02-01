@@ -250,3 +250,32 @@ func TestStartKeygenRequestSignerCompatibility(t *testing.T) {
 	require.Len(t, signers, 1)
 	require.Equal(t, expectedSigner, fmt.Sprintf("%x", signers[0]))
 }
+
+// TestRotateKeyRequestSignerCompatibility is a regression test for historical RotateKeyRequest
+// transactions that have binary AccAddress bytes in the sender string field (not bech32).
+// This causes UTF-8 validation errors when protoreflect tries to access the field.
+//
+// Background: RotateKeyRequest historically had field 1 as `string sender` with gogoproto
+// casttype to AccAddress, which stored raw binary bytes. When the SDK v0.50 upgrade changed
+// to using protoreflect for GetSigners, it validates UTF-8 on string fields, causing failures.
+func TestRotateKeyRequestSignerCompatibility(t *testing.T) {
+	// Raw tx from block 6858797 (base64 from RPC data.txs[0])
+	txBase64 := "CmUKYwopL2F4ZWxhci5tdWx0aXNpZy52MWJldGExLlJvdGF0ZUtleVJlcXVlc3QSNgoUgWig1Jmt4KrcC5ukFCPv7YQcNpwSCGZpbGVjb2luGhRldm0tZmlsZWNvaW4tZ2VuZXNpcxJnClEKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEC3uu7/OVfu9J22a/dtzqYGevpKAfqh0pidPfRMd2reogSBAoCCAEY0gYSEgoMCgR1YXhsEgQ4NzY4EKm5TBpAaau2rZ8o3AVKODUsXV8t1yHfFlUbpGHqnIO/cWKE3F8+RSNh6MC79OyRnzqY3Mlg0IJ3m6pP3N3O+gKkPe7UaQ=="
+	txBytes, err := base64.StdEncoding.DecodeString(txBase64)
+	expectedSigner := "8168a0d499ade0aadc0b9ba41423efed841c369c"
+	require.NoError(t, err)
+
+	encodingConfig := app.MakeEncodingConfig()
+	tx, err := encodingConfig.TxConfig.TxDecoder()(txBytes)
+	require.NoError(t, err)
+
+	msgs := tx.GetMsgs()
+	require.NotEmpty(t, msgs)
+	require.Equal(t, "/axelar.multisig.v1beta1.RotateKeyRequest", sdk.MsgTypeURL(msgs[0]))
+
+	// This is the critical test - GetMsgV1Signers should work for historical transactions
+	signers, _, err := encodingConfig.Codec.GetMsgV1Signers(msgs[0])
+	require.NoError(t, err, "GetMsgV1Signers should handle historical StartKeygenRequest with binary sender")
+	require.Len(t, signers, 1)
+	require.Equal(t, expectedSigner, fmt.Sprintf("%x", signers[0]))
+}
