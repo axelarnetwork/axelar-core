@@ -101,10 +101,15 @@ func (c *codecWrapper) GetMsgAnySigners(msg *types.Any) ([][]byte, googleproto.M
 		return signers, v2Msg, nil
 	}
 
-	// Fallback: handle StartKeygenRequest with binary sender field.
-	// Unmarshal using gogoproto which doesn't validate UTF-8 on string fields.
-	if msg.TypeUrl == "/axelar.multisig.v1beta1.StartKeygenRequest" {
+	// Fallback: in some cases the sender field was used with raw bytes without UTF-8 formatting
+	switch msg.TypeUrl {
+	case "/axelar.multisig.v1beta1.StartKeygenRequest":
 		var req multisigtypes.StartKeygenRequest
+		if unmarshalErr := c.ProtoCodec.Unmarshal(msg.Value, &req); unmarshalErr == nil && req.Sender != "" {
+			return [][]byte{[]byte(req.Sender)}, nil, nil
+		}
+	case "/axelar.multisig.v1beta1.RotateKeyRequest":
+		var req multisigtypes.RotateKeyRequest
 		if unmarshalErr := c.ProtoCodec.Unmarshal(msg.Value, &req); unmarshalErr == nil && req.Sender != "" {
 			return [][]byte{[]byte(req.Sender)}, nil, nil
 		}
