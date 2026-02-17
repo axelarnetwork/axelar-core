@@ -69,13 +69,15 @@ message KeyAddressResponse {
   string threshold = 3;
 }
 
+// Deprecated in v0.19
 message QueryTokenAddressResponse {
-  option deprecated = true; // Deprecated in v19
+  option deprecated = true;
 
   string address = 1;
   bool confirmed = 2;
 }
 
+// Deprecated in v1.4: link-deposit protocol removed
 message QueryDepositStateParams {
   option deprecated = true;
 
@@ -88,6 +90,7 @@ message QueryDepositStateParams {
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
+// Deprecated in v1.4: link-deposit protocol removed
 message DepositStateRequest {
   option deprecated = true;
 
@@ -97,6 +100,7 @@ message DepositStateRequest {
   QueryDepositStateParams params = 2;
 }
 
+// Deprecated in v1.4: link-deposit protocol removed
 message DepositStateResponse {
   option deprecated = true;
 
@@ -157,12 +161,18 @@ message QueryCommandResponse {
   uint32 max_gas_cost = 5;
 }
 
+// Deprecated in v1.4: BurnerInfoRequest is no longer used (link-deposit
+// protocol removed)
 message BurnerInfoRequest {
+  option deprecated = true;
   bytes address = 1
       [ (gogoproto.nullable) = false, (gogoproto.customtype) = "Address" ];
 }
 
+// Deprecated in v1.4: BurnerInfoResponse is no longer used (link-deposit
+// protocol removed)
 message BurnerInfoResponse {
+  option deprecated = true;
   string chain = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];
@@ -179,7 +189,9 @@ message GatewayAddressResponse { string address = 1; }
 
 message BytecodeRequest {
   string chain = 1;
-  string contract = 2;
+  // Deprecated: contract is no longer used. The query now only returns token
+  // bytecode.
+  string contract = 2 [ deprecated = true ];
 }
 
 message BytecodeResponse { string bytecode = 1; }

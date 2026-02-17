@@ -3,7 +3,6 @@ package keeper_test
 import (
 	mathrand "math/rand"
 	"testing"
-	"time"
 
 	"cosmossdk.io/log"
 	sdkmath "cosmossdk.io/math"
@@ -183,7 +182,7 @@ func TestTransfer(t *testing.T) {
 
 	whenAssetIsRegisteredOnSource := When("asset is registered on source chain", func() {
 		k.SetChain(ctx, source)
-		funcs.MustNoErr(k.RegisterAsset(ctx, source, nexus.Asset{Denom: asset, IsNativeAsset: true}, utils.MaxUint, time.Hour))
+		funcs.MustNoErr(k.RegisterAsset(ctx, source, nexus.Asset{Denom: asset, IsNativeAsset: true}))
 	})
 
 	validateTransferAssetFails := Then("validate transfer asset fails",
@@ -458,7 +457,7 @@ func setup(cfg params.EncodingConfig, t log.TestingT) (nexusKeeper.Keeper, sdk.C
 				isNative = true
 			}
 
-			if err := k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, isNative), utils.MaxUint, time.Hour); err != nil {
+			if err := k.RegisterAsset(ctx, chain, nexus.NewAsset(asset, isNative)); err != nil {
 				panic(err)
 			}
 

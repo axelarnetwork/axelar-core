@@ -1,13 +1,9 @@
 ## axelard query evm bytecode
 
-Fetch the bytecode of an EVM contract [contract] for chain [chain]
-
-### Synopsis
-
-Fetch the bytecode of an EVM contract [contract] for chain [chain]. The value for [contract] can be either 'token' or 'burner'.
+Fetch the token bytecode for chain [chain]
 
 ```
-axelard query evm bytecode [chain] [contract] [flags]
+axelard query evm bytecode [chain] [flags]
 ```
 
 ### Options

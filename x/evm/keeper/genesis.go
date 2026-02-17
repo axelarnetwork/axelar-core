@@ -15,30 +15,10 @@ func (k BaseKeeper) InitGenesis(ctx sdk.Context, state types.GenesisState) {
 		funcs.MustNoErr(k.CreateChain(ctx, chain.Params))
 		ck := funcs.Must(k.ForChain(ctx, chain.Params.Chain)).(chainKeeper)
 
-		for _, burner := range chain.BurnerInfos {
-			ck.SetBurnerInfo(ctx, burner)
-		}
-
 		if err := ck.validateCommandQueueState(chain.CommandQueue, commandQueueName); err != nil {
 			panic(err)
 		}
 		ck.getCommandQueue(ctx).ImportState(chain.CommandQueue)
-
-		for _, deposit := range chain.LegacyConfirmedDeposits {
-			ck.setLegacyDeposit(ctx, deposit, types.DepositStatus_Confirmed)
-		}
-
-		for _, deposit := range chain.LegacyBurnedDeposits {
-			ck.setLegacyDeposit(ctx, deposit, types.DepositStatus_Burned)
-		}
-
-		for _, deposit := range chain.ConfirmedDeposits {
-			ck.SetDeposit(ctx, deposit, types.DepositStatus_Confirmed)
-		}
-
-		for _, deposit := range chain.BurnedDeposits {
-			ck.SetDeposit(ctx, deposit, types.DepositStatus_Burned)
-		}
 
 		var latestBatch types.CommandBatchMetadata
 		for _, batch := range chain.CommandBatches {
@@ -82,18 +62,13 @@ func (k BaseKeeper) getChains(ctx sdk.Context) []types.GenesisState_Chain {
 		ck := funcs.Must(k.ForChain(ctx, nexus.ChainName(iter.Value()))).(chainKeeper)
 
 		chain := types.GenesisState_Chain{
-			Params:                  ck.GetParams(ctx),
-			BurnerInfos:             ck.getBurnerInfos(ctx),
-			CommandQueue:            ck.getCommandQueue(ctx).ExportState(),
-			LegacyConfirmedDeposits: ck.getLegacyDeposits(ctx, types.DepositStatus_Confirmed),
-			LegacyBurnedDeposits:    ck.getLegacyDeposits(ctx, types.DepositStatus_Burned),
-			ConfirmedDeposits:       ck.getConfirmedDeposits(ctx),
-			BurnedDeposits:          ck.getBurnedDeposits(ctx),
-			CommandBatches:          ck.getCommandBatchesMetadata(ctx),
-			Gateway:                 ck.getGateway(ctx),
-			Tokens:                  ck.getTokensMetadata(ctx),
-			Events:                  ck.getEvents(ctx),
-			ConfirmedEventQueue:     ck.GetConfirmedEventQueue(ctx).(utils.GeneralKVQueue).ExportState(),
+			Params:              ck.GetParams(ctx),
+			CommandQueue:        ck.getCommandQueue(ctx).ExportState(),
+			CommandBatches:      ck.getCommandBatchesMetadata(ctx),
+			Gateway:             ck.getGateway(ctx),
+			Tokens:              ck.getTokensMetadata(ctx),
+			Events:              ck.getEvents(ctx),
+			ConfirmedEventQueue: ck.GetConfirmedEventQueue(ctx).(utils.GeneralKVQueue).ExportState(),
 		}
 		chains = append(chains, chain)
 	}

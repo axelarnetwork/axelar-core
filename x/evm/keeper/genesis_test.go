@@ -74,9 +74,7 @@ func assertChainsEqual(t *testing.T, initial types.GenesisState, exported types.
 
 	for i := range initial.Chains {
 		assert.Equal(t, initial.Chains[i].CommandQueue, exported.Chains[i].CommandQueue)
-		assert.ElementsMatch(t, initial.Chains[i].BurnerInfos, exported.Chains[i].BurnerInfos)
-		assert.ElementsMatch(t, initial.Chains[i].ConfirmedDeposits, exported.Chains[i].ConfirmedDeposits)
-		assert.ElementsMatch(t, initial.Chains[i].BurnedDeposits, exported.Chains[i].BurnedDeposits)
+		// BurnerInfos, ConfirmedDeposits, BurnedDeposits are no longer exported (link-deposit protocol removed)
 		assert.ElementsMatch(t, initial.Chains[i].Tokens, exported.Chains[i].Tokens)
 		assert.ElementsMatch(t, initial.Chains[i].CommandBatches, exported.Chains[i].CommandBatches)
 		assert.Equal(t, initial.Chains[i].Gateway, exported.Chains[i].Gateway)

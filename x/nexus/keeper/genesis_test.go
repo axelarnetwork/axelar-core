@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"testing"
-	"time"
 
 	"cosmossdk.io/log"
 	store "cosmossdk.io/store/types"
@@ -16,7 +15,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/app/params"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
-	"github.com/axelarnetwork/axelar-core/utils"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	axelarnetkeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
@@ -97,11 +95,8 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 	assert.ElementsMatch(t, expected.Transfers, actual.Transfers)
 	assert.Equal(t, expected.Fee, actual.Fee)
 	assert.ElementsMatch(t, expected.FeeInfos, actual.FeeInfos)
-	assert.ElementsMatch(t, expected.RateLimits, actual.RateLimits)
 	assert.ElementsMatch(t, expected.Messages, actual.Messages)
 	assert.Equal(t, expected.MessageNonce, actual.MessageNonce)
-	// TODO: Track this with some random transfers
-	// assert.ElementsMatch(t, expected.TransferEpochs, actual.TransferEpochs)
 }
 
 func TestExportGenesisInitGenesis(t *testing.T) {
@@ -115,16 +110,12 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		panic(err)
 	}
 
-	if err := keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false), utils.MaxUint, time.Hour); err != nil {
+	if err := keeper.RegisterAsset(ctx, evm.Ethereum, exported.NewAsset(axelarnet.NativeAsset, false)); err != nil {
 		panic(err)
 	}
 	if err := keeper.RegisterFee(ctx, evm.Ethereum, testutils.RandFee(evm.Ethereum.Name, axelarnet.NativeAsset)); err != nil {
 		panic(err)
 	}
-
-	rateLimit := testutils.RandRateLimit(axelarnet.Axelarnet.Name, axelarnet.NativeAsset)
-	funcs.MustNoErr(keeper.SetRateLimit(ctx, rateLimit.Chain, rateLimit.Limit, rateLimit.Window))
-	expected.RateLimits = keeper.getRateLimits(ctx)
 
 	for _, chain := range expected.Chains {
 		keeper.ActivateChain(ctx, chain)

@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sort"
-	"strings"
 
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -30,12 +29,6 @@ var _ types.QueryServiceServer = Querier{}
 const (
 	QTokenAddressBySymbol = "token-address-symbol"
 	QTokenAddressByAsset  = "token-address-asset"
-)
-
-// Bytecode labels
-const (
-	BCToken  = "token"
-	BCBurner = "burner"
 )
 
 // Token address labels
@@ -130,27 +123,6 @@ func (q Querier) Command(c context.Context, req *types.CommandRequest) (*types.C
 		KeyID:      resp.KeyID,
 		MaxGasCost: resp.MaxGasCost,
 	}, nil
-}
-
-// BurnerInfo implements the burner info grpc query
-func (q Querier) BurnerInfo(c context.Context, req *types.BurnerInfoRequest) (*types.BurnerInfoResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	chains := getEVMChains(ctx, q.nexus)
-
-	for _, chain := range chains {
-		ck, err := q.keeper.ForChain(ctx, chain.Name)
-		if err != nil {
-			continue
-		}
-
-		burnerInfo := ck.GetBurnerInfo(ctx, req.Address)
-		if burnerInfo != nil {
-			return &types.BurnerInfoResponse{Chain: chain.Name, BurnerInfo: burnerInfo}, nil
-		}
-	}
-
-	return nil, status.Error(codes.NotFound, "unknown address")
 }
 
 // optimizeSignatureSet returns optimized signature set, sorted in ascending order by corresponding evm address
@@ -334,34 +306,6 @@ func (q Querier) Event(c context.Context, req *types.EventRequest) (*types.Event
 	return &types.EventResponse{Event: &event}, nil
 }
 
-// DepositState returns the status of the deposit matching the given chain, tx ID and burner address
-// Deprecated
-func (q Querier) DepositState(c context.Context, req *types.DepositStateRequest) (*types.DepositStateResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-	ck, err := q.keeper.ForChain(ctx, req.Chain)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, err.Error())
-	}
-
-	if _, status, ok := ck.GetLegacyDeposit(ctx, req.Params.TxID, req.Params.BurnerAddress); ok {
-		return &types.DepositStateResponse{Status: status}, nil
-	}
-
-	hasSameBurnerAddress := func(deposit types.ERC20Deposit) bool {
-		return deposit.BurnerAddress == req.Params.BurnerAddress
-	}
-
-	// we can only return the first matching deposit at this point despite the fact that there might be many
-	if slices.Any(funcs.Must(ck.GetDepositsByTxID(ctx, req.Params.TxID, types.DepositStatus_Confirmed)), hasSameBurnerAddress) {
-		return &types.DepositStateResponse{Status: types.DepositStatus_Confirmed}, nil
-	}
-	if slices.Any(funcs.Must(ck.GetDepositsByTxID(ctx, req.Params.TxID, types.DepositStatus_Burned)), hasSameBurnerAddress) {
-		return &types.DepositStateResponse{Status: types.DepositStatus_Burned}, nil
-	}
-
-	return &types.DepositStateResponse{Status: types.DepositStatus_None}, nil
-}
-
 // GetCommandResponse converts a Command into a CommandResponse type
 func GetCommandResponse(cmd types.Command) (types.QueryCommandResponse, error) {
 	params, err := cmd.DecodeParams()
@@ -463,7 +407,9 @@ func (q Querier) GatewayAddress(c context.Context, req *types.GatewayAddressRequ
 	return &types.GatewayAddressResponse{Address: address.Hex()}, nil
 }
 
-// Bytecode returns the bytecode of a specified contract and chain
+// Bytecode returns the token bytecode for a chain.
+// The contract field in the request is deprecated and ignored; this query now
+// only returns the token contract bytecode.
 func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types.BytecodeResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
@@ -472,15 +418,7 @@ func (q Querier) Bytecode(c context.Context, req *types.BytecodeRequest) (*types
 		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("%s is not a registered chain", req.Chain)).Error())
 	}
 
-	var bytecode []byte
-	switch strings.ToLower(req.Contract) {
-	case BCToken:
-		bytecode = ck.GetTokenByteCode(ctx)
-	case BCBurner:
-		bytecode = ck.GetBurnerByteCode(ctx)
-	default:
-		return nil, status.Error(codes.NotFound, errorsmod.Wrap(types.ErrEVM, fmt.Sprintf("could not retrieve bytecode for chain %s", req.Chain)).Error())
-	}
+	bytecode := ck.GetTokenByteCode(ctx)
 
 	return &types.BytecodeResponse{Bytecode: "0x" + common.Bytes2Hex(bytecode)}, nil
 }

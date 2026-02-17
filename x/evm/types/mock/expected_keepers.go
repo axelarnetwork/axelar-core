@@ -19,7 +19,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"sync"
-	"time"
 )
 
 // Ensure, that VoterMock does implement types.Voter.
@@ -113,9 +112,6 @@ var _ types.Nexus = &NexusMock{}
 //			ComputeTransferFeeFunc: func(ctx sdk.Context, sourceChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, destinationChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset sdk.Coin) (sdk.Coin, error) {
 //				panic("mock out the ComputeTransferFee method")
 //			},
-//			EnqueueForTransferFunc: func(ctx sdk.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount sdk.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
-//				panic("mock out the EnqueueForTransfer method")
-//			},
 //			EnqueueRouteMessageFunc: func(ctx sdk.Context, id string) error {
 //				panic("mock out the EnqueueRouteMessage method")
 //			},
@@ -140,9 +136,6 @@ var _ types.Nexus = &NexusMock{}
 //			GetProcessingMessagesFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit int64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage {
 //				panic("mock out the GetProcessingMessages method")
 //			},
-//			GetRecipientFunc: func(ctx sdk.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool) {
-//				panic("mock out the GetRecipient method")
-//			},
 //			GetTransfersForChainPaginatedFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, pageRequest *query.PageRequest) ([]github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer, *query.PageResponse, error) {
 //				panic("mock out the GetTransfersForChainPaginated method")
 //			},
@@ -152,16 +145,7 @@ var _ types.Nexus = &NexusMock{}
 //			IsChainActivatedFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) bool {
 //				panic("mock out the IsChainActivated method")
 //			},
-//			IsLinkDepositEnabledFunc: func(ctx sdk.Context) bool {
-//				panic("mock out the IsLinkDepositEnabled method")
-//			},
-//			LinkAddressesFunc: func(ctx sdk.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
-//				panic("mock out the LinkAddresses method")
-//			},
-//			RateLimitTransferFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset sdk.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
-//				panic("mock out the RateLimitTransfer method")
-//			},
-//			RegisterAssetFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdk_io_math.Uint, window time.Duration) error {
+//			RegisterAssetFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset) error {
 //				panic("mock out the RegisterAsset method")
 //			},
 //			SetChainFunc: func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)  {
@@ -195,9 +179,6 @@ type NexusMock struct {
 	// ComputeTransferFeeFunc mocks the ComputeTransferFee method.
 	ComputeTransferFeeFunc func(ctx sdk.Context, sourceChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, destinationChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset sdk.Coin) (sdk.Coin, error)
 
-	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
-	EnqueueForTransferFunc func(ctx sdk.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount sdk.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error)
-
 	// EnqueueRouteMessageFunc mocks the EnqueueRouteMessage method.
 	EnqueueRouteMessageFunc func(ctx sdk.Context, id string) error
 
@@ -222,9 +203,6 @@ type NexusMock struct {
 	// GetProcessingMessagesFunc mocks the GetProcessingMessages method.
 	GetProcessingMessagesFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, limit int64) []github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage
 
-	// GetRecipientFunc mocks the GetRecipient method.
-	GetRecipientFunc func(ctx sdk.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool)
-
 	// GetTransfersForChainPaginatedFunc mocks the GetTransfersForChainPaginated method.
 	GetTransfersForChainPaginatedFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, pageRequest *query.PageRequest) ([]github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer, *query.PageResponse, error)
 
@@ -234,17 +212,8 @@ type NexusMock struct {
 	// IsChainActivatedFunc mocks the IsChainActivated method.
 	IsChainActivatedFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain) bool
 
-	// IsLinkDepositEnabledFunc mocks the IsLinkDepositEnabled method.
-	IsLinkDepositEnabledFunc func(ctx sdk.Context) bool
-
-	// LinkAddressesFunc mocks the LinkAddresses method.
-	LinkAddressesFunc func(ctx sdk.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error
-
-	// RateLimitTransferFunc mocks the RateLimitTransfer method.
-	RateLimitTransferFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset sdk.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error
-
 	// RegisterAssetFunc mocks the RegisterAsset method.
-	RegisterAssetFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdk_io_math.Uint, window time.Duration) error
+	RegisterAssetFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset) error
 
 	// SetChainFunc mocks the SetChain method.
 	SetChainFunc func(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain)
@@ -287,15 +256,6 @@ type NexusMock struct {
 			DestinationChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// Asset is the asset argument value.
 			Asset sdk.Coin
-		}
-		// EnqueueForTransfer holds details about calls to the EnqueueForTransfer method.
-		EnqueueForTransfer []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Sender is the sender argument value.
-			Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-			// Amount is the amount argument value.
-			Amount sdk.Coin
 		}
 		// EnqueueRouteMessage holds details about calls to the EnqueueRouteMessage method.
 		EnqueueRouteMessage []struct {
@@ -359,13 +319,6 @@ type NexusMock struct {
 			// Limit is the limit argument value.
 			Limit int64
 		}
-		// GetRecipient holds details about calls to the GetRecipient method.
-		GetRecipient []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Sender is the sender argument value.
-			Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		}
 		// GetTransfersForChainPaginated holds details about calls to the GetTransfersForChainPaginated method.
 		GetTransfersForChainPaginated []struct {
 			// Ctx is the ctx argument value.
@@ -393,31 +346,6 @@ type NexusMock struct {
 			// Chain is the chain argument value.
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 		}
-		// IsLinkDepositEnabled holds details about calls to the IsLinkDepositEnabled method.
-		IsLinkDepositEnabled []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-		}
-		// LinkAddresses holds details about calls to the LinkAddresses method.
-		LinkAddresses []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Sender is the sender argument value.
-			Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-			// Recipient is the recipient argument value.
-			Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		}
-		// RateLimitTransfer holds details about calls to the RateLimitTransfer method.
-		RateLimitTransfer []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Chain is the chain argument value.
-			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-			// Asset is the asset argument value.
-			Asset sdk.Coin
-			// Direction is the direction argument value.
-			Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
-		}
 		// RegisterAsset holds details about calls to the RegisterAsset method.
 		RegisterAsset []struct {
 			// Ctx is the ctx argument value.
@@ -426,10 +354,6 @@ type NexusMock struct {
 			Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
 			// Asset is the asset argument value.
 			Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-			// Limit is the limit argument value.
-			Limit cosmossdk_io_math.Uint
-			// Window is the window argument value.
-			Window time.Duration
 		}
 		// SetChain holds details about calls to the SetChain method.
 		SetChain []struct {
@@ -470,7 +394,6 @@ type NexusMock struct {
 	lockAddTransferFee                sync.RWMutex
 	lockArchivePendingTransfer        sync.RWMutex
 	lockComputeTransferFee            sync.RWMutex
-	lockEnqueueForTransfer            sync.RWMutex
 	lockEnqueueRouteMessage           sync.RWMutex
 	lockEnqueueTransfer               sync.RWMutex
 	lockGetChain                      sync.RWMutex
@@ -479,13 +402,9 @@ type NexusMock struct {
 	lockGetChainMaintainers           sync.RWMutex
 	lockGetChains                     sync.RWMutex
 	lockGetProcessingMessages         sync.RWMutex
-	lockGetRecipient                  sync.RWMutex
 	lockGetTransfersForChainPaginated sync.RWMutex
 	lockIsAssetRegistered             sync.RWMutex
 	lockIsChainActivated              sync.RWMutex
-	lockIsLinkDepositEnabled          sync.RWMutex
-	lockLinkAddresses                 sync.RWMutex
-	lockRateLimitTransfer             sync.RWMutex
 	lockRegisterAsset                 sync.RWMutex
 	lockSetChain                      sync.RWMutex
 	lockSetChainMaintainerState       sync.RWMutex
@@ -607,46 +526,6 @@ func (mock *NexusMock) ComputeTransferFeeCalls() []struct {
 	mock.lockComputeTransferFee.RLock()
 	calls = mock.calls.ComputeTransferFee
 	mock.lockComputeTransferFee.RUnlock()
-	return calls
-}
-
-// EnqueueForTransfer calls EnqueueForTransferFunc.
-func (mock *NexusMock) EnqueueForTransfer(ctx sdk.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount sdk.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
-	if mock.EnqueueForTransferFunc == nil {
-		panic("NexusMock.EnqueueForTransferFunc: method is nil but Nexus.EnqueueForTransfer was just called")
-	}
-	callInfo := struct {
-		Ctx    sdk.Context
-		Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		Amount sdk.Coin
-	}{
-		Ctx:    ctx,
-		Sender: sender,
-		Amount: amount,
-	}
-	mock.lockEnqueueForTransfer.Lock()
-	mock.calls.EnqueueForTransfer = append(mock.calls.EnqueueForTransfer, callInfo)
-	mock.lockEnqueueForTransfer.Unlock()
-	return mock.EnqueueForTransferFunc(ctx, sender, amount)
-}
-
-// EnqueueForTransferCalls gets all the calls that were made to EnqueueForTransfer.
-// Check the length with:
-//
-//	len(mockedNexus.EnqueueForTransferCalls())
-func (mock *NexusMock) EnqueueForTransferCalls() []struct {
-	Ctx    sdk.Context
-	Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	Amount sdk.Coin
-} {
-	var calls []struct {
-		Ctx    sdk.Context
-		Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		Amount sdk.Coin
-	}
-	mock.lockEnqueueForTransfer.RLock()
-	calls = mock.calls.EnqueueForTransfer
-	mock.lockEnqueueForTransfer.RUnlock()
 	return calls
 }
 
@@ -950,42 +829,6 @@ func (mock *NexusMock) GetProcessingMessagesCalls() []struct {
 	return calls
 }
 
-// GetRecipient calls GetRecipientFunc.
-func (mock *NexusMock) GetRecipient(ctx sdk.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool) {
-	if mock.GetRecipientFunc == nil {
-		panic("NexusMock.GetRecipientFunc: method is nil but Nexus.GetRecipient was just called")
-	}
-	callInfo := struct {
-		Ctx    sdk.Context
-		Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	}{
-		Ctx:    ctx,
-		Sender: sender,
-	}
-	mock.lockGetRecipient.Lock()
-	mock.calls.GetRecipient = append(mock.calls.GetRecipient, callInfo)
-	mock.lockGetRecipient.Unlock()
-	return mock.GetRecipientFunc(ctx, sender)
-}
-
-// GetRecipientCalls gets all the calls that were made to GetRecipient.
-// Check the length with:
-//
-//	len(mockedNexus.GetRecipientCalls())
-func (mock *NexusMock) GetRecipientCalls() []struct {
-	Ctx    sdk.Context
-	Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-} {
-	var calls []struct {
-		Ctx    sdk.Context
-		Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	}
-	mock.lockGetRecipient.RLock()
-	calls = mock.calls.GetRecipient
-	mock.lockGetRecipient.RUnlock()
-	return calls
-}
-
 // GetTransfersForChainPaginated calls GetTransfersForChainPaginatedFunc.
 func (mock *NexusMock) GetTransfersForChainPaginated(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, state github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferState, pageRequest *query.PageRequest) ([]github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainTransfer, *query.PageResponse, error) {
 	if mock.GetTransfersForChainPaginatedFunc == nil {
@@ -1106,144 +949,24 @@ func (mock *NexusMock) IsChainActivatedCalls() []struct {
 	return calls
 }
 
-// IsLinkDepositEnabled calls IsLinkDepositEnabledFunc.
-func (mock *NexusMock) IsLinkDepositEnabled(ctx sdk.Context) bool {
-	if mock.IsLinkDepositEnabledFunc == nil {
-		panic("NexusMock.IsLinkDepositEnabledFunc: method is nil but Nexus.IsLinkDepositEnabled was just called")
-	}
-	callInfo := struct {
-		Ctx sdk.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockIsLinkDepositEnabled.Lock()
-	mock.calls.IsLinkDepositEnabled = append(mock.calls.IsLinkDepositEnabled, callInfo)
-	mock.lockIsLinkDepositEnabled.Unlock()
-	return mock.IsLinkDepositEnabledFunc(ctx)
-}
-
-// IsLinkDepositEnabledCalls gets all the calls that were made to IsLinkDepositEnabled.
-// Check the length with:
-//
-//	len(mockedNexus.IsLinkDepositEnabledCalls())
-func (mock *NexusMock) IsLinkDepositEnabledCalls() []struct {
-	Ctx sdk.Context
-} {
-	var calls []struct {
-		Ctx sdk.Context
-	}
-	mock.lockIsLinkDepositEnabled.RLock()
-	calls = mock.calls.IsLinkDepositEnabled
-	mock.lockIsLinkDepositEnabled.RUnlock()
-	return calls
-}
-
-// LinkAddresses calls LinkAddressesFunc.
-func (mock *NexusMock) LinkAddresses(ctx sdk.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
-	if mock.LinkAddressesFunc == nil {
-		panic("NexusMock.LinkAddressesFunc: method is nil but Nexus.LinkAddresses was just called")
-	}
-	callInfo := struct {
-		Ctx       sdk.Context
-		Sender    github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	}{
-		Ctx:       ctx,
-		Sender:    sender,
-		Recipient: recipient,
-	}
-	mock.lockLinkAddresses.Lock()
-	mock.calls.LinkAddresses = append(mock.calls.LinkAddresses, callInfo)
-	mock.lockLinkAddresses.Unlock()
-	return mock.LinkAddressesFunc(ctx, sender, recipient)
-}
-
-// LinkAddressesCalls gets all the calls that were made to LinkAddresses.
-// Check the length with:
-//
-//	len(mockedNexus.LinkAddressesCalls())
-func (mock *NexusMock) LinkAddressesCalls() []struct {
-	Ctx       sdk.Context
-	Sender    github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-} {
-	var calls []struct {
-		Ctx       sdk.Context
-		Sender    github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	}
-	mock.lockLinkAddresses.RLock()
-	calls = mock.calls.LinkAddresses
-	mock.lockLinkAddresses.RUnlock()
-	return calls
-}
-
-// RateLimitTransfer calls RateLimitTransferFunc.
-func (mock *NexusMock) RateLimitTransfer(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName, asset sdk.Coin, direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection) error {
-	if mock.RateLimitTransferFunc == nil {
-		panic("NexusMock.RateLimitTransferFunc: method is nil but Nexus.RateLimitTransfer was just called")
-	}
-	callInfo := struct {
-		Ctx       sdk.Context
-		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Asset     sdk.Coin
-		Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
-	}{
-		Ctx:       ctx,
-		Chain:     chain,
-		Asset:     asset,
-		Direction: direction,
-	}
-	mock.lockRateLimitTransfer.Lock()
-	mock.calls.RateLimitTransfer = append(mock.calls.RateLimitTransfer, callInfo)
-	mock.lockRateLimitTransfer.Unlock()
-	return mock.RateLimitTransferFunc(ctx, chain, asset, direction)
-}
-
-// RateLimitTransferCalls gets all the calls that were made to RateLimitTransfer.
-// Check the length with:
-//
-//	len(mockedNexus.RateLimitTransferCalls())
-func (mock *NexusMock) RateLimitTransferCalls() []struct {
-	Ctx       sdk.Context
-	Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-	Asset     sdk.Coin
-	Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
-} {
-	var calls []struct {
-		Ctx       sdk.Context
-		Chain     github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName
-		Asset     sdk.Coin
-		Direction github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferDirection
-	}
-	mock.lockRateLimitTransfer.RLock()
-	calls = mock.calls.RateLimitTransfer
-	mock.lockRateLimitTransfer.RUnlock()
-	return calls
-}
-
 // RegisterAsset calls RegisterAssetFunc.
-func (mock *NexusMock) RegisterAsset(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset, limit cosmossdk_io_math.Uint, window time.Duration) error {
+func (mock *NexusMock) RegisterAsset(ctx sdk.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset) error {
 	if mock.RegisterAssetFunc == nil {
 		panic("NexusMock.RegisterAssetFunc: method is nil but Nexus.RegisterAsset was just called")
 	}
 	callInfo := struct {
-		Ctx    sdk.Context
-		Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-		Limit  cosmossdk_io_math.Uint
-		Window time.Duration
+		Ctx   sdk.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
 	}{
-		Ctx:    ctx,
-		Chain:  chain,
-		Asset:  asset,
-		Limit:  limit,
-		Window: window,
+		Ctx:   ctx,
+		Chain: chain,
+		Asset: asset,
 	}
 	mock.lockRegisterAsset.Lock()
 	mock.calls.RegisterAsset = append(mock.calls.RegisterAsset, callInfo)
 	mock.lockRegisterAsset.Unlock()
-	return mock.RegisterAssetFunc(ctx, chain, asset, limit, window)
+	return mock.RegisterAssetFunc(ctx, chain, asset)
 }
 
 // RegisterAssetCalls gets all the calls that were made to RegisterAsset.
@@ -1251,18 +974,14 @@ func (mock *NexusMock) RegisterAsset(ctx sdk.Context, chain github_com_axelarnet
 //
 //	len(mockedNexus.RegisterAssetCalls())
 func (mock *NexusMock) RegisterAssetCalls() []struct {
-	Ctx    sdk.Context
-	Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-	Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-	Limit  cosmossdk_io_math.Uint
-	Window time.Duration
+	Ctx   sdk.Context
+	Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+	Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
 } {
 	var calls []struct {
-		Ctx    sdk.Context
-		Chain  github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
-		Asset  github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
-		Limit  cosmossdk_io_math.Uint
-		Window time.Duration
+		Ctx   sdk.Context
+		Chain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain
+		Asset github_com_axelarnetwork_axelar_core_x_nexus_exported.Asset
 	}
 	mock.lockRegisterAsset.RLock()
 	calls = mock.calls.RegisterAsset
@@ -1772,9 +1491,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 //			CreateNewBatchToSignFunc: func(ctx sdk.Context) (types.CommandBatch, error) {
 //				panic("mock out the CreateNewBatchToSign method")
 //			},
-//			DeleteDepositFunc: func(ctx sdk.Context, deposit types.ERC20Deposit)  {
-//				panic("mock out the DeleteDeposit method")
-//			},
 //			DeleteUnsignedCommandBatchIDFunc: func(ctx sdk.Context)  {
 //				panic("mock out the DeleteUnsignedCommandBatchID method")
 //			},
@@ -1784,20 +1500,11 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 //			EnqueueConfirmedEventFunc: func(ctx sdk.Context, eventID types.EventID) error {
 //				panic("mock out the EnqueueConfirmedEvent method")
 //			},
-//			GenerateSaltFunc: func(ctx sdk.Context, recipient string) types.Hash {
-//				panic("mock out the GenerateSalt method")
-//			},
 //			GetBatchByIDFunc: func(ctx sdk.Context, id []byte) types.CommandBatch {
 //				panic("mock out the GetBatchByID method")
 //			},
-//			GetBurnerAddressFunc: func(ctx sdk.Context, token types.ERC20Token, salt types.Hash, gatewayAddr types.Address) (types.Address, error) {
-//				panic("mock out the GetBurnerAddress method")
-//			},
 //			GetBurnerByteCodeFunc: func(ctx sdk.Context) []byte {
 //				panic("mock out the GetBurnerByteCode method")
-//			},
-//			GetBurnerInfoFunc: func(ctx sdk.Context, address types.Address) *types.BurnerInfo {
-//				panic("mock out the GetBurnerInfo method")
 //			},
 //			GetChainIDFunc: func(ctx sdk.Context) (cosmossdk_io_math.Int, bool) {
 //				panic("mock out the GetChainID method")
@@ -1808,17 +1515,8 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 //			GetCommandFunc: func(ctx sdk.Context, id types.CommandID) (types.Command, bool) {
 //				panic("mock out the GetCommand method")
 //			},
-//			GetConfirmedDepositsPaginatedFunc: func(ctx sdk.Context, pageRequest *query.PageRequest) ([]types.ERC20Deposit, *query.PageResponse, error) {
-//				panic("mock out the GetConfirmedDepositsPaginated method")
-//			},
 //			GetConfirmedEventQueueFunc: func(ctx sdk.Context) utils.KVQueue {
 //				panic("mock out the GetConfirmedEventQueue method")
-//			},
-//			GetDepositFunc: func(ctx sdk.Context, txID types.Hash, logIndex uint64) (types.ERC20Deposit, types.DepositStatus, bool) {
-//				panic("mock out the GetDeposit method")
-//			},
-//			GetDepositsByTxIDFunc: func(ctx sdk.Context, txID types.Hash, status types.DepositStatus) ([]types.ERC20Deposit, error) {
-//				panic("mock out the GetDepositsByTxID method")
 //			},
 //			GetERC20TokenByAddressFunc: func(ctx sdk.Context, address types.Address) types.ERC20Token {
 //				panic("mock out the GetERC20TokenByAddress method")
@@ -1837,9 +1535,6 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 //			},
 //			GetLatestCommandBatchFunc: func(ctx sdk.Context) types.CommandBatch {
 //				panic("mock out the GetLatestCommandBatch method")
-//			},
-//			GetLegacyDepositFunc: func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
-//				panic("mock out the GetLegacyDeposit method")
 //			},
 //			GetMinVoterCountFunc: func(ctx sdk.Context) int64 {
 //				panic("mock out the GetMinVoterCount method")
@@ -1877,14 +1572,8 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 //			LoggerFunc: func(ctx sdk.Context) log.Logger {
 //				panic("mock out the Logger method")
 //			},
-//			SetBurnerInfoFunc: func(ctx sdk.Context, burnerInfo types.BurnerInfo)  {
-//				panic("mock out the SetBurnerInfo method")
-//			},
 //			SetConfirmedEventFunc: func(ctx sdk.Context, event types.Event) error {
 //				panic("mock out the SetConfirmedEvent method")
-//			},
-//			SetDepositFunc: func(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositStatus)  {
-//				panic("mock out the SetDeposit method")
 //			},
 //			SetEventCompletedFunc: func(ctx sdk.Context, eventID types.EventID) error {
 //				panic("mock out the SetEventCompleted method")
@@ -1914,9 +1603,6 @@ type ChainKeeperMock struct {
 	// CreateNewBatchToSignFunc mocks the CreateNewBatchToSign method.
 	CreateNewBatchToSignFunc func(ctx sdk.Context) (types.CommandBatch, error)
 
-	// DeleteDepositFunc mocks the DeleteDeposit method.
-	DeleteDepositFunc func(ctx sdk.Context, deposit types.ERC20Deposit)
-
 	// DeleteUnsignedCommandBatchIDFunc mocks the DeleteUnsignedCommandBatchID method.
 	DeleteUnsignedCommandBatchIDFunc func(ctx sdk.Context)
 
@@ -1926,20 +1612,11 @@ type ChainKeeperMock struct {
 	// EnqueueConfirmedEventFunc mocks the EnqueueConfirmedEvent method.
 	EnqueueConfirmedEventFunc func(ctx sdk.Context, eventID types.EventID) error
 
-	// GenerateSaltFunc mocks the GenerateSalt method.
-	GenerateSaltFunc func(ctx sdk.Context, recipient string) types.Hash
-
 	// GetBatchByIDFunc mocks the GetBatchByID method.
 	GetBatchByIDFunc func(ctx sdk.Context, id []byte) types.CommandBatch
 
-	// GetBurnerAddressFunc mocks the GetBurnerAddress method.
-	GetBurnerAddressFunc func(ctx sdk.Context, token types.ERC20Token, salt types.Hash, gatewayAddr types.Address) (types.Address, error)
-
 	// GetBurnerByteCodeFunc mocks the GetBurnerByteCode method.
 	GetBurnerByteCodeFunc func(ctx sdk.Context) []byte
-
-	// GetBurnerInfoFunc mocks the GetBurnerInfo method.
-	GetBurnerInfoFunc func(ctx sdk.Context, address types.Address) *types.BurnerInfo
 
 	// GetChainIDFunc mocks the GetChainID method.
 	GetChainIDFunc func(ctx sdk.Context) (cosmossdk_io_math.Int, bool)
@@ -1950,17 +1627,8 @@ type ChainKeeperMock struct {
 	// GetCommandFunc mocks the GetCommand method.
 	GetCommandFunc func(ctx sdk.Context, id types.CommandID) (types.Command, bool)
 
-	// GetConfirmedDepositsPaginatedFunc mocks the GetConfirmedDepositsPaginated method.
-	GetConfirmedDepositsPaginatedFunc func(ctx sdk.Context, pageRequest *query.PageRequest) ([]types.ERC20Deposit, *query.PageResponse, error)
-
 	// GetConfirmedEventQueueFunc mocks the GetConfirmedEventQueue method.
 	GetConfirmedEventQueueFunc func(ctx sdk.Context) utils.KVQueue
-
-	// GetDepositFunc mocks the GetDeposit method.
-	GetDepositFunc func(ctx sdk.Context, txID types.Hash, logIndex uint64) (types.ERC20Deposit, types.DepositStatus, bool)
-
-	// GetDepositsByTxIDFunc mocks the GetDepositsByTxID method.
-	GetDepositsByTxIDFunc func(ctx sdk.Context, txID types.Hash, status types.DepositStatus) ([]types.ERC20Deposit, error)
 
 	// GetERC20TokenByAddressFunc mocks the GetERC20TokenByAddress method.
 	GetERC20TokenByAddressFunc func(ctx sdk.Context, address types.Address) types.ERC20Token
@@ -1979,9 +1647,6 @@ type ChainKeeperMock struct {
 
 	// GetLatestCommandBatchFunc mocks the GetLatestCommandBatch method.
 	GetLatestCommandBatchFunc func(ctx sdk.Context) types.CommandBatch
-
-	// GetLegacyDepositFunc mocks the GetLegacyDeposit method.
-	GetLegacyDepositFunc func(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool)
 
 	// GetMinVoterCountFunc mocks the GetMinVoterCount method.
 	GetMinVoterCountFunc func(ctx sdk.Context) int64
@@ -2019,14 +1684,8 @@ type ChainKeeperMock struct {
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx sdk.Context) log.Logger
 
-	// SetBurnerInfoFunc mocks the SetBurnerInfo method.
-	SetBurnerInfoFunc func(ctx sdk.Context, burnerInfo types.BurnerInfo)
-
 	// SetConfirmedEventFunc mocks the SetConfirmedEvent method.
 	SetConfirmedEventFunc func(ctx sdk.Context, event types.Event) error
-
-	// SetDepositFunc mocks the SetDeposit method.
-	SetDepositFunc func(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositStatus)
 
 	// SetEventCompletedFunc mocks the SetEventCompleted method.
 	SetEventCompletedFunc func(ctx sdk.Context, eventID types.EventID) error
@@ -2061,13 +1720,6 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
-		// DeleteDeposit holds details about calls to the DeleteDeposit method.
-		DeleteDeposit []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Deposit is the deposit argument value.
-			Deposit types.ERC20Deposit
-		}
 		// DeleteUnsignedCommandBatchID holds details about calls to the DeleteUnsignedCommandBatchID method.
 		DeleteUnsignedCommandBatchID []struct {
 			// Ctx is the ctx argument value.
@@ -2087,13 +1739,6 @@ type ChainKeeperMock struct {
 			// EventID is the eventID argument value.
 			EventID types.EventID
 		}
-		// GenerateSalt holds details about calls to the GenerateSalt method.
-		GenerateSalt []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Recipient is the recipient argument value.
-			Recipient string
-		}
 		// GetBatchByID holds details about calls to the GetBatchByID method.
 		GetBatchByID []struct {
 			// Ctx is the ctx argument value.
@@ -2101,28 +1746,10 @@ type ChainKeeperMock struct {
 			// ID is the id argument value.
 			ID []byte
 		}
-		// GetBurnerAddress holds details about calls to the GetBurnerAddress method.
-		GetBurnerAddress []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Token is the token argument value.
-			Token types.ERC20Token
-			// Salt is the salt argument value.
-			Salt types.Hash
-			// GatewayAddr is the gatewayAddr argument value.
-			GatewayAddr types.Address
-		}
 		// GetBurnerByteCode holds details about calls to the GetBurnerByteCode method.
 		GetBurnerByteCode []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-		}
-		// GetBurnerInfo holds details about calls to the GetBurnerInfo method.
-		GetBurnerInfo []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Address is the address argument value.
-			Address types.Address
 		}
 		// GetChainID holds details about calls to the GetChainID method.
 		GetChainID []struct {
@@ -2143,35 +1770,10 @@ type ChainKeeperMock struct {
 			// ID is the id argument value.
 			ID types.CommandID
 		}
-		// GetConfirmedDepositsPaginated holds details about calls to the GetConfirmedDepositsPaginated method.
-		GetConfirmedDepositsPaginated []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// PageRequest is the pageRequest argument value.
-			PageRequest *query.PageRequest
-		}
 		// GetConfirmedEventQueue holds details about calls to the GetConfirmedEventQueue method.
 		GetConfirmedEventQueue []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-		}
-		// GetDeposit holds details about calls to the GetDeposit method.
-		GetDeposit []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// TxID is the txID argument value.
-			TxID types.Hash
-			// LogIndex is the logIndex argument value.
-			LogIndex uint64
-		}
-		// GetDepositsByTxID holds details about calls to the GetDepositsByTxID method.
-		GetDepositsByTxID []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// TxID is the txID argument value.
-			TxID types.Hash
-			// Status is the status argument value.
-			Status types.DepositStatus
 		}
 		// GetERC20TokenByAddress holds details about calls to the GetERC20TokenByAddress method.
 		GetERC20TokenByAddress []struct {
@@ -2210,15 +1812,6 @@ type ChainKeeperMock struct {
 		GetLatestCommandBatch []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
-		}
-		// GetLegacyDeposit holds details about calls to the GetLegacyDeposit method.
-		GetLegacyDeposit []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// TxID is the txID argument value.
-			TxID types.Hash
-			// BurnerAddr is the burnerAddr argument value.
-			BurnerAddr types.Address
 		}
 		// GetMinVoterCount holds details about calls to the GetMinVoterCount method.
 		GetMinVoterCount []struct {
@@ -2280,28 +1873,12 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
-		// SetBurnerInfo holds details about calls to the SetBurnerInfo method.
-		SetBurnerInfo []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// BurnerInfo is the burnerInfo argument value.
-			BurnerInfo types.BurnerInfo
-		}
 		// SetConfirmedEvent holds details about calls to the SetConfirmedEvent method.
 		SetConfirmedEvent []struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 			// Event is the event argument value.
 			Event types.Event
-		}
-		// SetDeposit holds details about calls to the SetDeposit method.
-		SetDeposit []struct {
-			// Ctx is the ctx argument value.
-			Ctx sdk.Context
-			// Deposit is the deposit argument value.
-			Deposit types.ERC20Deposit
-			// State is the state argument value.
-			State types.DepositStatus
 		}
 		// SetEventCompleted holds details about calls to the SetEventCompleted method.
 		SetEventCompleted []struct {
@@ -2341,29 +1918,21 @@ type ChainKeeperMock struct {
 	}
 	lockCreateERC20Token              sync.RWMutex
 	lockCreateNewBatchToSign          sync.RWMutex
-	lockDeleteDeposit                 sync.RWMutex
 	lockDeleteUnsignedCommandBatchID  sync.RWMutex
 	lockEnqueueCommand                sync.RWMutex
 	lockEnqueueConfirmedEvent         sync.RWMutex
-	lockGenerateSalt                  sync.RWMutex
 	lockGetBatchByID                  sync.RWMutex
-	lockGetBurnerAddress              sync.RWMutex
 	lockGetBurnerByteCode             sync.RWMutex
-	lockGetBurnerInfo                 sync.RWMutex
 	lockGetChainID                    sync.RWMutex
 	lockGetChainIDByNetwork           sync.RWMutex
 	lockGetCommand                    sync.RWMutex
-	lockGetConfirmedDepositsPaginated sync.RWMutex
 	lockGetConfirmedEventQueue        sync.RWMutex
-	lockGetDeposit                    sync.RWMutex
-	lockGetDepositsByTxID             sync.RWMutex
 	lockGetERC20TokenByAddress        sync.RWMutex
 	lockGetERC20TokenByAsset          sync.RWMutex
 	lockGetERC20TokenBySymbol         sync.RWMutex
 	lockGetEvent                      sync.RWMutex
 	lockGetGatewayAddress             sync.RWMutex
 	lockGetLatestCommandBatch         sync.RWMutex
-	lockGetLegacyDeposit              sync.RWMutex
 	lockGetMinVoterCount              sync.RWMutex
 	lockGetName                       sync.RWMutex
 	lockGetNetwork                    sync.RWMutex
@@ -2376,9 +1945,7 @@ type ChainKeeperMock struct {
 	lockGetTokens                     sync.RWMutex
 	lockGetVotingThreshold            sync.RWMutex
 	lockLogger                        sync.RWMutex
-	lockSetBurnerInfo                 sync.RWMutex
 	lockSetConfirmedEvent             sync.RWMutex
-	lockSetDeposit                    sync.RWMutex
 	lockSetEventCompleted             sync.RWMutex
 	lockSetEventFailed                sync.RWMutex
 	lockSetGateway                    sync.RWMutex
@@ -2459,42 +2026,6 @@ func (mock *ChainKeeperMock) CreateNewBatchToSignCalls() []struct {
 	mock.lockCreateNewBatchToSign.RLock()
 	calls = mock.calls.CreateNewBatchToSign
 	mock.lockCreateNewBatchToSign.RUnlock()
-	return calls
-}
-
-// DeleteDeposit calls DeleteDepositFunc.
-func (mock *ChainKeeperMock) DeleteDeposit(ctx sdk.Context, deposit types.ERC20Deposit) {
-	if mock.DeleteDepositFunc == nil {
-		panic("ChainKeeperMock.DeleteDepositFunc: method is nil but ChainKeeper.DeleteDeposit was just called")
-	}
-	callInfo := struct {
-		Ctx     sdk.Context
-		Deposit types.ERC20Deposit
-	}{
-		Ctx:     ctx,
-		Deposit: deposit,
-	}
-	mock.lockDeleteDeposit.Lock()
-	mock.calls.DeleteDeposit = append(mock.calls.DeleteDeposit, callInfo)
-	mock.lockDeleteDeposit.Unlock()
-	mock.DeleteDepositFunc(ctx, deposit)
-}
-
-// DeleteDepositCalls gets all the calls that were made to DeleteDeposit.
-// Check the length with:
-//
-//	len(mockedChainKeeper.DeleteDepositCalls())
-func (mock *ChainKeeperMock) DeleteDepositCalls() []struct {
-	Ctx     sdk.Context
-	Deposit types.ERC20Deposit
-} {
-	var calls []struct {
-		Ctx     sdk.Context
-		Deposit types.ERC20Deposit
-	}
-	mock.lockDeleteDeposit.RLock()
-	calls = mock.calls.DeleteDeposit
-	mock.lockDeleteDeposit.RUnlock()
 	return calls
 }
 
@@ -2602,42 +2133,6 @@ func (mock *ChainKeeperMock) EnqueueConfirmedEventCalls() []struct {
 	return calls
 }
 
-// GenerateSalt calls GenerateSaltFunc.
-func (mock *ChainKeeperMock) GenerateSalt(ctx sdk.Context, recipient string) types.Hash {
-	if mock.GenerateSaltFunc == nil {
-		panic("ChainKeeperMock.GenerateSaltFunc: method is nil but ChainKeeper.GenerateSalt was just called")
-	}
-	callInfo := struct {
-		Ctx       sdk.Context
-		Recipient string
-	}{
-		Ctx:       ctx,
-		Recipient: recipient,
-	}
-	mock.lockGenerateSalt.Lock()
-	mock.calls.GenerateSalt = append(mock.calls.GenerateSalt, callInfo)
-	mock.lockGenerateSalt.Unlock()
-	return mock.GenerateSaltFunc(ctx, recipient)
-}
-
-// GenerateSaltCalls gets all the calls that were made to GenerateSalt.
-// Check the length with:
-//
-//	len(mockedChainKeeper.GenerateSaltCalls())
-func (mock *ChainKeeperMock) GenerateSaltCalls() []struct {
-	Ctx       sdk.Context
-	Recipient string
-} {
-	var calls []struct {
-		Ctx       sdk.Context
-		Recipient string
-	}
-	mock.lockGenerateSalt.RLock()
-	calls = mock.calls.GenerateSalt
-	mock.lockGenerateSalt.RUnlock()
-	return calls
-}
-
 // GetBatchByID calls GetBatchByIDFunc.
 func (mock *ChainKeeperMock) GetBatchByID(ctx sdk.Context, id []byte) types.CommandBatch {
 	if mock.GetBatchByIDFunc == nil {
@@ -2674,50 +2169,6 @@ func (mock *ChainKeeperMock) GetBatchByIDCalls() []struct {
 	return calls
 }
 
-// GetBurnerAddress calls GetBurnerAddressFunc.
-func (mock *ChainKeeperMock) GetBurnerAddress(ctx sdk.Context, token types.ERC20Token, salt types.Hash, gatewayAddr types.Address) (types.Address, error) {
-	if mock.GetBurnerAddressFunc == nil {
-		panic("ChainKeeperMock.GetBurnerAddressFunc: method is nil but ChainKeeper.GetBurnerAddress was just called")
-	}
-	callInfo := struct {
-		Ctx         sdk.Context
-		Token       types.ERC20Token
-		Salt        types.Hash
-		GatewayAddr types.Address
-	}{
-		Ctx:         ctx,
-		Token:       token,
-		Salt:        salt,
-		GatewayAddr: gatewayAddr,
-	}
-	mock.lockGetBurnerAddress.Lock()
-	mock.calls.GetBurnerAddress = append(mock.calls.GetBurnerAddress, callInfo)
-	mock.lockGetBurnerAddress.Unlock()
-	return mock.GetBurnerAddressFunc(ctx, token, salt, gatewayAddr)
-}
-
-// GetBurnerAddressCalls gets all the calls that were made to GetBurnerAddress.
-// Check the length with:
-//
-//	len(mockedChainKeeper.GetBurnerAddressCalls())
-func (mock *ChainKeeperMock) GetBurnerAddressCalls() []struct {
-	Ctx         sdk.Context
-	Token       types.ERC20Token
-	Salt        types.Hash
-	GatewayAddr types.Address
-} {
-	var calls []struct {
-		Ctx         sdk.Context
-		Token       types.ERC20Token
-		Salt        types.Hash
-		GatewayAddr types.Address
-	}
-	mock.lockGetBurnerAddress.RLock()
-	calls = mock.calls.GetBurnerAddress
-	mock.lockGetBurnerAddress.RUnlock()
-	return calls
-}
-
 // GetBurnerByteCode calls GetBurnerByteCodeFunc.
 func (mock *ChainKeeperMock) GetBurnerByteCode(ctx sdk.Context) []byte {
 	if mock.GetBurnerByteCodeFunc == nil {
@@ -2747,42 +2198,6 @@ func (mock *ChainKeeperMock) GetBurnerByteCodeCalls() []struct {
 	mock.lockGetBurnerByteCode.RLock()
 	calls = mock.calls.GetBurnerByteCode
 	mock.lockGetBurnerByteCode.RUnlock()
-	return calls
-}
-
-// GetBurnerInfo calls GetBurnerInfoFunc.
-func (mock *ChainKeeperMock) GetBurnerInfo(ctx sdk.Context, address types.Address) *types.BurnerInfo {
-	if mock.GetBurnerInfoFunc == nil {
-		panic("ChainKeeperMock.GetBurnerInfoFunc: method is nil but ChainKeeper.GetBurnerInfo was just called")
-	}
-	callInfo := struct {
-		Ctx     sdk.Context
-		Address types.Address
-	}{
-		Ctx:     ctx,
-		Address: address,
-	}
-	mock.lockGetBurnerInfo.Lock()
-	mock.calls.GetBurnerInfo = append(mock.calls.GetBurnerInfo, callInfo)
-	mock.lockGetBurnerInfo.Unlock()
-	return mock.GetBurnerInfoFunc(ctx, address)
-}
-
-// GetBurnerInfoCalls gets all the calls that were made to GetBurnerInfo.
-// Check the length with:
-//
-//	len(mockedChainKeeper.GetBurnerInfoCalls())
-func (mock *ChainKeeperMock) GetBurnerInfoCalls() []struct {
-	Ctx     sdk.Context
-	Address types.Address
-} {
-	var calls []struct {
-		Ctx     sdk.Context
-		Address types.Address
-	}
-	mock.lockGetBurnerInfo.RLock()
-	calls = mock.calls.GetBurnerInfo
-	mock.lockGetBurnerInfo.RUnlock()
 	return calls
 }
 
@@ -2890,42 +2305,6 @@ func (mock *ChainKeeperMock) GetCommandCalls() []struct {
 	return calls
 }
 
-// GetConfirmedDepositsPaginated calls GetConfirmedDepositsPaginatedFunc.
-func (mock *ChainKeeperMock) GetConfirmedDepositsPaginated(ctx sdk.Context, pageRequest *query.PageRequest) ([]types.ERC20Deposit, *query.PageResponse, error) {
-	if mock.GetConfirmedDepositsPaginatedFunc == nil {
-		panic("ChainKeeperMock.GetConfirmedDepositsPaginatedFunc: method is nil but ChainKeeper.GetConfirmedDepositsPaginated was just called")
-	}
-	callInfo := struct {
-		Ctx         sdk.Context
-		PageRequest *query.PageRequest
-	}{
-		Ctx:         ctx,
-		PageRequest: pageRequest,
-	}
-	mock.lockGetConfirmedDepositsPaginated.Lock()
-	mock.calls.GetConfirmedDepositsPaginated = append(mock.calls.GetConfirmedDepositsPaginated, callInfo)
-	mock.lockGetConfirmedDepositsPaginated.Unlock()
-	return mock.GetConfirmedDepositsPaginatedFunc(ctx, pageRequest)
-}
-
-// GetConfirmedDepositsPaginatedCalls gets all the calls that were made to GetConfirmedDepositsPaginated.
-// Check the length with:
-//
-//	len(mockedChainKeeper.GetConfirmedDepositsPaginatedCalls())
-func (mock *ChainKeeperMock) GetConfirmedDepositsPaginatedCalls() []struct {
-	Ctx         sdk.Context
-	PageRequest *query.PageRequest
-} {
-	var calls []struct {
-		Ctx         sdk.Context
-		PageRequest *query.PageRequest
-	}
-	mock.lockGetConfirmedDepositsPaginated.RLock()
-	calls = mock.calls.GetConfirmedDepositsPaginated
-	mock.lockGetConfirmedDepositsPaginated.RUnlock()
-	return calls
-}
-
 // GetConfirmedEventQueue calls GetConfirmedEventQueueFunc.
 func (mock *ChainKeeperMock) GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue {
 	if mock.GetConfirmedEventQueueFunc == nil {
@@ -2955,86 +2334,6 @@ func (mock *ChainKeeperMock) GetConfirmedEventQueueCalls() []struct {
 	mock.lockGetConfirmedEventQueue.RLock()
 	calls = mock.calls.GetConfirmedEventQueue
 	mock.lockGetConfirmedEventQueue.RUnlock()
-	return calls
-}
-
-// GetDeposit calls GetDepositFunc.
-func (mock *ChainKeeperMock) GetDeposit(ctx sdk.Context, txID types.Hash, logIndex uint64) (types.ERC20Deposit, types.DepositStatus, bool) {
-	if mock.GetDepositFunc == nil {
-		panic("ChainKeeperMock.GetDepositFunc: method is nil but ChainKeeper.GetDeposit was just called")
-	}
-	callInfo := struct {
-		Ctx      sdk.Context
-		TxID     types.Hash
-		LogIndex uint64
-	}{
-		Ctx:      ctx,
-		TxID:     txID,
-		LogIndex: logIndex,
-	}
-	mock.lockGetDeposit.Lock()
-	mock.calls.GetDeposit = append(mock.calls.GetDeposit, callInfo)
-	mock.lockGetDeposit.Unlock()
-	return mock.GetDepositFunc(ctx, txID, logIndex)
-}
-
-// GetDepositCalls gets all the calls that were made to GetDeposit.
-// Check the length with:
-//
-//	len(mockedChainKeeper.GetDepositCalls())
-func (mock *ChainKeeperMock) GetDepositCalls() []struct {
-	Ctx      sdk.Context
-	TxID     types.Hash
-	LogIndex uint64
-} {
-	var calls []struct {
-		Ctx      sdk.Context
-		TxID     types.Hash
-		LogIndex uint64
-	}
-	mock.lockGetDeposit.RLock()
-	calls = mock.calls.GetDeposit
-	mock.lockGetDeposit.RUnlock()
-	return calls
-}
-
-// GetDepositsByTxID calls GetDepositsByTxIDFunc.
-func (mock *ChainKeeperMock) GetDepositsByTxID(ctx sdk.Context, txID types.Hash, status types.DepositStatus) ([]types.ERC20Deposit, error) {
-	if mock.GetDepositsByTxIDFunc == nil {
-		panic("ChainKeeperMock.GetDepositsByTxIDFunc: method is nil but ChainKeeper.GetDepositsByTxID was just called")
-	}
-	callInfo := struct {
-		Ctx    sdk.Context
-		TxID   types.Hash
-		Status types.DepositStatus
-	}{
-		Ctx:    ctx,
-		TxID:   txID,
-		Status: status,
-	}
-	mock.lockGetDepositsByTxID.Lock()
-	mock.calls.GetDepositsByTxID = append(mock.calls.GetDepositsByTxID, callInfo)
-	mock.lockGetDepositsByTxID.Unlock()
-	return mock.GetDepositsByTxIDFunc(ctx, txID, status)
-}
-
-// GetDepositsByTxIDCalls gets all the calls that were made to GetDepositsByTxID.
-// Check the length with:
-//
-//	len(mockedChainKeeper.GetDepositsByTxIDCalls())
-func (mock *ChainKeeperMock) GetDepositsByTxIDCalls() []struct {
-	Ctx    sdk.Context
-	TxID   types.Hash
-	Status types.DepositStatus
-} {
-	var calls []struct {
-		Ctx    sdk.Context
-		TxID   types.Hash
-		Status types.DepositStatus
-	}
-	mock.lockGetDepositsByTxID.RLock()
-	calls = mock.calls.GetDepositsByTxID
-	mock.lockGetDepositsByTxID.RUnlock()
 	return calls
 }
 
@@ -3243,46 +2542,6 @@ func (mock *ChainKeeperMock) GetLatestCommandBatchCalls() []struct {
 	mock.lockGetLatestCommandBatch.RLock()
 	calls = mock.calls.GetLatestCommandBatch
 	mock.lockGetLatestCommandBatch.RUnlock()
-	return calls
-}
-
-// GetLegacyDeposit calls GetLegacyDepositFunc.
-func (mock *ChainKeeperMock) GetLegacyDeposit(ctx sdk.Context, txID types.Hash, burnerAddr types.Address) (types.ERC20Deposit, types.DepositStatus, bool) {
-	if mock.GetLegacyDepositFunc == nil {
-		panic("ChainKeeperMock.GetLegacyDepositFunc: method is nil but ChainKeeper.GetLegacyDeposit was just called")
-	}
-	callInfo := struct {
-		Ctx        sdk.Context
-		TxID       types.Hash
-		BurnerAddr types.Address
-	}{
-		Ctx:        ctx,
-		TxID:       txID,
-		BurnerAddr: burnerAddr,
-	}
-	mock.lockGetLegacyDeposit.Lock()
-	mock.calls.GetLegacyDeposit = append(mock.calls.GetLegacyDeposit, callInfo)
-	mock.lockGetLegacyDeposit.Unlock()
-	return mock.GetLegacyDepositFunc(ctx, txID, burnerAddr)
-}
-
-// GetLegacyDepositCalls gets all the calls that were made to GetLegacyDeposit.
-// Check the length with:
-//
-//	len(mockedChainKeeper.GetLegacyDepositCalls())
-func (mock *ChainKeeperMock) GetLegacyDepositCalls() []struct {
-	Ctx        sdk.Context
-	TxID       types.Hash
-	BurnerAddr types.Address
-} {
-	var calls []struct {
-		Ctx        sdk.Context
-		TxID       types.Hash
-		BurnerAddr types.Address
-	}
-	mock.lockGetLegacyDeposit.RLock()
-	calls = mock.calls.GetLegacyDeposit
-	mock.lockGetLegacyDeposit.RUnlock()
 	return calls
 }
 
@@ -3669,42 +2928,6 @@ func (mock *ChainKeeperMock) LoggerCalls() []struct {
 	return calls
 }
 
-// SetBurnerInfo calls SetBurnerInfoFunc.
-func (mock *ChainKeeperMock) SetBurnerInfo(ctx sdk.Context, burnerInfo types.BurnerInfo) {
-	if mock.SetBurnerInfoFunc == nil {
-		panic("ChainKeeperMock.SetBurnerInfoFunc: method is nil but ChainKeeper.SetBurnerInfo was just called")
-	}
-	callInfo := struct {
-		Ctx        sdk.Context
-		BurnerInfo types.BurnerInfo
-	}{
-		Ctx:        ctx,
-		BurnerInfo: burnerInfo,
-	}
-	mock.lockSetBurnerInfo.Lock()
-	mock.calls.SetBurnerInfo = append(mock.calls.SetBurnerInfo, callInfo)
-	mock.lockSetBurnerInfo.Unlock()
-	mock.SetBurnerInfoFunc(ctx, burnerInfo)
-}
-
-// SetBurnerInfoCalls gets all the calls that were made to SetBurnerInfo.
-// Check the length with:
-//
-//	len(mockedChainKeeper.SetBurnerInfoCalls())
-func (mock *ChainKeeperMock) SetBurnerInfoCalls() []struct {
-	Ctx        sdk.Context
-	BurnerInfo types.BurnerInfo
-} {
-	var calls []struct {
-		Ctx        sdk.Context
-		BurnerInfo types.BurnerInfo
-	}
-	mock.lockSetBurnerInfo.RLock()
-	calls = mock.calls.SetBurnerInfo
-	mock.lockSetBurnerInfo.RUnlock()
-	return calls
-}
-
 // SetConfirmedEvent calls SetConfirmedEventFunc.
 func (mock *ChainKeeperMock) SetConfirmedEvent(ctx sdk.Context, event types.Event) error {
 	if mock.SetConfirmedEventFunc == nil {
@@ -3738,46 +2961,6 @@ func (mock *ChainKeeperMock) SetConfirmedEventCalls() []struct {
 	mock.lockSetConfirmedEvent.RLock()
 	calls = mock.calls.SetConfirmedEvent
 	mock.lockSetConfirmedEvent.RUnlock()
-	return calls
-}
-
-// SetDeposit calls SetDepositFunc.
-func (mock *ChainKeeperMock) SetDeposit(ctx sdk.Context, deposit types.ERC20Deposit, state types.DepositStatus) {
-	if mock.SetDepositFunc == nil {
-		panic("ChainKeeperMock.SetDepositFunc: method is nil but ChainKeeper.SetDeposit was just called")
-	}
-	callInfo := struct {
-		Ctx     sdk.Context
-		Deposit types.ERC20Deposit
-		State   types.DepositStatus
-	}{
-		Ctx:     ctx,
-		Deposit: deposit,
-		State:   state,
-	}
-	mock.lockSetDeposit.Lock()
-	mock.calls.SetDeposit = append(mock.calls.SetDeposit, callInfo)
-	mock.lockSetDeposit.Unlock()
-	mock.SetDepositFunc(ctx, deposit, state)
-}
-
-// SetDepositCalls gets all the calls that were made to SetDeposit.
-// Check the length with:
-//
-//	len(mockedChainKeeper.SetDepositCalls())
-func (mock *ChainKeeperMock) SetDepositCalls() []struct {
-	Ctx     sdk.Context
-	Deposit types.ERC20Deposit
-	State   types.DepositStatus
-} {
-	var calls []struct {
-		Ctx     sdk.Context
-		Deposit types.ERC20Deposit
-		State   types.DepositStatus
-	}
-	mock.lockSetDeposit.RLock()
-	calls = mock.calls.SetDeposit
-	mock.lockSetDeposit.RUnlock()
 	return calls
 }
 

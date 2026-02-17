@@ -69,14 +69,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
-	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
-	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
@@ -109,7 +107,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/auxiliary"
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
-	axelarnetclient "github.com/axelarnetwork/axelar-core/x/axelarnet/client"
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	axelarbankkeeper "github.com/axelarnetwork/axelar-core/x/bank/keeper"
@@ -134,7 +131,6 @@ import (
 	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
 	"github.com/axelarnetwork/axelar-core/x/tss"
-	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	"github.com/axelarnetwork/axelar-core/x/vote"
 	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
@@ -261,7 +257,6 @@ func NewAxelarApp(
 	SetKeeper(keepers, initNexusKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initRewardKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initMultisigKeeper(appCodec, keys, keepers))
-	SetKeeper(keepers, initTssKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initSnapshotKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initVoteKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initPermissionKeeper(appCodec, keys, keepers))
@@ -316,6 +311,7 @@ func NewAxelarApp(
 
 	appModules := initAppModules(
 		keepers,
+		keys,
 		bApp,
 		encodingConfig,
 		appOpts,
@@ -392,13 +388,8 @@ func NewAxelarApp(
 }
 
 func InitICS4Wrapper(keepers *KeeperCache, wasmHooks *ibchooks.WasmHooks) ibchooks.ICS4Middleware {
-	// ICS4Wrapper deals with sending IBC packets. These need to get rate limited when appropriate,
-	// so we wrap the channel keeper (which implements the ICS4Wrapper interface) with a rate limiter.
-	ics4Wrapper := axelarnet.NewRateLimitedICS4Wrapper(
-		GetKeeper[ibckeeper.Keeper](keepers).ChannelKeeper,
-		axelarnet.NewRateLimiter(GetKeeper[axelarnetKeeper.Keeper](keepers), GetKeeper[nexusKeeper.Keeper](keepers)),
-		GetKeeper[axelarnetKeeper.Keeper](keepers),
-	)
+	// ICS4Wrapper deals with sending IBC packets.
+	ics4Wrapper := GetKeeper[ibckeeper.Keeper](keepers).ChannelKeeper
 	// create a middleware to integrate wasm hooks into the ibc pipeline
 	if wasmHooks != nil {
 		return ibchooks.NewICS4Middleware(ics4Wrapper, wasmHooks)
@@ -410,12 +401,10 @@ func InitICS4Wrapper(keepers *KeeperCache, wasmHooks *ibchooks.WasmHooks) ibchoo
 }
 
 func initIBCMiddleware(keepers *KeeperCache, ics4Middleware ibchooks.ICS4Middleware) ibchooks.IBCMiddleware {
-	// IBCModule deals with received IBC packets. These need to get rate limited when appropriate,
-	// so we wrap the transfer module's IBCModule with a rate limiter.
+	// IBCModule deals with received IBC packets.
 	ibcModule := axelarnet.NewAxelarnetIBCModule(
 		transfer.NewIBCModule(*GetKeeper[ibctransferkeeper.Keeper](keepers)),
 		*GetKeeper[axelarnetKeeper.IBCKeeper](keepers),
-		axelarnet.NewRateLimiter(GetKeeper[axelarnetKeeper.Keeper](keepers), GetKeeper[nexusKeeper.Keeper](keepers)),
 		GetKeeper[nexusKeeper.Keeper](keepers),
 		axelarbankkeeper.NewBankKeeper(GetKeeper[bankkeeper.BaseKeeper](keepers)),
 	)
@@ -502,7 +491,7 @@ func initBaseApp(db dbm.DB, traceStore io.Writer, encodingConfig axelarParams.En
 	return bApp
 }
 
-func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axelarParams.EncodingConfig, appOpts servertypes.AppOptions, axelarnetModule axelarnet.AppModule) []module.AppModule {
+func initAppModules(keepers *KeeperCache, keys map[string]*store.KVStoreKey, bApp *bam.BaseApp, encodingConfig axelarParams.EncodingConfig, appOpts servertypes.AppOptions, axelarnetModule axelarnet.AppModule) []module.AppModule {
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
@@ -572,13 +561,7 @@ func initAppModules(keepers *KeeperCache, bApp *bam.BaseApp, encodingConfig axel
 			GetKeeper[rewardKeeper.Keeper](keepers),
 			GetKeeper[nexusKeeper.Keeper](keepers),
 		),
-		tss.NewAppModule(
-			*GetKeeper[tssKeeper.Keeper](keepers),
-			GetKeeper[snapKeeper.Keeper](keepers),
-			GetKeeper[nexusKeeper.Keeper](keepers),
-			GetKeeper[stakingkeeper.Keeper](keepers),
-			GetKeeper[multisigKeeper.Keeper](keepers),
-		),
+		tss.NewAppModule(keys[tssTypes.StoreKey]),
 		vote.NewAppModule(*GetKeeper[voteKeeper.Keeper](keepers)),
 		nexus.NewAppModule(
 			*GetKeeper[nexusKeeper.Keeper](keepers),
@@ -841,7 +824,6 @@ func orderEndBlockers() []string {
 	endBlockerOrder = append(endBlockerOrder,
 		axelarnetTypes.ModuleName,
 		multisigTypes.ModuleName,
-		tssTypes.ModuleName,
 		evmTypes.ModuleName,
 		nexusTypes.ModuleName,
 		rewardTypes.ModuleName,
@@ -1049,12 +1031,7 @@ func GetModuleBasics() module.BasicManager {
 		staking.AppModuleBasic{},
 		mint.AppModuleBasic{},
 		distr.AppModuleBasic{},
-		gov.NewAppModuleBasic(
-			[]govclient.ProposalHandler{
-				paramsclient.ProposalHandler,
-				axelarnetclient.ProposalHandler,
-			},
-		),
+		gov.NewAppModuleBasic(nil),
 		params.AppModuleBasic{},
 		crisis.AppModuleBasic{},
 		slashing.AppModuleBasic{},

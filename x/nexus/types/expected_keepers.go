@@ -2,7 +2,6 @@ package types
 
 import (
 	"context"
-	"time"
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -45,19 +44,16 @@ type Nexus interface {
 	DeactivateChain(ctx sdk.Context, chain exported.Chain)
 	RegisterFee(ctx sdk.Context, chain exported.Chain, feeInfo exported.FeeInfo) error
 	GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) exported.FeeInfo
-	SetRateLimit(ctx sdk.Context, chainName exported.ChainName, limit sdk.Coin, window time.Duration) error
-	RateLimitTransfer(ctx sdk.Context, chain exported.ChainName, asset sdk.Coin, direction exported.TransferDirection) error
 	GenerateMessageID(ctx sdk.Context) (string, []byte, uint64)
 	SetNewMessage(ctx sdk.Context, msg exported.GeneralMessage) error
 	GetMessage(ctx sdk.Context, id string) (exported.GeneralMessage, bool)
 	SetMessageExecuted(ctx sdk.Context, id string) error
 	RouteMessage(ctx sdk.Context, id string, routingCtx ...exported.RoutingContext) error
 	DequeueRouteMessage(ctx sdk.Context) (exported.GeneralMessage, bool)
+	EnqueueRouteMessage(ctx sdk.Context, id string) error
 	IsAssetRegistered(ctx sdk.Context, chain exported.Chain, denom string) bool
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain exported.Chain, ok bool)
 	CurrID(ctx sdk.Context) ([32]byte, uint64)
-	IsLinkDepositEnabled(ctx sdk.Context) bool
-	SetLinkDepositEnabled(ctx sdk.Context, enabled bool)
 }
 
 // MsgIDGenerator provides functionality to generate msg IDs

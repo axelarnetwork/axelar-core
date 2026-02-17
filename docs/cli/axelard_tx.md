@@ -54,7 +54,6 @@ axelard tx [flags]
 - [axelard tx slashing](axelard_tx_slashing.md) - Transactions commands for the slashing module
 - [axelard tx snapshot](axelard_tx_snapshot.md) - snapshot transactions subcommands
 - [axelard tx staking](axelard_tx_staking.md) - Staking transaction subcommands
-- [axelard tx tss](axelard_tx_tss.md) - Transactions commands for the tss module
 - [axelard tx upgrade](axelard_tx_upgrade.md) - Upgrade transaction subcommands
 - [axelard tx validate-signatures](axelard_tx_validate-signatures.md) - validate transactions signatures
 - [axelard tx vesting](axelard_tx_vesting.md) - Vesting transaction subcommands

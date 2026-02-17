@@ -96,7 +96,7 @@ type Message struct {
 }
 
 // OnRecvMessage handles general message from a cosmos chain
-func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, r RateLimiter, packet ibcexported.PacketI) ibcexported.Acknowledgement {
+func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n types.Nexus, b types.BankKeeper, packet ibcexported.PacketI) ibcexported.Acknowledgement {
 	// The acknowledgement is considered successful if it is a ResultAcknowledgement,
 	// follow ibc transfer convention, put byte(1) in ResultAcknowledgement to indicate success.
 	ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
@@ -113,12 +113,6 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 
 	// Skip if packet not sent to Axelar message sender account.
 	if data.GetReceiver() != types.AxelarIBCAccount.String() {
-		// Rate limit non-GMP IBC transfers
-		// IBC receives are rate limited on the from direction (tokens coming from the source chain).
-		if err := r.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
-			return channeltypes.NewErrorAcknowledgement(err)
-		}
-
 		return ack
 	}
 
@@ -150,21 +144,11 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 		Address: data.GetSender(),
 	}
 
-	rateLimitPacket := true
-
 	switch msg.Type {
 	case nexus.TypeGeneralMessage:
 		err = handleMessage(ctx, n, b, ibcK, sourceAddress, msg, token)
 	case nexus.TypeGeneralMessageWithToken:
 		err = handleMessageWithToken(ctx, n, b, ibcK, sourceAddress, msg, token)
-	case nexus.TypeSendToken:
-		// toggle to deactivate deprecated transfer mechanism
-		if !n.IsLinkDepositEnabled(ctx) {
-			return channeltypes.NewErrorAcknowledgement(fmt.Errorf("direct token transfer is disabled, use the general-message-with-token format instead"))
-		}
-		// Send token is already rate limited in nexus.EnqueueTransfer
-		rateLimitPacket = false
-		err = handleTokenSent(ctx, n, sourceAddress, msg, token)
 	default:
 		err = errorsmod.Wrapf(types.ErrGeneralMessage, "unrecognized Message type")
 	}
@@ -177,13 +161,6 @@ func OnRecvMessage(ctx sdk.Context, k keeper.Keeper, ibcK keeper.IBCKeeper, n ty
 			"sequence", packet.GetSequence(),
 		)
 		return channeltypes.NewErrorAcknowledgement(err)
-	}
-
-	if rateLimitPacket {
-		// IBC receives are rate limited on the from direction (tokens coming from the source chain).
-		if err := r.RateLimitPacket(ctx, packet, nexus.TransferDirectionFrom, types.NewIBCPath(packet.GetDestPort(), packet.GetDestChannel())); err != nil {
-			return channeltypes.NewErrorAcknowledgement(err)
-		}
 	}
 
 	return ack
@@ -228,8 +205,7 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 	switch msg.Type {
 	case nexus.TypeGeneralMessage:
 		return nil
-	case nexus.TypeGeneralMessageWithToken, nexus.TypeSendToken:
-
+	case nexus.TypeGeneralMessageWithToken:
 		// if destination chain is not found but has tokens, it should not be allowed to be sent to amplifier
 		if !destChainFound {
 			return fmt.Errorf("unrecognized destination chain %s", destChainName)
@@ -326,32 +302,6 @@ func handleMessageWithToken(ctx sdk.Context, n types.Nexus, b types.BankKeeper, 
 	})
 
 	return n.SetNewMessage(ctx, m)
-}
-
-func handleTokenSent(ctx sdk.Context, n types.Nexus, sourceAddress nexus.CrossChainAddress, msg Message, token nexus.LockableAsset) error {
-	destChain := funcs.MustOk(n.GetChain(ctx, nexus.ChainName(msg.DestinationChain)))
-	crossChainAddr := nexus.CrossChainAddress{Chain: destChain, Address: msg.DestinationAddress}
-
-	if err := token.LockFrom(ctx, types.AxelarIBCAccount); err != nil {
-		return err
-	}
-
-	transferID, err := n.EnqueueTransfer(ctx, sourceAddress.Chain, crossChainAddr, token.GetAsset())
-	if err != nil {
-		return err
-	}
-
-	events.Emit(ctx, &types.TokenSent{
-		TransferID:         transferID,
-		Sender:             sourceAddress.Address,
-		SourceChain:        sourceAddress.Chain.Name,
-		DestinationAddress: crossChainAddr.Address,
-		DestinationChain:   crossChainAddr.Chain.Name,
-		Asset:              token.GetAsset(),
-	})
-
-	return nil
-
 }
 
 // extractTokenFromPacketData get normalized token from ICS20 packet

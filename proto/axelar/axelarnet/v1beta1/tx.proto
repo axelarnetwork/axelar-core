@@ -275,7 +275,9 @@ message RouteMessageRequest {
 
 message RouteMessageResponse {}
 
+// Deprecated in v1.4: CallContractRequest is no longer supported
 message CallContractRequest {
+  option deprecated = true;
   option (amino.name) = "axelarnet/CallContract";
   option (permission.exported.v1beta1.permission_role) = ROLE_UNRESTRICTED;
   option (cosmos.msg.v1.signer) = "sender";
@@ -296,7 +298,8 @@ message CallContractRequest {
   string sender = 6 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }
 
-message CallContractResponse {}
+// Deprecated in v1.4: CallContractResponse is no longer supported
+message CallContractResponse { option deprecated = true; }
 
 message UpdateParamsRequest {
   option (amino.name) = "axelarnet/UpdateParams";

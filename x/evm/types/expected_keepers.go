@@ -2,7 +2,6 @@ package types
 
 import (
 	"context"
-	"time"
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -47,16 +46,6 @@ type ChainKeeper interface {
 	GetTokenByteCode(ctx sdk.Context) []byte
 	SetGateway(ctx sdk.Context, address Address)
 	GetGatewayAddress(ctx sdk.Context) (Address, bool)
-	// Deprecated: Use GetDeposit instead
-	GetLegacyDeposit(ctx sdk.Context, txID Hash, burnerAddr Address) (ERC20Deposit, DepositStatus, bool)
-	GetDeposit(ctx sdk.Context, txID Hash, logIndex uint64) (ERC20Deposit, DepositStatus, bool)
-	GetBurnerInfo(ctx sdk.Context, address Address) *BurnerInfo
-	GenerateSalt(ctx sdk.Context, recipient string) Hash
-	GetBurnerAddress(ctx sdk.Context, token ERC20Token, salt Hash, gatewayAddr Address) (Address, error)
-	SetBurnerInfo(ctx sdk.Context, burnerInfo BurnerInfo)
-	DeleteDeposit(ctx sdk.Context, deposit ERC20Deposit)
-	SetDeposit(ctx sdk.Context, deposit ERC20Deposit, state DepositStatus)
-	GetConfirmedDepositsPaginated(ctx sdk.Context, pageRequest *query.PageRequest) ([]ERC20Deposit, *query.PageResponse, error)
 	GetNetworkByID(ctx sdk.Context, id math.Int) (string, bool)
 	GetChainIDByNetwork(ctx sdk.Context, network string) (math.Int, bool)
 	GetVotingThreshold(ctx sdk.Context) utils.Threshold
@@ -83,8 +72,6 @@ type ChainKeeper interface {
 	EnqueueConfirmedEvent(ctx sdk.Context, eventID EventID) error
 	SetEventCompleted(ctx sdk.Context, eventID EventID) error
 	SetEventFailed(ctx sdk.Context, eventID EventID) error
-
-	GetDepositsByTxID(ctx sdk.Context, txID Hash, status DepositStatus) ([]ERC20Deposit, error)
 }
 
 // ParamsKeeper represents a global paramstore
@@ -100,17 +87,14 @@ type Voter interface {
 
 // Nexus provides functionality to manage cross-chain transfers
 type Nexus interface {
-	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
-	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 	EnqueueTransfer(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error)
-	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) (nexus.TransferID, error)
 	GetTransfersForChainPaginated(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, pageRequest *query.PageRequest) ([]nexus.CrossChainTransfer, *query.PageResponse, error)
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
 	GetChains(ctx sdk.Context) []nexus.Chain
 	GetChain(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool)
 	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
-	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset, limit math.Uint, window time.Duration) error
+	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error
 	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
 	IsChainActivated(ctx sdk.Context, chain nexus.Chain) bool
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain nexus.Chain, ok bool)
@@ -118,13 +102,11 @@ type Nexus interface {
 	AddTransferFee(ctx sdk.Context, coin sdk.Coin)
 	GetChainMaintainerState(ctx sdk.Context, chain nexus.Chain, address sdk.ValAddress) (nexus.MaintainerState, bool)
 	SetChainMaintainerState(ctx sdk.Context, maintainerState nexus.MaintainerState) error
-	RateLimitTransfer(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error
 	SetNewMessage(ctx sdk.Context, m nexus.GeneralMessage) error
 	GetProcessingMessages(ctx sdk.Context, chain nexus.ChainName, limit int64) []nexus.GeneralMessage
 	SetMessageFailed(ctx sdk.Context, id string) error
 	SetMessageExecuted(ctx sdk.Context, id string) error
 	EnqueueRouteMessage(ctx sdk.Context, id string) error
-	IsLinkDepositEnabled(ctx sdk.Context) bool
 }
 
 // InitPoller is a minimal interface to start a poll. This must be a type alias instead of a type definition,

@@ -93,6 +93,7 @@ message ConfirmKeyTransferStarted {
       [ (gogoproto.nullable) = false, (gogoproto.embed) = true ];
 }
 
+// Deprecated in v0.22: use ConfirmGatewayTxsStarted instead
 message ConfirmGatewayTxStarted {
   option deprecated = true;
 
@@ -283,7 +284,10 @@ message ContractCallWithMintApproved {
   cosmos.base.v1beta1.Coin asset = 8 [ (gogoproto.nullable) = false ];
 }
 
+// Deprecated in v1.4: link-deposit protocol removed
 message TokenSent {
+  option deprecated = true;
+
   string chain = 1
       [ (gogoproto.casttype) =
             "github.com/axelarnetwork/axelar-core/x/nexus/exported.ChainName" ];

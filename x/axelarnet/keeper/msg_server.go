@@ -2,15 +2,12 @@ package keeper
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"strings"
 
-	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -38,208 +35,6 @@ func NewMsgServerImpl(k Keeper, n types.Nexus, b types.BankKeeper, ibcK IBCKeepe
 		bank:   b,
 		ibcK:   ibcK,
 	}
-}
-
-func (s msgServer) CallContract(c context.Context, req *types.CallContractRequest) (*types.CallContractResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	chain, ok := s.nexus.GetChain(ctx, req.Chain)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a registered chain", req.Chain)
-	}
-
-	if !s.nexus.IsChainActivated(ctx, exported.Axelarnet) {
-		return nil, fmt.Errorf("chain %s is not activated yet", exported.Axelarnet.Name)
-	}
-
-	if !s.nexus.IsChainActivated(ctx, chain) {
-		return nil, fmt.Errorf("chain %s is not activated yet", chain.Name)
-	}
-
-	recipient := nexus.CrossChainAddress{Chain: chain, Address: req.ContractAddress}
-	if err := s.nexus.ValidateAddress(ctx, recipient); err != nil {
-		return nil, err
-	}
-
-	sender := nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: req.Sender}
-
-	// axelar gateway expects keccak256 hashes for payloads
-	payloadHash := crypto.Keccak256(req.Payload)
-
-	msgID, txID, nonce := s.nexus.GenerateMessageID(ctx)
-	msg := nexus.NewGeneralMessage(msgID, sender, recipient, payloadHash, txID, nonce, nil)
-
-	events.Emit(ctx, &types.ContractCallSubmitted{
-		MessageID:        msg.ID,
-		Sender:           msg.GetSourceAddress(),
-		SourceChain:      msg.GetSourceChain(),
-		DestinationChain: msg.GetDestinationChain(),
-		ContractAddress:  msg.GetDestinationAddress(),
-		PayloadHash:      msg.PayloadHash,
-		Payload:          req.Payload,
-	})
-
-	if req.Fee != nil {
-		lockableAsset, err := s.nexus.NewLockableAsset(ctx, s.ibcK, s.bank, req.Fee.Amount)
-		if err != nil {
-			return nil, errorsmod.Wrap(err, "unrecognized fee denom")
-		}
-
-		sender, err := sdk.AccAddressFromBech32(req.Sender)
-		if err != nil {
-			return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender: %s", err)
-		}
-
-		err = s.bank.SendCoins(ctx, sender, req.Fee.Recipient, sdk.NewCoins(req.Fee.Amount))
-		if err != nil {
-			return nil, errorsmod.Wrap(err, "failed to transfer fee")
-		}
-
-		feePaidEvent := types.FeePaid{
-			MessageID:        msgID,
-			Recipient:        req.Fee.Recipient,
-			Fee:              req.Fee.Amount,
-			Asset:            lockableAsset.GetAsset().Denom,
-			SourceChain:      msg.GetSourceChain(),
-			DestinationChain: msg.GetDestinationChain(),
-		}
-		if req.Fee.RefundRecipient != nil {
-			feePaidEvent.RefundRecipient = req.Fee.RefundRecipient.String()
-		}
-		events.Emit(ctx, &feePaidEvent)
-	}
-
-	if err := s.nexus.SetNewMessage(ctx, msg); err != nil {
-		return nil, errorsmod.Wrap(err, "failed to add general message")
-	}
-
-	s.Logger(ctx).Debug(fmt.Sprintf("successfully enqueued contract call for contract address %s on chain %s from sender %s with message id %s", req.ContractAddress, req.Chain.String(), req.Sender, msg.ID),
-		types.AttributeKeyDestinationChain, req.Chain.String(),
-		types.AttributeKeyDestinationAddress, req.ContractAddress,
-		types.AttributeKeySourceAddress, req.Sender,
-		types.AttributeKeyMessageID, msg.ID,
-		types.AttributeKeyPayloadHash, hex.EncodeToString(payloadHash),
-	)
-
-	return &types.CallContractResponse{}, nil
-}
-
-// Link handles address linking
-func (s msgServer) Link(c context.Context, req *types.LinkRequest) (*types.LinkResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	if !s.nexus.IsLinkDepositEnabled(ctx) {
-		return nil, fmt.Errorf("link-deposit protocol is disabled")
-	}
-
-	recipientChain, ok := s.nexus.GetChain(ctx, req.RecipientChain)
-	if !ok {
-		return nil, fmt.Errorf("unknown recipient chain")
-	}
-
-	found := s.nexus.IsAssetRegistered(ctx, recipientChain, req.Asset)
-	if !found {
-		return nil, fmt.Errorf("asset '%s' not registered for chain '%s'", req.Asset, recipientChain.Name)
-	}
-
-	recipient := nexus.CrossChainAddress{Chain: recipientChain, Address: req.RecipientAddr}
-	depositAddress := types.NewLinkedAddress(ctx, recipientChain.Name, req.Asset, req.RecipientAddr)
-	if err := s.nexus.LinkAddresses(ctx,
-		nexus.CrossChainAddress{Chain: exported.Axelarnet, Address: depositAddress.String()},
-		recipient,
-	); err != nil {
-		return nil, fmt.Errorf("could not link addresses: %s", err.Error())
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			types.EventTypeLink,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(types.AttributeKeySourceChain, exported.Axelarnet.Name.String()),
-			sdk.NewAttribute(types.AttributeKeyDepositAddress, depositAddress.String()),
-			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipientChain.Name.String()),
-			sdk.NewAttribute(types.AttributeKeyDestinationAddress, req.RecipientAddr),
-			sdk.NewAttribute(types.AttributeKeyAsset, req.Asset),
-		),
-	)
-
-	s.Logger(ctx).Debug(fmt.Sprintf("successfully linked deposit %s on chain %s to recipient %s on chain %s for asset %s", depositAddress.String(), exported.Axelarnet.Name, req.RecipientAddr, req.RecipientChain, req.Asset),
-		types.AttributeKeySourceChain, exported.Axelarnet.Name,
-		types.AttributeKeyDepositAddress, depositAddress.String(),
-		types.AttributeKeyDestinationChain, recipientChain.Name,
-		types.AttributeKeyDestinationAddress, req.RecipientAddr,
-		types.AttributeKeyAsset, req.Asset,
-	)
-
-	return &types.LinkResponse{DepositAddr: depositAddress.String()}, nil
-}
-
-// ConfirmDeposit handles deposit confirmations
-func (s msgServer) ConfirmDeposit(c context.Context, req *types.ConfirmDepositRequest) (*types.ConfirmDepositResponse, error) {
-	ctx := sdk.UnwrapSDKContext(c)
-
-	if !s.nexus.IsLinkDepositEnabled(ctx) {
-		return nil, fmt.Errorf("link-deposit protocol is disabled")
-	}
-
-	depositAddr := nexus.CrossChainAddress{Address: req.DepositAddress.String(), Chain: exported.Axelarnet}
-	coin := s.bank.SpendableBalance(ctx, req.DepositAddress, req.Denom)
-	if coin.IsZero() {
-		return nil, fmt.Errorf("deposit address '%s' holds no funds for token %s", req.DepositAddress.String(), req.Denom)
-	}
-
-	recipient, ok := s.nexus.GetRecipient(ctx, depositAddr)
-	if !ok {
-		return nil, fmt.Errorf("no recipient linked to deposit address %s", req.DepositAddress.String())
-	}
-
-	if !s.nexus.IsChainActivated(ctx, exported.Axelarnet) {
-		return nil, fmt.Errorf("source chain '%s'  is not activated", exported.Axelarnet.Name)
-	}
-
-	if !s.nexus.IsChainActivated(ctx, recipient.Chain) {
-		return nil, fmt.Errorf("recipient chain '%s' is not activated", recipient.Chain.Name)
-	}
-
-	lockableAsset, err := s.nexus.NewLockableAsset(ctx, s.ibcK, s.bank, coin)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := lockableAsset.LockFrom(ctx, req.DepositAddress); err != nil {
-		return nil, err
-	}
-
-	transferID, err := s.nexus.EnqueueForTransfer(ctx, depositAddr, lockableAsset.GetAsset())
-	if err != nil {
-		return nil, err
-	}
-
-	s.Logger(ctx).Info(fmt.Sprintf("deposit confirmed for %s on chain %s to recipient %s on chain %s for asset %s with transfer ID %d", req.DepositAddress.String(), exported.Axelarnet.Name, recipient.Address, recipient.Chain.Name, coin.String(), transferID),
-		sdk.AttributeKeyAction, types.AttributeValueConfirm,
-		types.AttributeKeySourceChain, exported.Axelarnet.Name,
-		types.AttributeKeyDepositAddress, req.DepositAddress.String(),
-		types.AttributeKeyDestinationChain, recipient.Chain.Name,
-		types.AttributeKeyDestinationAddress, recipient.Address,
-		sdk.AttributeKeyAmount, coin.String(),
-		types.AttributeKeyAsset, coin.Denom,
-		types.AttributeKeyTransferID, transferID.String(),
-	)
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(types.EventTypeDepositConfirmation,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-			sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueConfirm),
-			sdk.NewAttribute(types.AttributeKeySourceChain, exported.Axelarnet.Name.String()),
-			sdk.NewAttribute(types.AttributeKeyDepositAddress, req.DepositAddress.String()),
-			sdk.NewAttribute(types.AttributeKeyDestinationChain, recipient.Chain.Name.String()),
-			sdk.NewAttribute(types.AttributeKeyDestinationAddress, recipient.Address),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, coin.String()),
-			sdk.NewAttribute(types.AttributeKeyAsset, coin.Denom),
-			sdk.NewAttribute(types.AttributeKeyTransferID, transferID.String()),
-		))
-
-	return &types.ConfirmDepositResponse{}, nil
 }
 
 // ExecutePendingTransfers handles execute pending transfers
@@ -342,7 +137,7 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 
 	// register asset in chain state
 	for _, asset := range req.NativeAssets {
-		if err := s.nexus.RegisterAsset(ctx, chain, asset, utils.MaxUint, types.DefaultRateLimitWindow); err != nil {
+		if err := s.nexus.RegisterAsset(ctx, chain, asset); err != nil {
 			return nil, err
 		}
 	}
@@ -376,8 +171,7 @@ func (s msgServer) RegisterAsset(c context.Context, req *types.RegisterAssetRequ
 	}
 
 	// register asset in chain state
-	err := s.nexus.RegisterAsset(ctx, chain, req.Asset, req.Limit, req.Window)
-	if err != nil {
+	if err := s.nexus.RegisterAsset(ctx, chain, req.Asset); err != nil {
 		return nil, err
 	}
 

@@ -105,7 +105,7 @@ func TestIBCModule(t *testing.T) {
 				return lockableAsset, nil
 			},
 		}
-		ibcModule = axelarnet.NewAxelarnetIBCModule(ibcTransfer.NewIBCModule(transferK), ibcK, axelarnet.NewRateLimiter(&k, n), n, bankK)
+		ibcModule = axelarnet.NewAxelarnetIBCModule(ibcTransfer.NewIBCModule(transferK), ibcK, n, bankK)
 
 		fungibleTokenPacket = ibctransfertypes.NewFungibleTokenPacketData(rand.Denom(5, 10), "1", rand.AccAddr().String(), rand.AccAddr().String(), "")
 		transferK.SetTotalEscrowForDenom(ctx, sdk.NewCoin(fungibleTokenPacket.GetDenom(), funcs.MustOk(math.NewIntFromString(fungibleTokenPacket.GetAmount()))))
@@ -172,9 +172,6 @@ func TestIBCModule(t *testing.T) {
 	whenChainIsActivated := When("chain is activated", func() {
 		n.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, true }
 		n.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool { return true }
-		n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-			return nil
-		}
 	})
 
 	lockCoin := func(success bool) func() {

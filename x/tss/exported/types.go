@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"strings"
 
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -36,20 +35,6 @@ func (id KeyID) Validate() error {
 	return nil
 }
 
-// KeyRoleFromSimpleStr creates a KeyRole from string
-func KeyRoleFromSimpleStr(str string) (KeyRole, error) {
-	switch strings.ToLower(str) {
-	case MasterKey.SimpleString():
-		return MasterKey, nil
-	case SecondaryKey.SimpleString():
-		return SecondaryKey, nil
-	case ExternalKey.SimpleString():
-		return ExternalKey, nil
-	default:
-		return -1, fmt.Errorf("invalid key role %s", str)
-	}
-}
-
 // SimpleString returns a human-readable string
 func (x KeyRole) SimpleString() string {
 	switch x {
@@ -71,18 +56,6 @@ func (x KeyRole) Validate() error {
 		return nil
 	default:
 		return fmt.Errorf("invalid key role %d", x)
-	}
-}
-
-// KeyShareDistributionPolicyFromSimpleStr creates a KeyShareDistributionPolicy from string
-func KeyShareDistributionPolicyFromSimpleStr(str string) (KeyShareDistributionPolicy, error) {
-	switch strings.ToLower(str) {
-	case WeightedByStake.SimpleString():
-		return WeightedByStake, nil
-	case OnePerValidator.SimpleString():
-		return OnePerValidator, nil
-	default:
-		return -1, fmt.Errorf("invalid key share distribution policy %s", str)
 	}
 }
 

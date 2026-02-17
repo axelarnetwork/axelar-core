@@ -6,14 +6,12 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
-	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -35,13 +33,11 @@ func GetQueryCmd() *cobra.Command {
 	evmQueryCmd.AddCommand(
 		getCmdAddress(),
 		getCmdAxelarGatewayAddress(),
-		getCmdDepositState(),
 		getCmdBytecode(),
 		getCmdQueryBatchedCommands(),
 		getCmdLatestBatchedCommands(),
 		getCmdPendingCommands(),
 		getCmdCommand(),
-		getCmdBurnerInfo(),
 		getCmdChains(),
 		getCmdConfirmationHeight(),
 		getCmdERC20Tokens(),
@@ -88,45 +84,6 @@ func getCmdAddress() *cobra.Command {
 	return cmd
 }
 
-// getCmdDepositState returns the query for an ERC20 deposit transaction state
-// Deprecated: link-deposit protocol is being disabled
-func getCmdDepositState() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:        "deposit-state [chain] [txID] [burner address]",
-		Short:      "Query the state of a deposit transaction",
-		Deprecated: "link-deposit protocol is being disabled",
-		Args:       cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			chain := args[0]
-			txID := common.HexToHash(args[1])
-			burnerAddress := common.HexToAddress(args[2])
-
-			queryClient := types.NewQueryServiceClient(cliCtx)
-
-			res, err := queryClient.DepositState(cmd.Context(), &types.DepositStateRequest{
-				Chain: nexus.ChainName(chain),
-				Params: &types.QueryDepositStateParams{
-					TxID:          types.Hash(txID),
-					BurnerAddress: types.Address(burnerAddress),
-				},
-			})
-			if err != nil {
-				return err
-			}
-
-			return cliCtx.PrintProto(res)
-		},
-	}
-
-	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
-}
-
 // getCmdAxelarGatewayAddress returns the query for the AxelarGateway contract address
 func getCmdAxelarGatewayAddress() *cobra.Command {
 	cmd := &cobra.Command{
@@ -159,13 +116,12 @@ func getCmdAxelarGatewayAddress() *cobra.Command {
 	return cmd
 }
 
-// getCmdBytecode fetches the bytecodes of an EVM contract
+// getCmdBytecode fetches the token bytecode for an EVM chain
 func getCmdBytecode() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "bytecode [chain] [contract]",
-		Short: "Fetch the bytecode of an EVM contract [contract] for chain [chain]",
-		Long:  fmt.Sprintf("Fetch the bytecode of an EVM contract [contract] for chain [chain]. The value for [contract] can be either '%s' or '%s'.", keeper.BCToken, keeper.BCBurner),
-		Args:  cobra.ExactArgs(2),
+		Use:   "bytecode [chain]",
+		Short: "Fetch the token bytecode for chain [chain]",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -173,17 +129,15 @@ func getCmdBytecode() *cobra.Command {
 			}
 
 			chain := args[0]
-			contract := args[1]
 
 			queryClient := types.NewQueryServiceClient(clientCtx)
 
 			res, err := queryClient.Bytecode(cmd.Context(),
 				&types.BytecodeRequest{
-					Chain:    utils.NormalizeString(chain),
-					Contract: utils.NormalizeString(contract),
+					Chain: utils.NormalizeString(chain),
 				})
 			if err != nil {
-				return errorsmod.Wrapf(err, types.ErrFBytecode, contract)
+				return errorsmod.Wrapf(err, types.ErrFBytecode, chain)
 			}
 
 			return clientCtx.PrintProto(res)
@@ -306,35 +260,6 @@ func getCmdCommand() *cobra.Command {
 					ID:    args[1],
 				},
 			)
-			if err != nil {
-				return err
-			}
-
-			return clientCtx.PrintProto(res)
-		},
-	}
-	flags.AddQueryFlagsToCmd(cmd)
-	return cmd
-}
-
-// getCmdBurnerInfo returns the query to get the burner info for the specified address
-func getCmdBurnerInfo() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "burner-info [deposit address]",
-		Short: "Get information about a burner address",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			queryClient := types.NewQueryServiceClient(clientCtx)
-
-			res, err := queryClient.BurnerInfo(cmd.Context(),
-				&types.BurnerInfoRequest{
-					Address: types.Address(common.HexToAddress(args[0])),
-				})
 			if err != nil {
 				return err
 			}

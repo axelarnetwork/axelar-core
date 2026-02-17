@@ -112,8 +112,7 @@
     - [evm](axelard_query_evm.md) - Querying commands for the evm module
       - [address [chain]](axelard_query_evm_address.md) - Returns the EVM address
       - [batched-commands [chain] [batchedCommandsID]](axelard_query_evm_batched-commands.md) - Get the signed batched commands that can be wrapped in an EVM transaction to be executed in Axelar Gateway
-      - [burner-info [deposit address]](axelard_query_evm_burner-info.md) - Get information about a burner address
-      - [bytecode [chain] [contract]](axelard_query_evm_bytecode.md) - Fetch the bytecode of an EVM contract [contract] for chain [chain]
+      - [bytecode [chain]](axelard_query_evm_bytecode.md) - Fetch the token bytecode for chain [chain]
       - [chains](axelard_query_evm_chains.md) - Return the supported EVM chains by status
       - [command [chain] [id]](axelard_query_evm_command.md) - Get information about an EVM gateway command given a chain and the command ID
       - [confirmation-height [chain]](axelard_query_evm_confirmation-height.md) - Returns the minimum confirmation height for the given chain
@@ -194,12 +193,9 @@
       - [chain-state [chain]](axelard_query_nexus_chain-state.md) - Returns the chain state
       - [chains](axelard_query_nexus_chains.md) - Returns the registered chain names
       - [fee-info [chain] [asset]](axelard_query_nexus_fee-info.md) - Returns the per-chain fee for a registered asset
-      - [latest-deposit-address [deposit chain] [recipient chain] [recipient address]](axelard_query_nexus_latest-deposit-address.md) - Query for account by address
       - [message [id]](axelard_query_nexus_message.md) - Returns the cross-chain message with the given ID
       - [params](axelard_query_nexus_params.md) - Returns the params for the nexus module
-      - [recipient-address [chain] [address]](axelard_query_nexus_recipient-address.md) - Returns the recipient address corresponding to the given deposit address
       - [transfer-fee [source-chain] [destination-chain] [amount]](axelard_query_nexus_transfer-fee.md) - Returns the fee incurred on a cross-chain transfer
-      - [transfer-rate-limit [chain] [asset]](axelard_query_nexus_transfer-rate-limit.md) - Returns the transfer rate limit for a given chain and asset
       - [transfers-for-chain [chain] [state (pending|archived|insufficient_amount)]](axelard_query_nexus_transfers-for-chain.md) - Query for account by address
     - [params](axelard_query_params.md) - Querying commands for the params module
       - [subspace [subspace] [key]](axelard_query_params_subspace.md) - Query for raw parameters by subspace and key
@@ -233,8 +229,6 @@
       - [unbonding-delegations-from [validator-addr]](axelard_query_staking_unbonding-delegations-from.md) - Query all unbonding delegatations from a validator
       - [validator [validator-addr]](axelard_query_staking_validator.md) - Query a validator
       - [validators](axelard_query_staking_validators.md) - Query for all validators
-    - [tss](axelard_query_tss.md) - Querying commands for the tss module
-      - [params](axelard_query_tss_params.md) - Returns the params for the tss module
     - [tx --type=[hash|acc_seq|signature] [hash|acc_seq|signature]](axelard_query_tx.md) - Query for a transaction by hash, "<addr>/<seq>" combination or comma-separated signatures in a committed block
     - [txs](axelard_query_txs.md) - Query for paginated transactions that match a set of events
     - [upgrade](axelard_query_upgrade.md) - Querying commands for the upgrade module
@@ -290,7 +284,6 @@
       - [batch](axelard_tx_auxiliary_batch.md) - Execute the Batch RPC method
     - [axelarnet](axelard_tx_axelarnet.md) - axelarnet transactions subcommands
       - [add-cosmos-based-chain [name] [address prefix] [ibc path] [native asset]...](axelard_tx_axelarnet_add-cosmos-based-chain.md) - Add a new cosmos based chain
-      - [call-contract [destination chain] [contract address] [hex encoded payload]](axelard_tx_axelarnet_call-contract.md) - Call a contract on another chain
       - [execute-pending-transfers](axelard_tx_axelarnet_execute-pending-transfers.md) - Send all pending transfers to Axelar chain
       - [register-asset [chain] [denom]](axelard_tx_axelarnet_register-asset.md) - Register a new asset to a cosmos based chain
       - [register-fee-collector [fee collector]](axelard_tx_axelarnet_register-fee-collector.md) - Register axelarnet fee collector account
@@ -319,7 +312,6 @@
       - [confirm-gateway-txs [chain] [txID]...](axelard_tx_evm_confirm-gateway-txs.md) - Confirm gateway transactions in an EVM chain
       - [confirm-transfer-operatorship [chain] [txID]](axelard_tx_evm_confirm-transfer-operatorship.md) - Confirm a transfer operatorship in an EVM chain transaction
       - [create-deploy-token [evm chain] [origin chain] [origin asset] [token name] [symbol] [decimals] [capacity] [mintLimit]](axelard_tx_evm_create-deploy-token.md) - Create a deploy token command with the AxelarGateway contract
-      - [create-pending-transfers [chain]](axelard_tx_evm_create-pending-transfers.md) - Create commands for handling all pending transfers to an EVM chain
       - [retry-event [chain] [event ID]](axelard_tx_evm_retry-event.md) - Retry a failed event
       - [set-gateway [chain] [address]](axelard_tx_evm_set-gateway.md) - Set the gateway address for the given evm chain
       - [sign-commands [chain]](axelard_tx_evm_sign-commands.md) - Sign pending commands for an EVM chain contract
@@ -364,7 +356,7 @@
       - [deregister-chain-maintainer [chain]...](axelard_tx_nexus_deregister-chain-maintainer.md) - deregister a validator as a chain maintainer for the given chains
       - [register-asset-fee [chain] [asset] [fee-rate] [min-fee] [max-fee]](axelard_tx_nexus_register-asset-fee.md) - register fees for an asset on a chain
       - [register-chain-maintainer [chain]...](axelard_tx_nexus_register-chain-maintainer.md) - register a validator as a chain maintainer for the given chains
-      - [set-transfer-rate-limit [chain] [limit] [window]](axelard_tx_nexus_set-transfer-rate-limit.md) - set transfer rate limit for an asset on a chain
+      - [retry-failed-message [message-id]](axelard_tx_nexus_retry-failed-message.md) - retry routing a failed general message
     - [permission](axelard_tx_permission.md) - permission transactions subcommands
       - [deregister-controller [controller]](axelard_tx_permission_deregister-controller.md) - Deregister controller account
       - [register-controller [controller]](axelard_tx_permission_register-controller.md) - Register controller account
@@ -388,9 +380,6 @@
       - [edit-validator](axelard_tx_staking_edit-validator.md) - edit an existing validator account
       - [redelegate [src-validator-addr] [dst-validator-addr] [amount]](axelard_tx_staking_redelegate.md) - Redelegate illiquid tokens from one validator to another
       - [unbond [validator-addr] [amount]](axelard_tx_staking_unbond.md) - Unbond shares from a validator
-    - [tss](axelard_tx_tss.md) - Transactions commands for the tss module
-      - [heart-beat](axelard_tx_tss_heart-beat.md) - Execute the HeartBeat RPC method
-      - [update-params](axelard_tx_tss_update-params.md) - Execute the UpdateParams RPC method
     - [upgrade](axelard_tx_upgrade.md) - Upgrade transaction subcommands
       - [cancel-software-upgrade [flags]](axelard_tx_upgrade_cancel-software-upgrade.md) - Cancel the current software upgrade proposal
       - [software-upgrade [name] (--upgrade-height [height]) (--upgrade-info [info]) [flags]](axelard_tx_upgrade_software-upgrade.md) - Submit a software upgrade proposal
