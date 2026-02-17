@@ -134,7 +134,6 @@ debug:  go.sum
 .PHONY: docker-image
 docker-image:
 	@DOCKER_BUILDKIT=1 docker build \
-		--secret id=cometbft-tachyon-pat,env=COMETBFT_TACHYON_PAT \
 		--build-arg WASM="${WASM}" \
 		--build-arg IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" \
 		--build-arg ARCH="${ARCH}" \
@@ -154,7 +153,6 @@ docker-image-local-user:  guard-VERSION guard-GROUP_ID guard-USER_ID
 .PHONY: build-push-docker-images
 build-push-docker-images:  guard-SEMVER
 	@DOCKER_BUILDKIT=1 docker buildx build \
-		--secret id=cometbft-tachyon-pat,env=COMETBFT_TACHYON_PAT \
 		--platform ${PLATFORM} \
 		--output "type=image,push=${PUSH_DOCKER_IMAGE}" \
 		--build-arg WASM="${WASM}" \
@@ -166,7 +164,7 @@ build-push-docker-images:  guard-SEMVER
 # Build a docker image that is able to run dlv and a debugger can be hooked up to
 .PHONY: docker-image-debug
 docker-image-debug:
-	@DOCKER_BUILDKIT=1 docker build --secret id=cometbft-tachyon-pat,env=COMETBFT_TACHYON_PAT --build-arg WASM="${WASM}" --build-arg IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" -t axelar/core-debug -f ./Dockerfile.debug .
+	@DOCKER_BUILDKIT=1 docker build --build-arg WASM="${WASM}" --build-arg IBC_WASM_HOOKS="${IBC_WASM_HOOKS}" -t axelar/core-debug -f ./Dockerfile.debug .
 
 # Install all generate prerequisites
 .PHONY: prereqs
