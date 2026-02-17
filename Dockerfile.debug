@@ -11,9 +11,7 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
 COPY ./go.mod .
 COPY ./go.sum .
-RUN --mount=type=secret,id=cometbft-tachyon-pat \
-    git config --global url."https://$(cat /run/secrets/cometbft-tachyon-pat)@github.com/axelarnetwork/cometbft-sec-tachyon".insteadOf "https://github.com/axelarnetwork/cometbft-sec-tachyon" && \
-    go mod download
+RUN go mod download
 
 COPY . .
 RUN git config --global --add safe.directory /axelar
