@@ -15,11 +15,7 @@ message GenesisState {
 
   message Chain {
     Params params = 1 [ (gogoproto.nullable) = false ];
-    repeated BurnerInfo burner_infos = 2 [ (gogoproto.nullable) = false ];
     utils.v1beta1.QueueState command_queue = 3 [ (gogoproto.nullable) = false ];
-    repeated ERC20Deposit confirmed_deposits = 4
-        [ (gogoproto.nullable) = false ];
-    repeated ERC20Deposit burned_deposits = 5 [ (gogoproto.nullable) = false ];
 
     repeated CommandBatchMetadata command_batches = 8
         [ (gogoproto.nullable) = false ];
@@ -29,10 +25,13 @@ message GenesisState {
     repeated Event events = 11 [ (gogoproto.nullable) = false ];
     utils.v1beta1.QueueState confirmed_event_queue = 12
         [ (gogoproto.nullable) = false ];
-    repeated ERC20Deposit legacy_confirmed_deposits = 13
-        [ (gogoproto.nullable) = false ];
-    repeated ERC20Deposit legacy_burned_deposits = 14
-        [ (gogoproto.nullable) = false ];
+
+    // Deprecated in v1.4: link-deposit protocol removed
+    reserved 2;  // burner_infos
+    reserved 4;  // confirmed_deposits
+    reserved 5;  // burned_deposits
+    reserved 13; // legacy_confirmed_deposits
+    reserved 14; // legacy_burned_deposits
   }
 
   repeated Chain chains = 3 [ (gogoproto.nullable) = false ];

@@ -10,12 +10,14 @@ import "axelar/reward/v1beta1/query.proto";
 
 option (gogoproto.goproto_registration) = true;
 
-// Msg defines the axelarnet Msg service.
+// Msg defines the reward Msg service.
 service MsgService {
   rpc RefundMsg(RefundMsgRequest) returns (RefundMsgResponse) {
     option (google.api.http) = {
-      post : "/axelar/reward/refund_message"
+      post : "/axelar/reward/v1beta1/refund_message"
       body : "*"
+      // Deprecated: use /axelar/reward/v1beta1/refund_message instead
+      additional_bindings : {post : "/axelar/reward/refund_message" body : "*"}
     };
   }
 

@@ -8,6 +8,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
@@ -24,6 +25,10 @@ func NewMessageRoute(
 	stakingK types.StakingKeeper,
 ) nexus.MessageRoute {
 	return func(ctx sdk.Context, routingCtx nexus.RoutingContext, msg nexus.GeneralMessage) error {
+		if msg.Recipient.Chain.Name.Equals(exported.Axelarnet.Name) {
+			return fmt.Errorf("%s is not a supported destination", exported.Axelarnet.Name)
+		}
+
 		if routingCtx.Payload == nil {
 			return fmt.Errorf("payload is required for routing messages to a cosmos chain")
 		}

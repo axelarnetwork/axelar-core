@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	errorsmod "cosmossdk.io/errors"
-	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -69,9 +68,7 @@ func (m CreateDeployTokenRequest) ValidateBasic() error {
 		return err
 	}
 
-	if _, err := math.ParseUint(m.DailyMintLimit); err != nil {
-		return err
-	}
+	// DailyMintLimit is deprecated and ignored - no validation needed
 
 	return nil
 }

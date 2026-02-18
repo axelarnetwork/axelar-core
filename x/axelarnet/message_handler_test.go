@@ -11,9 +11,13 @@ import (
 	"strings"
 	"testing"
 
+	"cosmossdk.io/log"
 	sdkmath "cosmossdk.io/math"
+	store "cosmossdk.io/store/types"
 	tmbytes "github.com/cometbft/cometbft/libs/bytes"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
@@ -21,6 +25,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/assert"
 
+	appParams "github.com/axelarnetwork/axelar-core/app/params"
+	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
@@ -39,6 +45,21 @@ import (
 	. "github.com/axelarnetwork/utils/test"
 )
 
+func setup(t log.TestingT) (sdk.Context, keeper.Keeper, *mock.ChannelKeeperMock) {
+	encCfg := appParams.MakeEncodingConfig()
+	axelarnetSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("axelarnetKey"), store.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+
+	channelK := &mock.ChannelKeeperMock{
+		GetChannelFunc: func(ctx sdk.Context, portID, channelID string) (ibcchanneltypes.Channel, bool) {
+			return ibcchanneltypes.Channel{}, true
+		},
+	}
+
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.FeegrantKeeperMock{})
+	return ctx, k, channelK
+}
+
 func TestHandleMessage(t *testing.T) {
 	var (
 		ctx           sdk.Context
@@ -48,7 +69,6 @@ func TestHandleMessage(t *testing.T) {
 		n             *mock.NexusMock
 		channelK      *mock.ChannelKeeperMock
 		ibcK          keeper.IBCKeeper
-		r             axelarnet.RateLimiter
 		lockableAsset *nexusmock.LockableAssetMock
 
 		ics20Packet ibctransfertypes.FungibleTokenPacketData
@@ -116,9 +136,6 @@ func TestHandleMessage(t *testing.T) {
 				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0), hash[:], 0
 			},
-			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-				return nil
-			},
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) {
 				return srcChain, true
 			},
@@ -132,32 +149,14 @@ func TestHandleMessage(t *testing.T) {
 			},
 		})
 
-		r = axelarnet.NewRateLimiter(&k, n)
 		b = &mock.BankKeeperMock{
 			SendCoinsFunc: func(context.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil },
 		}
 	})
 
-	whenRateLimitIsSet := func(randDenom bool) func() {
-		return func() {
-			token := sdk.NewCoin(ics20Packet.GetDenom(), funcs.MustOk(sdkmath.NewIntFromString(ics20Packet.Amount)))
-			if randDenom {
-				token.Denom = rand.Denom(10, 20)
-			}
-
-			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-				if direction == nexus.TransferDirectionFrom && asset.Equal(token) {
-					return fmt.Errorf("rate limit exceeded")
-				}
-
-				return nil
-			}
-		}
-	}
-
 	ackError := func() func(t *testing.T) {
 		return func(t *testing.T) {
-			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet)
+			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet)
 			var ack ibcchanneltypes.Acknowledgement
 			funcs.MustNoErr(ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement.Acknowledgement(), &ack))
 			assert.False(t, ack.Success())
@@ -176,7 +175,7 @@ func TestHandleMessage(t *testing.T) {
 	givenPacketWithMessage.
 		When("packet receiver is not Axelar gmp account", nonGMPPacket).
 		Then("should not handle message", func(t *testing.T) {
-			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet)
+			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet)
 			assert.True(t, acknowledgement.Success())
 		}).
 		Run(t)
@@ -247,29 +246,6 @@ func TestHandleMessage(t *testing.T) {
 		}
 	}
 
-	givenPacketWithMessage.
-		When("packet receiver is not Axelar gmp account", nonGMPPacket).
-		When("source chain is valid", func() {
-			isIBCPathRegistered(true)()
-			isChainActivated(srcChain, true)()
-		}).
-		When("rate limit is set", whenRateLimitIsSet(false)).
-		Then("should fail due to ibc transfer rate limit", ackError()).
-		Run(t)
-
-	givenPacketWithMessage.
-		When("packet receiver is not Axelar gmp account", nonGMPPacket).
-		When("source chain is valid", func() {
-			isIBCPathRegistered(true)()
-			isChainActivated(srcChain, true)()
-		}).
-		When("rate limit is set on another asset", whenRateLimitIsSet(true)).
-		Then("should not handle message", func(t *testing.T) {
-			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet)
-			assert.True(t, acknowledgement.Success())
-		}).
-		Run(t)
-
 	whenSourceChainIsValid := whenPacketReceiverIsGMPAccount.
 		When("source chain is valid", func() {
 			isIBCPathRegistered(true)()
@@ -317,14 +293,8 @@ func TestHandleMessage(t *testing.T) {
 
 	for _, whenMessageIsValid := range []WhenStatement{whenMessageIsValidWithKnownDest, whenMessageIsValidWithUnknownDest} {
 		whenMessageIsValid.
-			When("rate limit is set", whenRateLimitIsSet(false)).
-			Then("should return ack error", ackError()).
-			Run(t)
-
-		whenMessageIsValid.
-			When("rate limit on another asset is set", whenRateLimitIsSet(true)).
 			Then("should return ack success", func(t *testing.T) {
-				assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
+				assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet).Success())
 				assert.Equal(t, genMsg.Status, nexus.Approved)
 			}).
 			Run(t)
@@ -398,7 +368,7 @@ func TestHandleMessage(t *testing.T) {
 				setFee(funcs.MustOk(sdkmath.NewIntFromString(ics20Packet.Amount)), rand.AccAddr())
 			}).
 			Then("should return ack success", func(t *testing.T) {
-				assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
+				assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet).Success())
 				assert.Equal(t, genMsg.Status, nexus.Approved)
 			}).
 			Run(t)
@@ -430,7 +400,7 @@ func TestHandleMessage(t *testing.T) {
 				setFee(funcs.MustOk(sdkmath.NewIntFromString(ics20Packet.Amount)), rand.AccAddr())
 			}).
 			Then("should return ack success", func(t *testing.T) {
-				assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
+				assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet).Success())
 				assert.Equal(t, genMsg.Status, nexus.Approved)
 			}).
 			Run(t)
@@ -446,7 +416,6 @@ func TestHandleMessageWithToken(t *testing.T) {
 		n             *mock.NexusMock
 		channelK      *mock.ChannelKeeperMock
 		ibcK          keeper.IBCKeeper
-		r             axelarnet.RateLimiter
 		lockableAsset *nexusmock.LockableAssetMock
 
 		denom       string
@@ -540,9 +509,6 @@ func TestHandleMessageWithToken(t *testing.T) {
 				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0), hash[:], 0
 			},
-			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-				return nil
-			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
 			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
@@ -563,12 +529,11 @@ func TestHandleMessageWithToken(t *testing.T) {
 				return nil
 			},
 		}
-		r = axelarnet.NewRateLimiter(&k, n)
 	})
 
 	ackError := func() func(t *testing.T) {
 		return func(t *testing.T) {
-			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet)
+			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet)
 			var ack ibcchanneltypes.Acknowledgement
 			funcs.MustNoErr(ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement.Acknowledgement(), &ack))
 			assert.False(t, ack.Success())
@@ -584,23 +549,6 @@ func TestHandleMessageWithToken(t *testing.T) {
 				default:
 					return true
 				}
-			}
-		}
-	}
-
-	whenRateLimitIsSet := func(randDenom bool) func() {
-		return func() {
-			token := sdk.NewCoin(denom, funcs.MustOk(sdkmath.NewIntFromString(amount)))
-			if randDenom {
-				token.Denom = rand.Denom(10, 20)
-			}
-
-			n.RateLimitTransferFunc = func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-				if direction == nexus.TransferDirectionFrom && asset.Equal(token) {
-					return fmt.Errorf("rate limit exceeded")
-				}
-
-				return nil
 			}
 		}
 	}
@@ -631,14 +579,6 @@ func TestHandleMessageWithToken(t *testing.T) {
 	givenPacketWithMessageWithToken.
 		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
 		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
-		When("lock coin succeeds", lockCoin(true)).
-		When("rate limit is exceeded", whenRateLimitIsSet(false)).
-		Then("should return ack error", ackError()).
-		Run(t)
-
-	givenPacketWithMessageWithToken.
-		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
-		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
 		When("lock coin fails", lockCoin(false)).
 		Then("should return ack error", ackError()).
 		Run(t)
@@ -647,9 +587,8 @@ func TestHandleMessageWithToken(t *testing.T) {
 		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
 		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
 		When("lock coin succeeds", lockCoin(true)).
-		When("rate limit on another asset is set", whenRateLimitIsSet(true)).
 		Then("should return ack success", func(t *testing.T) {
-			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
+			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet).Success())
 			assert.Equal(t, genMsg.Status, nexus.Approved)
 		}).
 		Run(t)
@@ -683,222 +622,12 @@ func TestHandleMessageWithToken(t *testing.T) {
 		}).
 		When("lock coin succeeds", lockCoin(true)).
 		Then("should return ack success", func(t *testing.T) {
-			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
+			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet).Success())
 			assert.Equal(t, genMsg.Status, nexus.Approved)
 			assert.Len(t, n.NewLockableAssetCalls(), 2)
 			assert.Equal(t, n.NewLockableAssetCalls()[0].Coin.Amount, funcs.MustOk(sdkmath.NewIntFromString(amount)))
 			assert.Equal(t, n.NewLockableAssetCalls()[1].Coin.Amount, sdkmath.OneInt())
 		}).
-		Run(t)
-}
-
-func TestHandleSendToken(t *testing.T) {
-	var (
-		ctx           sdk.Context
-		k             keeper.Keeper
-		packet        ibcchanneltypes.Packet
-		b             *mock.BankKeeperMock
-		n             *mock.NexusMock
-		channelK      *mock.ChannelKeeperMock
-		ibcK          keeper.IBCKeeper
-		r             axelarnet.RateLimiter
-		lockableAsset *nexusmock.LockableAssetMock
-
-		denom       string
-		amount      string
-		ics20Packet ibctransfertypes.FungibleTokenPacketData
-		message     axelarnet.Message
-	)
-
-	sourceChannel := axelartestutils.RandomChannel()
-	receiverChannel := axelartestutils.RandomChannel()
-
-	srcChain := nexustestutils.RandomChain()
-	destChain := nexustestutils.RandomChain()
-	destChain.Module = evmtypes.ModuleName
-	destAddress := evmtestutils.RandomAddress().Hex()
-
-	givenPacketWithSendToken := Given("a packet with send token", func() {
-		message = axelarnet.Message{
-			DestinationChain:   destChain.Name.String(),
-			DestinationAddress: destAddress,
-			Payload:            nil,
-			Type:               nexus.TypeSendToken,
-		}
-
-		// packet send to axelar gmp account
-		denom = rand.Denom(5, 10)
-		amount = strconv.FormatInt(rand.PosI64(), 10)
-		ics20Packet = ibctransfertypes.NewFungibleTokenPacketData(
-			denom, amount, rand.AccAddr().String(), types.AxelarIBCAccount.String(), "",
-		)
-		ics20Packet.Memo = string(funcs.Must(json.Marshal(message)))
-		packet = axelartestutils.RandomPacket(ics20Packet, ibctransfertypes.PortID, sourceChannel, ibctransfertypes.PortID, receiverChannel)
-
-		ctx, k, channelK = setup(t)
-
-		// path registered
-		path := types.NewIBCPath(ibctransfertypes.PortID, receiverChannel)
-		funcs.MustNoErr(k.SetChainByIBCPath(ctx, path, srcChain.Name))
-		funcs.MustNoErr(k.SetCosmosChain(ctx, types.CosmosChain{
-			Name:       srcChain.Name,
-			IBCPath:    path,
-			AddrPrefix: rand.StrBetween(5, 10),
-		}))
-
-		channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
-			return mathrand.Uint64(), nil
-		}
-		lockableAsset = &nexusmock.LockableAssetMock{
-			GetAssetFunc: func() sdk.Coin { return sdk.NewCoin(denom, funcs.MustOk(sdkmath.NewIntFromString(amount))) },
-			GetCoinFunc: func(_ sdk.Context) sdk.Coin {
-				return sdk.NewCoin(denom, funcs.MustOk(sdkmath.NewIntFromString(amount)))
-			},
-		}
-		n = &mock.NexusMock{
-			IsLinkDepositEnabledFunc: func(sdk.Context) bool { return true },
-			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
-				return lockableAsset, nil
-			},
-			SetNewMessageFunc: func(sdk.Context, nexus.GeneralMessage) error { return nil },
-			GetChainFunc: func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-				switch chain {
-				case srcChain.Name:
-					return srcChain, true
-				case destChain.Name:
-					return destChain, true
-				default:
-					return nexus.Chain{}, false
-
-				}
-			},
-			ValidateAddressFunc: func(ctx sdk.Context, address nexus.CrossChainAddress) error {
-				switch address.Chain.Module {
-				case evmtypes.ModuleName:
-					return evmKeeper.NewAddressValidator()(ctx, address)
-				default:
-					panic("module not found")
-				}
-			},
-			IsChainActivatedFunc: func(ctx sdk.Context, chain nexus.Chain) bool { return true },
-			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) {
-				return srcChain, true
-			},
-			EnqueueTransferFunc: func(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error) {
-				return nexustestutils.RandomTransferID(), nil
-			},
-			GenerateMessageIDFunc: func(ctx sdk.Context) (string, []byte, uint64) {
-				hash := sha256.Sum256(ctx.TxBytes())
-				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0), hash[:], 0
-			},
-			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-				return nil
-			},
-		}
-		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
-			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
-				return ibctransfertypes.DenomTrace{
-					Path:      fmt.Sprintf("%s/%s", ibctransfertypes.PortID, receiverChannel),
-					BaseDenom: denom,
-				}, true
-			},
-		})
-		b = &mock.BankKeeperMock{
-			SpendableBalanceFunc: func(ctx context.Context, addr sdk.AccAddress, d string) sdk.Coin {
-				if addr.Equals(types.AxelarIBCAccount) {
-					return sdk.NewCoin(d, funcs.MustOk(sdkmath.NewIntFromString(amount)))
-				}
-				return sdk.NewCoin(d, sdkmath.ZeroInt())
-			},
-			SendCoinsFunc: func(ctx context.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error {
-				return nil
-			},
-		}
-		r = axelarnet.NewRateLimiter(&k, n)
-	})
-
-	ackError := func() func(t *testing.T) {
-		return func(t *testing.T) {
-			acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet)
-			var ack ibcchanneltypes.Acknowledgement
-			funcs.MustNoErr(ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement.Acknowledgement(), &ack))
-			assert.False(t, ack.Success())
-		}
-	}
-
-	isAssetRegistered := func(c nexus.Chain, isRegistered bool) func() {
-		return func() {
-			n.IsAssetRegisteredFunc = func(ctx sdk.Context, chain nexus.Chain, denom string) bool {
-				switch chain {
-				case c:
-					return isRegistered
-				default:
-					return true
-				}
-			}
-		}
-	}
-
-	whenEnqueueTransferFailed := func() {
-		n.EnqueueTransferFunc = func(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error) {
-			return 0, fmt.Errorf("enqueue transfer failed")
-		}
-	}
-
-	lockCoin := func(success bool) func() {
-		if success {
-			return func() {
-				lockableAsset.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil }
-			}
-		}
-
-		return func() {
-			lockableAsset.LockFromFunc = func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return fmt.Errorf("lock coin failed") }
-		}
-	}
-
-	givenPacketWithSendToken.
-		When("asset is not registered on source chain", isAssetRegistered(srcChain, false)).
-		Then("should return ack error", ackError()).
-		Run(t)
-
-	givenPacketWithSendToken.
-		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
-		When("asset is not registered on dest chain", isAssetRegistered(destChain, false)).
-		Then("should return ack error", ackError()).
-		Run(t)
-
-	givenPacketWithSendToken.
-		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
-		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
-		When("lock coin succeeds", lockCoin(true)).
-		When("enqueue transfer failed", whenEnqueueTransferFailed).
-		Then("should return ack error", ackError()).
-		Run(t)
-
-	givenPacketWithSendToken.
-		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
-		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
-		When("lock coin fails", lockCoin(false)).
-		Then("should return ack error", ackError()).
-		Run(t)
-
-	givenPacketWithSendToken.
-		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
-		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
-		When("lock coin succeeds", lockCoin(true)).
-		Then("should return ack success", func(t *testing.T) {
-			assert.True(t, axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet).Success())
-		}).
-		Run(t)
-
-	givenPacketWithSendToken.
-		When("asset is registered on source chain", isAssetRegistered(srcChain, true)).
-		When("asset is registered on dest chain", isAssetRegistered(destChain, true)).
-		When("link-deposit protocol is disabled", func() {
-			n.IsLinkDepositEnabledFunc = func(sdk.Context) bool { return false }
-		}).
-		Then("should return ack error", ackError()).
 		Run(t)
 }
 
@@ -911,7 +640,6 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 		n             *mock.NexusMock
 		channelK      *mock.ChannelKeeperMock
 		ibcK          keeper.IBCKeeper
-		r             axelarnet.RateLimiter
 		lockableAsset *nexusmock.LockableAssetMock
 
 		ics20Packet  ibctransfertypes.FungibleTokenPacketData
@@ -981,9 +709,6 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 				hash := sha256.Sum256(ctx.TxBytes())
 				return fmt.Sprintf("%s-%d", hex.EncodeToString(hash[:]), 0), hash[:], 0
 			},
-			RateLimitTransferFunc: func(ctx sdk.Context, chain nexus.ChainName, asset sdk.Coin, direction nexus.TransferDirection) error {
-				return nil
-			},
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) {
 				return srcChain, true
 			},
@@ -1000,7 +725,6 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 			},
 		})
 
-		r = axelarnet.NewRateLimiter(&k, n)
 		b = &mock.BankKeeperMock{
 			SendCoinsFunc: func(context.Context, sdk.AccAddress, sdk.AccAddress, sdk.Coins) error { return nil },
 		}
@@ -1030,7 +754,7 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 				funcs.MustNoErr(k.SetChainByIBCPath(ctx, types.NewIBCPath(ibctransfertypes.PortID, receiverChannel), srcChain.Name))
 			}).
 			Then("should return ack error", func(t *testing.T) {
-				acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, r, packet)
+				acknowledgement := axelarnet.OnRecvMessage(ctx, k, ibcK, n, b, packet)
 				var ack ibcchanneltypes.Acknowledgement
 				funcs.MustNoErr(ibctransfertypes.ModuleCdc.UnmarshalJSON(acknowledgement.Acknowledgement(), &ack))
 				assert.False(t, ack.Success())

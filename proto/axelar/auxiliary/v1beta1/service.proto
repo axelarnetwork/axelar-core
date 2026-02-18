@@ -9,12 +9,14 @@ import "axelar/auxiliary/v1beta1/tx.proto";
 
 option (gogoproto.goproto_registration) = true;
 
-// Msg defines the nexus Msg service.
+// Msg defines the auxiliary Msg service.
 service MsgService {
   rpc Batch(BatchRequest) returns (BatchResponse) {
     option (google.api.http) = {
-      post : "/axelar/auxiliary/batch"
+      post : "/axelar/auxiliary/v1beta1/batch"
       body : "*"
+      // Deprecated: use /axelar/auxiliary/v1beta1/batch instead
+      additional_bindings : {post : "/axelar/auxiliary/batch" body : "*"}
     };
   }
 }

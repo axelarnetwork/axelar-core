@@ -34,13 +34,10 @@ import (
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	paramproposal "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
@@ -49,15 +46,12 @@ import (
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	ibcclient "github.com/cosmos/ibc-go/v8/modules/core/02-client"
-	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 	porttypes "github.com/cosmos/ibc-go/v8/modules/core/05-port/types"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 	"golang.org/x/mod/semver"
 
 	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
-	"github.com/axelarnetwork/axelar-core/x/axelarnet"
 	axelarnetKeeper "github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	axelarnetTypes "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	axelarbankkeeper "github.com/axelarnetwork/axelar-core/x/bank/keeper"
@@ -74,8 +68,6 @@ import (
 	rewardTypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	snapKeeper "github.com/axelarnetwork/axelar-core/x/snapshot/keeper"
 	snapTypes "github.com/axelarnetwork/axelar-core/x/snapshot/types"
-	tssKeeper "github.com/axelarnetwork/axelar-core/x/tss/keeper"
-	tssTypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 	voteKeeper "github.com/axelarnetwork/axelar-core/x/vote/keeper"
 	voteTypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/maps"
@@ -146,7 +138,6 @@ func initParamsKeeper(encodingConfig axelarParams.EncodingConfig, key, tkey stor
 	paramsKeeper.Subspace(wasm.ModuleName)
 	paramsKeeper.Subspace(snapTypes.ModuleName)
 	paramsKeeper.Subspace(multisigTypes.ModuleName)
-	paramsKeeper.Subspace(tssTypes.ModuleName)
 	paramsKeeper.Subspace(nexusTypes.ModuleName)
 	paramsKeeper.Subspace(axelarnetTypes.ModuleName)
 	paramsKeeper.Subspace(rewardTypes.ModuleName)
@@ -222,16 +213,6 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 }
 
 func initGovernanceKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache, msgServiceRouter *bam.MsgServiceRouter) *govkeeper.Keeper {
-	// Register the proposal types
-	// Deprecated: Avoid adding new handlers, instead use the new proposal flow
-	// by granting the governance module the right to execute the message.
-	// See: https://docs.cosmos.network/main/modules/gov#proposal-messages
-	govRouter := govv1beta1.NewRouter()
-	govRouter.AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler).
-		AddRoute(paramproposal.RouterKey, params.NewParamChangeProposalHandler(*GetKeeper[paramskeeper.Keeper](keepers))).
-		AddRoute(ibcclienttypes.RouterKey, ibcclient.NewClientProposalHandler(GetKeeper[ibckeeper.Keeper](keepers).ClientKeeper)).
-		AddRoute(axelarnetTypes.RouterKey, axelarnet.NewProposalHandler(*GetKeeper[axelarnetKeeper.Keeper](keepers), GetKeeper[nexusKeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers)))
-
 	govK := govkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[govtypes.StoreKey]),
@@ -243,12 +224,6 @@ func initGovernanceKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKe
 		govtypes.DefaultConfig(),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
-
-	// Set legacy router for backwards compatibility with gov v1beta1
-	govK.SetLegacyRouter(govRouter)
-
-	axelarnetK := GetKeeper[axelarnetKeeper.Keeper](keepers)
-	govK.SetHooks(govtypes.NewMultiGovHooks(axelarnetK.Hooks(GetKeeper[nexusKeeper.Keeper](keepers), *govK)))
 
 	return govK
 }
@@ -292,11 +267,6 @@ func initSnapshotKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey,
 		GetKeeper[slashingkeeper.Keeper](keepers),
 	)
 	return &snapK
-}
-
-func initTssKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *tssKeeper.Keeper {
-	tssK := tssKeeper.NewKeeper(appCodec, keys[tssTypes.StoreKey], keepers.getSubspace(tssTypes.ModuleName))
-	return &tssK
 }
 
 func initMultisigKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *multisigKeeper.Keeper {
