@@ -56,6 +56,10 @@ const (
 	BurnerCodeHashV5 = "0x9f217a79e864028081339cfcead3c3d1fe92e237fcbe9468d6bb4d1da7aa6352"
 )
 
+// MaxEventsPerVote limits the number of events in a single VoteEvents to prevent
+// memory exhaustion from large vote payloads being repeatedly loaded during poll processing.
+const MaxEventsPerVote = 500
+
 func validateBurnerCode(burnerCode []byte) error {
 	burnerCodeHash := crypto.Keccak256Hash(burnerCode).Hex()
 	switch burnerCodeHash {
@@ -1089,6 +1093,10 @@ func NewVoteEvents(chain nexus.ChainName, events ...Event) *VoteEvents {
 func (m VoteEvents) ValidateBasic() error {
 	if err := m.Chain.Validate(); err != nil {
 		return err
+	}
+
+	if len(m.Events) > MaxEventsPerVote {
+		return fmt.Errorf("too many events: %d exceeds maximum of %d", len(m.Events), MaxEventsPerVote)
 	}
 
 	for _, event := range m.Events {

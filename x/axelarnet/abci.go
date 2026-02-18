@@ -14,7 +14,7 @@ import (
 )
 
 // EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, bk types.BaseKeeper, ibcKeeper keeper.IBCKeeper) ([]abci.ValidatorUpdate, error) {
+func EndBlocker(ctx sdk.Context, bk types.BaseKeeper, ibcKeeper keeper.IBCKeeper, n types.Nexus, bank types.BankKeeper) ([]abci.ValidatorUpdate, error) {
 	queue := bk.GetIBCTransferQueue(ctx)
 	endBlockerLimit := bk.GetEndBlockerLimit(ctx)
 
@@ -54,8 +54,12 @@ func EndBlocker(ctx sdk.Context, bk types.BaseKeeper, ibcKeeper keeper.IBCKeeper
 		}
 	}
 
-	// set transfer as failed
+	// re-lock tokens to escrow and set transfer as failed
 	for _, f := range failed {
+		lockableAsset, err := n.NewLockableAsset(ctx, ibcKeeper, bank, f.Token)
+		funcs.MustNoErr(err)
+		funcs.MustNoErr(lockableAsset.LockFrom(ctx, types.AxelarIBCAccount))
+
 		funcs.MustNoErr(bk.SetTransferFailed(ctx, f.ID))
 
 		events.Emit(ctx,

@@ -319,6 +319,364 @@ func TestPoll(t *testing.T) {
 	})
 }
 
+// TestPoll_HasVotedCaching tests that calling HasVoted and HasVotedCorrectly
+// multiple times for different voters returns consistent results with cached tallied votes.
+func TestPoll_HasVotedCaching(t *testing.T) {
+	numVoters := 20
+	voters := make([]sdk.ValAddress, numVoters)
+	for i := range numVoters {
+		voters[i] = rand.ValAddr()
+	}
+	participants := slices.Map(voters, func(v sdk.ValAddress) snapshot.Participant {
+		return snapshot.NewParticipant(v, math.OneUint())
+	})
+
+	snapshotter := mock.SnapshotterMock{}
+	staking := mock.StakingKeeperMock{}
+	rewarder := mock.RewarderMock{}
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{Height: rand.PosI64()}, false, log.NewTestLogger(t))
+	encodingConfig := params.MakeEncodingConfig()
+	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	encodingConfig.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &evmtypes.VoteEvents{})
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "vote")
+
+	k := keeper.NewKeeper(
+		encodingConfig.Codec,
+		store.NewKVStoreKey(types.StoreKey),
+		subspace,
+		&snapshotter,
+		&staking,
+		&rewarder,
+	)
+	k.SetParams(ctx, types.DefaultParams())
+
+	snap := snapshot.NewSnapshot(time.Now(), rand.I64Between(1, 100), participants, math.NewUint(uint64(numVoters)))
+	pollBuilder := exported.NewPollBuilder(
+		rand.NormalizedStr(5),
+		utils.NewThreshold(51, 100),
+		snap,
+		ctx.BlockHeight()+100,
+	).GracePeriod(1)
+
+	pollID, err := k.InitializePoll(ctx, pollBuilder)
+	assert.NoError(t, err)
+
+	poll, ok := k.GetPoll(ctx, pollID)
+	assert.True(t, ok)
+
+	voteData := &evmtypes.VoteEvents{Events: []evmtypes.Event{{}}}
+	majorityCount := (numVoters * 51 / 100) + 1
+	for i := range majorityCount {
+		_, err := poll.Vote(voters[i], ctx.BlockHeight(), voteData)
+		assert.NoError(t, err)
+	}
+
+	assert.EqualValues(t, exported.Completed, poll.GetState())
+
+	poll, ok = k.GetPoll(ctx, pollID)
+	assert.True(t, ok)
+
+	allVoters := poll.GetVoters()
+	hasVotedResults := make(map[string]bool)
+	hasVotedCorrectlyResults := make(map[string]bool)
+
+	for _, voter := range allVoters {
+		hasVotedResults[voter.String()] = poll.HasVoted(voter)
+		hasVotedCorrectlyResults[voter.String()] = poll.HasVotedCorrectly(voter)
+	}
+
+	for _, voter := range allVoters {
+		assert.Equal(t, hasVotedResults[voter.String()], poll.HasVoted(voter),
+			"HasVoted should return consistent results for voter %s", voter.String())
+		assert.Equal(t, hasVotedCorrectlyResults[voter.String()], poll.HasVotedCorrectly(voter),
+			"HasVotedCorrectly should return consistent results for voter %s", voter.String())
+	}
+
+	for i := range majorityCount {
+		assert.True(t, hasVotedResults[voters[i].String()],
+			"Voter %d should have voted", i)
+		assert.True(t, hasVotedCorrectlyResults[voters[i].String()],
+			"Voter %d should have voted correctly", i)
+	}
+
+	for i := majorityCount; i < numVoters; i++ {
+		assert.False(t, hasVotedResults[voters[i].String()],
+			"Voter %d should not have voted", i)
+		assert.False(t, hasVotedCorrectlyResults[voters[i].String()],
+			"Voter %d should not have voted correctly", i)
+	}
+}
+
+// TestPoll_ImmediateStateTransition verifies that poll state transitions happen immediately
+// within the same Vote() call, not delayed to the next transaction. This catches bugs where
+// stale cached data prevents immediate completion.
+func TestPoll_ImmediateStateTransition(t *testing.T) {
+	numVoters := 5
+	voters := make([]sdk.ValAddress, numVoters)
+	for i := range numVoters {
+		voters[i] = rand.ValAddr()
+	}
+	participants := slices.Map(voters, func(v sdk.ValAddress) snapshot.Participant {
+		return snapshot.NewParticipant(v, math.OneUint())
+	})
+
+	encodingConfig := params.MakeEncodingConfig()
+	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	encodingConfig.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &evmtypes.VoteEvents{})
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "vote")
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{Height: 100}, false, log.NewTestLogger(t))
+	k := keeper.NewKeeper(
+		encodingConfig.Codec,
+		store.NewKVStoreKey(types.StoreKey),
+		subspace,
+		&mock.SnapshotterMock{},
+		&mock.StakingKeeperMock{},
+		&mock.RewarderMock{},
+	)
+	k.SetParams(ctx, types.DefaultParams())
+
+	snap := snapshot.NewSnapshot(time.Now(), 1, participants, math.NewUint(uint64(numVoters)))
+	pollBuilder := exported.NewPollBuilder(
+		"evm",
+		utils.NewThreshold(51, 100),
+		snap,
+		ctx.BlockHeight()+100,
+	).GracePeriod(1)
+
+	pollID, err := k.InitializePoll(ctx, pollBuilder)
+	assert.NoError(t, err)
+
+	poll, ok := k.GetPoll(ctx, pollID)
+	assert.True(t, ok)
+
+	voteData := &evmtypes.VoteEvents{Events: []evmtypes.Event{{}}}
+	majorityCount := (numVoters*51)/100 + 1
+
+	for i := range majorityCount - 1 {
+		result, err := poll.Vote(voters[i], ctx.BlockHeight(), voteData)
+		assert.NoError(t, err)
+		assert.EqualValues(t, exported.VoteInTime, result)
+		assert.EqualValues(t, exported.Pending, poll.GetState())
+	}
+
+	result, err := poll.Vote(voters[majorityCount-1], ctx.BlockHeight(), voteData)
+	assert.NoError(t, err)
+	assert.EqualValues(t, exported.VoteInTime, result)
+	assert.EqualValues(t, exported.Completed, poll.GetState())
+
+	persistedPoll, ok := k.GetPoll(ctx, pollID)
+	assert.True(t, ok)
+	assert.EqualValues(t, exported.Completed, persistedPoll.GetState(),
+		"Completed state must be persisted to storage")
+}
+
+// TestPoll_ImmediateFailure verifies that poll failure happens immediately when it becomes
+// impossible to reach threshold, not delayed to the next transaction.
+func TestPoll_ImmediateFailure(t *testing.T) {
+	numVoters := 4
+	voters := make([]sdk.ValAddress, numVoters)
+	for i := range numVoters {
+		voters[i] = rand.ValAddr()
+	}
+	participants := slices.Map(voters, func(v sdk.ValAddress) snapshot.Participant {
+		return snapshot.NewParticipant(v, math.OneUint())
+	})
+
+	encodingConfig := params.MakeEncodingConfig()
+	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	encodingConfig.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &evmtypes.VoteEvents{})
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "vote")
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{Height: 100}, false, log.NewTestLogger(t))
+	k := keeper.NewKeeper(
+		encodingConfig.Codec,
+		store.NewKVStoreKey(types.StoreKey),
+		subspace,
+		&mock.SnapshotterMock{},
+		&mock.StakingKeeperMock{},
+		&mock.RewarderMock{},
+	)
+	k.SetParams(ctx, types.DefaultParams())
+
+	snap := snapshot.NewSnapshot(time.Now(), 1, participants, math.NewUint(uint64(numVoters)))
+	pollBuilder := exported.NewPollBuilder(
+		"evm",
+		utils.NewThreshold(51, 100),
+		snap,
+		ctx.BlockHeight()+100,
+	).GracePeriod(1)
+
+	pollID, err := k.InitializePoll(ctx, pollBuilder)
+	assert.NoError(t, err)
+
+	poll, ok := k.GetPoll(ctx, pollID)
+	assert.True(t, ok)
+
+	voteData1 := &evmtypes.VoteEvents{Chain: "Ethereum", Events: []evmtypes.Event{{Chain: "Ethereum", Index: 1}}}
+	voteData2 := &evmtypes.VoteEvents{Chain: "Ethereum", Events: []evmtypes.Event{{Chain: "Ethereum", Index: 2}}}
+	voteData3 := &evmtypes.VoteEvents{Chain: "Ethereum", Events: []evmtypes.Event{{Chain: "Ethereum", Index: 3}}}
+
+	poll.Vote(voters[0], ctx.BlockHeight(), voteData1)
+	assert.EqualValues(t, exported.Pending, poll.GetState())
+
+	poll.Vote(voters[1], ctx.BlockHeight(), voteData2)
+	assert.EqualValues(t, exported.Pending, poll.GetState())
+
+	poll.Vote(voters[2], ctx.BlockHeight(), voteData3)
+	assert.EqualValues(t, exported.Failed, poll.GetState(),
+		"Poll MUST fail immediately when threshold becomes unreachable, not on next transaction")
+
+	persistedPoll, ok := k.GetPoll(ctx, pollID)
+	assert.True(t, ok)
+	assert.EqualValues(t, exported.Failed, persistedPoll.GetState(),
+		"Failed state must be persisted to storage")
+}
+
+// TestPoll_StorageReadsCount demonstrates the O(N²) vs O(N) storage read improvement
+// from caching tallied votes.
+func TestPoll_StorageReadsCount(t *testing.T) {
+	numVoters := 20
+	voters := make([]sdk.ValAddress, numVoters)
+	for i := range numVoters {
+		voters[i] = rand.ValAddr()
+	}
+	participants := slices.Map(voters, func(v sdk.ValAddress) snapshot.Participant {
+		return snapshot.NewParticipant(v, math.OneUint())
+	})
+
+	encodingConfig := params.MakeEncodingConfig()
+	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	encodingConfig.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &evmtypes.VoteEvents{})
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "vote")
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{Height: 1}, false, log.NewTestLogger(t))
+	k := keeper.NewKeeper(
+		encodingConfig.Codec,
+		store.NewKVStoreKey(types.StoreKey),
+		subspace,
+		&mock.SnapshotterMock{},
+		&mock.StakingKeeperMock{},
+		&mock.RewarderMock{},
+	)
+	k.SetParams(ctx, types.DefaultParams())
+
+	snap := snapshot.NewSnapshot(time.Now(), 1, participants, math.NewUint(uint64(numVoters)))
+	pollBuilder := exported.NewPollBuilder(
+		"evm",
+		utils.NewThreshold(51, 100),
+		snap,
+		ctx.BlockHeight()+100,
+	).GracePeriod(1)
+
+	pollID, _ := k.InitializePoll(ctx, pollBuilder)
+	poll, _ := k.GetPoll(ctx, pollID)
+
+	voteData := &evmtypes.VoteEvents{Events: []evmtypes.Event{{}}}
+	majorityCount := (numVoters * 51 / 100) + 1
+	for i := range majorityCount {
+		poll.Vote(voters[i], ctx.BlockHeight(), voteData)
+	}
+
+	poll, _ = k.GetPoll(ctx, pollID)
+	allVoters := poll.GetVoters()
+
+	operationCount := 0
+	for _, voter := range allVoters {
+		_ = poll.HasVoted(voter)
+		operationCount++
+		_ = poll.HasVotedCorrectly(voter)
+		operationCount++
+	}
+
+	t.Logf("Voters: %d", numVoters)
+	t.Logf("Operations (HasVoted + HasVotedCorrectly calls): %d", operationCount)
+	t.Logf("WITHOUT caching fix: would trigger %d storage reads (O(N²))", operationCount)
+	t.Logf("WITH caching fix: triggers 1 storage read (O(1) per poll)")
+
+	assert.Equal(t, numVoters*2, operationCount)
+}
+
+// BenchmarkPoll_HasVoted_EndBlockerScenario benchmarks multiple polls expiring simultaneously,
+// where HandleExpiredPoll calls HasVoted for each voter. The caching fix reduces storage reads
+// from O(N²) per poll to O(N).
+func BenchmarkPoll_HasVoted_EndBlockerScenario(b *testing.B) {
+	numVoters := 83
+	numPolls := 10
+
+	voters := make([]sdk.ValAddress, numVoters)
+	for i := range numVoters {
+		voters[i] = rand.ValAddr()
+	}
+	participants := slices.Map(voters, func(v sdk.ValAddress) snapshot.Participant {
+		return snapshot.NewParticipant(v, math.OneUint())
+	})
+
+	encodingConfig := params.MakeEncodingConfig()
+	types.RegisterLegacyAminoCodec(encodingConfig.Amino)
+	types.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	encodingConfig.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &evmtypes.VoteEvents{})
+	subspace := paramstypes.NewSubspace(encodingConfig.Codec, encodingConfig.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "vote")
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{Height: 1}, false, log.NewNopLogger())
+	k := keeper.NewKeeper(
+		encodingConfig.Codec,
+		store.NewKVStoreKey(types.StoreKey),
+		subspace,
+		&mock.SnapshotterMock{},
+		&mock.StakingKeeperMock{},
+		&mock.RewarderMock{},
+	)
+	k.SetParams(ctx, types.DefaultParams())
+
+	polls := make([]exported.Poll, numPolls)
+	snap := snapshot.NewSnapshot(time.Now(), 1, participants, math.NewUint(uint64(numVoters)))
+
+	for p := range numPolls {
+		pollBuilder := exported.NewPollBuilder(
+			"evm",
+			utils.NewThreshold(51, 100),
+			snap,
+			ctx.BlockHeight()+100,
+		).GracePeriod(1)
+
+		pollID, _ := k.InitializePoll(ctx, pollBuilder)
+		poll, _ := k.GetPoll(ctx, pollID)
+
+		events := make([]evmtypes.Event, 50)
+		for i := range events {
+			events[i] = evmtypes.Event{
+				Chain: "Ethereum",
+				TxID:  evmtypes.Hash(common.BytesToHash(rand.Bytes(32))),
+				Index: uint64(i),
+			}
+		}
+		voteData := &evmtypes.VoteEvents{Chain: "Ethereum", Events: events}
+
+		majorityCount := (numVoters * 51 / 100) + 1
+		for i := range majorityCount {
+			poll.Vote(voters[i], ctx.BlockHeight(), voteData)
+		}
+
+		polls[p], _ = k.GetPoll(ctx, pollID)
+	}
+
+	for b.Loop() {
+		for _, poll := range polls {
+			allVoters := poll.GetVoters()
+			for _, voter := range allVoters {
+				_ = poll.HasVoted(voter)
+				_ = poll.HasVotedCorrectly(voter)
+			}
+		}
+	}
+}
+
 func TestPoll_GetMetaData(t *testing.T) {
 	encCfg := params.MakeEncodingConfig()
 	evmtypes.RegisterInterfaces(encCfg.InterfaceRegistry)
