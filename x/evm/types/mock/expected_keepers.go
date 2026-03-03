@@ -1572,6 +1572,9 @@ var _ types.ChainKeeper = &ChainKeeperMock{}
 //			LoggerFunc: func(ctx sdk.Context) log.Logger {
 //				panic("mock out the Logger method")
 //			},
+//			RetryEventFunc: func(ctx sdk.Context, eventID types.EventID) error {
+//				panic("mock out the RetryEvent method")
+//			},
 //			SetConfirmedEventFunc: func(ctx sdk.Context, event types.Event) error {
 //				panic("mock out the SetConfirmedEvent method")
 //			},
@@ -1683,6 +1686,9 @@ type ChainKeeperMock struct {
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx sdk.Context) log.Logger
+
+	// RetryEventFunc mocks the RetryEvent method.
+	RetryEventFunc func(ctx sdk.Context, eventID types.EventID) error
 
 	// SetConfirmedEventFunc mocks the SetConfirmedEvent method.
 	SetConfirmedEventFunc func(ctx sdk.Context, event types.Event) error
@@ -1873,6 +1879,13 @@ type ChainKeeperMock struct {
 			// Ctx is the ctx argument value.
 			Ctx sdk.Context
 		}
+		// RetryEvent holds details about calls to the RetryEvent method.
+		RetryEvent []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+			// EventID is the eventID argument value.
+			EventID types.EventID
+		}
 		// SetConfirmedEvent holds details about calls to the SetConfirmedEvent method.
 		SetConfirmedEvent []struct {
 			// Ctx is the ctx argument value.
@@ -1945,6 +1958,7 @@ type ChainKeeperMock struct {
 	lockGetTokens                     sync.RWMutex
 	lockGetVotingThreshold            sync.RWMutex
 	lockLogger                        sync.RWMutex
+	lockRetryEvent                    sync.RWMutex
 	lockSetConfirmedEvent             sync.RWMutex
 	lockSetEventCompleted             sync.RWMutex
 	lockSetEventFailed                sync.RWMutex
@@ -2925,6 +2939,42 @@ func (mock *ChainKeeperMock) LoggerCalls() []struct {
 	mock.lockLogger.RLock()
 	calls = mock.calls.Logger
 	mock.lockLogger.RUnlock()
+	return calls
+}
+
+// RetryEvent calls RetryEventFunc.
+func (mock *ChainKeeperMock) RetryEvent(ctx sdk.Context, eventID types.EventID) error {
+	if mock.RetryEventFunc == nil {
+		panic("ChainKeeperMock.RetryEventFunc: method is nil but ChainKeeper.RetryEvent was just called")
+	}
+	callInfo := struct {
+		Ctx     sdk.Context
+		EventID types.EventID
+	}{
+		Ctx:     ctx,
+		EventID: eventID,
+	}
+	mock.lockRetryEvent.Lock()
+	mock.calls.RetryEvent = append(mock.calls.RetryEvent, callInfo)
+	mock.lockRetryEvent.Unlock()
+	return mock.RetryEventFunc(ctx, eventID)
+}
+
+// RetryEventCalls gets all the calls that were made to RetryEvent.
+// Check the length with:
+//
+//	len(mockedChainKeeper.RetryEventCalls())
+func (mock *ChainKeeperMock) RetryEventCalls() []struct {
+	Ctx     sdk.Context
+	EventID types.EventID
+} {
+	var calls []struct {
+		Ctx     sdk.Context
+		EventID types.EventID
+	}
+	mock.lockRetryEvent.RLock()
+	calls = mock.calls.RetryEvent
+	mock.lockRetryEvent.RUnlock()
 	return calls
 }
 

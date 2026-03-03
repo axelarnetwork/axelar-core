@@ -23,3 +23,6 @@
 /contract-artifacts
 /client/docs/node_modules/
 .cache
+.gomodcache/
+.env.local
+.claude/
