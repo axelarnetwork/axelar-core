@@ -237,10 +237,10 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/toml v1.5.0 h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg=
 github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/CosmWasm/wasmd v0.54.3 h1:Lnbshr2O4edRpdyBmubDOL13mgtKm+JaTxM7Nfvymxk=
-github.com/CosmWasm/wasmd v0.54.3/go.mod h1:2FX9+3mf0FmlRHUoUwF8Vg/kkNdtey9TogE5N6nX4Ng=
-github.com/CosmWasm/wasmvm/v2 v2.2.4 h1:V3UwXJMA8TNOuQETppDQkaXAevF7gOWLYpKvrThPv7o=
-github.com/CosmWasm/wasmvm/v2 v2.2.4/go.mod h1:Aj/rB2KMRM8nAdbWxkO23rnQYb5KsoPuH9ZizSi0sVg=
+github.com/CosmWasm/wasmd v0.54.6 h1:L9YY59R55nHJ50PFp2h3+lcBNQfie7iBg6gi3w9u8fU=
+github.com/CosmWasm/wasmd v0.54.6/go.mod h1:ajCQ+3QTeQAsd7pl4PEMTgSqxwweQJXYbW0snQviFik=
+github.com/CosmWasm/wasmvm/v2 v2.2.6 h1:8pwNPZeP/OS14XpjXD0YAZ1Y3my7g5zkmqKCtUdTN38=
+github.com/CosmWasm/wasmvm/v2 v2.2.6/go.mod h1:Aj/rB2KMRM8nAdbWxkO23rnQYb5KsoPuH9ZizSi0sVg=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/DataDog/datadog-go v3.2.0+incompatible h1:qSG2N4FghB1He/r2mFrWKCaL7dXCilEuNEeAn20fdD4=
 github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
@@ -304,8 +304,8 @@ github.com/aws/aws-sdk-go-v2/service/route53 v1.1.1/go.mod h1:rLiOUrPLW/Er5kRcQ7
 github.com/aws/aws-sdk-go-v2/service/sso v1.1.1/go.mod h1:SuZJxklHxLAXgLTc1iFXbEWkXs7QRTQpCLGaKIprQW0=
 github.com/aws/aws-sdk-go-v2/service/sts v1.1.1/go.mod h1:Wi0EBZwiz/K44YliU0EKxqTCJGUfYTWXrrBwkq736bM=
 github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB9LgIw=
-github.com/axelarnetwork/cosmos-sdk v0.50.14-0.20251027135325-71cefd84b6c7 h1:cqobrjSZyGAHnyZIGoUjGVqY48++NR/LPN796aoQR6E=
-github.com/axelarnetwork/cosmos-sdk v0.50.14-0.20251027135325-71cefd84b6c7/go.mod h1:hrWEFMU1eoXqLJeE6VVESpJDQH67FS1nnMrQIjO2daw=
+github.com/axelarnetwork/cosmos-sdk v0.50.16-0.20260224145552-077cbdf94fac h1:QA0K3vSDYf8k0flZwD0rUEroH6tLPL3N6gTe2p4i1nw=
+github.com/axelarnetwork/cosmos-sdk v0.50.16-0.20260224145552-077cbdf94fac/go.mod h1:/dinzXHi7qK0dEPZjS3LI5gMHueKQdqyjbB9chwswo0=
 github.com/axelarnetwork/rosetta v0.50.13-0.20260114132051-460a573dd773 h1:Ujm5fz7T/K6Kl8jMQIZxNl8vOjqp+qPpTh86fTGYJic=
 github.com/axelarnetwork/rosetta v0.50.13-0.20260114132051-460a573dd773/go.mod h1:w80RJd4oW5r6t89rajdZGJbI0mucZ1CSZdi+YeSTKow=
 github.com/axelarnetwork/tm-events v0.0.0-20251121130841-4c4b590f0d06 h1:R7rrsY44+AJB7iQTttGFBeiL2gSalycC/LWVRUyvbos=
@@ -463,8 +463,8 @@ github.com/cosmos/ibc-apps/modules/ibc-hooks/v8 v8.0.0 h1:RBUq0cC9HJ9iIhifdWbV+k
 github.com/cosmos/ibc-apps/modules/ibc-hooks/v8 v8.0.0/go.mod h1:6szYOdzw0cUzFj8ZW+qfss0b4mMN1/HWxPATKZKbCfI=
 github.com/cosmos/ibc-go/modules/capability v1.0.1 h1:ibwhrpJ3SftEEZRxCRkH0fQZ9svjthrX2+oXdZvzgGI=
 github.com/cosmos/ibc-go/modules/capability v1.0.1/go.mod h1:rquyOV262nGJplkumH+/LeYs04P3eV8oB7ZM4Ygqk4E=
-github.com/cosmos/ibc-go/v8 v8.6.1 h1:35JQ9HttSDNLjy4J/ZxmmFbzw0cRVjoCRKkc3ngDZms=
-github.com/cosmos/ibc-go/v8 v8.6.1/go.mod h1:Hd3kDFNOhQ/EnYt8qb84/r78tA/lOYC3IkLMbpurs3I=
+github.com/cosmos/ibc-go/v8 v8.8.0 h1:Xn4/Xzt7JZihKRRSe8xJ65zG7PwrSnIWYRoQDK9hhME=
+github.com/cosmos/ibc-go/v8 v8.8.0/go.mod h1:G2z+Q6ZQSMcyHI2+BVcJdvfOupb09M2h/tgpXOEdY6k=
 github.com/cosmos/ics23/go v0.11.0 h1:jk5skjT0TqX5e5QJbEnwXIS2yI2vnmLOgpQPeM5RtnU=
 github.com/cosmos/ics23/go v0.11.0/go.mod h1:A8OjxPE67hHST4Icw94hOxxFEJMBG031xIGF/JHNIY0=
 github.com/cosmos/keyring v1.2.0 h1:8C1lBP9xhImmIabyXW4c3vFjjLiBdGCmfLUfeZlV1Yo=
