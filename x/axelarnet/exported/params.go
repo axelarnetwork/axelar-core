@@ -16,7 +16,7 @@ var (
 
 	// Axelarnet defines properties of the Axelar chain
 	Axelarnet = exported.Chain{
-		Name:                  "Axelarnet",
+		Name:                  "axelar",
 		SupportsForeignAssets: true,
 		KeyType:               tss.None,
 		Module:                ModuleName,

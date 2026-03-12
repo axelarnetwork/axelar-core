@@ -21,7 +21,7 @@ import (
 func TestAddressValidator(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 	prefixes := map[string]string{
-		"Axelarnet": "axelar",
+		"axelar": "axelar",
 		"terra":     "terra",
 		"osmosis":   "osmo",
 	}
