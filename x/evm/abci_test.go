@@ -257,7 +257,7 @@ func TestProcessConfirmedEvents(t *testing.T) {
 			assert.Len(t, s.nexus.SetNewMessageCalls(), 0)
 		})
 
-		t.Run("event to unregistered chain is marked failed", func(t *testing.T) {
+		t.Run("event to unregistered chain is routed through wasm", func(t *testing.T) {
 			s := newRoutingTestSetup(t)
 			s.queueEvent(s.createContractCallEvent())
 			s.nexus.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -270,9 +270,9 @@ func TestProcessConfirmedEvents(t *testing.T) {
 			_, err := EndBlocker(s.ctx, s.baseKeeper, s.nexus, s.multisig)
 			assert.NoError(t, err)
 
-			assert.Len(t, s.sourceChainKeeper.SetEventFailedCalls(), 1, "event should be marked failed")
-			assert.Len(t, s.sourceChainKeeper.SetEventCompletedCalls(), 0)
-			assert.Len(t, s.nexus.SetNewMessageCalls(), 0, "no message should be created")
+			assert.Len(t, s.sourceChainKeeper.SetEventFailedCalls(), 0)
+			assert.Len(t, s.sourceChainKeeper.SetEventCompletedCalls(), 1, "event should be completed")
+			assert.Len(t, s.nexus.SetNewMessageCalls(), 1, "message should be created for wasm routing")
 		})
 
 		t.Run("SetNewMessage error marks event failed", func(t *testing.T) {
@@ -375,7 +375,7 @@ func TestProcessConfirmedEvents(t *testing.T) {
 			assert.Len(t, s.nexus.SetNewMessageCalls(), 0)
 		})
 
-		t.Run("event to unregistered chain is marked failed", func(t *testing.T) {
+		t.Run("event to unregistered chain is routed through wasm", func(t *testing.T) {
 			s := newRoutingTestSetup(t)
 			s.setupConfirmedToken()
 			s.queueEvent(s.createContractCallWithTokenEvent())
@@ -389,9 +389,9 @@ func TestProcessConfirmedEvents(t *testing.T) {
 			_, err := EndBlocker(s.ctx, s.baseKeeper, s.nexus, s.multisig)
 			assert.NoError(t, err)
 
-			assert.Len(t, s.sourceChainKeeper.SetEventFailedCalls(), 1, "event should be marked failed")
-			assert.Len(t, s.sourceChainKeeper.SetEventCompletedCalls(), 0)
-			assert.Len(t, s.nexus.SetNewMessageCalls(), 0)
+			assert.Len(t, s.sourceChainKeeper.SetEventFailedCalls(), 0)
+			assert.Len(t, s.sourceChainKeeper.SetEventCompletedCalls(), 1, "event should be completed")
+			assert.Len(t, s.nexus.SetNewMessageCalls(), 1, "message should be created for wasm routing")
 		})
 
 		t.Run("SetNewMessage error marks event failed", func(t *testing.T) {
@@ -685,18 +685,21 @@ func TestProcessConfirmedEvents(t *testing.T) {
 	t.Run("Resilience", func(t *testing.T) {
 		t.Run("first event fails but second event still succeeds", func(t *testing.T) {
 			s := newRoutingTestSetup(t)
-			unregisteredChain := nexus.ChainName("unregistered")
+			inactiveChain := nexus.ChainName("inactive-chain")
 			failingEvent := s.createContractCallEvent()
-			failingEvent.GetContractCall().DestinationChain = unregisteredChain // Will fail (unregistered)
-			succeedingEvent := s.createContractCallEvent()                      // Will succeed
+			failingEvent.GetContractCall().DestinationChain = inactiveChain // Will fail (inactive)
+			succeedingEvent := s.createContractCallEvent()                  // Will succeed
 
-			// Make the unregistered chain fail lookup
+			// Register the inactive chain but mark it as inactive
 			originalGetChain := s.nexus.GetChainFunc
 			s.nexus.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-				if chain == unregisteredChain {
-					return nexus.Chain{}, false
+				if chain == inactiveChain {
+					return nexus.Chain{Name: chain, Module: types.ModuleName}, true
 				}
 				return originalGetChain(ctx, chain)
+			}
+			s.nexus.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool {
+				return chain.Name != inactiveChain
 			}
 
 			s.queueEvents(failingEvent, succeedingEvent)
@@ -714,7 +717,7 @@ func TestProcessConfirmedEvents(t *testing.T) {
 			s := newRoutingTestSetup(t)
 			chain1 := nexus.ChainName("chain1")
 			chain2 := nexus.ChainName("chain2")
-			unregisteredDest := nexus.ChainName("unregistered")
+			inactiveDest := nexus.ChainName("inactive-dest")
 
 			ck1 := &mock.ChainKeeperMock{
 				LoggerFunc:            func(ctx sdk.Context) log.Logger { return ctx.Logger() },
@@ -729,7 +732,7 @@ func TestProcessConfirmedEvents(t *testing.T) {
 				SetEventFailedFunc:    func(ctx sdk.Context, eventID types.EventID) error { return nil },
 			}
 
-			// Chain1 has failing event (unregistered destination), Chain2 has succeeding event
+			// Chain1 has failing event (inactive destination), Chain2 has succeeding event
 			failingEvent := types.Event{
 				Chain: chain1,
 				TxID:  evmTestUtils.RandomHash(),
@@ -737,7 +740,7 @@ func TestProcessConfirmedEvents(t *testing.T) {
 				Event: &types.Event_ContractCall{
 					ContractCall: &types.EventContractCall{
 						Sender:           evmTestUtils.RandomAddress(),
-						DestinationChain: unregisteredDest, // Will fail (unregistered)
+						DestinationChain: inactiveDest, // Will fail (inactive)
 						ContractAddress:  evmTestUtils.RandomAddress().Hex(),
 						PayloadHash:      types.Hash(evmCrypto.Keccak256Hash(rand.Bytes(100))),
 					},
@@ -776,13 +779,16 @@ func TestProcessConfirmedEvents(t *testing.T) {
 					{Name: chain2, Module: types.ModuleName},
 				}
 			}
-			// Make the unregistered destination fail lookup
+			// Register the inactive destination but mark it as inactive
 			originalGetChain := s.nexus.GetChainFunc
 			s.nexus.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
-				if chain == unregisteredDest {
-					return nexus.Chain{}, false
+				if chain == inactiveDest {
+					return nexus.Chain{Name: chain, Module: types.ModuleName}, true
 				}
 				return originalGetChain(ctx, chain)
+			}
+			s.nexus.IsChainActivatedFunc = func(ctx sdk.Context, chain nexus.Chain) bool {
+				return chain.Name != inactiveDest
 			}
 
 			_, err := EndBlocker(s.ctx, s.baseKeeper, s.nexus, s.multisig)
