@@ -11,13 +11,12 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
