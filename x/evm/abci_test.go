@@ -257,7 +257,7 @@ func TestProcessConfirmedEvents(t *testing.T) {
 			assert.Len(t, s.nexus.SetNewMessageCalls(), 0)
 		})
 
-		t.Run("event to unregistered chain is routed through wasm", func(t *testing.T) {
+		t.Run("ContractCall event to unregistered chain is routed through wasm", func(t *testing.T) {
 			s := newRoutingTestSetup(t)
 			s.queueEvent(s.createContractCallEvent())
 			s.nexus.GetChainFunc = func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
@@ -375,7 +375,7 @@ func TestProcessConfirmedEvents(t *testing.T) {
 			assert.Len(t, s.nexus.SetNewMessageCalls(), 0)
 		})
 
-		t.Run("event to unregistered chain is routed through wasm", func(t *testing.T) {
+		t.Run("ContractCallWithToken event to unregistered chain is not routed through wasm", func(t *testing.T) {
 			s := newRoutingTestSetup(t)
 			s.setupConfirmedToken()
 			s.queueEvent(s.createContractCallWithTokenEvent())
@@ -389,9 +389,9 @@ func TestProcessConfirmedEvents(t *testing.T) {
 			_, err := EndBlocker(s.ctx, s.baseKeeper, s.nexus, s.multisig)
 			assert.NoError(t, err)
 
-			assert.Len(t, s.sourceChainKeeper.SetEventFailedCalls(), 0)
-			assert.Len(t, s.sourceChainKeeper.SetEventCompletedCalls(), 1, "event should be completed")
-			assert.Len(t, s.nexus.SetNewMessageCalls(), 1, "message should be created for wasm routing")
+			assert.Len(t, s.sourceChainKeeper.SetEventFailedCalls(), 1, "event should be marked failed")
+			assert.Len(t, s.sourceChainKeeper.SetEventCompletedCalls(), 0)
+			assert.Len(t, s.nexus.SetNewMessageCalls(), 0)
 		})
 
 		t.Run("SetNewMessage error marks event failed", func(t *testing.T) {

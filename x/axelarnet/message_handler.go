@@ -7,7 +7,6 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
-	"github.com/CosmWasm/wasmd/x/wasm"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
@@ -20,7 +19,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
@@ -227,13 +225,7 @@ func validateMessage(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.Nexus, ibcP
 func handleMessage(ctx sdk.Context, n types.Nexus, b types.BankKeeper, ibcK types.IBCKeeper, sourceAddress nexus.CrossChainAddress, msg Message, token nexus.LockableAsset) error {
 	id, txID, nonce := n.GenerateMessageID(ctx)
 
-	destChain, ok := n.GetChain(ctx, nexus.ChainName(msg.DestinationChain))
-	if !ok {
-		// try forwarding it to wasm router if destination chain is not registered
-		// Wasm chain names are always lower case, so normalize it for consistency in core
-		destChainName := nexus.ChainName(strings.ToLower(msg.DestinationChain))
-		destChain = nexus.Chain{Name: destChainName, SupportsForeignAssets: false, KeyType: tss.None, Module: wasm.ModuleName}
-	}
+	destChain := nexus.GetChainOrWasmFallback(ctx, n.GetChain, nexus.ChainName(msg.DestinationChain))
 
 	// ignore token for call contract
 	_, err := deductFee(ctx, n, b, ibcK, msg.Fee, token, id, sourceAddress.Chain.Name, destChain.GetName())

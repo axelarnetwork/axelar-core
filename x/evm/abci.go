@@ -2,10 +2,8 @@ package evm
 
 import (
 	"fmt"
-	"strings"
 
 	"cosmossdk.io/math"
-	"github.com/CosmWasm/wasmd/x/wasm"
 	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -15,7 +13,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -226,7 +223,7 @@ func routeEventToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 		}
 
 		recipient := nexus.CrossChainAddress{
-			Chain:   getChainOrWasm(ctx, n, e.ContractCall.DestinationChain),
+			Chain:   nexus.GetChainOrWasmFallback(ctx, n.GetChain, e.ContractCall.DestinationChain),
 			Address: e.ContractCall.ContractAddress,
 		}
 
@@ -250,8 +247,13 @@ func routeEventToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 			Address: e.ContractCallWithToken.Sender.Hex(),
 		}
 
+		destChain, ok := n.GetChain(ctx, e.ContractCallWithToken.DestinationChain)
+		if !ok {
+			return fmt.Errorf("unrecognized destination chain %s", e.ContractCallWithToken.DestinationChain)
+		}
+
 		recipient := nexus.CrossChainAddress{
-			Chain:   getChainOrWasm(ctx, n, e.ContractCallWithToken.DestinationChain),
+			Chain:   destChain,
 			Address: e.ContractCallWithToken.ContractAddress,
 		}
 
@@ -273,19 +275,6 @@ func routeEventToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 	}
 
 	return n.EnqueueRouteMessage(ctx, message.ID)
-}
-
-// getChainOrWasm returns the chain from nexus, or creates a synthetic wasm
-// chain if not found. This allows the EVM EndBlocker to route messages to
-// amplifier chains that are not registered in nexus core.
-func getChainOrWasm(ctx sdk.Context, n types.Nexus, chainName nexus.ChainName) nexus.Chain {
-	chain, ok := n.GetChain(ctx, chainName)
-	if !ok {
-		destChainName := nexus.ChainName(strings.ToLower(string(chainName)))
-		return nexus.Chain{Name: destChainName, SupportsForeignAssets: false, KeyType: tss.None, Module: wasm.ModuleName}
-	}
-
-	return chain
 }
 
 func applyTokenDeployment(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n types.Nexus) error {
