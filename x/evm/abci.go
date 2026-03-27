@@ -161,7 +161,8 @@ func validateEvent(ctx sdk.Context, event types.Event, bk types.BaseKeeper, n ty
 
 	destinationChain, ok := n.GetChain(ctx, destinationChainName)
 	if !ok {
-		return fmt.Errorf("destination chain not found")
+		// destination chain not in nexus, will be routed through wasm
+		return nil
 	}
 
 	if !n.IsChainActivated(ctx, destinationChain) {
@@ -222,7 +223,7 @@ func routeEventToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 		}
 
 		recipient := nexus.CrossChainAddress{
-			Chain:   funcs.MustOk(n.GetChain(ctx, e.ContractCall.DestinationChain)),
+			Chain:   nexus.GetChainOrWasmFallback(ctx, n.GetChain, e.ContractCall.DestinationChain),
 			Address: e.ContractCall.ContractAddress,
 		}
 
@@ -246,8 +247,13 @@ func routeEventToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset 
 			Address: e.ContractCallWithToken.Sender.Hex(),
 		}
 
+		destChain, ok := n.GetChain(ctx, e.ContractCallWithToken.DestinationChain)
+		if !ok {
+			return fmt.Errorf("unrecognized destination chain %s", e.ContractCallWithToken.DestinationChain)
+		}
+
 		recipient := nexus.CrossChainAddress{
-			Chain:   funcs.MustOk(n.GetChain(ctx, e.ContractCallWithToken.DestinationChain)),
+			Chain:   destChain,
 			Address: e.ContractCallWithToken.ContractAddress,
 		}
 

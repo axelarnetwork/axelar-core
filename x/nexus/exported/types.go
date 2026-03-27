@@ -11,6 +11,7 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
@@ -18,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
+	tss "github.com/axelarnetwork/axelar-core/x/tss/exported"
 	"github.com/axelarnetwork/utils/slices"
 )
 
@@ -454,4 +456,24 @@ type IsChainRegisteredRequest struct {
 
 type WasmQueryIsChainRegisteredResponse struct {
 	IsRegistered bool `json:"is_registered"`
+}
+
+// WasmChain creates a synthetic Chain for routing messages to amplifier chains not registered in nexus.
+func WasmChain(chainName ChainName) Chain {
+	return Chain{
+		Name:                  ChainName(strings.ToLower(string(chainName))),
+		SupportsForeignAssets: false,
+		KeyType:               tss.None,
+		Module:                wasmtypes.ModuleName,
+	}
+}
+
+// GetChainOrWasmFallback returns the chain from nexus, or falls back to a synthetic wasm chain if not registered.
+func GetChainOrWasmFallback(ctx sdk.Context, getChain func(sdk.Context, ChainName) (Chain, bool), chainName ChainName) Chain {
+	chain, ok := getChain(ctx, chainName)
+	if !ok {
+		return WasmChain(chainName)
+	}
+
+	return chain
 }
