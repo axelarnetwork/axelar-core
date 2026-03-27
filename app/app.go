@@ -389,7 +389,13 @@ func NewAxelarApp(
 
 func InitICS4Wrapper(keepers *KeeperCache, wasmHooks *ibchooks.WasmHooks) ibchooks.ICS4Middleware {
 	// ICS4Wrapper deals with sending IBC packets.
-	ics4Wrapper := GetKeeper[ibckeeper.Keeper](keepers).ChannelKeeper
+	// Wrap the channel keeper with a chain activation check to reject
+	// outgoing packets to deactivated chains.
+	ics4Wrapper := axelarnet.NewChainActivationICS4Wrapper(
+		GetKeeper[ibckeeper.Keeper](keepers).ChannelKeeper,
+		GetKeeper[axelarnetKeeper.Keeper](keepers),
+		GetKeeper[nexusKeeper.Keeper](keepers),
+	)
 	// create a middleware to integrate wasm hooks into the ibc pipeline
 	if wasmHooks != nil {
 		return ibchooks.NewICS4Middleware(ics4Wrapper, wasmHooks)
