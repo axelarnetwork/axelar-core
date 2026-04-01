@@ -15,9 +15,9 @@ require (
 	cosmossdk.io/x/tx v0.13.7
 	cosmossdk.io/x/upgrade v0.1.4
 	github.com/BurntSushi/toml v1.5.0
-	github.com/CosmWasm/wasmd v0.54.3
+	github.com/CosmWasm/wasmd v0.54.6
 	// Ensure WASMVM_VERSION in the Dockerfile is updated when changing wasmvm version.
-	github.com/CosmWasm/wasmvm/v2 v2.2.4
+	github.com/CosmWasm/wasmvm/v2 v2.2.6
 	github.com/axelarnetwork/tm-events v0.0.0-20251121130841-4c4b590f0d06
 	github.com/axelarnetwork/utils v0.0.0-20251121135440-7d92b8abb3a7
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
@@ -25,11 +25,11 @@ require (
 	github.com/cometbft/cometbft-db v0.14.1
 	github.com/cosmos/cosmos-db v1.1.1
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
-	github.com/cosmos/cosmos-sdk v0.50.14
+	github.com/cosmos/cosmos-sdk v0.50.15
 	github.com/cosmos/gogoproto v1.7.0
 	github.com/cosmos/ibc-apps/modules/ibc-hooks/v8 v8.0.0
 	github.com/cosmos/ibc-go/modules/capability v1.0.1
-	github.com/cosmos/ibc-go/v8 v8.6.1
+	github.com/cosmos/ibc-go/v8 v8.8.0
 	github.com/cosmos/rosetta v0.50.12
 	github.com/ethereum/go-ethereum v1.16.5
 	github.com/go-errors/errors v1.5.1
@@ -262,7 +262,7 @@ replace github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
 replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 
 // temporary replacements
-replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.50.14-0.20251027135325-71cefd84b6c7
+replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.50.16-0.20260224145552-077cbdf94fac
 
 // patches contained in this:
 // https://github.com/axelarnetwork/rosetta/compare/release/v0.50.x...axelarnetwork:rosetta:6149820beca95a96d6b397f1056fe6be8cb9c08b
