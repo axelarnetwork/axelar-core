@@ -10,7 +10,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 )
 
-const maxBitmapSize = 1 << 15 // 32,768
+const maxBitmapSize = 1 << 10 // 1,024
 
 // NewMaintainerState is the constructor for MaintainerState
 func NewMaintainerState(chain exported.ChainName, address sdk.ValAddress) *MaintainerState {
