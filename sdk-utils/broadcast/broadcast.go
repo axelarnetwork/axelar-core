@@ -2,6 +2,7 @@ package broadcast
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
@@ -11,6 +12,10 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/config"
+	"github.com/cometbft/cometbft/crypto/tmhash"
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -83,6 +88,18 @@ func isSequenceMismatch(err error) bool {
 
 // Broadcast sends the given tx to the blockchain and blocks until it is added to a block (or timeout).
 func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcasterOption) (*sdk.TxResponse, error) {
+	params := broadcastParams{
+		Timeout:         config.DefaultRPCConfig().TimeoutBroadcastTxCommit,
+		PollingInterval: 400 * time.Millisecond,
+	}
+	for _, option := range options {
+		params = option(params)
+	}
+
+	txHash := fmt.Sprintf("%X", tmhash.Sum(txBytes))
+	subscription := subscribeTxEvent(ctx, txHash, params)
+	defer cleanupSubscription(subscription)
+
 	res, err := ctx.BroadcastTx(txBytes)
 
 	switch {
@@ -92,15 +109,7 @@ func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcasterOpti
 		return nil, errorsmod.ABCIError(res.Codespace, res.Code, res.RawLog)
 	}
 
-	params := broadcastParams{
-		Timeout:         config.DefaultRPCConfig().TimeoutBroadcastTxCommit,
-		PollingInterval: 400 * time.Millisecond,
-	}
-	for _, option := range options {
-		params = option(params)
-	}
-
-	res, err = waitForBlockInclusion(ctx, res.TxHash, params)
+	res, err = waitForBlockInclusion(ctx, res.TxHash, params, subscription)
 
 	switch {
 	case err != nil:
@@ -112,32 +121,101 @@ func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcasterOpti
 	return res, nil
 }
 
-func waitForBlockInclusion(clientCtx sdkClient.Context, txHash string, options broadcastParams) (*sdk.TxResponse, error) {
-	timeout, cancel := context.WithTimeout(context.Background(), options.Timeout)
-	defer cancel()
+type txSubscription struct {
+	eventCh <-chan coretypes.ResultEvent
+	ctx     context.Context
+	cancel  context.CancelFunc
+	cleanup func()
+}
 
-	ticker := time.NewTicker(options.PollingInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			res, err := authtx.QueryTx(clientCtx, txHash)
-			if err != nil {
-				// query failed or tx is not found yet
-				continue
-			}
-
-			return res, nil
-		case <-timeout.Done():
-			// try one last time to find the tx
-			res, err := authtx.QueryTx(clientCtx, txHash)
-			if err != nil {
-				return nil, errors.New("timed out waiting for tx to be included in a block")
-			}
-			return res, err
-		}
+// subscribeTxEvent subscribes to tx events for the given tx hash.
+// Returns nil if the subscription fails
+func subscribeTxEvent(clientCtx sdkClient.Context, txHash string, options broadcastParams) *txSubscription {
+	eventsClient, ok := clientCtx.Client.(rpcclient.EventsClient)
+	if !ok || eventsClient == nil {
+		return nil
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), options.Timeout)
+
+	query := fmt.Sprintf("%s='%s' AND %s='%s'", tmtypes.EventTypeKey, tmtypes.EventTx, tmtypes.TxHashKey, txHash)
+	eventCh, err := eventsClient.Subscribe(ctx, "broadcast-wait", query)
+	if err != nil {
+		cancel()
+		return nil
+	}
+
+	return &txSubscription{
+		eventCh: eventCh,
+		ctx:     ctx,
+		cancel:  cancel,
+		cleanup: func() {
+			// Use a fresh context for unsubscribe since the original may have timed out
+			_ = eventsClient.UnsubscribeAll(context.Background(), "broadcast-wait")
+		},
+	}
+}
+
+func cleanupSubscription(subscription *txSubscription) {
+	if subscription != nil {
+		subscription.cancel()
+		subscription.cleanup()
+	}
+}
+
+func waitForBlockInclusion(clientCtx sdkClient.Context, txHash string, options broadcastParams, subscription *txSubscription) (*sdk.TxResponse, error) {
+	// Note: when indexer is disabled, authtx.QueryTx will always return an error.
+	// By default uses the subscription, with fallback to indexer.
+
+	// Check if the tx is already included.
+	res, err := authtx.QueryTx(clientCtx, txHash)
+	if err == nil {
+		return res, nil
+	}
+
+	if subscription != nil {
+		// Wait for the event from the subscription
+		select {
+		case evt, ok := <-subscription.eventCh:
+			if !ok {
+				return nil, errors.New("subscription channel closed while waiting for tx to be included in a block")
+			}
+
+			txEvent, ok := evt.Data.(tmtypes.EventDataTx)
+			if !ok {
+				return nil, errors.New("unexpected event data type while waiting for tx inclusion")
+			}
+
+			return &sdk.TxResponse{
+				TxHash:    txHash,
+				Height:    txEvent.Height,
+				Code:      txEvent.Result.Code,
+				Data:      strings.ToUpper(hex.EncodeToString(txEvent.Result.Data)),
+				RawLog:    txEvent.Result.Log,
+				GasWanted: txEvent.Result.GasWanted,
+				GasUsed:   txEvent.Result.GasUsed,
+				Events:    txEvent.Result.Events,
+			}, nil
+
+		case <-subscription.ctx.Done():
+			break
+		}
+	} else {
+		// No subscription available, just wait the timeout.
+		time.Sleep(options.Timeout)
+	}
+
+	// On timeout, try the indexer one last time
+	res, err = authtx.QueryTx(clientCtx, txHash)
+	if err == nil {
+		return res, nil
+	}
+
+	if strings.Contains(err.Error(), "indexing is disabled") {
+		return nil, errors.New("timed out waiting for tx inclusion and transaction indexing is disabled")
+	}
+
+	return nil, errors.New("timed out waiting for tx to be included in a block")
 }
 
 // Broadcaster broadcasts msgs to the blockchain
