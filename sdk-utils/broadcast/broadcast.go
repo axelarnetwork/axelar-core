@@ -168,10 +168,10 @@ func waitForBlockInclusion(clientCtx sdkClient.Context, txHash string, options b
 	// By default uses the subscription, with fallback to indexer.
 
 	// Check if the tx is already included.
-	res, err := authtx.QueryTx(clientCtx, txHash)
+	/*res, err := authtx.QueryTx(clientCtx, txHash)
 	if err == nil {
 		return res, nil
-	}
+	}*/
 
 	if subscription != nil {
 		// Wait for the event from the subscription
@@ -206,10 +206,10 @@ func waitForBlockInclusion(clientCtx sdkClient.Context, txHash string, options b
 	}
 
 	// On timeout, try the indexer one last time
-	res, err = authtx.QueryTx(clientCtx, txHash)
+	/*res, err = authtx.QueryTx(clientCtx, txHash)
 	if err == nil {
 		return res, nil
-	}
+	}*/
 
 	if strings.Contains(err.Error(), "indexing is disabled") {
 		return nil, errors.New("timed out waiting for tx inclusion and transaction indexing is disabled")
