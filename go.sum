@@ -237,8 +237,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/toml v1.5.0 h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg=
 github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/CosmWasm/wasmd v0.54.6 h1:L9YY59R55nHJ50PFp2h3+lcBNQfie7iBg6gi3w9u8fU=
-github.com/CosmWasm/wasmd v0.54.6/go.mod h1:ajCQ+3QTeQAsd7pl4PEMTgSqxwweQJXYbW0snQviFik=
+github.com/CosmWasm/wasmd v0.54.7 h1:9y4RVoZmkpdqqiCbwzQ4bnjJnEfnt8tCRqcRUb93t7A=
+github.com/CosmWasm/wasmd v0.54.7/go.mod h1:ajCQ+3QTeQAsd7pl4PEMTgSqxwweQJXYbW0snQviFik=
 github.com/CosmWasm/wasmvm/v2 v2.2.6 h1:8pwNPZeP/OS14XpjXD0YAZ1Y3my7g5zkmqKCtUdTN38=
 github.com/CosmWasm/wasmvm/v2 v2.2.6/go.mod h1:Aj/rB2KMRM8nAdbWxkO23rnQYb5KsoPuH9ZizSi0sVg=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
