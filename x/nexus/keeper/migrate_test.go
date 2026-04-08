@@ -12,10 +12,70 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
+	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/keeper"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	. "github.com/axelarnetwork/utils/test"
 )
+
+func TestMigrate8to9(t *testing.T) {
+	encCfg := app.MakeEncodingConfig()
+	subspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("nexusKey"), store.NewKVStoreKey("tNexusKey"), "nexus")
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("nexus"), subspace)
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+
+	chain := testutils.RandomChain()
+	addr := rand.ValAddr()
+	oldMaxSize := 1 << 15 // 32,768
+	newMaxSize := types.MaxBitmapSize()
+	voteCount := newMaxSize + 500
+
+	Given("a chain with a maintainer that has an old large bitmap", func() {
+		k.SetChain(ctx, chain)
+		assert.NoError(t, k.AddChainMaintainer(ctx, chain, addr))
+
+		ms, ok := k.GetChainMaintainerState(ctx, chain, addr)
+		assert.True(t, ok)
+
+		maintainer := ms.(*types.MaintainerState)
+		maintainer.MissingVotes.TrueCountCache.SetMaxSize(oldMaxSize)
+		maintainer.IncorrectVotes.TrueCountCache.SetMaxSize(oldMaxSize)
+
+		for i := 0; i < voteCount; i++ {
+			maintainer.MarkMissingVote(i%3 == 0)
+			maintainer.MarkIncorrectVote(i%5 == 0)
+		}
+
+		assert.Greater(t, len(maintainer.MissingVotes.TrueCountCache.CumulativeValue), newMaxSize)
+		assert.NoError(t, k.SetChainMaintainerState(ctx, maintainer))
+	}).
+		When("the migration runs", func() {
+			assert.NoError(t, keeper.Migrate8to9(k)(ctx))
+		}).
+		Then("bitmap MaxSize should be capped and buffer shrinks on next Add", func(t *testing.T) {
+			ms, ok := k.GetChainMaintainerState(ctx, chain, addr)
+			assert.True(t, ok)
+
+			maintainer := ms.(*types.MaintainerState)
+			assert.Equal(t, int32(newMaxSize), maintainer.MissingVotes.TrueCountCache.MaxSize)
+			assert.Equal(t, int32(newMaxSize), maintainer.IncorrectVotes.TrueCountCache.MaxSize)
+
+			// The buffer is still large in storage until the next Add triggers shrink
+			assert.Greater(t, len(maintainer.MissingVotes.TrueCountCache.CumulativeValue), newMaxSize)
+
+			// After one more vote, shrink should trigger
+			maintainer.MarkMissingVote(false)
+			assert.Equal(t, newMaxSize, len(maintainer.MissingVotes.TrueCountCache.CumulativeValue))
+
+			// Vote counts within a small window should still be correct after shrink.
+			// The window of 100 covers the 1 extra false vote plus the last 99 loop
+			// iterations (i=1425..1523). Votes where i%3==0 are true: 1425,1428,...,1521 = 33.
+			missingCount := maintainer.CountMissingVotes(100)
+			assert.Equal(t, uint64(33), missingCount)
+		}).
+		Run(t)
+}
 
 func TestMigrate6to7(t *testing.T) {
 	encCfg := app.MakeEncodingConfig()
