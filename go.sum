@@ -306,8 +306,8 @@ github.com/aws/aws-sdk-go-v2/service/sts v1.1.1/go.mod h1:Wi0EBZwiz/K44YliU0EKxq
 github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB9LgIw=
 github.com/axelarnetwork/cosmos-sdk v0.50.16-0.20260224145552-077cbdf94fac h1:QA0K3vSDYf8k0flZwD0rUEroH6tLPL3N6gTe2p4i1nw=
 github.com/axelarnetwork/cosmos-sdk v0.50.16-0.20260224145552-077cbdf94fac/go.mod h1:/dinzXHi7qK0dEPZjS3LI5gMHueKQdqyjbB9chwswo0=
-github.com/axelarnetwork/rosetta v0.50.13-0.20260114132051-460a573dd773 h1:Ujm5fz7T/K6Kl8jMQIZxNl8vOjqp+qPpTh86fTGYJic=
-github.com/axelarnetwork/rosetta v0.50.13-0.20260114132051-460a573dd773/go.mod h1:w80RJd4oW5r6t89rajdZGJbI0mucZ1CSZdi+YeSTKow=
+github.com/axelarnetwork/rosetta v0.50.13-0.20260408131525-9a97032c7833 h1:S4nOlXG5blBsH+68wjPyoUouaXdVANz+l18DvtUR0xc=
+github.com/axelarnetwork/rosetta v0.50.13-0.20260408131525-9a97032c7833/go.mod h1:w80RJd4oW5r6t89rajdZGJbI0mucZ1CSZdi+YeSTKow=
 github.com/axelarnetwork/tm-events v0.0.0-20251121130841-4c4b590f0d06 h1:R7rrsY44+AJB7iQTttGFBeiL2gSalycC/LWVRUyvbos=
 github.com/axelarnetwork/tm-events v0.0.0-20251121130841-4c4b590f0d06/go.mod h1:a00OM9xc7190Tx+B4QoX+cAf8xvN1V1KtqGkNrljQuI=
 github.com/axelarnetwork/utils v0.0.0-20251121135440-7d92b8abb3a7 h1:KDhg2z/fUmOhZgUyjJp8XV3N3x56Ts2zXRYo63LDnYw=
