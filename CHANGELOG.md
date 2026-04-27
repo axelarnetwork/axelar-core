@@ -2,6 +2,69 @@
 
 ## [Unreleased]
 
+## [v1.4.4](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.4)
+
+### State Machine Breaking
+
+* [#2321](https://github.com/axelarnetwork/axelar-core/pull/2321) Remove link-deposit protocol and streamline cross-chain messaging — removes TSS module, deposit confirmation flow, and transfer rate limiting
+
+### Features
+
+* [#2334](https://github.com/axelarnetwork/axelar-core/pull/2334) Add wasm fallback for unregistered destination chains in EVM `EndBlocker`
+
+### Bug Fixes
+
+* [#2330](https://github.com/axelarnetwork/axelar-core/pull/2330) Allow correct decoding of historical `RotateKeyRequest` transactions
+* [#2326](https://github.com/axelarnetwork/axelar-core/pull/2326) Reject votes on completed polls after grace period
+* [#2335](https://github.com/axelarnetwork/axelar-core/pull/2335) Re-add chain activation check on outgoing IBC transfers
+* [#2325](https://github.com/axelarnetwork/axelar-core/pull/2325) Handle historical transactions with deprecated fields and UTF-8 issues in Rosetta
+* [#2322](https://github.com/axelarnetwork/axelar-core/pull/2322) Fix temp directory not being cleaned up after use
+* Fix nexus routing and `RetryFailedEvent` bugs
+* Cache tallied votes in `x/vote` to fix O(N²) storage reads in `EndBlocker` (Immunefi bug bounty report #62661)
+* Re-lock tokens to escrow on `EndBlocker` IBC transfer failure so `RetryIBCTransfer` can recover stranded funds (Immunefi bug bounty reports #63113, #63746)
+* Handle `MsgSendOperation` with fee operations in Rosetta
+* Reduce `maxBitmapSize` from 32,768 to 1,024 in nexus `MaintainerState` to lower memory footprint of vote-tracking bitmaps (`MissingVotes`, `IncorrectVotes`)
+* Resolve `wasmvm` version dynamically from `go.sum` in Docker builds (fixes `undefined reference to sync_pinned_codes` linker error after wasmd v0.54.6 bump)
+* Fix v1.4 upgrade handler to omit re-added `crisis` and `consensus` stores that caused IAVL to reject pre-existing data and crash nodes during upgrade
+
+### Improvements
+
+* Update CometBFT to v0.38.22 (includes [CSA-2026-001](https://github.com/cometbft/cometbft/security/advisories/GHSA-c32p-wcqj-j677) fix)
+* Bump wasmd v0.54.3 → v0.54.7 (security fix [CWA-2026-001](https://github.com/CosmWasm/advisories)), wasmvm v2.2.4 → v2.2.6, cosmos-sdk v0.50.14 → v0.50.15, ibc-go v8.6.1 → v8.8.0
+* [#2319](https://github.com/axelarnetwork/axelar-core/pull/2319) Remove time-based activation gate for validator reward fix
+* [#2333](https://github.com/axelarnetwork/axelar-core/pull/2333) Bump `bytedance/sonic` to v1.15.0 for Go 1.26 compatibility
+* [#2299](https://github.com/axelarnetwork/axelar-core/pull/2299) Use standard `crypto/sha3` instead of `golang.org/x/crypto/sha3`
+
+## [v1.3.11](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.3.11)
+
+### Improvements
+
+* Update CometBFT dependency to v0.38.22
+
+## [v1.3.10](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.3.10)
+
+### Bug Fixes
+
+* [#2329](https://github.com/axelarnetwork/axelar-core/pull/2329) Allow correct decoding of historical `RotateKeyRequest` transactions
+
+## [v1.3.9](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.3.9)
+
+### Improvements
+
+* [#2328](https://github.com/axelarnetwork/axelar-core/pull/2328) Update CometBFT dependency to public release (includes fix for [CSA-2026-001](https://github.com/cometbft/cometbft/security/advisories/GHSA-c32p-wcqj-j677))
+
+## [v1.3.8](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.3.8)
+
+### Bug Fixes
+
+* [#2325](https://github.com/axelarnetwork/axelar-core/pull/2325) Handle historical transactions with deprecated fields and UTF-8 issues in Rosetta
+* [#2322](https://github.com/axelarnetwork/axelar-core/pull/2322) Fix temp directory not being cleaned up after use
+
+### Improvements
+
+* Update CometBFT with fix for [CSA-2026-001](https://github.com/cometbft/cometbft/security/advisories/GHSA-c32p-wcqj-j677)
+* [#2299](https://github.com/axelarnetwork/axelar-core/pull/2299) Use standard `crypto/sha3` instead of `golang.org/x/crypto/sha3`
+
 ## [v1.3.6](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.3.6)
 
 ### Improvements
