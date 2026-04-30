@@ -29,6 +29,7 @@ const (
 	// - bytes4(0) To Native
 	// - bytes4(1) To CosmWasm Contract
 	// - bytes4(2) To CosmWasm Contract with json encoded payload
+	// - bytes4(3) To CosmWasm Contract with IBC destination callback
 	versionSize = 4
 
 	sourceChain   = "source_chain"
@@ -50,6 +51,17 @@ type contractCall struct {
 // wasm is the json that gets passed to the IBC memo field
 type wasm struct {
 	Wasm contractCall `json:"wasm"`
+}
+
+type destinationCallback struct {
+	Address string `json:"address"`
+}
+
+type destinationCallbackMessage struct {
+	DestCallback  destinationCallback `json:"dest_callback"`
+	SourceChain   string              `json:"source_chain"`
+	SourceAddress string              `json:"source_address"`
+	Payload       json.RawMessage     `json:"payload"`
 }
 
 type message struct {
@@ -82,6 +94,11 @@ func TranslateMessage(msg nexus.GeneralMessage, versionedPayload []byte) ([]byte
 		bz, err = ConstructWasmMessageV2(msg, payload)
 		if err != nil {
 			return nil, errorsmod.Wrap(err, "failed to construct wasm payload")
+		}
+	case CosmWasmDestinationCallbackV1:
+		bz, err = ConstructDestinationCallbackMessageV1(msg, payload)
+		if err != nil {
+			return nil, errorsmod.Wrap(err, "failed to construct destination callback payload")
 		}
 	default:
 		return nil, fmt.Errorf("unknown payload version")
@@ -211,6 +228,31 @@ func ConstructWasmMessageV2(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 	msg = []byte(strings.Replace(string(msg), originalField, replacementField, 1))
 
 	return msg, err
+}
+
+// ConstructDestinationCallbackMessageV1 creates a json serialized IBC destination callback message from json encoded payload
+func ConstructDestinationCallbackMessageV1(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
+	if !json.Valid(payload) {
+		return nil, fmt.Errorf("invalid json payload")
+	}
+
+	msg, err := json.Marshal(destinationCallbackMessage{
+		DestCallback: destinationCallback{
+			Address: gm.GetDestinationAddress(),
+		},
+		SourceChain:   gm.GetSourceChain().String(),
+		SourceAddress: gm.GetSourceAddress(),
+		Payload:       nil,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	originalField := `"payload":null`
+	replacementField := fmt.Sprintf("\"payload\":%s", string(payload))
+	msg = []byte(strings.Replace(string(msg), originalField, replacementField, 1))
+
+	return msg, nil
 }
 
 // ConstructNativeMessage creates a json serialized cross chain message
