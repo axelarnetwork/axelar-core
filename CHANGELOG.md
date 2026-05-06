@@ -1,8 +1,6 @@
 # Changelog
 
-## [Unreleased]
-
-## [v1.4.4](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.4)
+## [v1.4.5](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.5)
 
 ### State Machine Breaking
 
@@ -19,6 +17,7 @@
 * [#2335](https://github.com/axelarnetwork/axelar-core/pull/2335) Re-add chain activation check on outgoing IBC transfers
 * [#2325](https://github.com/axelarnetwork/axelar-core/pull/2325) Handle historical transactions with deprecated fields and UTF-8 issues in Rosetta
 * [#2322](https://github.com/axelarnetwork/axelar-core/pull/2322) Fix temp directory not being cleaned up after use
+* Reject votes on failed polls
 * Fix nexus routing and `RetryFailedEvent` bugs
 * Cache tallied votes in `x/vote` to fix O(N²) storage reads in `EndBlocker` (Immunefi bug bounty report #62661)
 * Re-lock tokens to escrow on `EndBlocker` IBC transfer failure so `RetryIBCTransfer` can recover stranded funds (Immunefi bug bounty reports #63113, #63746)
