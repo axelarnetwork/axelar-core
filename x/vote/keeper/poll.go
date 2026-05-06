@@ -125,7 +125,7 @@ func (p *poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMar
 	}
 
 	if p.Is(exported.Failed) {
-		return exported.NoVote, nil
+		return exported.NoVote, errors.New("poll failed")
 	}
 
 	if p.Is(exported.Completed) && p.isInGracePeriod(blockHeight) {
@@ -136,7 +136,7 @@ func (p *poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMar
 	}
 
 	if p.Is(exported.Completed) {
-		return exported.NoVote, fmt.Errorf("poll completed")
+		return exported.NoVote, errors.New("poll completed")
 	}
 
 	p.voteBeforeCompletion(voter, blockHeight, data)
