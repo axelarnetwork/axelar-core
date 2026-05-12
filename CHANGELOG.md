@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.4.6](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.6)
+
+### Improvements
+
+* Update CometBFT to v0.38.23
+
 ## [v1.4.5](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.5)
 
 ### State Machine Breaking
