@@ -9,11 +9,13 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gogoproto/protoc-gen-gogo/descriptor"
 	"github.com/stretchr/testify/require"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	permissionexported "github.com/axelarnetwork/axelar-core/x/permission/exported"
 )
 
 // HistoricalTransaction represents a test case for decoding historical transactions
@@ -278,4 +280,32 @@ func TestRotateKeyRequestSignerCompatibility(t *testing.T) {
 	require.NoError(t, err, "GetMsgV1Signers should handle historical StartKeygenRequest with binary sender")
 	require.Len(t, signers, 1)
 	require.Equal(t, expectedSigner, fmt.Sprintf("%x", signers[0]))
+}
+
+// TestRefundableMessagesAreUnrestricted asserts that every message registered
+// as reward.v1beta1.Refundable declares permission_role = ROLE_UNRESTRICTED.
+//
+// RefundMsg dispatches its inner message via MsgServiceRouter.Handler, which
+// bypasses the RestrictedTx ante decorator entirely (ante handlers run only
+// at tx-level dispatch). If a restricted message were registered as
+// Refundable, any signer could wrap it in a RefundMsgRequest and execute it
+// without the role check — escalating privilege. This test guards against
+// that footgun at CI time.
+func TestRefundableMessagesAreUnrestricted(t *testing.T) {
+	reg := app.MakeEncodingConfig().InterfaceRegistry
+
+	urls := reg.ListImplementations("reward.v1beta1.Refundable")
+	require.NotEmpty(t, urls, "expected at least one Refundable message to be registered")
+
+	for _, url := range urls {
+		t.Run(url, func(t *testing.T) {
+			msg, err := reg.Resolve(url)
+			require.NoError(t, err)
+
+			role := permissionexported.GetPermissionRole(msg.(descriptor.Message))
+			require.Equal(t, permissionexported.ROLE_UNRESTRICTED, role,
+				"refundable message %s must declare permission_role = ROLE_UNRESTRICTED; otherwise RefundMsg bypasses the RestrictedTx ante",
+				url)
+		})
+	}
 }
