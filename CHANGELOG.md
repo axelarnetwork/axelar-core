@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.4.7](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.7)
+
+### Bug Fixes
+
+* Restore `InterfaceRegistry` registrations for `axelar.tss.v1beta1.UpdateParamsRequest` (`sdk.Msg`) and `axelar.tss.v1beta1.HeartBeatRequest` (`sdk.Msg` + `reward.Refundable`), fixing `/cosmos/gov/v1/proposals` returning `no concrete type registered for type URL` on chains that have a historical TSS `MsgUpdateParams` proposal in gov state
+
 ## [v1.4.6](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.6)
 
 ### Improvements
