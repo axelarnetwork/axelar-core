@@ -38,6 +38,9 @@ type RewardPoolMock struct {
 	// AddRewardFunc mocks the AddReward method.
 	AddRewardFunc func(valAddress sdk.ValAddress, coin sdk.Coin)
 
+	// AddRewardsFunc mocks the AddRewards method.
+	AddRewardsFunc func(rewards []exported.Reward)
+
 	// ClearRewardsFunc mocks the ClearRewards method.
 	ClearRewardsFunc func(valAddress sdk.ValAddress)
 
@@ -53,6 +56,11 @@ type RewardPoolMock struct {
 			// Coin is the coin argument value.
 			Coin sdk.Coin
 		}
+		// AddRewards holds details about calls to the AddRewards method.
+		AddRewards []struct {
+			// Rewards is the rewards argument value.
+			Rewards []exported.Reward
+		}
 		// ClearRewards holds details about calls to the ClearRewards method.
 		ClearRewards []struct {
 			// ValAddress is the valAddress argument value.
@@ -65,6 +73,7 @@ type RewardPoolMock struct {
 		}
 	}
 	lockAddReward      sync.RWMutex
+	lockAddRewards     sync.RWMutex
 	lockClearRewards   sync.RWMutex
 	lockReleaseRewards sync.RWMutex
 }
@@ -102,6 +111,38 @@ func (mock *RewardPoolMock) AddRewardCalls() []struct {
 	mock.lockAddReward.RLock()
 	calls = mock.calls.AddReward
 	mock.lockAddReward.RUnlock()
+	return calls
+}
+
+// AddRewards calls AddRewardsFunc.
+func (mock *RewardPoolMock) AddRewards(rewards []exported.Reward) {
+	if mock.AddRewardsFunc == nil {
+		panic("RewardPoolMock.AddRewardsFunc: method is nil but RewardPool.AddRewards was just called")
+	}
+	callInfo := struct {
+		Rewards []exported.Reward
+	}{
+		Rewards: rewards,
+	}
+	mock.lockAddRewards.Lock()
+	mock.calls.AddRewards = append(mock.calls.AddRewards, callInfo)
+	mock.lockAddRewards.Unlock()
+	mock.AddRewardsFunc(rewards)
+}
+
+// AddRewardsCalls gets all the calls that were made to AddRewards.
+// Check the length with:
+//
+//	len(mockedRewardPool.AddRewardsCalls())
+func (mock *RewardPoolMock) AddRewardsCalls() []struct {
+	Rewards []exported.Reward
+} {
+	var calls []struct {
+		Rewards []exported.Reward
+	}
+	mock.lockAddRewards.RLock()
+	calls = mock.calls.AddRewards
+	mock.lockAddRewards.RUnlock()
 	return calls
 }
 
