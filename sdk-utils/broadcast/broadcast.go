@@ -2,6 +2,7 @@ package broadcast
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
@@ -11,6 +12,9 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/config"
+	"github.com/cometbft/cometbft/crypto/tmhash"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 	sdkClient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -82,7 +86,25 @@ func isSequenceMismatch(err error) bool {
 }
 
 // Broadcast sends the given tx to the blockchain and blocks until it is added to a block (or timeout).
-func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcasterOption) (*sdk.TxResponse, error) {
+func Broadcast(ctx sdkClient.Context, subscriber TxEventSubscriber, txBytes []byte, options ...BroadcasterOption) (*sdk.TxResponse, error) {
+	params := broadcastParams{
+		Timeout: config.DefaultRPCConfig().TimeoutBroadcastTxCommit,
+	}
+	for _, option := range options {
+		params = option(params)
+	}
+
+	// Subscribe to the inclusion event before broadcasting so the event cannot
+	// be missed. Confirmation is done purely via this subscription, so it works
+	// with the tx indexer disabled (tx_index="null"). A failure here is loud on
+	// purpose: we never silently fall back to the indexer.
+	txHash := fmt.Sprintf("%X", tmhash.Sum(txBytes))
+	subscription, err := subscribeTxEvent(subscriber, txHash, params.Timeout)
+	if err != nil {
+		return nil, errorsmod.Wrap(err, "failed to subscribe to tx inclusion event")
+	}
+	defer subscription.close()
+
 	res, err := ctx.BroadcastTx(txBytes)
 
 	switch {
@@ -92,15 +114,7 @@ func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcasterOpti
 		return nil, errorsmod.ABCIError(res.Codespace, res.Code, res.RawLog)
 	}
 
-	params := broadcastParams{
-		Timeout:         config.DefaultRPCConfig().TimeoutBroadcastTxCommit,
-		PollingInterval: 400 * time.Millisecond,
-	}
-	for _, option := range options {
-		params = option(params)
-	}
-
-	res, err = waitForBlockInclusion(ctx, res.TxHash, params)
+	res, err = waitForBlockInclusion(ctx, res.TxHash, subscription)
 
 	switch {
 	case err != nil:
@@ -112,31 +126,101 @@ func Broadcast(ctx sdkClient.Context, txBytes []byte, options ...BroadcasterOpti
 	return res, nil
 }
 
-func waitForBlockInclusion(clientCtx sdkClient.Context, txHash string, options broadcastParams) (*sdk.TxResponse, error) {
-	timeout, cancel := context.WithTimeout(context.Background(), options.Timeout)
-	defer cancel()
+// TxEventSubscriber subscribes to and unsubscribes from CometBFT events. It is
+// implemented by any started CometBFT RPC client (e.g. a started *rpchttp.HTTP)
+// and by vald's tendermint.RobustClient. A *started* client is required: event
+// subscriptions need a live websocket, which the default client context's
+// client does not have. Unsubscribe is per-query (we never call UnsubscribeAll)
+// so the subscriber can be safely shared with other subscriptions on the same
+// client (e.g. vald's event bus) without tearing them down.
+type TxEventSubscriber interface {
+	Subscribe(ctx context.Context, subscriber, query string, outCapacity ...int) (<-chan coretypes.ResultEvent, error)
+	Unsubscribe(ctx context.Context, subscriber, query string) error
+}
 
-	ticker := time.NewTicker(options.PollingInterval)
-	defer ticker.Stop()
+type txSubscription struct {
+	eventCh <-chan coretypes.ResultEvent
+	ctx     context.Context
+	cancel  context.CancelFunc
+	cleanup func()
+}
 
-	for {
-		select {
-		case <-ticker.C:
-			res, err := authtx.QueryTx(clientCtx, txHash)
-			if err != nil {
-				// query failed or tx is not found yet
-				continue
-			}
+// close cancels the subscription context and unsubscribes from the event.
+func (s *txSubscription) close() {
+	s.cancel()
+	s.cleanup()
+}
 
-			return res, nil
-		case <-timeout.Done():
-			// try one last time to find the tx
-			res, err := authtx.QueryTx(clientCtx, txHash)
-			if err != nil {
-				return nil, errors.New("timed out waiting for tx to be included in a block")
-			}
-			return res, err
+// subscribeTxEvent subscribes to the inclusion event for the given tx hash via
+// the (required, started) subscriber. Inclusion is confirmed purely through
+// this subscription, so it works with the tx indexer disabled.
+func subscribeTxEvent(subscriber TxEventSubscriber, txHash string, timeout time.Duration) (*txSubscription, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+
+	// Unique subscriber name per tx, and Unsubscribe by query (never
+	// UnsubscribeAll), so sharing the client with other subscriptions can never
+	// tear those down, and a leaked subscription can't collide with the next tx.
+	subscriberName := "broadcast-wait-" + txHash
+	query := fmt.Sprintf("%s='%s' AND %s='%s'", tmtypes.EventTypeKey, tmtypes.EventTx, tmtypes.TxHashKey, txHash)
+	eventCh, err := subscriber.Subscribe(ctx, subscriberName, query)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+
+	return &txSubscription{
+		eventCh: eventCh,
+		ctx:     ctx,
+		cancel:  cancel,
+		cleanup: func() {
+			// Fresh context for unsubscribe since the original may have timed out.
+			_ = subscriber.Unsubscribe(context.Background(), subscriberName, query)
+		},
+	}, nil
+}
+
+func waitForBlockInclusion(clientCtx sdkClient.Context, txHash string, subscription *txSubscription) (*sdk.TxResponse, error) {
+	// The subscription is established before the tx is broadcast, so the
+	// inclusion event cannot be missed unless the connection drops. On a
+	// drop/timeout the caller's retry wrapper re-broadcasts, which is safe
+	// thanks to sequence-number tracking.
+	select {
+	case evt, ok := <-subscription.eventCh:
+		if !ok {
+			return nil, errors.New("subscription channel closed while waiting for tx to be included in a block")
 		}
+
+		txEvent, ok := evt.Data.(tmtypes.EventDataTx)
+		if !ok {
+			return nil, errors.New("unexpected event data type while waiting for tx inclusion")
+		}
+
+		return &sdk.TxResponse{
+			TxHash:    txHash,
+			Height:    txEvent.Height,
+			Codespace: txEvent.Result.Codespace,
+			Code:      txEvent.Result.Code,
+			Data:      strings.ToUpper(hex.EncodeToString(txEvent.Result.Data)),
+			RawLog:    txEvent.Result.Log,
+			Info:      txEvent.Result.Info,
+			GasWanted: txEvent.Result.GasWanted,
+			GasUsed:   txEvent.Result.GasUsed,
+			Events:    txEvent.Result.Events,
+		}, nil
+
+	case <-subscription.ctx.Done():
+		// Missed the inclusion event (timeout or reconnect window). Do a single
+		// best-effort indexer lookup, otherwise return a descriptive error.
+		res, err := authtx.QueryTx(clientCtx, txHash)
+		if err == nil {
+			return res, nil
+		}
+
+		if strings.Contains(err.Error(), "indexing is disabled") {
+			return nil, errors.New("timed out waiting for tx inclusion and transaction indexing is disabled")
+		}
+
+		return nil, errors.New("timed out waiting for tx to be included in a block")
 	}
 }
 
@@ -146,17 +230,21 @@ type Broadcaster interface {
 }
 
 type statefulBroadcaster struct {
-	clientCtx sdkClient.Context
-	txf       tx.Factory
-	options   []BroadcasterOption
+	clientCtx  sdkClient.Context
+	subscriber TxEventSubscriber
+	txf        tx.Factory
+	options    []BroadcasterOption
 }
 
-// WithStateManager tracks sequence numbers, so it can be used to broadcast consecutive txs
-func WithStateManager(clientCtx sdkClient.Context, txf tx.Factory, options ...BroadcasterOption) Broadcaster {
+// WithStateManager tracks sequence numbers, so it can be used to broadcast consecutive txs.
+// The subscriber (a started client, e.g. tendermint.RobustClient) is required: tx inclusion
+// is confirmed via its event subscription, which works with the tx indexer disabled.
+func WithStateManager(clientCtx sdkClient.Context, subscriber TxEventSubscriber, txf tx.Factory, options ...BroadcasterOption) Broadcaster {
 	return &statefulBroadcaster{
-		clientCtx: clientCtx,
-		txf:       txf,
-		options:   options,
+		clientCtx:  clientCtx,
+		subscriber: subscriber,
+		txf:        txf,
+		options:    options,
 	}
 }
 
@@ -183,7 +271,7 @@ func (b *statefulBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) (*
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "tx preparation failed")
 	}
-	response, err := Broadcast(b.clientCtx, bz, b.options...)
+	response, err := Broadcast(b.clientCtx, b.subscriber, bz, b.options...)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "broadcast failed")
 	}
@@ -233,22 +321,13 @@ func prepareFactory(clientCtx sdkClient.Context, txf tx.Factory) (tx.Factory, er
 type BroadcasterOption func(broadcaster broadcastParams) broadcastParams
 
 type broadcastParams struct {
-	PollingInterval time.Duration
-	Timeout         time.Duration
+	Timeout time.Duration
 }
 
 // WithResponseTimeout sets the time to wait for a tx response
 func WithResponseTimeout(timeout time.Duration) BroadcasterOption {
 	return func(params broadcastParams) broadcastParams {
 		params.Timeout = timeout
-		return params
-	}
-}
-
-// WithPollingInterval modifies how often the broadcaster checks the blockchain for tx responses
-func WithPollingInterval(interval time.Duration) BroadcasterOption {
-	return func(params broadcastParams) broadcastParams {
-		params.PollingInterval = interval
 		return params
 	}
 }
