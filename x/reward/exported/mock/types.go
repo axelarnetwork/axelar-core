@@ -22,6 +22,9 @@ var _ exported.RewardPool = &RewardPoolMock{}
 //			AddRewardFunc: func(valAddress sdk.ValAddress, coin sdk.Coin)  {
 //				panic("mock out the AddReward method")
 //			},
+//			AddRewardsFunc: func(rewards []exported.Reward)  {
+//				panic("mock out the AddRewards method")
+//			},
 //			ClearRewardsFunc: func(valAddress sdk.ValAddress)  {
 //				panic("mock out the ClearRewards method")
 //			},
