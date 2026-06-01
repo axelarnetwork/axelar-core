@@ -185,8 +185,6 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		WithFromAddress(funcs.Must(sender.GetAddress())).
 		WithFromName(sender.Name)
 
-	bc := createRefundableBroadcaster(txf, clientCtx, axelarCfg)
-
 	robustClient := tendermint.NewRobustClient(func() (rpcclient.Client, error) {
 		cl, err := sdkClient.NewClientFromNode(clientCtx.NodeURI)
 		if err != nil {
@@ -199,6 +197,8 @@ func listen(clientCtx sdkClient.Context, txf tx.Factory, axelarCfg config.ValdCo
 		}
 		return cl, nil
 	})
+
+	bc := createRefundableBroadcaster(txf, clientCtx, axelarCfg, robustClient)
 	evmMgr := createEVMMgr(axelarCfg, clientCtx, bc, valAddr)
 	multisigMgr := createMultisigMgr(bc, clientCtx, axelarCfg, valAddr)
 
@@ -394,14 +394,14 @@ func createEventBus(client *tendermint.RobustClient, startBlock int64, retries i
 	return tmEvents.NewEventBus(tmEvents.NewBlockSource(client, notifier, tmEvents.Retries(retries), tmEvents.BackOff(backOff)), pubsub.NewBus[tmEvents.ABCIEventWithHeight]())
 }
 
-func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig) broadcast.Broadcaster {
+func createRefundableBroadcaster(txf tx.Factory, ctx sdkClient.Context, axelarCfg config.ValdConfig, subscriber broadcast.TxEventSubscriber) broadcast.Broadcaster {
 	codec := app.MakeEncodingConfig().Codec
 
 	broadcaster := broadcast.WithStateManager(
 		ctx,
+		subscriber,
 		txf,
 		broadcast.WithResponseTimeout(axelarCfg.BroadcastConfig.MaxTimeout),
-		broadcast.WithPollingInterval(axelarCfg.BroadcastConfig.ConfirmationPollingInterval),
 	)
 	broadcaster = broadcast.WithRetry(broadcaster, axelarCfg.MaxRetries, axelarCfg.MinSleepBeforeRetry)
 	broadcaster = broadcast.Batched(broadcaster, axelarCfg.BatchThreshold, axelarCfg.BatchSizeLimit, codec)
