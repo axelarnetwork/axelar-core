@@ -16,6 +16,7 @@ import (
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	permissionexported "github.com/axelarnetwork/axelar-core/x/permission/exported"
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 )
 
 // HistoricalTransaction represents a test case for decoding historical transactions
@@ -282,17 +283,21 @@ func TestRotateKeyRequestSignerCompatibility(t *testing.T) {
 	require.Equal(t, expectedSigner, fmt.Sprintf("%x", signers[0]))
 }
 
-// TestRefundableMessagesAreUnrestricted asserts that every message registered
-// as reward.v1beta1.Refundable declares permission_role = ROLE_UNRESTRICTED.
+// TestRefundableMessagesMatchRefundMsgRole asserts that every message
+// registered as reward.v1beta1.Refundable declares the same permission_role as
+// the wrapping RefundMsgRequest.
 //
 // RefundMsg dispatches its inner message via MsgServiceRouter.Handler, which
 // bypasses the RestrictedTx ante decorator entirely (ante handlers run only
-// at tx-level dispatch). If a restricted message were registered as
-// Refundable, any signer could wrap it in a RefundMsgRequest and execute it
-// without the role check — escalating privilege. This test guards against
-// that footgun at CI time.
-func TestRefundableMessagesAreUnrestricted(t *testing.T) {
+// at tx-level dispatch). RefundMsg.requireMatchingRole guards against this at
+// runtime by rejecting any inner message whose role differs from the wrapping
+// RefundMsgRequest. This test enforces the same invariant at CI time: if a
+// Refundable message is registered with a mismatched role, every refund of it
+// would fail at runtime — so the mismatch should be caught here instead.
+func TestRefundableMessagesMatchRefundMsgRole(t *testing.T) {
 	reg := app.MakeEncodingConfig().InterfaceRegistry
+
+	wantRole := permissionexported.GetPermissionRole(&rewardtypes.RefundMsgRequest{})
 
 	urls := reg.ListImplementations("reward.v1beta1.Refundable")
 	require.NotEmpty(t, urls, "expected at least one Refundable message to be registered")
@@ -303,9 +308,9 @@ func TestRefundableMessagesAreUnrestricted(t *testing.T) {
 			require.NoError(t, err)
 
 			role := permissionexported.GetPermissionRole(msg.(descriptor.Message))
-			require.Equal(t, permissionexported.ROLE_UNRESTRICTED, role,
-				"refundable message %s must declare permission_role = ROLE_UNRESTRICTED; otherwise RefundMsg bypasses the RestrictedTx ante",
-				url)
+			require.Equal(t, wantRole, role,
+				"refundable message %s must declare the same permission_role (%s) as RefundMsgRequest; otherwise RefundMsg would reject every refund of it",
+				url, wantRole)
 		})
 	}
 }
