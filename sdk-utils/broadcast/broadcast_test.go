@@ -603,6 +603,42 @@ func TestBroadcastInclusionViaSubscription(t *testing.T) {
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "timed out waiting for tx to be included in a block")
 		}).Run(t)
+
+	// Test: the subscription channel is closed before delivering an event
+	givenSetup.
+		When2(accountExists).
+		When2(simulationSucceeds).
+		When2(broadcastSucceeds).
+		When("the subscription channel is closed", func() {
+			clientMock.SubscribeFunc = func(_ context.Context, _ string, _ string, _ ...int) (<-chan coretypes.ResultEvent, error) {
+				ch := make(chan coretypes.ResultEvent)
+				close(ch)
+				return ch, nil
+			}
+		}).
+		Then("return a channel closed error", func(t *testing.T) {
+			_, err := broadcaster.Broadcast(context.Background(), randomMsgs(3)...)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "subscription channel closed")
+		}).Run(t)
+
+	// Test: the subscription delivers an event whose data is not an EventDataTx
+	givenSetup.
+		When2(accountExists).
+		When2(simulationSucceeds).
+		When2(broadcastSucceeds).
+		When("the subscription delivers an unexpected event type", func() {
+			clientMock.SubscribeFunc = func(_ context.Context, _ string, _ string, _ ...int) (<-chan coretypes.ResultEvent, error) {
+				ch := make(chan coretypes.ResultEvent, 1)
+				ch <- coretypes.ResultEvent{Data: tm.EventDataNewBlock{}}
+				return ch, nil
+			}
+		}).
+		Then("return an unexpected event data error", func(t *testing.T) {
+			_, err := broadcaster.Broadcast(context.Background(), randomMsgs(3)...)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "unexpected event data type")
+		}).Run(t)
 }
 
 func TestBroadcastSubscribeFailed(t *testing.T) {
