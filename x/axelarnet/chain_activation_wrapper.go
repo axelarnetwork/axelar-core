@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 	porttypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
@@ -31,7 +30,6 @@ func NewChainActivationICS4Wrapper(channel porttypes.ICS4Wrapper, keeper types.B
 
 func (w ChainActivationICS4Wrapper) SendPacket(
 	ctx sdk.Context,
-	chanCap *capabilitytypes.Capability,
 	sourcePort string,
 	sourceChannel string,
 	timeoutHeight clienttypes.Height,
@@ -47,11 +45,11 @@ func (w ChainActivationICS4Wrapper) SendPacket(
 		}
 	}
 
-	return w.channel.SendPacket(ctx, chanCap, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data)
+	return w.channel.SendPacket(ctx, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data)
 }
 
-func (w ChainActivationICS4Wrapper) WriteAcknowledgement(ctx sdk.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
-	return w.channel.WriteAcknowledgement(ctx, chanCap, packet, ack)
+func (w ChainActivationICS4Wrapper) WriteAcknowledgement(ctx sdk.Context, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
+	return w.channel.WriteAcknowledgement(ctx, packet, ack)
 }
 
 func (w ChainActivationICS4Wrapper) GetAppVersion(ctx sdk.Context, portID string, channelID string) (string, bool) {

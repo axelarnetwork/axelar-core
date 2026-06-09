@@ -123,12 +123,9 @@ func toICS20(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, coin sdk.C
 		return sdk.Coin{}, err
 	}
 
-	trace := ibctypes.DenomTrace{
-		Path:      path,
-		BaseDenom: coin.GetDenom(),
-	}
+	denom := ibctypes.ExtractDenomFromPath(fmt.Sprintf("%s/%s", path, coin.GetDenom()))
 
-	return sdk.NewCoin(trace.IBCDenom(), coin.Amount), nil
+	return sdk.NewCoin(denom.IBCDenom(), coin.Amount), nil
 }
 
 func lock(ctx sdk.Context, bank types.BankKeeper, fromAddr sdk.AccAddress, coin sdk.Coin) error {
@@ -175,20 +172,20 @@ func toAssetAndType(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, coi
 	// check if the format of token denomination is 'ibc/{hash}' and it's a registered asset
 	case isICS20Denom(denom):
 		{
-			denomTrace, err := ibc.ParseIBCDenom(ctx, denom)
+			ibcDenom, err := ibc.ParseIBCDenom(ctx, denom)
 			if err != nil {
 				return sdk.Coin{}, types.Unrecognized, err
 			}
 
-			path, err := getIBCPath(ctx, nexus, ibc, denomTrace.GetBaseDenom())
+			path, err := getIBCPath(ctx, nexus, ibc, ibcDenom.Base)
 			if err != nil {
 				return sdk.Coin{}, types.Unrecognized, err
 			}
-			if path != denomTrace.GetPath() {
-				return sdk.Coin{}, types.Unrecognized, fmt.Errorf("expected ics20 coin IBC path %s, got %s", path, denomTrace.GetPath())
+			if path != tracePath(ibcDenom) {
+				return sdk.Coin{}, types.Unrecognized, fmt.Errorf("expected ics20 coin IBC path %s, got %s", path, tracePath(ibcDenom))
 			}
 
-			asset := sdk.NewCoin(denomTrace.GetBaseDenom(), coin.Amount)
+			asset := sdk.NewCoin(ibcDenom.Base, coin.Amount)
 
 			return asset, types.ICS20, nil
 		}
@@ -210,6 +207,17 @@ func isFromExternalCosmosChain(ctx sdk.Context, nexus types.Nexus, ibc types.IBC
 	_, err := getIBCPath(ctx, nexus, ibc, denom)
 
 	return err == nil
+}
+
+// tracePath returns the trace path of the given denom without the base denomination,
+// e.g. "transfer/channel-1" (the equivalent of DenomTrace.GetPath() in ibc-go v8)
+func tracePath(denom ibctypes.Denom) string {
+	hops := make([]string, len(denom.Trace))
+	for i, hop := range denom.Trace {
+		hops[i] = hop.String()
+	}
+
+	return strings.Join(hops, "/")
 }
 
 // isICS20Denom validates that the given denomination is a valid ICS token representation (ibc/{hash})

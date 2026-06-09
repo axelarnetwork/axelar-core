@@ -45,21 +45,21 @@ func (i IBCKeeper) SendIBCTransfer(ctx sdk.Context, transfer types.IBCTransfer) 
 }
 
 // ParseIBCDenom retrieves the full identifiers trace and base denomination from the IBC transfer keeper store
-func (i IBCKeeper) ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.DenomTrace, error) {
+func (i IBCKeeper) ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.Denom, error) {
 	denomSplit := strings.Split(ibcDenom, "/")
 
 	hash, err := ibctypes.ParseHexHash(denomSplit[1])
 	if err != nil {
-		return ibctypes.DenomTrace{}, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid denom trace hash %s, %s", hash, err))
+		return ibctypes.Denom{}, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid denom trace hash %s, %s", hash, err))
 	}
-	denomTrace, found := i.ibcTransferK.GetDenomTrace(ctx, hash)
+	denom, found := i.ibcTransferK.GetDenom(ctx, hash)
 	if !found {
-		return ibctypes.DenomTrace{}, status.Error(
+		return ibctypes.Denom{}, status.Error(
 			codes.NotFound,
-			errorsmod.Wrap(ibctypes.ErrTraceNotFound, denomSplit[1]).Error(),
+			errorsmod.Wrap(ibctypes.ErrDenomNotFound, denomSplit[1]).Error(),
 		)
 	}
-	return denomTrace, nil
+	return denom, nil
 }
 
 // SendMessage sends general message via ICS20 packet memo
@@ -88,12 +88,14 @@ func (i IBCKeeper) SendMessage(c context.Context, recipient nexus.CrossChainAddr
 }
 
 func (i IBCKeeper) getPacketTimeoutHeight(ctx sdk.Context, portID, channelID string) (clienttypes.Height, error) {
-	_, state, err := i.channelK.GetChannelClientState(ctx, portID, channelID)
+	clientID, _, err := i.channelK.GetChannelClientState(ctx, portID, channelID)
 	if err != nil {
 		return clienttypes.Height{}, err
 	}
 
-	return clienttypes.NewHeight(state.GetLatestHeight().GetRevisionNumber(), state.GetLatestHeight().GetRevisionHeight()+i.GetRouteTimeoutWindow(ctx)), nil
+	latestHeight := i.clientK.GetClientLatestHeight(ctx, clientID)
+
+	return clienttypes.NewHeight(latestHeight.GetRevisionNumber(), latestHeight.GetRevisionHeight()+i.GetRouteTimeoutWindow(ctx)), nil
 }
 
 func (i IBCKeeper) getPortAndChannel(ctx sdk.Context, chain nexus.ChainName) (string, string, error) {

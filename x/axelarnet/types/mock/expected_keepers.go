@@ -18,7 +18,6 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
@@ -3712,8 +3711,8 @@ var _ axelarnettypes.IBCTransferKeeper = &IBCTransferKeeperMock{}
 //
 //		// make and configure a mocked axelarnettypes.IBCTransferKeeper
 //		mockedIBCTransferKeeper := &IBCTransferKeeperMock{
-//			GetDenomTraceFunc: func(ctx cosmossdktypes.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
-//				panic("mock out the GetDenomTrace method")
+//			GetDenomFunc: func(ctx cosmossdktypes.Context, denomHash tmbytes.HexBytes) (ibctransfertypes.Denom, bool) {
+//				panic("mock out the GetDenom method")
 //			},
 //			TransferFunc: func(goCtx context.Context, msg *ibctransfertypes.MsgTransfer) (*ibctransfertypes.MsgTransferResponse, error) {
 //				panic("mock out the Transfer method")
@@ -3725,20 +3724,20 @@ var _ axelarnettypes.IBCTransferKeeper = &IBCTransferKeeperMock{}
 //
 //	}
 type IBCTransferKeeperMock struct {
-	// GetDenomTraceFunc mocks the GetDenomTrace method.
-	GetDenomTraceFunc func(ctx cosmossdktypes.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool)
+	// GetDenomFunc mocks the GetDenom method.
+	GetDenomFunc func(ctx cosmossdktypes.Context, denomHash tmbytes.HexBytes) (ibctransfertypes.Denom, bool)
 
 	// TransferFunc mocks the Transfer method.
 	TransferFunc func(goCtx context.Context, msg *ibctransfertypes.MsgTransfer) (*ibctransfertypes.MsgTransferResponse, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetDenomTrace holds details about calls to the GetDenomTrace method.
-		GetDenomTrace []struct {
+		// GetDenom holds details about calls to the GetDenom method.
+		GetDenom []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
-			// DenomTraceHash is the denomTraceHash argument value.
-			DenomTraceHash tmbytes.HexBytes
+			// DenomHash is the denomHash argument value.
+			DenomHash tmbytes.HexBytes
 		}
 		// Transfer holds details about calls to the Transfer method.
 		Transfer []struct {
@@ -3748,43 +3747,43 @@ type IBCTransferKeeperMock struct {
 			Msg *ibctransfertypes.MsgTransfer
 		}
 	}
-	lockGetDenomTrace sync.RWMutex
-	lockTransfer      sync.RWMutex
+	lockGetDenom sync.RWMutex
+	lockTransfer sync.RWMutex
 }
 
-// GetDenomTrace calls GetDenomTraceFunc.
-func (mock *IBCTransferKeeperMock) GetDenomTrace(ctx cosmossdktypes.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
-	if mock.GetDenomTraceFunc == nil {
-		panic("IBCTransferKeeperMock.GetDenomTraceFunc: method is nil but IBCTransferKeeper.GetDenomTrace was just called")
+// GetDenom calls GetDenomFunc.
+func (mock *IBCTransferKeeperMock) GetDenom(ctx cosmossdktypes.Context, denomHash tmbytes.HexBytes) (ibctransfertypes.Denom, bool) {
+	if mock.GetDenomFunc == nil {
+		panic("IBCTransferKeeperMock.GetDenomFunc: method is nil but IBCTransferKeeper.GetDenom was just called")
 	}
 	callInfo := struct {
-		Ctx            cosmossdktypes.Context
-		DenomTraceHash tmbytes.HexBytes
+		Ctx       cosmossdktypes.Context
+		DenomHash tmbytes.HexBytes
 	}{
-		Ctx:            ctx,
-		DenomTraceHash: denomTraceHash,
+		Ctx:       ctx,
+		DenomHash: denomHash,
 	}
-	mock.lockGetDenomTrace.Lock()
-	mock.calls.GetDenomTrace = append(mock.calls.GetDenomTrace, callInfo)
-	mock.lockGetDenomTrace.Unlock()
-	return mock.GetDenomTraceFunc(ctx, denomTraceHash)
+	mock.lockGetDenom.Lock()
+	mock.calls.GetDenom = append(mock.calls.GetDenom, callInfo)
+	mock.lockGetDenom.Unlock()
+	return mock.GetDenomFunc(ctx, denomHash)
 }
 
-// GetDenomTraceCalls gets all the calls that were made to GetDenomTrace.
+// GetDenomCalls gets all the calls that were made to GetDenom.
 // Check the length with:
 //
-//	len(mockedIBCTransferKeeper.GetDenomTraceCalls())
-func (mock *IBCTransferKeeperMock) GetDenomTraceCalls() []struct {
-	Ctx            cosmossdktypes.Context
-	DenomTraceHash tmbytes.HexBytes
+//	len(mockedIBCTransferKeeper.GetDenomCalls())
+func (mock *IBCTransferKeeperMock) GetDenomCalls() []struct {
+	Ctx       cosmossdktypes.Context
+	DenomHash tmbytes.HexBytes
 } {
 	var calls []struct {
-		Ctx            cosmossdktypes.Context
-		DenomTraceHash tmbytes.HexBytes
+		Ctx       cosmossdktypes.Context
+		DenomHash tmbytes.HexBytes
 	}
-	mock.lockGetDenomTrace.RLock()
-	calls = mock.calls.GetDenomTrace
-	mock.lockGetDenomTrace.RUnlock()
+	mock.lockGetDenom.RLock()
+	calls = mock.calls.GetDenom
+	mock.lockGetDenom.RUnlock()
 	return calls
 }
 
@@ -3849,10 +3848,10 @@ var _ axelarnettypes.ChannelKeeper = &ChannelKeeperMock{}
 //			GetNextSequenceSendFunc: func(ctx cosmossdktypes.Context, portID string, channelID string) (uint64, bool) {
 //				panic("mock out the GetNextSequenceSend method")
 //			},
-//			SendPacketFunc: func(ctx cosmossdktypes.Context, channelCap *capabilitytypes.Capability, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error) {
+//			SendPacketFunc: func(ctx cosmossdktypes.Context, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error) {
 //				panic("mock out the SendPacket method")
 //			},
-//			WriteAcknowledgementFunc: func(ctx cosmossdktypes.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
+//			WriteAcknowledgementFunc: func(ctx cosmossdktypes.Context, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
 //				panic("mock out the WriteAcknowledgement method")
 //			},
 //		}
@@ -3878,10 +3877,10 @@ type ChannelKeeperMock struct {
 	GetNextSequenceSendFunc func(ctx cosmossdktypes.Context, portID string, channelID string) (uint64, bool)
 
 	// SendPacketFunc mocks the SendPacket method.
-	SendPacketFunc func(ctx cosmossdktypes.Context, channelCap *capabilitytypes.Capability, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error)
+	SendPacketFunc func(ctx cosmossdktypes.Context, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error)
 
 	// WriteAcknowledgementFunc mocks the WriteAcknowledgement method.
-	WriteAcknowledgementFunc func(ctx cosmossdktypes.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error
+	WriteAcknowledgementFunc func(ctx cosmossdktypes.Context, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -3932,8 +3931,6 @@ type ChannelKeeperMock struct {
 		SendPacket []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
-			// ChannelCap is the channelCap argument value.
-			ChannelCap *capabilitytypes.Capability
 			// SourcePort is the sourcePort argument value.
 			SourcePort string
 			// SourceChannel is the sourceChannel argument value.
@@ -3949,8 +3946,6 @@ type ChannelKeeperMock struct {
 		WriteAcknowledgement []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
-			// ChanCap is the chanCap argument value.
-			ChanCap *capabilitytypes.Capability
 			// Packet is the packet argument value.
 			Packet ibcexported.PacketI
 			// Ack is the ack argument value.
@@ -4163,13 +4158,12 @@ func (mock *ChannelKeeperMock) GetNextSequenceSendCalls() []struct {
 }
 
 // SendPacket calls SendPacketFunc.
-func (mock *ChannelKeeperMock) SendPacket(ctx cosmossdktypes.Context, channelCap *capabilitytypes.Capability, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error) {
+func (mock *ChannelKeeperMock) SendPacket(ctx cosmossdktypes.Context, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error) {
 	if mock.SendPacketFunc == nil {
 		panic("ChannelKeeperMock.SendPacketFunc: method is nil but ChannelKeeper.SendPacket was just called")
 	}
 	callInfo := struct {
 		Ctx              cosmossdktypes.Context
-		ChannelCap       *capabilitytypes.Capability
 		SourcePort       string
 		SourceChannel    string
 		TimeoutHeight    clienttypes.Height
@@ -4177,7 +4171,6 @@ func (mock *ChannelKeeperMock) SendPacket(ctx cosmossdktypes.Context, channelCap
 		Data             []byte
 	}{
 		Ctx:              ctx,
-		ChannelCap:       channelCap,
 		SourcePort:       sourcePort,
 		SourceChannel:    sourceChannel,
 		TimeoutHeight:    timeoutHeight,
@@ -4187,7 +4180,7 @@ func (mock *ChannelKeeperMock) SendPacket(ctx cosmossdktypes.Context, channelCap
 	mock.lockSendPacket.Lock()
 	mock.calls.SendPacket = append(mock.calls.SendPacket, callInfo)
 	mock.lockSendPacket.Unlock()
-	return mock.SendPacketFunc(ctx, channelCap, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data)
+	return mock.SendPacketFunc(ctx, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data)
 }
 
 // SendPacketCalls gets all the calls that were made to SendPacket.
@@ -4196,7 +4189,6 @@ func (mock *ChannelKeeperMock) SendPacket(ctx cosmossdktypes.Context, channelCap
 //	len(mockedChannelKeeper.SendPacketCalls())
 func (mock *ChannelKeeperMock) SendPacketCalls() []struct {
 	Ctx              cosmossdktypes.Context
-	ChannelCap       *capabilitytypes.Capability
 	SourcePort       string
 	SourceChannel    string
 	TimeoutHeight    clienttypes.Height
@@ -4205,7 +4197,6 @@ func (mock *ChannelKeeperMock) SendPacketCalls() []struct {
 } {
 	var calls []struct {
 		Ctx              cosmossdktypes.Context
-		ChannelCap       *capabilitytypes.Capability
 		SourcePort       string
 		SourceChannel    string
 		TimeoutHeight    clienttypes.Height
@@ -4219,25 +4210,23 @@ func (mock *ChannelKeeperMock) SendPacketCalls() []struct {
 }
 
 // WriteAcknowledgement calls WriteAcknowledgementFunc.
-func (mock *ChannelKeeperMock) WriteAcknowledgement(ctx cosmossdktypes.Context, chanCap *capabilitytypes.Capability, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
+func (mock *ChannelKeeperMock) WriteAcknowledgement(ctx cosmossdktypes.Context, packet ibcexported.PacketI, ack ibcexported.Acknowledgement) error {
 	if mock.WriteAcknowledgementFunc == nil {
 		panic("ChannelKeeperMock.WriteAcknowledgementFunc: method is nil but ChannelKeeper.WriteAcknowledgement was just called")
 	}
 	callInfo := struct {
-		Ctx     cosmossdktypes.Context
-		ChanCap *capabilitytypes.Capability
-		Packet  ibcexported.PacketI
-		Ack     ibcexported.Acknowledgement
+		Ctx    cosmossdktypes.Context
+		Packet ibcexported.PacketI
+		Ack    ibcexported.Acknowledgement
 	}{
-		Ctx:     ctx,
-		ChanCap: chanCap,
-		Packet:  packet,
-		Ack:     ack,
+		Ctx:    ctx,
+		Packet: packet,
+		Ack:    ack,
 	}
 	mock.lockWriteAcknowledgement.Lock()
 	mock.calls.WriteAcknowledgement = append(mock.calls.WriteAcknowledgement, callInfo)
 	mock.lockWriteAcknowledgement.Unlock()
-	return mock.WriteAcknowledgementFunc(ctx, chanCap, packet, ack)
+	return mock.WriteAcknowledgementFunc(ctx, packet, ack)
 }
 
 // WriteAcknowledgementCalls gets all the calls that were made to WriteAcknowledgement.
@@ -4245,20 +4234,90 @@ func (mock *ChannelKeeperMock) WriteAcknowledgement(ctx cosmossdktypes.Context, 
 //
 //	len(mockedChannelKeeper.WriteAcknowledgementCalls())
 func (mock *ChannelKeeperMock) WriteAcknowledgementCalls() []struct {
-	Ctx     cosmossdktypes.Context
-	ChanCap *capabilitytypes.Capability
-	Packet  ibcexported.PacketI
-	Ack     ibcexported.Acknowledgement
+	Ctx    cosmossdktypes.Context
+	Packet ibcexported.PacketI
+	Ack    ibcexported.Acknowledgement
 } {
 	var calls []struct {
-		Ctx     cosmossdktypes.Context
-		ChanCap *capabilitytypes.Capability
-		Packet  ibcexported.PacketI
-		Ack     ibcexported.Acknowledgement
+		Ctx    cosmossdktypes.Context
+		Packet ibcexported.PacketI
+		Ack    ibcexported.Acknowledgement
 	}
 	mock.lockWriteAcknowledgement.RLock()
 	calls = mock.calls.WriteAcknowledgement
 	mock.lockWriteAcknowledgement.RUnlock()
+	return calls
+}
+
+// Ensure, that ClientKeeperMock does implement axelarnettypes.ClientKeeper.
+// If this is not the case, regenerate this file with moq.
+var _ axelarnettypes.ClientKeeper = &ClientKeeperMock{}
+
+// ClientKeeperMock is a mock implementation of axelarnettypes.ClientKeeper.
+//
+//	func TestSomethingThatUsesClientKeeper(t *testing.T) {
+//
+//		// make and configure a mocked axelarnettypes.ClientKeeper
+//		mockedClientKeeper := &ClientKeeperMock{
+//			GetClientLatestHeightFunc: func(ctx cosmossdktypes.Context, clientID string) clienttypes.Height {
+//				panic("mock out the GetClientLatestHeight method")
+//			},
+//		}
+//
+//		// use mockedClientKeeper in code that requires axelarnettypes.ClientKeeper
+//		// and then make assertions.
+//
+//	}
+type ClientKeeperMock struct {
+	// GetClientLatestHeightFunc mocks the GetClientLatestHeight method.
+	GetClientLatestHeightFunc func(ctx cosmossdktypes.Context, clientID string) clienttypes.Height
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// GetClientLatestHeight holds details about calls to the GetClientLatestHeight method.
+		GetClientLatestHeight []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// ClientID is the clientID argument value.
+			ClientID string
+		}
+	}
+	lockGetClientLatestHeight sync.RWMutex
+}
+
+// GetClientLatestHeight calls GetClientLatestHeightFunc.
+func (mock *ClientKeeperMock) GetClientLatestHeight(ctx cosmossdktypes.Context, clientID string) clienttypes.Height {
+	if mock.GetClientLatestHeightFunc == nil {
+		panic("ClientKeeperMock.GetClientLatestHeightFunc: method is nil but ClientKeeper.GetClientLatestHeight was just called")
+	}
+	callInfo := struct {
+		Ctx      cosmossdktypes.Context
+		ClientID string
+	}{
+		Ctx:      ctx,
+		ClientID: clientID,
+	}
+	mock.lockGetClientLatestHeight.Lock()
+	mock.calls.GetClientLatestHeight = append(mock.calls.GetClientLatestHeight, callInfo)
+	mock.lockGetClientLatestHeight.Unlock()
+	return mock.GetClientLatestHeightFunc(ctx, clientID)
+}
+
+// GetClientLatestHeightCalls gets all the calls that were made to GetClientLatestHeight.
+// Check the length with:
+//
+//	len(mockedClientKeeper.GetClientLatestHeightCalls())
+func (mock *ClientKeeperMock) GetClientLatestHeightCalls() []struct {
+	Ctx      cosmossdktypes.Context
+	ClientID string
+} {
+	var calls []struct {
+		Ctx      cosmossdktypes.Context
+		ClientID string
+	}
+	mock.lockGetClientLatestHeight.RLock()
+	calls = mock.calls.GetClientLatestHeight
+	mock.lockGetClientLatestHeight.RUnlock()
 	return calls
 }
 
@@ -4512,78 +4571,6 @@ func (mock *AccountKeeperMock) SetModuleAccountCalls() []struct {
 	mock.lockSetModuleAccount.RLock()
 	calls = mock.calls.SetModuleAccount
 	mock.lockSetModuleAccount.RUnlock()
-	return calls
-}
-
-// Ensure, that PortKeeperMock does implement axelarnettypes.PortKeeper.
-// If this is not the case, regenerate this file with moq.
-var _ axelarnettypes.PortKeeper = &PortKeeperMock{}
-
-// PortKeeperMock is a mock implementation of axelarnettypes.PortKeeper.
-//
-//	func TestSomethingThatUsesPortKeeper(t *testing.T) {
-//
-//		// make and configure a mocked axelarnettypes.PortKeeper
-//		mockedPortKeeper := &PortKeeperMock{
-//			BindPortFunc: func(ctx cosmossdktypes.Context, portID string) *capabilitytypes.Capability {
-//				panic("mock out the BindPort method")
-//			},
-//		}
-//
-//		// use mockedPortKeeper in code that requires axelarnettypes.PortKeeper
-//		// and then make assertions.
-//
-//	}
-type PortKeeperMock struct {
-	// BindPortFunc mocks the BindPort method.
-	BindPortFunc func(ctx cosmossdktypes.Context, portID string) *capabilitytypes.Capability
-
-	// calls tracks calls to the methods.
-	calls struct {
-		// BindPort holds details about calls to the BindPort method.
-		BindPort []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// PortID is the portID argument value.
-			PortID string
-		}
-	}
-	lockBindPort sync.RWMutex
-}
-
-// BindPort calls BindPortFunc.
-func (mock *PortKeeperMock) BindPort(ctx cosmossdktypes.Context, portID string) *capabilitytypes.Capability {
-	if mock.BindPortFunc == nil {
-		panic("PortKeeperMock.BindPortFunc: method is nil but PortKeeper.BindPort was just called")
-	}
-	callInfo := struct {
-		Ctx    cosmossdktypes.Context
-		PortID string
-	}{
-		Ctx:    ctx,
-		PortID: portID,
-	}
-	mock.lockBindPort.Lock()
-	mock.calls.BindPort = append(mock.calls.BindPort, callInfo)
-	mock.lockBindPort.Unlock()
-	return mock.BindPortFunc(ctx, portID)
-}
-
-// BindPortCalls gets all the calls that were made to BindPort.
-// Check the length with:
-//
-//	len(mockedPortKeeper.BindPortCalls())
-func (mock *PortKeeperMock) BindPortCalls() []struct {
-	Ctx    cosmossdktypes.Context
-	PortID string
-} {
-	var calls []struct {
-		Ctx    cosmossdktypes.Context
-		PortID string
-	}
-	mock.lockBindPort.RLock()
-	calls = mock.calls.BindPort
-	mock.lockBindPort.RUnlock()
 	return calls
 }
 
@@ -5015,7 +5002,7 @@ var _ axelarnettypes.IBCKeeper = &IBCKeeperMock{}
 //			GetIBCPathFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (string, bool) {
 //				panic("mock out the GetIBCPath method")
 //			},
-//			ParseIBCDenomFunc: func(ctx cosmossdktypes.Context, ibcDenom string) (ibctransfertypes.DenomTrace, error) {
+//			ParseIBCDenomFunc: func(ctx cosmossdktypes.Context, ibcDenom string) (ibctransfertypes.Denom, error) {
 //				panic("mock out the ParseIBCDenom method")
 //			},
 //			SendMessageFunc: func(c context.Context, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset cosmossdktypes.Coin, payload string, id string) error {
@@ -5032,7 +5019,7 @@ type IBCKeeperMock struct {
 	GetIBCPathFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (string, bool)
 
 	// ParseIBCDenomFunc mocks the ParseIBCDenom method.
-	ParseIBCDenomFunc func(ctx cosmossdktypes.Context, ibcDenom string) (ibctransfertypes.DenomTrace, error)
+	ParseIBCDenomFunc func(ctx cosmossdktypes.Context, ibcDenom string) (ibctransfertypes.Denom, error)
 
 	// SendMessageFunc mocks the SendMessage method.
 	SendMessageFunc func(c context.Context, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset cosmossdktypes.Coin, payload string, id string) error
@@ -5109,7 +5096,7 @@ func (mock *IBCKeeperMock) GetIBCPathCalls() []struct {
 }
 
 // ParseIBCDenom calls ParseIBCDenomFunc.
-func (mock *IBCKeeperMock) ParseIBCDenom(ctx cosmossdktypes.Context, ibcDenom string) (ibctransfertypes.DenomTrace, error) {
+func (mock *IBCKeeperMock) ParseIBCDenom(ctx cosmossdktypes.Context, ibcDenom string) (ibctransfertypes.Denom, error) {
 	if mock.ParseIBCDenomFunc == nil {
 		panic("IBCKeeperMock.ParseIBCDenomFunc: method is nil but IBCKeeper.ParseIBCDenom was just called")
 	}

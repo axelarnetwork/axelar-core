@@ -3118,7 +3118,7 @@ var _ nexustypes.IBCKeeper = &IBCKeeperMock{}
 //			GetIBCPathFunc: func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (string, bool) {
 //				panic("mock out the GetIBCPath method")
 //			},
-//			ParseIBCDenomFunc: func(ctx cosmossdktypes.Context, ibcDenom string) (ibctypes.DenomTrace, error) {
+//			ParseIBCDenomFunc: func(ctx cosmossdktypes.Context, ibcDenom string) (ibctypes.Denom, error) {
 //				panic("mock out the ParseIBCDenom method")
 //			},
 //		}
@@ -3132,7 +3132,7 @@ type IBCKeeperMock struct {
 	GetIBCPathFunc func(ctx cosmossdktypes.Context, chain github_com_axelarnetwork_axelar_core_x_nexus_exported.ChainName) (string, bool)
 
 	// ParseIBCDenomFunc mocks the ParseIBCDenom method.
-	ParseIBCDenomFunc func(ctx cosmossdktypes.Context, ibcDenom string) (ibctypes.DenomTrace, error)
+	ParseIBCDenomFunc func(ctx cosmossdktypes.Context, ibcDenom string) (ibctypes.Denom, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -3192,7 +3192,7 @@ func (mock *IBCKeeperMock) GetIBCPathCalls() []struct {
 }
 
 // ParseIBCDenom calls ParseIBCDenomFunc.
-func (mock *IBCKeeperMock) ParseIBCDenom(ctx cosmossdktypes.Context, ibcDenom string) (ibctypes.DenomTrace, error) {
+func (mock *IBCKeeperMock) ParseIBCDenom(ctx cosmossdktypes.Context, ibcDenom string) (ibctypes.Denom, error) {
 	if mock.ParseIBCDenomFunc == nil {
 		panic("IBCKeeperMock.ParseIBCDenomFunc: method is nil but IBCKeeper.ParseIBCDenom was just called")
 	}

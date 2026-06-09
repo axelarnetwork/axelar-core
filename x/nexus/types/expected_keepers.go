@@ -103,7 +103,7 @@ type AccountKeeper interface {
 
 // IBCKeeper provides functionality to send IBC transfer
 type IBCKeeper interface {
-	ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.DenomTrace, error)
+	ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.Denom, error)
 	GetIBCPath(ctx sdk.Context, chain exported.ChainName) (string, bool)
 }
 

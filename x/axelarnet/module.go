@@ -195,12 +195,13 @@ func NewAxelarnetIBCModule(
 // logic returns without error.
 func (m AxelarnetIBCModule) OnRecvPacket(
 	ctx sdk.Context,
+	channelVersion string,
 	packet channeltypes.Packet,
 	relayer sdk.AccAddress,
 ) ibcexported.Acknowledgement {
 	// TODO: split axelar routed packets and gmp into separated middleware?
 
-	ack := m.IBCModule.OnRecvPacket(ctx, packet, relayer)
+	ack := m.IBCModule.OnRecvPacket(ctx, channelVersion, packet, relayer)
 	if !ack.Success() {
 		return ack
 	}
@@ -211,11 +212,12 @@ func (m AxelarnetIBCModule) OnRecvPacket(
 // OnAcknowledgementPacket implements the IBCModule interface
 func (m AxelarnetIBCModule) OnAcknowledgementPacket(
 	ctx sdk.Context,
+	channelVersion string,
 	packet channeltypes.Packet,
 	acknowledgement []byte,
 	relayer sdk.AccAddress,
 ) error {
-	err := m.IBCModule.OnAcknowledgementPacket(ctx, packet, acknowledgement, relayer)
+	err := m.IBCModule.OnAcknowledgementPacket(ctx, channelVersion, packet, acknowledgement, relayer)
 	if err != nil {
 		return err
 	}
@@ -244,10 +246,11 @@ func (m AxelarnetIBCModule) OnAcknowledgementPacket(
 // OnTimeoutPacket implements the IBCModule interface
 func (m AxelarnetIBCModule) OnTimeoutPacket(
 	ctx sdk.Context,
+	channelVersion string,
 	packet channeltypes.Packet,
 	relayer sdk.AccAddress,
 ) error {
-	err := m.IBCModule.OnTimeoutPacket(ctx, packet, relayer)
+	err := m.IBCModule.OnTimeoutPacket(ctx, channelVersion, packet, relayer)
 	if err != nil {
 		return err
 	}
@@ -360,10 +363,10 @@ func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channe
 func extractTokenFromAckOrTimeoutPacket(packet channeltypes.Packet) sdk.Coin {
 	data := funcs.Must(types.ToICS20Packet(packet))
 
-	trace := ibctransfertypes.ParseDenomTrace(data.Denom)
+	denom := ibctransfertypes.ExtractDenomFromPath(data.Denom)
 	amount := funcs.MustOk(math.NewIntFromString(data.Amount))
 
-	return sdk.NewCoin(trace.IBCDenom(), amount)
+	return sdk.NewCoin(denom.IBCDenom(), amount)
 }
 
 // Temporary logic to handle in-transit IBC transfers during upgrade. Previously IBC transfers were sent from the asset
@@ -380,7 +383,7 @@ func refundFromAssetEscrowAddressToIBCAccount(ctx sdk.Context, packet channeltyp
 		return nil
 	}
 
-	denom := ibctransfertypes.ParseDenomTrace(data.Denom).IBCDenom()
+	denom := ibctransfertypes.ExtractDenomFromPath(data.Denom).IBCDenom()
 	transferAmount := funcs.MustOk(math.NewIntFromString(data.Amount))
 
 	token := sdk.NewCoin(denom, transferAmount)

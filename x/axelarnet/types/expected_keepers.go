@@ -12,7 +12,6 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	ibctypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
@@ -23,7 +22,7 @@ import (
 	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 )
 
-//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper Nexus BankKeeper IBCTransferKeeper ChannelKeeper AccountKeeper PortKeeper GovKeeper StakingKeeper FeegrantKeeper IBCKeeper DistributionKeeper
+//go:generate moq -out ./mock/expected_keepers.go -pkg mock . BaseKeeper Nexus BankKeeper IBCTransferKeeper ChannelKeeper ClientKeeper AccountKeeper GovKeeper StakingKeeper FeegrantKeeper IBCKeeper DistributionKeeper
 
 // BaseKeeper is implemented by this module's base keeper
 type BaseKeeper interface {
@@ -116,7 +115,7 @@ type BankKeeper interface {
 
 // IBCTransferKeeper provides functionality to manage IBC transfers
 type IBCTransferKeeper interface {
-	GetDenomTrace(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctypes.DenomTrace, bool)
+	GetDenom(ctx sdk.Context, denomHash tmbytes.HexBytes) (ibctypes.Denom, bool)
 	Transfer(goCtx context.Context, msg *ibctypes.MsgTransfer) (*ibctypes.MsgTransferResponse, error)
 }
 
@@ -128,7 +127,6 @@ type ChannelKeeper interface {
 	GetChannel(ctx sdk.Context, srcPort string, srcChan string) (channel channeltypes.Channel, found bool)
 	SendPacket(
 		ctx sdk.Context,
-		channelCap *capabilitytypes.Capability,
 		sourcePort string,
 		sourceChannel string,
 		timeoutHeight clienttypes.Height,
@@ -137,7 +135,6 @@ type ChannelKeeper interface {
 	) (uint64, error) // used in module_test
 	WriteAcknowledgement(
 		ctx sdk.Context,
-		chanCap *capabilitytypes.Capability,
 		packet ibc.PacketI,
 		ack ibc.Acknowledgement,
 	) error
@@ -159,9 +156,9 @@ type AccountKeeper interface {
 // CosmosChainGetter exposes GetCosmosChainByName
 type CosmosChainGetter func(ctx sdk.Context, chain nexus.ChainName) (CosmosChain, bool)
 
-// PortKeeper used in module_test
-type PortKeeper interface {
-	BindPort(ctx sdk.Context, portID string) *capabilitytypes.Capability
+// ClientKeeper defines the expected IBC client keeper
+type ClientKeeper interface {
+	GetClientLatestHeight(ctx sdk.Context, clientID string) clienttypes.Height
 }
 
 // GovKeeper provides functionality to the gov module
@@ -193,7 +190,7 @@ type FeegrantKeeper interface {
 // IBCKeeper defines the expected IBC keeper
 type IBCKeeper interface {
 	SendMessage(c context.Context, recipient nexus.CrossChainAddress, asset sdk.Coin, payload string, id string) error
-	ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.DenomTrace, error)
+	ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.Denom, error)
 	GetIBCPath(ctx sdk.Context, chain nexus.ChainName) (string, bool)
 }
 
