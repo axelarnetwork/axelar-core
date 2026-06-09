@@ -31,7 +31,7 @@ func TestLockableAsset(t *testing.T) {
 		bank  *mock.BankKeeperMock
 
 		coin  sdk.Coin
-		trace ibctypes.DenomTrace
+		trace ibctypes.Denom
 	)
 
 	givenKeeper := Given("the nexus keeper", func() {
@@ -66,13 +66,10 @@ func TestLockableAsset(t *testing.T) {
 
 	whenCoinIsICS20FromExternalCosmosChain := When("coin is ICS20 from external cosmos chain", func() {
 		path := testutils.RandomIBCPath()
-		trace = ibctypes.DenomTrace{
-			Path:      path,
-			BaseDenom: rand.Denom(5, 10),
-		}
+		trace = ibctypes.ExtractDenomFromPath(fmt.Sprintf("%s/%s", path, rand.Denom(5, 10)))
 
 		nexus.GetChainByNativeAssetFunc = func(ctx sdk.Context, asset string) (exported.Chain, bool) {
-			if asset == trace.GetBaseDenom() {
+			if asset == trace.Base {
 				return axelarnet.Axelarnet, true
 			}
 
@@ -82,22 +79,19 @@ func TestLockableAsset(t *testing.T) {
 			return path, chain == axelarnet.Axelarnet.Name
 		}
 
-		coin = sdk.NewCoin(trace.GetBaseDenom(), math.NewInt(rand.PosI64()))
+		coin = sdk.NewCoin(trace.Base, math.NewInt(rand.PosI64()))
 	})
 
 	whenCoinIsICS20 := When("coin is ICS20", func() {
 		path := testutils.RandomIBCPath()
-		trace = ibctypes.DenomTrace{
-			Path:      path,
-			BaseDenom: rand.Denom(5, 10),
-		}
+		trace = ibctypes.ExtractDenomFromPath(fmt.Sprintf("%s/%s", path, rand.Denom(5, 10)))
 
-		ibc.ParseIBCDenomFunc = func(ctx sdk.Context, ibcDenom string) (ibctypes.DenomTrace, error) {
+		ibc.ParseIBCDenomFunc = func(ctx sdk.Context, ibcDenom string) (ibctypes.Denom, error) {
 			if ibcDenom == coin.Denom {
 				return trace, nil
 			}
 
-			return ibctypes.DenomTrace{}, fmt.Errorf("denom not found")
+			return ibctypes.Denom{}, fmt.Errorf("denom not found")
 		}
 		ibc.GetIBCPathFunc = func(ctx sdk.Context, chain exported.ChainName) (string, bool) {
 			if chain == axelarnet.Axelarnet.Name {
@@ -107,7 +101,7 @@ func TestLockableAsset(t *testing.T) {
 			return "", false
 		}
 		nexus.GetChainByNativeAssetFunc = func(ctx sdk.Context, asset string) (exported.Chain, bool) {
-			if asset == trace.BaseDenom {
+			if asset == trace.Base {
 				return axelarnet.Axelarnet, true
 			}
 
@@ -125,7 +119,7 @@ func TestLockableAsset(t *testing.T) {
 
 				assert.NoError(t, err)
 				assert.Equal(t, types.CoinType(types.ICS20), lockableAsset.coinType)
-				assert.Equal(t, sdk.NewCoin(trace.GetBaseDenom(), coin.Amount), lockableAsset.GetAsset())
+				assert.Equal(t, sdk.NewCoin(trace.Base, coin.Amount), lockableAsset.GetAsset())
 				assert.Equal(t, coin, lockableAsset.GetCoin(ctx))
 			}).
 			Run(t)

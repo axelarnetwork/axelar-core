@@ -111,6 +111,7 @@ type BankKeeper interface {
 	LockedCoins(ctx context.Context, addr sdk.AccAddress) sdk.Coins
 	HasDenomMetaData(ctx context.Context, denom string) bool
 	SetDenomMetaData(ctx context.Context, denomMetaData banktypes.Metadata)
+	SpendableCoin(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin
 }
 
 // IBCTransferKeeper provides functionality to manage IBC transfers

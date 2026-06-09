@@ -55,7 +55,11 @@ func setup(t log.TestingT) (sdk.Context, keeper.Keeper, *mock.ChannelKeeperMock)
 		},
 	}
 
-	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.FeegrantKeeperMock{})
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.ClientKeeperMock{
+		GetClientLatestHeightFunc: func(sdk.Context, string) clienttypes.Height {
+			return clienttypes.NewHeight(0, 5)
+		},
+	}, &mock.FeegrantKeeperMock{})
 	return ctx, k, channelK
 }
 
@@ -140,11 +144,8 @@ func TestHandleMessage(t *testing.T) {
 			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
-			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
-				return ibctransfertypes.DenomTrace{
-					Path:      fmt.Sprintf("%s/%s", ibctransfertypes.PortID, receiverChannel),
-					BaseDenom: rand.Denom(5, 10),
-				}, true
+			GetDenomFunc: func(ctx sdk.Context, denomHash tmbytes.HexBytes) (ibctransfertypes.Denom, bool) {
+				return ibctransfertypes.ExtractDenomFromPath(fmt.Sprintf("%s/%s/%s", ibctransfertypes.PortID, receiverChannel, rand.Denom(5, 10))), true
 			},
 		})
 
@@ -510,11 +511,8 @@ func TestHandleMessageWithToken(t *testing.T) {
 			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
-			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
-				return ibctransfertypes.DenomTrace{
-					Path:      fmt.Sprintf("%s/%s", ibctransfertypes.PortID, receiverChannel),
-					BaseDenom: denom,
-				}, true
+			GetDenomFunc: func(ctx sdk.Context, denomHash tmbytes.HexBytes) (ibctransfertypes.Denom, bool) {
+				return ibctransfertypes.ExtractDenomFromPath(fmt.Sprintf("%s/%s/%s", ibctransfertypes.PortID, receiverChannel, denom)), true
 			},
 		})
 		b = &mock.BankKeeperMock{
@@ -716,11 +714,8 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
-			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
-				return ibctransfertypes.DenomTrace{
-					Path:      fmt.Sprintf("%s/%s", ibctransfertypes.PortID, receiverChannel),
-					BaseDenom: rand.Denom(5, 10),
-				}, true
+			GetDenomFunc: func(ctx sdk.Context, denomHash tmbytes.HexBytes) (ibctransfertypes.Denom, bool) {
+				return ibctransfertypes.ExtractDenomFromPath(fmt.Sprintf("%s/%s/%s", ibctransfertypes.PortID, receiverChannel, rand.Denom(5, 10))), true
 			},
 		})
 

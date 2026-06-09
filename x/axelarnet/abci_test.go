@@ -14,6 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 	ibcchanneltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
 	ibcclient "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	"github.com/stretchr/testify/assert"
@@ -47,7 +48,11 @@ func setup(t log.TestingT) (sdk.Context, keeper.IBCKeeper, *mock.ChannelKeeperMo
 	}
 	transferK := &mock.IBCTransferKeeperMock{}
 
-	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.FeegrantKeeperMock{})
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.ClientKeeperMock{
+		GetClientLatestHeightFunc: func(sdk.Context, string) clienttypes.Height {
+			return clienttypes.NewHeight(0, 5)
+		},
+	}, &mock.FeegrantKeeperMock{})
 	k.InitGenesis(ctx, types.DefaultGenesisState())
 	ibcK := keeper.NewIBCKeeper(k, transferK)
 	return ctx, ibcK, channelK, transferK

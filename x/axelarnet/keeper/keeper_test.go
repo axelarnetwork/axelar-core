@@ -10,6 +10,7 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 	"github.com/stretchr/testify/assert"
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
@@ -34,7 +35,11 @@ func setup(t log.TestingT) (sdk.Context, keeper.Keeper, *mock.ChannelKeeperMock,
 	channelK := &mock.ChannelKeeperMock{}
 	feegrantK := &mock.FeegrantKeeperMock{}
 
-	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, feegrantK)
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.ClientKeeperMock{
+		GetClientLatestHeightFunc: func(sdk.Context, string) clienttypes.Height {
+			return clienttypes.NewHeight(0, 5)
+		},
+	}, feegrantK)
 	return ctx, k, channelK, feegrantK
 }
 

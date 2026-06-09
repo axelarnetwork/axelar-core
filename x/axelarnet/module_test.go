@@ -72,7 +72,11 @@ func TestIBCModule(t *testing.T) {
 			},
 		}
 
-		k = keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(types.ModuleName), subspace, channelK, &mock.FeegrantKeeperMock{})
+		k = keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(types.ModuleName), subspace, channelK, &mock.ClientKeeperMock{
+			GetClientLatestHeightFunc: func(sdk.Context, string) clienttypes.Height {
+				return clienttypes.NewHeight(0, 5)
+			},
+		}, &mock.FeegrantKeeperMock{})
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
 
 		accountK := &mock.AccountKeeperMock{
@@ -90,6 +94,7 @@ func TestIBCModule(t *testing.T) {
 			},
 			BurnCoinsFunc:      func(context.Context, string, sdk.Coins) error { return nil },
 			GetAllBalancesFunc: func(context.Context, sdk.AccAddress) sdk.Coins { return sdk.NewCoins() },
+			BlockedAddrFunc:    func(sdk.AccAddress) bool { return false },
 		}
 
 		transferSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey(ibctransfertypes.StoreKey), store.NewKVStoreKey("tTrasferKey"), ibctransfertypes.ModuleName)
@@ -151,12 +156,12 @@ func TestIBCModule(t *testing.T) {
 	})
 
 	whenOnAck := When("on acknowledgement", func() {
-		err := ibcModule.OnAcknowledgementPacket(ctx, packet, ack.Acknowledgement(), nil)
+		err := ibcModule.OnAcknowledgementPacket(ctx, ibctransfertypes.V1, packet, ack.Acknowledgement(), nil)
 		assert.NoError(t, err)
 	})
 
 	whenOnTimeout := When("on timeout", func() {
-		err := ibcModule.OnTimeoutPacket(ctx, packet, nil)
+		err := ibcModule.OnTimeoutPacket(ctx, ibctransfertypes.V1, packet, nil)
 		assert.NoError(t, err)
 	})
 
@@ -207,7 +212,7 @@ func TestIBCModule(t *testing.T) {
 
 			whenPendingTransfersExist.
 				When("get invalid ack", func() {
-					err := ibcModule.OnAcknowledgementPacket(ctx, packet, rand.BytesBetween(1, 50), nil)
+					err := ibcModule.OnAcknowledgementPacket(ctx, ibctransfertypes.V1, packet, rand.BytesBetween(1, 50), nil)
 					assert.Error(t, err)
 				}).
 				Then2(shouldNotChangeTransferState),

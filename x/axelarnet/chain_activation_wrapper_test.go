@@ -46,7 +46,7 @@ func TestChainActivationICS4Wrapper(t *testing.T) {
 		}
 		n.IsChainActivatedFunc = func(_ sdk.Context, _ nexus.Chain) bool { return true }
 
-		seq, err := wrapper.SendPacket(ctx, nil, "transfer", "channel-0", clienttypes.Height{}, 0, []byte("data"))
+		seq, err := wrapper.SendPacket(ctx, "transfer", "channel-0", clienttypes.Height{}, 0, []byte("data"))
 		assert.NoError(t, err)
 		assert.Equal(t, uint64(1), seq)
 		assert.Len(t, channel.SendPacketCalls(), 1)
@@ -62,7 +62,7 @@ func TestChainActivationICS4Wrapper(t *testing.T) {
 		}
 		n.IsChainActivatedFunc = func(_ sdk.Context, _ nexus.Chain) bool { return false }
 
-		_, err := wrapper.SendPacket(ctx, nil, "transfer", "channel-0", clienttypes.Height{}, 0, []byte("data"))
+		_, err := wrapper.SendPacket(ctx, "transfer", "channel-0", clienttypes.Height{}, 0, []byte("data"))
 		assert.ErrorContains(t, err, "deactivated")
 		assert.Len(t, channel.SendPacketCalls(), 0)
 	})
@@ -73,7 +73,7 @@ func TestChainActivationICS4Wrapper(t *testing.T) {
 			return "", false
 		}
 
-		seq, err := wrapper.SendPacket(ctx, nil, "transfer", "channel-99", clienttypes.Height{}, 0, []byte("data"))
+		seq, err := wrapper.SendPacket(ctx, "transfer", "channel-99", clienttypes.Height{}, 0, []byte("data"))
 		assert.NoError(t, err)
 		assert.Equal(t, uint64(1), seq)
 		assert.Len(t, channel.SendPacketCalls(), 1)
