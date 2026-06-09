@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 
+	store "cosmossdk.io/store/types"
 	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	v2 "github.com/CosmWasm/wasmd/x/wasm/migrations/v2"
@@ -10,7 +11,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
@@ -36,6 +36,25 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keep
 		},
 	)
 
+	upgradeInfo, err := upgradeKeeper.ReadUpgradeInfoFromDisk()
+	if err != nil {
+		panic(err)
+	}
+
+	if upgradeInfo.Name == upgradeName(app.Version()) && !upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+		storeUpgrades := store.StoreUpgrades{
+			Deleted: []string{
+				// x/capability is removed entirely at ibc-go v10
+				"capability",
+				// x/crisis is dropped from the app; every axelar module
+				// registered zero invariants so the removal is lossless
+				"crisis",
+			},
+		}
+
+		// configure store loader that checks if version == upgradeHeight and applies store upgrades
+		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+	}
 }
 
 func setupLegacyKeyTables(k *paramskeeper.Keeper) {
@@ -54,8 +73,6 @@ func setupLegacyKeyTables(k *paramskeeper.Keeper) {
 			keyTable = slashingtypes.ParamKeyTable()
 		case govtypes.ModuleName:
 			keyTable = govv1.ParamKeyTable()
-		case crisistypes.ModuleName:
-			keyTable = crisistypes.ParamKeyTable()
 		case ibcexported.ModuleName:
 			// Register legacy key table for IBC client and connection params so migrations can read them
 			keyTable = paramstypes.NewKeyTable().

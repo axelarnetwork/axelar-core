@@ -28,8 +28,6 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
@@ -130,7 +128,6 @@ func initParamsKeeper(encodingConfig axelarParams.EncodingConfig, key, tkey stor
 	paramsKeeper.Subspace(distrtypes.ModuleName)
 	paramsKeeper.Subspace(slashingtypes.ModuleName)
 	paramsKeeper.Subspace(govtypes.ModuleName)
-	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibcexported.ModuleName)
 	paramsKeeper.Subspace(wasm.ModuleName)
@@ -379,18 +376,6 @@ func upgradeName(version string) string {
 		panic(fmt.Errorf("invalid app version %s", version))
 	}
 	return name
-}
-
-func initCrisisKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache, invCheckPeriod uint) *crisiskeeper.Keeper {
-	return crisiskeeper.NewKeeper(
-		appCodec,
-		runtime.NewKVStoreService(keys[crisistypes.StoreKey]),
-		invCheckPeriod,
-		GetKeeper[bankkeeper.BaseKeeper](keepers),
-		authtypes.FeeCollectorName,
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		GetKeeper[authkeeper.AccountKeeper](keepers).AddressCodec(),
-	)
 }
 
 func initSlashingKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *slashingkeeper.Keeper {

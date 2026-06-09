@@ -60,9 +60,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/consensus"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
-	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
@@ -231,9 +228,6 @@ func NewAxelarApp(
 	SetKeeper(keepers, initDistributionKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initSlashingKeeper(appCodec, encodingConfig.Amino, keys, keepers))
 
-	invCheckPeriod := cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod))
-	SetKeeper(keepers, initCrisisKeeper(appCodec, keys, keepers, invCheckPeriod))
-
 	// get skipUpgradeHeights from the app options
 	skipUpgradeHeights := map[int64]bool{}
 	for _, h := range cast.ToIntSlice(appOpts.Get(server.FlagUnsafeSkipUpgrades)) {
@@ -291,6 +285,11 @@ func NewAxelarApp(
 	GetKeeper[nexusKeeper.Keeper](keepers).SetMessageRouter(initMessageRouter(keepers))
 	GetKeeper[ibckeeper.Keeper](keepers).SetRouter(initIBCRouter(keepers, initIBCMiddleware(keepers, ics4Wrapper)))
 
+	// light clients are no longer implicit in ibc-go v10; they must be registered
+	// as modular routes on the client keeper
+	tmLightClientModule := ibctendermint.NewLightClientModule(appCodec, GetKeeper[ibckeeper.Keeper](keepers).ClientKeeper.GetStoreProvider())
+	GetKeeper[ibckeeper.Keeper](keepers).ClientKeeper.AddRoute(ibctendermint.ModuleName, &tmLightClientModule)
+
 	// register the staking hooks
 	GetKeeper[stakingkeeper.Keeper](keepers).SetHooks(
 		stakingtypes.NewMultiStakingHooks(
@@ -315,14 +314,16 @@ func NewAxelarApp(
 			logger,
 		),
 	)
+	appModules = append(appModules, ibctendermint.NewAppModule(tmLightClientModule))
 
 	mm := NewFilteredModuleManager(appModules, []string{vestingtypes.ModuleName})
 	mm.SetOrderMigrations(orderMigrations()...)
+	// upgrade module must run first so upgrades are applied before any other
+	// module's PreBlock; x/auth implements PreBlock since cosmos-sdk v0.53
+	mm.SetOrderPreBlockers(upgradetypes.ModuleName, authtypes.ModuleName)
 	mm.SetOrderBeginBlockers(orderBeginBlockers()...)
 	mm.SetOrderEndBlockers(orderEndBlockers()...)
 	mm.SetOrderInitGenesis(orderModulesForGenesis()...)
-
-	mm.RegisterInvariants(GetKeeper[crisiskeeper.Keeper](keepers))
 
 	configurator := module.NewConfigurator(appCodec, bApp.MsgServiceRouter(), bApp.GRPCQueryRouter())
 	mm.RegisterServices(configurator)
@@ -491,8 +492,6 @@ func initBaseApp(db dbm.DB, traceStore io.Writer, encodingConfig axelarParams.En
 func initAppModules(keepers *KeeperCache, keys map[string]*store.KVStoreKey, bApp *bam.BaseApp, encodingConfig axelarParams.EncodingConfig, appOpts servertypes.AppOptions, axelarnetModule axelarnet.AppModule) []module.AppModule {
 	// NOTE: we may consider parsing `appOpts` inside module constructors. For the moment
 	// we prefer to be more strict in what arguments the modules expect.
-	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
-
 	appCodec := encodingConfig.Codec
 	paramsKeeper := GetKeeper[paramskeeper.Keeper](keepers)
 
@@ -505,7 +504,6 @@ func initAppModules(keepers *KeeperCache, keys map[string]*store.KVStoreKey, bAp
 
 		// bank module accepts a reference to the base keeper, but panics when RegisterService is called on a reference, so we need to dereference it
 		bank.NewAppModule(appCodec, *GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(banktypes.ModuleName))),
-		crisis.NewAppModule(GetKeeper[crisiskeeper.Keeper](keepers), skipGenesisInvariants, funcs.MustOk(paramsKeeper.GetSubspace(crisistypes.ModuleName))),
 		gov.NewAppModule(appCodec, GetKeeper[govkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(govtypes.ModuleName))),
 		mint.NewAppModule(appCodec, *GetKeeper[mintkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), nil, funcs.MustOk(paramsKeeper.GetSubspace(minttypes.ModuleName))),
 		slashing.NewAppModule(appCodec, *GetKeeper[slashingkeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers), GetKeeper[bankkeeper.BaseKeeper](keepers), GetKeeper[stakingkeeper.Keeper](keepers), funcs.MustOk(paramsKeeper.GetSubspace(slashingtypes.ModuleName)), encodingConfig.InterfaceRegistry),
@@ -703,11 +701,11 @@ func orderMigrations() []string {
 		authtypes.ModuleName,
 		// sdk modules
 		upgradetypes.ModuleName,
-		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
 		ibctransfertypes.ModuleName,
 		ibcexported.ModuleName,
+		ibctendermint.ModuleName,
 		banktypes.ModuleName,
 		distrtypes.ModuleName,
 		slashingtypes.ModuleName,
@@ -753,7 +751,6 @@ func orderBeginBlockers() []string {
 	beginBlockerOrder := []string{
 		// upgrades should be run first
 		upgradetypes.ModuleName,
-		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
 		ibctransfertypes.ModuleName,
@@ -785,7 +782,6 @@ func orderBeginBlockers() []string {
 
 func orderEndBlockers() []string {
 	endBlockerOrder := []string{
-		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
 		ibctransfertypes.ModuleName,
@@ -838,11 +834,9 @@ func orderModulesForGenesis() []string {
 		slashingtypes.ModuleName,
 		govtypes.ModuleName,
 		minttypes.ModuleName,
-		crisistypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		ibcexported.ModuleName,
-		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
 		feegrant.ModuleName,
 		paramstypes.ModuleName,
@@ -891,7 +885,6 @@ func CreateStoreKeys() map[string]*store.KVStoreKey {
 		ibctransfertypes.StoreKey,
 		feegrant.StoreKey,
 		consensusparamtypes.StoreKey,
-		crisistypes.StoreKey,
 
 		voteTypes.StoreKey,
 		evmTypes.StoreKey,
@@ -1023,7 +1016,6 @@ func GetModuleBasics() module.BasicManager {
 		distr.AppModuleBasic{},
 		gov.NewAppModuleBasic(nil),
 		params.AppModuleBasic{},
-		crisis.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		feegrantmodule.AppModuleBasic{},
 		upgrade.AppModuleBasic{},
