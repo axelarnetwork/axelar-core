@@ -4,6 +4,7 @@ import (
 	"context"
 
 	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	distribution "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distributionTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
@@ -93,4 +94,32 @@ func (k Keeper) AllocateTokens(ctx context.Context, _ int64, _ []abci.VoteInfo) 
 	}
 
 	return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, distributionTypes.ModuleName, types.ZeroAddress, feesBurned)
+}
+
+// BeginBlocker mirrors the cosmos-sdk distribution keeper's BeginBlocker
+// (cosmos-sdk/x/distribution/keeper/abci.go) so the custom AllocateTokens
+// defined on this keeper is used instead of the SDK's. The SDK's external
+// community pool handling is omitted because the app does not wire
+// x/protocolpool.
+func (k Keeper) BeginBlocker(ctx sdk.Context) error {
+	start := telemetry.Now()
+	defer telemetry.ModuleMeasureSince(distributionTypes.ModuleName, start, telemetry.MetricKeyBeginBlocker)
+
+	// determine the total power signing the block
+	var previousTotalPower int64
+	for _, voteInfo := range ctx.VoteInfos() {
+		previousTotalPower += voteInfo.Validator.Power
+	}
+
+	// TODO this is Tendermint-dependent
+	// ref https://github.com/cosmos/cosmos-sdk/issues/3095
+	if ctx.BlockHeight() > 1 {
+		if err := k.AllocateTokens(ctx, previousTotalPower, ctx.VoteInfos()); err != nil {
+			return err
+		}
+	}
+
+	// record the proposer for when we pay out on the next block
+	consAddr := sdk.ConsAddress(ctx.BlockHeader().ProposerAddress)
+	return k.SetPreviousProposerConsAddr(ctx, consAddr)
 }
