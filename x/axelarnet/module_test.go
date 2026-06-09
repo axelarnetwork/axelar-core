@@ -9,12 +9,11 @@ import (
 	"cosmossdk.io/math"
 	store "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	ibcTransfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
@@ -93,11 +92,9 @@ func TestIBCModule(t *testing.T) {
 			GetAllBalancesFunc: func(context.Context, sdk.AccAddress) sdk.Coins { return sdk.NewCoins() },
 		}
 
-		scopeKeeper := capabilitykeeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(capabilitytypes.StoreKey), store.NewKVStoreKey(capabilitytypes.MemStoreKey))
-		scopedTransferK := scopeKeeper.ScopeToModule(ibctransfertypes.ModuleName)
 		transferSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey(ibctransfertypes.StoreKey), store.NewKVStoreKey("tTrasferKey"), ibctransfertypes.ModuleName)
 
-		transferK = ibctransferkeeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK, authtypes.NewModuleAddress(govtypes.ModuleName).String())
+		transferK = ibctransferkeeper.NewKeeper(encCfg.Codec, runtime.NewKVStoreService(store.NewKVStoreKey("transfer")), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, nil, accountK, bankK, authtypes.NewModuleAddress(govtypes.ModuleName).String())
 
 		lockableAsset = &nexusmock.LockableAssetMock{}
 		n = &mock.NexusMock{

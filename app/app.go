@@ -86,9 +86,6 @@ import (
 	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10"
 	ibchookskeeper "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/keeper"
 	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10/types"
-	"github.com/cosmos/ibc-go/modules/capability"
-	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	"github.com/cosmos/ibc-go/v10/modules/apps/transfer"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
@@ -214,7 +211,6 @@ func NewAxelarApp(
 ) *AxelarApp {
 	keys := CreateStoreKeys()
 	tkeys := store.NewTransientStoreKeys(paramstypes.TStoreKey)
-	memKeys := store.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
 	keepers := NewKeeperCache()
 	appCodec := codec.NewProtoCodec(encodingConfig.InterfaceRegistry)
@@ -247,7 +243,6 @@ func NewAxelarApp(
 	SetKeeper(keepers, initUpgradeKeeper(appCodec, keys, skipUpgradeHeights, homePath, bApp))
 	SetKeeper(keepers, initEvidenceKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initFeegrantKeeper(appCodec, keys, keepers))
-	SetKeeper(keepers, initCapabilityKeeper(appCodec, keys, memKeys))
 	SetKeeper(keepers, initIBCKeeper(appCodec, keys, keepers))
 
 	// set up custom axelar keepers
@@ -264,7 +259,7 @@ func NewAxelarApp(
 	// set up ibc/wasm keepers
 	wasmHooks := InitWasmHooks(keys)
 	ics4Wrapper := InitICS4Wrapper(keepers, wasmHooks)
-	SetKeeper(keepers, initIBCTransferKeeper(appCodec, keys, keepers, ics4Wrapper))
+	SetKeeper(keepers, initIBCTransferKeeper(appCodec, keys, keepers, ics4Wrapper, bApp.MsgServiceRouter()))
 
 	SetKeeper(keepers, initAxelarIBCKeeper(keepers))
 
@@ -291,9 +286,6 @@ func NewAxelarApp(
 
 	// set up governance keeper last when it has access to all other keepers to set up governance routes
 	SetKeeper(keepers, initGovernanceKeeper(appCodec, keys, keepers, bApp.MsgServiceRouter()))
-
-	// seal capability keeper after all keepers are set to be certain that all capabilities have been registered
-	GetKeeper[capabilitykeeper.Keeper](keepers).Seal()
 
 	// set routers
 	GetKeeper[nexusKeeper.Keeper](keepers).SetMessageRouter(initMessageRouter(keepers))
@@ -349,7 +341,6 @@ func NewAxelarApp(
 	// initialize stores
 	app.MountKVStores(keys)
 	app.MountTransientStores(tkeys)
-	app.MountMemoryStores(memKeys)
 
 	// The initChainer handles translating the genesis.json file into initial state for the network
 	app.SetInitChainer(app.InitChainer)
@@ -523,7 +514,6 @@ func initAppModules(keepers *KeeperCache, keys map[string]*store.KVStoreKey, bAp
 		upgrade.NewAppModule(GetKeeper[upgradekeeper.Keeper](keepers), GetKeeper[authkeeper.AccountKeeper](keepers).AddressCodec()),
 		evidence.NewAppModule(*GetKeeper[evidencekeeper.Keeper](keepers)),
 		params.NewAppModule(*GetKeeper[paramskeeper.Keeper](keepers)),
-		capability.NewAppModule(appCodec, *GetKeeper[capabilitykeeper.Keeper](keepers), false),
 		consensus.NewAppModule(appCodec, *GetKeeper[consensusparamkeeper.Keeper](keepers)),
 	}
 
@@ -713,7 +703,6 @@ func orderMigrations() []string {
 		authtypes.ModuleName,
 		// sdk modules
 		upgradetypes.ModuleName,
-		capabilitytypes.ModuleName,
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
@@ -764,7 +753,6 @@ func orderBeginBlockers() []string {
 	beginBlockerOrder := []string{
 		// upgrades should be run first
 		upgradetypes.ModuleName,
-		capabilitytypes.ModuleName,
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName,
@@ -803,7 +791,6 @@ func orderEndBlockers() []string {
 		ibctransfertypes.ModuleName,
 		ibcexported.ModuleName,
 		feegrant.ModuleName,
-		capabilitytypes.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
 		distrtypes.ModuleName,
@@ -844,7 +831,6 @@ func orderModulesForGenesis() []string {
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
 	genesisOrder := []string{
-		capabilitytypes.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
 		distrtypes.ModuleName,
@@ -903,7 +889,6 @@ func CreateStoreKeys() map[string]*store.KVStoreKey {
 		evidencetypes.StoreKey,
 		ibcexported.StoreKey,
 		ibctransfertypes.StoreKey,
-		capabilitytypes.StoreKey,
 		feegrant.StoreKey,
 		consensusparamtypes.StoreKey,
 		crisistypes.StoreKey,
@@ -1033,7 +1018,6 @@ func GetModuleBasics() module.BasicManager {
 		auth.AppModuleBasic{},
 		genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
 		bank.AppModuleBasic{},
-		capability.AppModuleBasic{},
 		staking.AppModuleBasic{},
 		mint.AppModuleBasic{},
 		distr.AppModuleBasic{},

@@ -18,7 +18,6 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 	ibcchanneltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
@@ -98,7 +97,7 @@ func TestHandleMessage(t *testing.T) {
 			IBCPath:    axelartestutils.RandomIBCPath(),
 			AddrPrefix: "cosmos",
 		}))
-		channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+		channelK.SendPacketFunc = func(sdk.Context, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
 			return mathrand.Uint64(), nil
 		}
 		n = &mock.NexusMock{
@@ -463,7 +462,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 			IBCPath:    path,
 			AddrPrefix: rand.StrBetween(5, 10),
 		}))
-		channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+		channelK.SendPacketFunc = func(sdk.Context, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
 			return mathrand.Uint64(), nil
 		}
 		lockableAsset = &nexusmock.LockableAssetMock{
@@ -676,7 +675,7 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 			IBCPath:    axelartestutils.RandomIBCPath(),
 			AddrPrefix: "cosmos",
 		}))
-		channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+		channelK.SendPacketFunc = func(sdk.Context, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
 			return mathrand.Uint64(), nil
 		}
 		lockableAsset = &nexusmock.LockableAssetMock{}

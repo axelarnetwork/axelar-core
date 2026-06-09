@@ -42,8 +42,6 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	ibctransferkeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	porttypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
@@ -184,7 +182,6 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 		wasmkeeper.WithQueryPlugins(NewQueryPlugins(nexusK)),
 	)
 
-	scopedWasmK := GetKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(wasm.ModuleName)
 	ibcKeeper := GetKeeper[ibckeeper.Keeper](keepers)
 
 	wasmK := wasm.NewKeeper(
@@ -196,8 +193,6 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 		distrkeeper.NewQuerier(*GetKeeper[distrkeeper.Keeper](keepers)),
 		ibcKeeper.ChannelKeeper,
 		ibcKeeper.ChannelKeeper,
-		ibcKeeper.PortKeeper,
-		scopedWasmK,
 		GetKeeper[ibctransferkeeper.Keeper](keepers),
 		bApp.MsgServiceRouter(),
 		bApp.GRPCQueryRouter(),
@@ -291,31 +286,26 @@ func initRewardKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, k
 }
 
 func initIBCKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *ibckeeper.Keeper {
-	scopedIBCK := GetKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(ibcexported.ModuleName)
 	return ibckeeper.NewKeeper(
 		appCodec,
-		keys[ibcexported.StoreKey],
+		runtime.NewKVStoreService(keys[ibcexported.StoreKey]),
 		keepers.getSubspace(ibcexported.ModuleName),
-		GetKeeper[stakingkeeper.Keeper](keepers),
 		GetKeeper[upgradekeeper.Keeper](keepers),
-		scopedIBCK,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 }
 
-func initIBCTransferKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache, ics4Wrapper porttypes.ICS4Wrapper) *ibctransferkeeper.Keeper {
-	scopedTransferK := GetKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(ibctransfertypes.ModuleName)
+func initIBCTransferKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache, ics4Wrapper porttypes.ICS4Wrapper, msgServiceRouter *bam.MsgServiceRouter) *ibctransferkeeper.Keeper {
 	transferK := ibctransferkeeper.NewKeeper(
 		appCodec,
-		keys[ibctransfertypes.StoreKey],
+		runtime.NewKVStoreService(keys[ibctransfertypes.StoreKey]),
 		keepers.getSubspace(ibctransfertypes.ModuleName),
 		// Use the IBC middleware stack
 		ics4Wrapper,
 		GetKeeper[ibckeeper.Keeper](keepers).ChannelKeeper,
-		GetKeeper[ibckeeper.Keeper](keepers).PortKeeper,
+		msgServiceRouter,
 		GetKeeper[authkeeper.AccountKeeper](keepers),
 		GetKeeper[bankkeeper.BaseKeeper](keepers),
-		scopedTransferK,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 	return &transferK
@@ -336,6 +326,7 @@ func initAxelarnetKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey
 		keys[axelarnetTypes.StoreKey],
 		keepers.getSubspace(axelarnetTypes.ModuleName),
 		GetKeeper[ibckeeper.Keeper](keepers).ChannelKeeper,
+		GetKeeper[ibckeeper.Keeper](keepers).ClientKeeper,
 		GetKeeper[feegrantkeeper.Keeper](keepers),
 	)
 	return &axelarnetK
@@ -357,10 +348,6 @@ func initNexusKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, ke
 	nexusK.SetAddressValidators(addressValidators)
 
 	return &nexusK
-}
-
-func initCapabilityKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, memKeys map[string]*store.MemoryStoreKey) *capabilitykeeper.Keeper {
-	return capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
 }
 
 func initFeegrantKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *feegrantkeeper.Keeper {

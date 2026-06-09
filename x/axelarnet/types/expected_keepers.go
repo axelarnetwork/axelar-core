@@ -140,6 +140,7 @@ type ChannelKeeper interface {
 	) error
 	GetAppVersion(ctx sdk.Context, portID string, channelID string) (string, bool)                    // used in module_test
 	GetAllChannelsWithPortPrefix(ctx sdk.Context, portPrefix string) []channeltypes.IdentifiedChannel // used in module_test
+	HasChannel(ctx sdk.Context, portID, channelID string) bool                                        // used in module_test
 }
 
 // AccountKeeper defines the account contract that must be fulfilled when

@@ -3848,6 +3848,9 @@ var _ axelarnettypes.ChannelKeeper = &ChannelKeeperMock{}
 //			GetNextSequenceSendFunc: func(ctx cosmossdktypes.Context, portID string, channelID string) (uint64, bool) {
 //				panic("mock out the GetNextSequenceSend method")
 //			},
+//			HasChannelFunc: func(ctx cosmossdktypes.Context, portID string, channelID string) bool {
+//				panic("mock out the HasChannel method")
+//			},
 //			SendPacketFunc: func(ctx cosmossdktypes.Context, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error) {
 //				panic("mock out the SendPacket method")
 //			},
@@ -3875,6 +3878,9 @@ type ChannelKeeperMock struct {
 
 	// GetNextSequenceSendFunc mocks the GetNextSequenceSend method.
 	GetNextSequenceSendFunc func(ctx cosmossdktypes.Context, portID string, channelID string) (uint64, bool)
+
+	// HasChannelFunc mocks the HasChannel method.
+	HasChannelFunc func(ctx cosmossdktypes.Context, portID string, channelID string) bool
 
 	// SendPacketFunc mocks the SendPacket method.
 	SendPacketFunc func(ctx cosmossdktypes.Context, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error)
@@ -3927,6 +3933,15 @@ type ChannelKeeperMock struct {
 			// ChannelID is the channelID argument value.
 			ChannelID string
 		}
+		// HasChannel holds details about calls to the HasChannel method.
+		HasChannel []struct {
+			// Ctx is the ctx argument value.
+			Ctx cosmossdktypes.Context
+			// PortID is the portID argument value.
+			PortID string
+			// ChannelID is the channelID argument value.
+			ChannelID string
+		}
 		// SendPacket holds details about calls to the SendPacket method.
 		SendPacket []struct {
 			// Ctx is the ctx argument value.
@@ -3957,6 +3972,7 @@ type ChannelKeeperMock struct {
 	lockGetChannel                   sync.RWMutex
 	lockGetChannelClientState        sync.RWMutex
 	lockGetNextSequenceSend          sync.RWMutex
+	lockHasChannel                   sync.RWMutex
 	lockSendPacket                   sync.RWMutex
 	lockWriteAcknowledgement         sync.RWMutex
 }
@@ -4154,6 +4170,46 @@ func (mock *ChannelKeeperMock) GetNextSequenceSendCalls() []struct {
 	mock.lockGetNextSequenceSend.RLock()
 	calls = mock.calls.GetNextSequenceSend
 	mock.lockGetNextSequenceSend.RUnlock()
+	return calls
+}
+
+// HasChannel calls HasChannelFunc.
+func (mock *ChannelKeeperMock) HasChannel(ctx cosmossdktypes.Context, portID string, channelID string) bool {
+	if mock.HasChannelFunc == nil {
+		panic("ChannelKeeperMock.HasChannelFunc: method is nil but ChannelKeeper.HasChannel was just called")
+	}
+	callInfo := struct {
+		Ctx       cosmossdktypes.Context
+		PortID    string
+		ChannelID string
+	}{
+		Ctx:       ctx,
+		PortID:    portID,
+		ChannelID: channelID,
+	}
+	mock.lockHasChannel.Lock()
+	mock.calls.HasChannel = append(mock.calls.HasChannel, callInfo)
+	mock.lockHasChannel.Unlock()
+	return mock.HasChannelFunc(ctx, portID, channelID)
+}
+
+// HasChannelCalls gets all the calls that were made to HasChannel.
+// Check the length with:
+//
+//	len(mockedChannelKeeper.HasChannelCalls())
+func (mock *ChannelKeeperMock) HasChannelCalls() []struct {
+	Ctx       cosmossdktypes.Context
+	PortID    string
+	ChannelID string
+} {
+	var calls []struct {
+		Ctx       cosmossdktypes.Context
+		PortID    string
+		ChannelID string
+	}
+	mock.lockHasChannel.RLock()
+	calls = mock.calls.HasChannel
+	mock.lockHasChannel.RUnlock()
 	return calls
 }
 
