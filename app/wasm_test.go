@@ -48,7 +48,7 @@ func TestAnteHandlerMessenger_DispatchMsg(t *testing.T) {
 				return nil, nil
 			},
 			Staking: func(_ sdk.AccAddress, _ *wasmvmtypes.StakingMsg) ([]sdk.Msg, error) { return nil, nil },
-			Any:     func(_ sdk.AccAddress, _ *wasmvmtypes.AnyMsg) ([]sdk.Msg, error) { return nil, nil },
+			Any:     func(_ sdk.Context, _ sdk.AccAddress, _ *wasmvmtypes.AnyMsg) ([]sdk.Msg, error) { return nil, nil },
 			Wasm:    func(_ sdk.AccAddress, _ *wasmvmtypes.WasmMsg) ([]sdk.Msg, error) { return nil, nil },
 			Gov:     func(_ sdk.AccAddress, _ *wasmvmtypes.GovMsg) ([]sdk.Msg, error) { return nil, nil },
 		}
@@ -300,9 +300,9 @@ func TestICSMiddleWare(t *testing.T) {
 			}
 
 			// these must not panic and return an error unrelated to the wasm hook
-			_, err := ics4Wrapper.SendPacket(ctx, nil, packet.GetSourcePort(), packet.GetSourceChannel(), ibcclient.ZeroHeight(), 0, nil)
+			_, err := ics4Wrapper.SendPacket(ctx, packet.GetSourcePort(), packet.GetSourceChannel(), ibcclient.ZeroHeight(), 0, nil)
 			assert.ErrorContains(t, err, "channel: channel not found")
-			assert.ErrorContains(t, ics4Wrapper.WriteAcknowledgement(ctx, nil, packet, nil), "channel: channel not found")
+			assert.ErrorContains(t, ics4Wrapper.WriteAcknowledgement(ctx, packet, nil), "channel: channel not found")
 			_, ok := ics4Wrapper.GetAppVersion(ctx, "port", "channel")
 			assert.False(t, ok)
 		})
