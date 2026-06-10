@@ -24,25 +24,29 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 )
 
-func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keepers *KeeperCache) {
-	setupLegacyKeyTables(GetKeeper[paramskeeper.Keeper](keepers))
+// upgrade defines a coordinated chain upgrade: the name matched against the
+// governance upgrade plan, an optional custom handler, and the store changes
+// applied at the upgrade height.
+//
+// Every release line adds its own entry to the upgrades list below. Entries of
+// shipped upgrades are immutable history: their store changes belong to the
+// height they executed at and must not be carried over to later upgrades.
+type chainUpgrade struct {
+	name          string
+	storeUpgrades store.StoreUpgrades
+	// createHandler may be nil, in which case the upgrade runs the default
+	// handler (mm.RunMigrations only)
+	createHandler func(app *AxelarApp, configurator module.Configurator, keepers *KeeperCache) upgradetypes.UpgradeHandler
+}
 
-	upgradeKeeper := GetKeeper[upgradekeeper.Keeper](keepers)
-	upgradeKeeper.SetUpgradeHandler(
-		upgradeName(app.Version()),
-		func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-			app.Logger().Info("Running upgrade handler", "version", app.Version())
-			return app.mm.RunMigrations(ctx, configurator, fromVM)
-		},
-	)
-
-	upgradeInfo, err := upgradeKeeper.ReadUpgradeInfoFromDisk()
-	if err != nil {
-		panic(err)
-	}
-
-	if upgradeInfo.Name == upgradeName(app.Version()) && !upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
-		storeUpgrades := store.StoreUpgrades{
+// upgrades lists all upgrades known to this binary, oldest first
+var chainUpgrades = []chainUpgrade{
+	{
+		// cosmos-sdk v0.53 / ibc-go v10 / wasmd v0.60. mm.RunMigrations runs
+		// the ibc core (6->8) and ibc transfer (5->6, DenomTrace->Denom)
+		// state migrations.
+		name: "v1.5",
+		storeUpgrades: store.StoreUpgrades{
 			Deleted: []string{
 				// x/capability is removed entirely at ibc-go v10
 				"capability",
@@ -50,10 +54,57 @@ func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keep
 				// registered zero invariants so the removal is lossless
 				"crisis",
 			},
-		}
+		},
+	},
+}
 
-		// configure store loader that checks if version == upgradeHeight and applies store upgrades
-		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+func (app *AxelarApp) defaultUpgradeHandler(configurator module.Configurator, name string) upgradetypes.UpgradeHandler {
+	return func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+		app.Logger().Info("Running upgrade handler", "name", name)
+		return app.mm.RunMigrations(ctx, configurator, fromVM)
+	}
+}
+
+func (app *AxelarApp) setUpgradeBehaviour(configurator module.Configurator, keepers *KeeperCache) {
+	setupLegacyKeyTables(GetKeeper[paramskeeper.Keeper](keepers))
+
+	upgradeKeeper := GetKeeper[upgradekeeper.Keeper](keepers)
+
+	currentName := upgradeName(app.Version())
+	currentRegistered := false
+	for _, u := range chainUpgrades {
+		handler := app.defaultUpgradeHandler(configurator, u.name)
+		if u.createHandler != nil {
+			handler = u.createHandler(app, configurator, keepers)
+		}
+		upgradeKeeper.SetUpgradeHandler(u.name, handler)
+
+		currentRegistered = currentRegistered || u.name == currentName
+	}
+
+	// safety net: a binary must always carry a handler for its own version so
+	// an upgrade plan named after it can execute even if the upgrades list has
+	// no entry (e.g. a release without store changes)
+	if !currentRegistered {
+		upgradeKeeper.SetUpgradeHandler(currentName, app.defaultUpgradeHandler(configurator, currentName))
+	}
+
+	upgradeInfo, err := upgradeKeeper.ReadUpgradeInfoFromDisk()
+	if err != nil {
+		panic(err)
+	}
+
+	if upgradeKeeper.IsSkipHeight(upgradeInfo.Height) {
+		return
+	}
+
+	for _, u := range chainUpgrades {
+		if upgradeInfo.Name == u.name {
+			// configure store loader that checks if version == upgradeHeight and applies store upgrades
+			storeUpgrades := u.storeUpgrades
+			app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradeInfo.Height, &storeUpgrades))
+			return
+		}
 	}
 }
 
