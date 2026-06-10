@@ -50,8 +50,9 @@ var chainUpgrades = []chainUpgrade{
 			Deleted: []string{
 				// x/capability is removed entirely at ibc-go v10
 				"capability",
-				// x/crisis is dropped from the app; every axelar module
-				// registered zero invariants so the removal is lossless
+				// x/crisis still exists in cosmos-sdk v0.53 but is deprecated
+				// and removed upstream in the next SDK line, so dropping it now
+				// avoids a forced follow-up store migration
 				"crisis",
 			},
 		},
