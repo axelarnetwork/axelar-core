@@ -102,7 +102,7 @@ axelard start [flags]
       --wasm.simulation_gas_limit string                  Set the max gas that can be spent when executing a simulation TX
       --wasm.skip_wasmvm_version_check                    Skip check that ensures that libwasmvm version (the Rust project) and wasmvm version (the Go project) match
       --with-comet                                        Run abci app embedded in-process with CometBFT (default true)
-      --x-crisis-skip-assert-invariants                   Skip x/crisis invariants check on startup
+      --x-crisis-skip-assert-invariants                   deprecated: x/crisis was removed, this flag has no effect
 ```
 
 ### Options inherited from parent commands

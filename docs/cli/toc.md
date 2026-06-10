@@ -269,7 +269,6 @@
   - [rosetta](axelard_rosetta.md) - spin up a rosetta server
   - [set-genesis-auth](axelard_set-genesis-auth.md) - Set the genesis parameters for the auth module
   - [set-genesis-chain-params evm [chain]](axelard_set-genesis-chain-params.md) - Set chain parameters in genesis.json
-  - [set-genesis-crisis](axelard_set-genesis-crisis.md) - Set the genesis parameters for the crisis module
   - [set-genesis-evm-contracts](axelard_set-genesis-evm-contracts.md) - Set the EVM's contract parameters in genesis.json
   - [set-genesis-gov](axelard_set-genesis-gov.md) - Set the genesis parameters for the governance module
   - [set-genesis-mint](axelard_set-genesis-mint.md) - Set the genesis parameters for the mint module
