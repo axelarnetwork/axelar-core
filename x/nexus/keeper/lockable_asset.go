@@ -181,8 +181,8 @@ func toAssetAndType(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, coi
 			if err != nil {
 				return sdk.Coin{}, types.Unrecognized, err
 			}
-			if path != tracePath(ibcDenom) {
-				return sdk.Coin{}, types.Unrecognized, fmt.Errorf("expected ics20 coin IBC path %s, got %s", path, tracePath(ibcDenom))
+			if fullPath := fmt.Sprintf("%s/%s", path, ibcDenom.Base); fullPath != ibcDenom.Path() {
+				return sdk.Coin{}, types.Unrecognized, fmt.Errorf("expected ics20 coin IBC path %s, got %s", fullPath, ibcDenom.Path())
 			}
 
 			asset := sdk.NewCoin(ibcDenom.Base, coin.Amount)
@@ -207,17 +207,6 @@ func isFromExternalCosmosChain(ctx sdk.Context, nexus types.Nexus, ibc types.IBC
 	_, err := getIBCPath(ctx, nexus, ibc, denom)
 
 	return err == nil
-}
-
-// tracePath returns the trace path of the given denom without the base denomination,
-// e.g. "transfer/channel-1" (the equivalent of DenomTrace.GetPath() in ibc-go v8)
-func tracePath(denom ibctypes.Denom) string {
-	hops := make([]string, len(denom.Trace))
-	for i, hop := range denom.Trace {
-		hops[i] = hop.String()
-	}
-
-	return strings.Join(hops, "/")
 }
 
 // isICS20Denom validates that the given denomination is a valid ICS token representation (ibc/{hash})

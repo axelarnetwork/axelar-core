@@ -318,12 +318,13 @@ func initAxelarIBCKeeper(keepers *KeeperCache) *axelarnetKeeper.IBCKeeper {
 }
 
 func initAxelarnetKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *axelarnetKeeper.Keeper {
+	ibcKeeper := GetKeeper[ibckeeper.Keeper](keepers)
 	axelarnetK := axelarnetKeeper.NewKeeper(
 		appCodec,
 		keys[axelarnetTypes.StoreKey],
 		keepers.getSubspace(axelarnetTypes.ModuleName),
-		GetKeeper[ibckeeper.Keeper](keepers).ChannelKeeper,
-		GetKeeper[ibckeeper.Keeper](keepers).ClientKeeper,
+		ibcKeeper.ChannelKeeper,
+		ibcKeeper.ClientKeeper,
 		GetKeeper[feegrantkeeper.Keeper](keepers),
 	)
 	return &axelarnetK

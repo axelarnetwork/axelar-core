@@ -145,7 +145,7 @@ func TestHandleMessage(t *testing.T) {
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
 			GetDenomFunc: func(ctx sdk.Context, denomHash tmbytes.HexBytes) (ibctransfertypes.Denom, bool) {
-				return ibctransfertypes.ExtractDenomFromPath(fmt.Sprintf("%s/%s/%s", ibctransfertypes.PortID, receiverChannel, rand.Denom(5, 10))), true
+				return ibctransfertypes.NewDenom(rand.Denom(5, 10), ibctransfertypes.NewHop(ibctransfertypes.PortID, receiverChannel)), true
 			},
 		})
 
@@ -512,7 +512,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
 			GetDenomFunc: func(ctx sdk.Context, denomHash tmbytes.HexBytes) (ibctransfertypes.Denom, bool) {
-				return ibctransfertypes.ExtractDenomFromPath(fmt.Sprintf("%s/%s/%s", ibctransfertypes.PortID, receiverChannel, denom)), true
+				return ibctransfertypes.NewDenom(denom, ibctransfertypes.NewHop(ibctransfertypes.PortID, receiverChannel)), true
 			},
 		})
 		b = &mock.BankKeeperMock{
@@ -715,7 +715,7 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
 			GetDenomFunc: func(ctx sdk.Context, denomHash tmbytes.HexBytes) (ibctransfertypes.Denom, bool) {
-				return ibctransfertypes.ExtractDenomFromPath(fmt.Sprintf("%s/%s/%s", ibctransfertypes.PortID, receiverChannel, rand.Denom(5, 10))), true
+				return ibctransfertypes.NewDenom(rand.Denom(5, 10), ibctransfertypes.NewHop(ibctransfertypes.PortID, receiverChannel)), true
 			},
 		})
 
