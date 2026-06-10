@@ -1,19 +1,19 @@
-## axelard query ibc channel params
+## axelard query ibc client config
 
-Query the current ibc channel parameters
+Query a client's config
 
 ### Synopsis
 
-Query the current ibc channel parameters
+Query a client's config
 
 ```
-axelard query ibc channel params [flags]
+axelard query ibc client config [client-id] [flags]
 ```
 
 ### Examples
 
 ```
-axelard query ibc channel params
+axelard query ibc client params 08-wasm-0
 ```
 
 ### Options
@@ -22,7 +22,7 @@ axelard query ibc channel params
       --grpc-addr string   the gRPC endpoint to use for this chain
       --grpc-insecure      allow gRPC over insecure channels, if not the server must use TLS
       --height int         Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help               help for params
+  -h, --help               help for config
       --node string        <host>:<port> to CometBFT RPC interface for this chain (default "tcp://localhost:26657")
   -o, --output string      Output format (text|json) (default "text")
 ```
@@ -38,4 +38,4 @@ axelard query ibc channel params
 
 ### SEE ALSO
 
-- [axelard query ibc channel](axelard_query_ibc_channel.md) - IBC channel query subcommands
+- [axelard query ibc client](axelard_query_ibc_client.md) - IBC client query subcommands

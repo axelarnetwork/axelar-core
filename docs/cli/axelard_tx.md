@@ -31,7 +31,6 @@ axelard tx [flags]
 - [axelard tx bank](axelard_tx_bank.md) - Bank transaction subcommands
 - [axelard tx broadcast](axelard_tx_broadcast.md) - Broadcast transactions generated offline
 - [axelard tx consensus](axelard_tx_consensus.md) - Transactions commands for the consensus module
-- [axelard tx crisis](axelard_tx_crisis.md) - Transactions commands for the crisis module
 - [axelard tx decode](axelard_tx_decode.md) - Decode a binary encoded transaction string
 - [axelard tx distribution](axelard_tx_distribution.md) - Distribution transactions subcommands
 - [axelard tx encode](axelard_tx_encode.md) - Encode transactions generated offline

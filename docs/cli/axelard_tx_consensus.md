@@ -25,3 +25,4 @@ axelard tx consensus [flags]
 ### SEE ALSO
 
 - [axelard tx](axelard_tx.md) - Transactions subcommands
+- [axelard tx consensus update-params-proposal](axelard_tx_consensus_update-params-proposal.md) - Submit a proposal to update consensus module params. Note: the entire params must be provided.

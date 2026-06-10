@@ -21,6 +21,7 @@ axelard keys show [name_or_address [name_or_address...]] [flags]
   -h, --help                     help for show
       --multisig-threshold int   K out of N required signatures (default 1)
   -p, --pubkey                   Output the public key only (cannot be used with --output)
+      --qrcode                   Display key address QR code (will be ignored if -a or --address is false)
 ```
 
 ### Options inherited from parent commands

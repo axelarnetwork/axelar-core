@@ -30,6 +30,7 @@ axelard query bank [flags]
 - [axelard query bank denom-metadata](axelard_query_bank_denom-metadata.md) - Query the client metadata of a given coin denomination
 - [axelard query bank denom-metadata-by-query-string](axelard_query_bank_denom-metadata-by-query-string.md) - Execute the DenomMetadataByQueryString RPC method
 - [axelard query bank denom-owners](axelard_query_bank_denom-owners.md) - Query for all account addresses that own a particular token denomination.
+- [axelard query bank denom-owners-by-query](axelard_query_bank_denom-owners-by-query.md) - Execute the DenomOwnersByQuery RPC method
 - [axelard query bank denoms-metadata](axelard_query_bank_denoms-metadata.md) - Query the client metadata for all registered coin denominations
 - [axelard query bank params](axelard_query_bank_params.md) - Query the current bank parameters
 - [axelard query bank send-enabled](axelard_query_bank_send-enabled.md) - Query for send enabled entries

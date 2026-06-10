@@ -1,24 +1,22 @@
 ## axelard tx ibc-transfer transfer
 
-Transfer a fungible token through IBC
+Transfer a fungible tokens through IBC
 
 ### Synopsis
 
-Transfer a fungible token through IBC. Timeouts can be specified
-as absolute or relative using the "absolute-timeouts" flag. Timeout height can be set by passing in the height string
-in the form {revision}-{height} using the "packet-timeout-height" flag. Relative timeout height is added to the block
-height queried from the latest consensus state corresponding to the counterparty channel. Relative timeout timestamp
-is added to the greater value of the local clock time and the block timestamp queried from the latest consensus state
-corresponding to the counterparty channel. Any timeout set to 0 is disabled.
+Transfer one fungible tokens through IBC. Timeouts can be specified as absolute using the {absolute-timeouts} flag.
+Timeout height can be set by passing in the height string in the form {revision}-{height} using the {packet-timeout-height} flag.
+Note, relative timeout height is not supported. Relative timeout timestamp is added to the value of the user's local system clock time
+using the {packet-timeout-timestamp} flag. If no timeout value is set then a default relative timeout value of 10 minutes is used.
 
 ```
-axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [amount] [flags]
+axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [coin] [flags]
 ```
 
 ### Examples
 
 ```
-axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [amount]
+axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [coin]
 ```
 
 ### Options
@@ -47,12 +45,14 @@ axelard tx ibc-transfer transfer [src-port] [src-channel] [receiver] [amount]
       --note string                     Note to add a description to the transaction (previously --memo)
       --offline                         Offline mode (does not allow any online functionality)
   -o, --output string                   Output format (text|json) (default "json")
-      --packet-timeout-height string    Packet timeout block height. The timeout is disabled when set to 0-0. (default "0-1000")
-      --packet-timeout-timestamp uint   Packet timeout timestamp in nanoseconds from now. Default is 10 minutes. The timeout is disabled when set to 0. (default 600000000000)
+      --packet-timeout-height string    Packet timeout block height in the format {revision}-{height}. (default "0-0")
+      --packet-timeout-timestamp uint   Packet timeout timestamp in nanoseconds from now. Default is 10 minutes. On IBC v1 protocol, either timeout timestamp or timeout height must be set. On IBC v2 protocol timeout timestamp must be set. (default 600000000000)
   -s, --sequence uint                   The sequence number of the signing account (offline mode only)
       --sign-mode string                Choose sign mode (direct|amino-json|direct-aux|textual), this is an advanced feature
-      --timeout-height uint             Set a block timeout height to prevent the tx from being committed past a certain height
+      --timeout-duration duration       TimeoutDuration is the duration the transaction will be considered valid in the mempool. The transaction's unordered nonce will be set to the time of transaction creation + the duration value passed. If the transaction is still in the mempool, and the block time has passed the time of submission + TimeoutTimestamp, the transaction will be rejected.
+      --timeout-height uint             DEPRECATED: Please use --timeout-duration instead. Set a block timeout height to prevent the tx from being committed past a certain height
       --tip string                      Tip is the amount that is going to be transferred to the fee payer on the target chain. This flag is only valid when used with --aux, and is ignored if the target chain didn't enable the TipDecorator
+      --unordered                       Enable unordered transaction delivery; must be used in conjunction with --timeout-duration
   -y, --yes                             Skip tx broadcasting prompt confirmation (default true)
 ```
 

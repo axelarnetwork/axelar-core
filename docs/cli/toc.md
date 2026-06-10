@@ -42,7 +42,7 @@
     - [delete \<name>...](axelard_keys_delete.md) - Delete the given keys
     - [export \<name>](axelard_keys_export.md) - Export private keys
     - [import \<name> \<keyfile>](axelard_keys_import.md) - Import private keys into the local keybase
-    - [import-hex \<name> \<hex>](axelard_keys_import-hex.md) - Import private keys into the local keybase
+    - [import-hex \<name> [hex]](axelard_keys_import-hex.md) - Import private keys into the local keybase
     - [list](axelard_keys_list.md) - List all keys
     - [list-key-types](axelard_keys_list-key-types.md) - List all key types
     - [migrate](axelard_keys_migrate.md) - Migrate keys from amino to proto serialization format
@@ -75,6 +75,7 @@
       - [denom-metadata [denom]](axelard_query_bank_denom-metadata.md) - Query the client metadata of a given coin denomination
       - [denom-metadata-by-query-string](axelard_query_bank_denom-metadata-by-query-string.md) - Execute the DenomMetadataByQueryString RPC method
       - [denom-owners [denom]](axelard_query_bank_denom-owners.md) - Query for all account addresses that own a particular token denomination.
+      - [denom-owners-by-query](axelard_query_bank_denom-owners-by-query.md) - Execute the DenomOwnersByQuery RPC method
       - [denoms-metadata](axelard_query_bank_denoms-metadata.md) - Query the client metadata for all registered coin denominations
       - [params](axelard_query_bank_params.md) - Query the current bank parameters
       - [send-enabled [denom1 ...]](axelard_query_bank_send-enabled.md) - Query for send enabled entries
@@ -149,16 +150,25 @@
         - [packet-commitment [port-id] [channel-id] [sequence]](axelard_query_ibc_channel_packet-commitment.md) - Query a packet commitment
         - [packet-commitments [port-id] [channel-id]](axelard_query_ibc_channel_packet-commitments.md) - Query all packet commitments associated with a channel
         - [packet-receipt [port-id] [channel-id] [sequence]](axelard_query_ibc_channel_packet-receipt.md) - Query a packet receipt
-        - [params](axelard_query_ibc_channel_params.md) - Query the current ibc channel parameters
         - [unreceived-acks [port-id] [channel-id]](axelard_query_ibc_channel_unreceived-acks.md) - Query all the unreceived acks associated with a channel
         - [unreceived-packets [port-id] [channel-id]](axelard_query_ibc_channel_unreceived-packets.md) - Query all the unreceived packets associated with a channel
-        - [upgrade [port-id] [channel-id]](axelard_query_ibc_channel_upgrade.md) - Query the upgrade
-        - [upgrade-error [port-id] [channel-id]](axelard_query_ibc_channel_upgrade-error.md) - Query the upgrade error
+      - [channelv2](axelard_query_ibc_channelv2.md) - IBC channel/v2 query subcommands
+        - [next-sequence-send [client-id]](axelard_query_ibc_channelv2_next-sequence-send.md) - Query a next send sequence
+        - [packet-acknowledgement [client-id] [sequence]](axelard_query_ibc_channelv2_packet-acknowledgement.md) - Query a channel/v2 packet acknowledgement
+        - [packet-commitment [client-id] [sequence]](axelard_query_ibc_channelv2_packet-commitment.md) - Query a channel/v2 packet commitment
+        - [packet-commitments [client-id]](axelard_query_ibc_channelv2_packet-commitments.md) - Query all packet commitments associated with a client
+        - [packet-receipt [client-id] [sequence]](axelard_query_ibc_channelv2_packet-receipt.md) - Query a channel/v2 packet receipt
+        - [unreceived-acks [client-id]](axelard_query_ibc_channelv2_unreceived-acks.md) - Query all the unreceived acks associated with a client
+        - [unreceived-packets [client-id]](axelard_query_ibc_channelv2_unreceived-packets.md) - Query a channel/v2 unreceived-packets
       - [client](axelard_query_ibc_client.md) - IBC client query subcommands
+        - [config [client-id]](axelard_query_ibc_client_config.md) - Query a client's config
         - [consensus-state [client-id] [height]](axelard_query_ibc_client_consensus-state.md) - Query the consensus state of a client at a given height
         - [consensus-state-heights [client-id]](axelard_query_ibc_client_consensus-state-heights.md) - Query the heights of all consensus states of a client.
         - [consensus-states [client-id]](axelard_query_ibc_client_consensus-states.md) - Query all the consensus states of a client.
+        - [counterparty-info [client-id]](axelard_query_ibc_client_counterparty-info.md) - Query a client's counterparty info
+        - [creator [client-id]](axelard_query_ibc_client_creator.md) - Query a client's creator
         - [header](axelard_query_ibc_client_header.md) - Query the latest header of the running chain
+        - [params](axelard_query_ibc_client_params.md) - Query the current ibc client parameters
         - [params](axelard_query_ibc_client_params.md) - Query the current ibc client parameters
         - [self-consensus-state](axelard_query_ibc_client_self-consensus-state.md) - Query the self consensus state for this chain
         - [state [client-id]](axelard_query_ibc_client_state.md) - Query a client state
@@ -170,9 +180,9 @@
         - [params](axelard_query_ibc_connection_params.md) - Query the current ibc connection parameters
         - [path [client-id]](axelard_query_ibc_connection_path.md) - Query stored client connection paths
     - [ibc-transfer](axelard_query_ibc-transfer.md) - IBC fungible token transfer query subcommands
+      - [denom [hash/denom]](axelard_query_ibc-transfer_denom.md) - Query the denom trace info from a given hash or ibc denom
       - [denom-hash [trace]](axelard_query_ibc-transfer_denom-hash.md) - Query the denom hash info from a given denom trace
-      - [denom-trace [hash/denom]](axelard_query_ibc-transfer_denom-trace.md) - Query the denom trace info from a given trace hash or ibc denom
-      - [denom-traces](axelard_query_ibc-transfer_denom-traces.md) - Query the trace info for all token denominations
+      - [denoms](axelard_query_ibc-transfer_denoms.md) - Query for all token denominations
       - [escrow-address](axelard_query_ibc-transfer_escrow-address.md) - Get the escrow address for a channel
       - [params](axelard_query_ibc-transfer_params.md) - Query the current ibc-transfer parameters
       - [total-escrow [denom]](axelard_query_ibc-transfer_total-escrow.md) - Query the total amount of tokens in escrow for a denom
@@ -280,6 +290,7 @@
   - [status](axelard_status.md) - Query remote node for status
   - [tx](axelard_tx.md) - Transactions subcommands
     - [auth](axelard_tx_auth.md) - Transactions commands for the auth module
+      - [update-params-proposal [params]](axelard_tx_auth_update-params-proposal.md) - Submit a proposal to update auth module params. Note: the entire params must be provided.
     - [auxiliary](axelard_tx_auxiliary.md) - Transactions commands for the auxiliary module
       - [batch](axelard_tx_auxiliary_batch.md) - Execute the Batch RPC method
     - [axelarnet](axelard_tx_axelarnet.md) - axelarnet transactions subcommands
@@ -293,17 +304,21 @@
     - [bank](axelard_tx_bank.md) - Bank transaction subcommands
       - [multi-send [from_key_or_address] [to_address_1 to_address_2 ...] [amount]](axelard_tx_bank_multi-send.md) - Send funds from one account to two or more accounts.
       - [send [from_key_or_address] [to_address] [amount]](axelard_tx_bank_send.md) - Send funds from one account to another.
+      - [set-send-enabled-proposal [send_enabled]](axelard_tx_bank_set-send-enabled-proposal.md) - Submit a proposal to set/update/delete send enabled entries
+      - [update-params-proposal [params]](axelard_tx_bank_update-params-proposal.md) - Submit a proposal to update bank module params. Note: the entire params must be provided.
     - [broadcast [file_path]](axelard_tx_broadcast.md) - Broadcast transactions generated offline
     - [consensus](axelard_tx_consensus.md) - Transactions commands for the consensus module
-    - [crisis](axelard_tx_crisis.md) - Transactions commands for the crisis module
-      - [invariant-broken [module-name] [invariant-route] --from mykey](axelard_tx_crisis_invariant-broken.md) - Submit proof that an invariant broken
+      - [update-params-proposal [params]](axelard_tx_consensus_update-params-proposal.md) - Submit a proposal to update consensus module params. Note: the entire params must be provided.
     - [decode [protobuf-byte-string]](axelard_tx_decode.md) - Decode a binary encoded transaction string
     - [distribution](axelard_tx_distribution.md) - Distribution transactions subcommands
+      - [community-pool-spend-proposal [recipient] [amount]](axelard_tx_distribution_community-pool-spend-proposal.md) - Submit a proposal to spend from the community pool
       - [fund-community-pool [amount]](axelard_tx_distribution_fund-community-pool.md) - Funds the community pool with the specified amount
       - [fund-validator-rewards-pool [val_addr] [amount]](axelard_tx_distribution_fund-validator-rewards-pool.md) - Fund the validator rewards pool with the specified amount
       - [set-withdraw-addr [withdraw-addr]](axelard_tx_distribution_set-withdraw-addr.md) - change the default withdraw address for rewards associated with an address
+      - [update-params-proposal [params]](axelard_tx_distribution_update-params-proposal.md) - Submit a proposal to update distribution module params. Note: the entire params must be provided.
       - [withdraw-all-rewards](axelard_tx_distribution_withdraw-all-rewards.md) - withdraw all delegations rewards for a delegator
       - [withdraw-rewards [validator-addr]](axelard_tx_distribution_withdraw-rewards.md) - Withdraw rewards from a given delegation address, and optionally withdraw validator commission if the delegation address given is a validator operator
+      - [withdraw-validator-commission [validator-addr]](axelard_tx_distribution_withdraw-validator-commission.md) - Withdraw commissions from a validator address (must be a validator operator)
     - [encode [file]](axelard_tx_encode.md) - Encode transactions generated offline
     - [evidence](axelard_tx_evidence.md) - Evidence transaction subcommands
     - [evm](axelard_tx_evm.md) - evm transactions subcommands
@@ -329,19 +344,21 @@
       - [vote [proposal-id] [option]](axelard_tx_gov_vote.md) - Vote for an active proposal, options: yes/no/no_with_veto/abstain
       - [weighted-vote [proposal-id] [weighted-options]](axelard_tx_gov_weighted-vote.md) - Vote for an active proposal, options: yes/no/no_with_veto/abstain
     - [ibc](axelard_tx_ibc.md) - IBC transaction subcommands
-      - [channel](axelard_tx_ibc_channel.md) - IBC channel transaction subcommands
-        - [prune-acknowledgements [port] [channel] [limit]](axelard_tx_ibc_channel_prune-acknowledgements.md) - Prune expired packet acknowledgements stored in IBC state
-        - [upgrade-channels](axelard_tx_ibc_channel_upgrade-channels.md) - Upgrade IBC channels
+      - [channelv2](axelard_tx_ibc_channelv2.md) - IBC channel/v2 transaction subcommands
       - [client](axelard_tx_ibc_client.md) - IBC client transaction subcommands
+        - [add-counterparty [client-id] [counterparty-client-id] [merkle-prefix...]](axelard_tx_ibc_client_add-counterparty.md) - add counterparty to client
         - [create [path/to/client_state.json] [path/to/consensus_state.json]](axelard_tx_ibc_client_create.md) - create new IBC client
+        - [delete-client-creator [client-id]](axelard_tx_ibc_client_delete-client-creator.md) - delete the client creator
         - [misbehaviour [clientID] [path/to/misbehaviour.json]](axelard_tx_ibc_client_misbehaviour.md) - submit a client misbehaviour
         - [recover-client [subject-client-id] [substitute-client-id] [flags]](axelard_tx_ibc_client_recover-client.md) - recover an IBC client
         - [schedule-ibc-upgrade [name] [height] [path/to/upgraded_client_state.json] [flags]](axelard_tx_ibc_client_schedule-ibc-upgrade.md) - Submit an IBC software upgrade proposal
         - [update [client-id] [path/to/client_msg.json]](axelard_tx_ibc_client_update.md) - update existing client with a client message
+        - [update-client-config client-id [allowed-relayer-addresses...]](axelard_tx_ibc_client_update-client-config.md) - update allowed relayers for a client (replaces existing list, and no addresses means empty list and permissionless relaying)
         - [upgrade [client-identifier] [path/to/client_state.json] [path/to/consensus_state.json] [upgrade-client-proof] [upgrade-consensus-state-proof]](axelard_tx_ibc_client_upgrade.md) - upgrade an IBC client
     - [ibc-transfer](axelard_tx_ibc-transfer.md) - IBC fungible token transfer transaction subcommands
-      - [transfer [src-port] [src-channel] [receiver] [amount]](axelard_tx_ibc-transfer_transfer.md) - Transfer a fungible token through IBC
+      - [transfer [src-port] [src-channel] [receiver] [coin]](axelard_tx_ibc-transfer_transfer.md) - Transfer a fungible tokens through IBC
     - [mint](axelard_tx_mint.md) - Transactions commands for the mint module
+      - [update-params-proposal [params]](axelard_tx_mint_update-params-proposal.md) - Submit a proposal to update mint module params. Note: the entire params must be provided.
     - [multi-sign [file] [name] \[[signature]...\]](axelard_tx_multi-sign.md) - Generate multisig signatures for transactions generated offline
     - [multisig](axelard_tx_multisig.md) - multisig transactions subcommands
       - [keygen](axelard_tx_multisig_keygen.md) - sub-commands for keygen
@@ -369,6 +386,7 @@
     - [simulate /path/to/unsigned-tx.json --from keyname](axelard_tx_simulate.md) - Simulate the gas usage of a transaction
     - [slashing](axelard_tx_slashing.md) - Transactions commands for the slashing module
       - [unjail](axelard_tx_slashing_unjail.md) - Unjail a jailed validator
+      - [update-params-proposal [params]](axelard_tx_slashing_update-params-proposal.md) - Submit a proposal to update slashing module params. Note: the entire params must be provided.
     - [snapshot](axelard_tx_snapshot.md) - snapshot transactions subcommands
       - [deactivate-proxy](axelard_tx_snapshot_deactivate-proxy.md) - Deactivate the proxy account of the sender
       - [register-proxy [proxy address]](axelard_tx_snapshot_register-proxy.md) - Register a proxy account for a specific validator principal to broadcast transactions in its stead
@@ -382,6 +400,7 @@
       - [unbond [validator-addr] [amount]](axelard_tx_staking_unbond.md) - Unbond shares from a validator
     - [upgrade](axelard_tx_upgrade.md) - Upgrade transaction subcommands
       - [cancel-software-upgrade [flags]](axelard_tx_upgrade_cancel-software-upgrade.md) - Cancel the current software upgrade proposal
+      - [cancel-upgrade-proposal](axelard_tx_upgrade_cancel-upgrade-proposal.md) - Submit a proposal to cancel a planned chain upgrade.
       - [software-upgrade [name] (--upgrade-height [height]) (--upgrade-info [info]) [flags]](axelard_tx_upgrade_software-upgrade.md) - Submit a software upgrade proposal
     - [validate-signatures [file]](axelard_tx_validate-signatures.md) - validate transactions signatures
     - [vesting](axelard_tx_vesting.md) - Vesting transaction subcommands
