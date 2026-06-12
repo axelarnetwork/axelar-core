@@ -286,34 +286,34 @@ func TestWithRefund(t *testing.T) {
 }
 
 func TestWithRefundSenderMatchesInnerMsgSigner(t *testing.T) {
-  var (
-    broadcaster *mock2.BroadcasterMock
-    refunder    broadcast.Broadcaster
-  )
+	var (
+		broadcaster *mock2.BroadcasterMock
+		refunder    broadcast.Broadcaster
+	)
 
-  Given("a refunding broadcaster", func() {
-    broadcaster = &mock2.BroadcasterMock{}
-    refunder = broadcast.WithRefund(broadcaster, app.MakeEncodingConfig().Codec)
-  }).
-    When("the response contains the msgs of the tx", func() {
-      broadcaster.BroadcastFunc = func(_ context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
-        anyTx, _ := codectypes.NewAnyWithValue(&tx2.Tx{Body: &tx2.TxBody{Messages: slices.Map(msgs, unsafePack)}})
-        return &sdk.TxResponse{Tx: anyTx}, nil
-      }
-    }).
-    Then("each RefundMsgRequest sender matches its inner msg's signer", func(t *testing.T) {
-      // two groups, each with a distinct random sender
-      msgs := append(randomMsgs(2), randomMsgs(2)...)
-      res, err := refunder.Broadcast(context.Background(), msgs...)
-      assert.NoError(t, err)
+	Given("a refunding broadcaster", func() {
+		broadcaster = &mock2.BroadcasterMock{}
+		refunder = broadcast.WithRefund(broadcaster, app.MakeEncodingConfig().Codec)
+	}).
+		When("the response contains the msgs of the tx", func() {
+			broadcaster.BroadcastFunc = func(_ context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+				anyTx, _ := codectypes.NewAnyWithValue(&tx2.Tx{Body: &tx2.TxBody{Messages: slices.Map(msgs, unsafePack)}})
+				return &sdk.TxResponse{Tx: anyTx}, nil
+			}
+		}).
+		Then("each RefundMsgRequest sender matches its inner msg's signer", func(t *testing.T) {
+			// two groups, each with a distinct random sender
+			msgs := append(randomMsgs(2), randomMsgs(2)...)
+			res, err := refunder.Broadcast(context.Background(), msgs...)
+			assert.NoError(t, err)
 
-      wrapped := res.Tx.GetCachedValue().(sdk.HasMsgs).GetMsgs()
-      assert.Len(t, wrapped, len(msgs))
-      for i, msg := range wrapped {
-        req := msg.(*types.RefundMsgRequest)
-        assert.Equal(t, msgs[i].(*evm.LinkRequest).Sender, req.Sender)
-      }
-    }).Run(t)
+			wrapped := res.Tx.GetCachedValue().(sdk.HasMsgs).GetMsgs()
+			assert.Len(t, wrapped, len(msgs))
+			for i, msg := range wrapped {
+				req := msg.(*types.RefundMsgRequest)
+				assert.Equal(t, msgs[i].(*evm.LinkRequest).Sender, req.Sender)
+			}
+		}).Run(t)
 }
 
 func TestInBatches(t *testing.T) {
