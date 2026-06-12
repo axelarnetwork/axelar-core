@@ -3,7 +3,6 @@ package evm
 import (
 	"bytes"
 	"context"
-	"fmt"
 
 	errorsmod "cosmossdk.io/errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -29,7 +28,6 @@ func (mgr Mgr) ProcessTokenConfirmation(event *types.ConfirmTokenStarted) error 
 	if txReceipt.Err() != nil {
 		vote = voteTypes.NewVoteRequest(mgr.proxy, event.PollID, types.NewVoteEvents(event.Chain))
 
-		fmt.Printf("txReceipt.Err().Error() %#v\n", txReceipt.Err().Error())
 		mgr.logger().Infof("broadcasting empty vote for poll %s: %s", event.PollID.String(), txReceipt.Err().Error())
 	} else {
 		events := mgr.processTokenConfirmationLogs(event, txReceipt.Ok().Logs)
