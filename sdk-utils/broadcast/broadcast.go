@@ -483,7 +483,7 @@ func (b *refundableBroadcaster) Broadcast(ctx context.Context, msgs ...sdk.Msg) 
 	var refundables []sdk.Msg
 	for _, msg := range msgs {
 
-		msgV1Signers, _, err := b.cdc.GetMsgV1Signers(msgs[0])
+		msgV1Signers, _, err := b.cdc.GetMsgV1Signers(msg)
 		if err != nil {
 			return nil, err
 		}
