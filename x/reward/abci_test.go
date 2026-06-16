@@ -48,7 +48,7 @@ func TestEndBlocker_ExternalChainVotingInflation(t *testing.T) {
 		err := s.runEndBlocker()
 
 		assert.NoError(t, err)
-		assert.NotEmpty(t, s.rewardPool.AddRewardCalls(), "bonded chain maintainers should receive external chain voting inflation rewards")
+		assert.NotEmpty(t, s.rewardPool.AddRewardsCalls(), "bonded chain maintainers should receive external chain voting inflation rewards")
 	})
 
 	t.Run("skips maintainer when validator lookup fails", func(t *testing.T) {
@@ -61,7 +61,7 @@ func TestEndBlocker_ExternalChainVotingInflation(t *testing.T) {
 		err := s.runEndBlocker()
 
 		assert.NoError(t, err)
-		assert.Empty(t, s.rewardPool.AddRewardCalls(), "maintainers with failed validator lookups should be skipped without panic")
+		assert.Empty(t, s.rewardPool.AddRewardsCalls(), "maintainers with failed validator lookups should be skipped without panic")
 	})
 }
 
@@ -118,7 +118,8 @@ func newEndBlockerTestSetup(t *testing.T) *endBlockerTestSetup {
 	}))
 
 	rewardPool := &exportedmock.RewardPoolMock{
-		AddRewardFunc: func(valAddress sdk.ValAddress, coin sdk.Coin) {},
+		AddRewardFunc:  func(valAddress sdk.ValAddress, coin sdk.Coin) {},
+		AddRewardsFunc: func(rewards []exported.Reward) {},
 	}
 
 	rewarder := &mock.RewarderMock{
