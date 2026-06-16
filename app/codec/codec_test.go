@@ -13,11 +13,14 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
+	"github.com/cosmos/gogoproto/protoc-gen-gogo/descriptor"
 	"github.com/stretchr/testify/require"
 
 	"github.com/axelarnetwork/axelar-core/app"
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	permissionexported "github.com/axelarnetwork/axelar-core/x/permission/exported"
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -283,6 +286,38 @@ func TestRotateKeyRequestSignerCompatibility(t *testing.T) {
 	require.NoError(t, err, "GetMsgV1Signers should handle historical StartKeygenRequest with binary sender")
 	require.Len(t, signers, 1)
 	require.Equal(t, expectedSigner, fmt.Sprintf("%x", signers[0]))
+}
+
+// TestRefundableMessagesMatchRefundMsgRole asserts that every message
+// registered as reward.v1beta1.Refundable declares the same permission_role as
+// the wrapping RefundMsgRequest.
+//
+// RefundMsg dispatches its inner message via MsgServiceRouter.Handler, which
+// bypasses the RestrictedTx ante decorator entirely (ante handlers run only
+// at tx-level dispatch). RefundMsg.requireMatchingRole guards against this at
+// runtime by rejecting any inner message whose role differs from the wrapping
+// RefundMsgRequest. This test enforces the same invariant at CI time: if a
+// Refundable message is registered with a mismatched role, every refund of it
+// would fail at runtime — so the mismatch should be caught here instead.
+func TestRefundableMessagesMatchRefundMsgRole(t *testing.T) {
+	reg := app.MakeEncodingConfig().InterfaceRegistry
+
+	wantRole := permissionexported.GetPermissionRole(&rewardtypes.RefundMsgRequest{})
+
+	urls := reg.ListImplementations("reward.v1beta1.Refundable")
+	require.NotEmpty(t, urls, "expected at least one Refundable message to be registered")
+
+	for _, url := range urls {
+		t.Run(url, func(t *testing.T) {
+			msg, err := reg.Resolve(url)
+			require.NoError(t, err)
+
+			role := permissionexported.GetPermissionRole(msg.(descriptor.Message))
+			require.Equal(t, wantRole, role,
+				"refundable message %s must declare the same permission_role (%s) as RefundMsgRequest; otherwise RefundMsg would reject every refund of it",
+				url, wantRole)
+		})
+	}
 }
 
 // TestGovV1ProposalUnpacksHistoricalTSSUpdateParams reproduces the regression
