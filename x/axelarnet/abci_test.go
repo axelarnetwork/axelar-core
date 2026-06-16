@@ -28,6 +28,8 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types/mock"
 	axelartestutils "github.com/axelarnetwork/axelar-core/x/axelarnet/types/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	nexusmock "github.com/axelarnetwork/axelar-core/x/nexus/exported/mock"
+	nexustypes "github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/utils/math"
 	"github.com/axelarnetwork/utils/slices"
 	. "github.com/axelarnetwork/utils/test"
@@ -64,6 +66,8 @@ func TestEndBlocker(t *testing.T) {
 		transferLimit        int
 		panicOnTransferError bool
 		ctx                  sdk.Context
+		nexusK               *mock.NexusMock
+		bankK                *mock.BankKeeperMock
 	)
 
 	repeats := 20
@@ -124,6 +128,15 @@ func TestEndBlocker(t *testing.T) {
 		queueIdx = 0
 		ibcTransferErrors = 0
 		panicOnTransferError = false
+
+		nexusK = &mock.NexusMock{
+			NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+				return &nexusmock.LockableAssetMock{
+					LockFromFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error { return nil },
+				}, nil
+			},
+		}
+		bankK = &mock.BankKeeperMock{}
 	})
 
 	givenTransferQueue.
@@ -131,7 +144,7 @@ func TestEndBlocker(t *testing.T) {
 			queueSize = 0
 		}).
 		Then("should do nothing", func(t *testing.T) {
-			_, err := EndBlocker(ctx, bk, ibcK)
+			_, err := EndBlocker(ctx, bk, ibcK, nexusK, bankK)
 			assert.NoError(t, err)
 			assert.Equal(t, len(transferQueue.DequeueCalls()), 0)
 			assert.Equal(t, len(transferK.TransferCalls()), 0)
@@ -143,7 +156,7 @@ func TestEndBlocker(t *testing.T) {
 			queueSize = int(rand.I64Between(50, 200))
 		}).
 		Then("should init ibc transfers", func(t *testing.T) {
-			_, err := EndBlocker(ctx, bk, ibcK)
+			_, err := EndBlocker(ctx, bk, ibcK, nexusK, bankK)
 			assert.NoError(t, err)
 			assert.Equal(t, queueSize, len(transferQueue.DequeueCalls()))
 			assert.Equal(t, queueSize, len(transferK.TransferCalls()))
@@ -166,7 +179,7 @@ func TestEndBlocker(t *testing.T) {
 		}).
 		Then("should init ibc transfers", func(t *testing.T) {
 			numTransfers := math.Min(queueSize, transferLimit)
-			_, err := EndBlocker(ctx, bk, ibcK)
+			_, err := EndBlocker(ctx, bk, ibcK, nexusK, bankK)
 			assert.NoError(t, err)
 			assert.Equal(t, numTransfers, len(transferQueue.DequeueCalls()))
 			assert.Equal(t, numTransfers, len(transferK.TransferCalls()))
@@ -185,7 +198,7 @@ func TestEndBlocker(t *testing.T) {
 			ibcTransferErrors = int(rand.I64Between(1, int64(queueSize)) + 1)
 		}).
 		Then("should set failed transfers", func(t *testing.T) {
-			_, err := EndBlocker(ctx, bk, ibcK)
+			_, err := EndBlocker(ctx, bk, ibcK, nexusK, bankK)
 			assert.NoError(t, err)
 			assert.Equal(t, queueSize, len(transferQueue.DequeueCalls()))
 			assert.Equal(t, queueSize, len(transferK.TransferCalls()))
@@ -206,7 +219,7 @@ func TestEndBlocker(t *testing.T) {
 			panicOnTransferError = true
 		}).
 		Then("should set transfers failed", func(t *testing.T) {
-			_, err := EndBlocker(ctx, bk, ibcK)
+			_, err := EndBlocker(ctx, bk, ibcK, nexusK, bankK)
 			assert.NoError(t, err)
 			assert.Equal(t, queueSize, len(transferQueue.DequeueCalls()))
 			assert.Equal(t, queueSize, len(transferK.TransferCalls()))
@@ -219,4 +232,67 @@ func TestEndBlocker(t *testing.T) {
 			assert.Equal(t, ibcTransferErrors, len(bk.SetTransferFailedCalls()))
 		}).
 		Run(t, repeats)
+}
+
+// TestEndBlocker_RelocksTokensOnFailure verifies that EndBlocker calls LockFrom
+// for each failed transfer to re-lock tokens back to escrow.
+func TestEndBlocker_RelocksTokensOnFailure(t *testing.T) {
+	ctx, ibcK, channelK, transferK := setup(t)
+
+	channelK.GetChannelClientStateFunc = func(ctx sdk.Context, portID string, channelID string) (string, ibcclient.ClientState, error) {
+		return "07-tendermint-0", axelartestutils.ClientState(), nil
+	}
+
+	transferK.TransferFunc = func(context.Context, *ibctransfertypes.MsgTransfer) (*ibctransfertypes.MsgTransferResponse, error) {
+		return nil, fmt.Errorf("failed to send transfer")
+	}
+
+	lockableAsset := &nexusmock.LockableAssetMock{
+		LockFromFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
+			return nil
+		},
+	}
+
+	nexusK := &mock.NexusMock{
+		NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+			return lockableAsset, nil
+		},
+	}
+	bankK := &mock.BankKeeperMock{}
+
+	numTransfers := 3
+	queueIdx := 0
+	transferQueue := &utilsMock.KVQueueMock{
+		IsEmptyFunc: func() bool { return queueIdx >= numTransfers },
+		DequeueFunc: func(value codec.ProtoMarshaler) bool {
+			if queueIdx >= numTransfers {
+				return false
+			}
+			transfer := axelartestutils.RandomIBCTransfer()
+			bz, _ := transfer.Marshal()
+			_ = value.Unmarshal(bz)
+			queueIdx++
+			return true
+		},
+	}
+
+	bk := &mock.BaseKeeperMock{
+		LoggerFunc:              func(ctx sdk.Context) log.Logger { return log.NewNopLogger() },
+		GetIBCTransferQueueFunc: func(ctx sdk.Context) utils.KVQueue { return transferQueue },
+		GetEndBlockerLimitFunc:  func(ctx sdk.Context) uint64 { return 1000 },
+		SetTransferFailedFunc:   func(sdk.Context, nexus.TransferID) error { return nil },
+	}
+
+	_, err := EndBlocker(ctx, bk, ibcK, nexusK, bankK)
+	assert.NoError(t, err)
+
+	assert.Equal(t, numTransfers, len(bk.SetTransferFailedCalls()))
+
+	assert.Equal(t, numTransfers, len(lockableAsset.LockFromCalls()),
+		"LockFrom should be called for each failed transfer to re-lock tokens to escrow")
+
+	for _, call := range lockableAsset.LockFromCalls() {
+		assert.Equal(t, types.AxelarIBCAccount, call.FromAddr,
+			"tokens should be re-locked from AxelarIBCAccount")
+	}
 }

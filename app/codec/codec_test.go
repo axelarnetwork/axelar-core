@@ -8,7 +8,11 @@ import (
 	"runtime"
 	"testing"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	"github.com/cosmos/gogoproto/protoc-gen-gogo/descriptor"
 	"github.com/stretchr/testify/require"
 
@@ -17,6 +21,7 @@ import (
 	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	permissionexported "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
+	tsstypes "github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
 // HistoricalTransaction represents a test case for decoding historical transactions
@@ -311,6 +316,81 @@ func TestRefundableMessagesMatchRefundMsgRole(t *testing.T) {
 			require.Equal(t, wantRole, role,
 				"refundable message %s must declare the same permission_role (%s) as RefundMsgRequest; otherwise RefundMsg would reject every refund of it",
 				url, wantRole)
+		})
+	}
+}
+
+// TestGovV1ProposalUnpacksHistoricalTSSUpdateParams reproduces the regression
+// where /cosmos/gov/v1/proposals fails.
+func TestGovV1ProposalUnpacksHistoricalTSSUpdateParams(t *testing.T) {
+	encodingConfig := app.MakeEncodingConfig()
+	cdc := encodingConfig.Codec
+
+	tssMsg := &tsstypes.UpdateParamsRequest{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Params:    tsstypes.Params{},
+	}
+	anyMsg, err := codectypes.NewAnyWithValue(tssMsg)
+	require.NoError(t, err)
+
+	stored := govv1.Proposal{
+		Id:       1,
+		Messages: []*codectypes.Any{anyMsg},
+		Status:   govv1.StatusPassed,
+	}
+	bz, err := cdc.Marshal(&stored)
+	require.NoError(t, err)
+
+	var decoded govv1.Proposal
+	require.NoError(t, cdc.Unmarshal(bz, &decoded))
+
+	var asMsg sdk.Msg
+	require.NoError(t, cdc.UnpackAny(decoded.Messages[0], &asMsg))
+	require.IsType(t, &tsstypes.UpdateParamsRequest{}, asMsg)
+}
+
+func TestGovV1ProposalUnpackBehaviourPerTSSType(t *testing.T) {
+	encodingConfig := app.MakeEncodingConfig()
+	cdc := encodingConfig.Codec
+
+	cases := []struct {
+		msg          sdk.Msg
+		shouldUnpack bool
+	}{
+		{&tsstypes.HeartBeatRequest{}, true},
+		{&tsstypes.UpdateParamsRequest{}, true},
+		{&tsstypes.StartKeygenRequest{}, true},
+		{&tsstypes.RotateKeyRequest{}, true},
+		{&tsstypes.ProcessKeygenTrafficRequest{}, true},
+		{&tsstypes.ProcessSignTrafficRequest{}, true},
+		{&tsstypes.VotePubKeyRequest{}, true},
+		{&tsstypes.VoteSigRequest{}, true},
+		{&tsstypes.RegisterExternalKeysRequest{}, true},
+		{&tsstypes.SubmitMultisigPubKeysRequest{}, true},
+		{&tsstypes.SubmitMultisigSignaturesRequest{}, true},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(sdk.MsgTypeURL(tc.msg), func(t *testing.T) {
+			anyMsg, err := codectypes.NewAnyWithValue(tc.msg)
+			require.NoError(t, err)
+
+			stored := govv1.Proposal{
+				Id:       1,
+				Messages: []*codectypes.Any{anyMsg},
+				Status:   govv1.StatusPassed,
+			}
+			bz, err := cdc.Marshal(&stored)
+			require.NoError(t, err)
+
+			var decoded govv1.Proposal
+			err = cdc.Unmarshal(bz, &decoded)
+			if tc.shouldUnpack {
+				require.NoError(t, err, "gov v1 unpack of %s should succeed", sdk.MsgTypeURL(tc.msg))
+			} else {
+				require.Error(t, err, "gov v1 unpack of %s should fail", sdk.MsgTypeURL(tc.msg))
+			}
 		})
 	}
 }

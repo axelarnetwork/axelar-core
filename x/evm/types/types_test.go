@@ -14,6 +14,7 @@ import (
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -175,4 +176,79 @@ func TestCommandID_ValidateBasic(t *testing.T) {
 
 	var emptyID CommandID
 	assert.NoError(t, emptyID.ValidateBasic())
+}
+
+func TestVoteEvents_ValidateBasic(t *testing.T) {
+	chainName := nexus.ChainName("ethereum")
+
+	createValidEvent := func(chain nexus.ChainName, index uint64) Event {
+		return Event{
+			Chain: chain,
+			TxID:  Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+			Index: index,
+			Event: &Event_ContractCall{
+				ContractCall: &EventContractCall{
+					Sender:           Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
+					DestinationChain: nexus.ChainName("destination"),
+					ContractAddress:  "0x" + common.Bytes2Hex(rand.Bytes(common.AddressLength)),
+					PayloadHash:      Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
+				},
+			},
+		}
+	}
+
+	t.Run("valid VoteEvents with few events should pass", func(t *testing.T) {
+		voteEvents := VoteEvents{
+			Chain:  chainName,
+			Events: []Event{createValidEvent(chainName, 0), createValidEvent(chainName, 1)},
+		}
+		assert.NoError(t, voteEvents.ValidateBasic())
+	})
+
+	t.Run("empty events should pass", func(t *testing.T) {
+		voteEvents := VoteEvents{
+			Chain:  chainName,
+			Events: []Event{},
+		}
+		assert.NoError(t, voteEvents.ValidateBasic())
+	})
+
+	t.Run("events at max limit should pass", func(t *testing.T) {
+		events := make([]Event, MaxEventsPerVote)
+		for i := range MaxEventsPerVote {
+			events[i] = createValidEvent(chainName, uint64(i))
+		}
+		voteEvents := VoteEvents{
+			Chain:  chainName,
+			Events: events,
+		}
+		assert.NoError(t, voteEvents.ValidateBasic())
+	})
+
+	t.Run("events exceeding max limit should fail", func(t *testing.T) {
+		events := make([]Event, MaxEventsPerVote+1)
+		for i := range MaxEventsPerVote + 1 {
+			events[i] = createValidEvent(chainName, uint64(i))
+		}
+		voteEvents := VoteEvents{
+			Chain:  chainName,
+			Events: events,
+		}
+		err := voteEvents.ValidateBasic()
+		assert.ErrorContains(t, err, "too many events")
+	})
+
+	t.Run("large number of events should fail", func(t *testing.T) {
+		const largeEventCount = 6000
+		events := make([]Event, largeEventCount)
+		for i := range largeEventCount {
+			events[i] = createValidEvent(chainName, uint64(i))
+		}
+		voteEvents := VoteEvents{
+			Chain:  chainName,
+			Events: events,
+		}
+		err := voteEvents.ValidateBasic()
+		assert.ErrorContains(t, err, "too many events")
+	})
 }
