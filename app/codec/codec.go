@@ -84,6 +84,7 @@ func RegisterLegacyMsgInterfaces(registry cdctypes.InterfaceRegistry) {
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/tss.v1beta1.SubmitMultisigPubKeysRequest", &tsstypes.SubmitMultisigPubKeysRequest{})
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/tss.v1beta1.SubmitMultisigSignaturesRequest", &tsstypes.SubmitMultisigSignaturesRequest{})
 
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.HeartBeatRequest", &tsstypes.HeartBeatRequest{})
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.StartKeygenRequest", &tsstypes.StartKeygenRequest{})
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.ProcessKeygenTrafficRequest", &tsstypes.ProcessKeygenTrafficRequest{})
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.ProcessSignTrafficRequest", &tsstypes.ProcessSignTrafficRequest{})
@@ -93,13 +94,15 @@ func RegisterLegacyMsgInterfaces(registry cdctypes.InterfaceRegistry) {
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.RegisterExternalKeysRequest", &tsstypes.RegisterExternalKeysRequest{})
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.SubmitMultisigPubKeysRequest", &tsstypes.SubmitMultisigPubKeysRequest{})
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.SubmitMultisigSignaturesRequest", &tsstypes.SubmitMultisigSignaturesRequest{})
+	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/axelar.tss.v1beta1.UpdateParamsRequest", &tsstypes.UpdateParamsRequest{})
 
 	r.RegisterCustomTypeURL((*sdk.Msg)(nil), "/vote.v1beta1.VoteRequest", &votetypes.VoteRequest{})
 
-	// Register Refundable interface implementations for legacy type URLs
+	// Register Refundable interface implementations
 	// These are needed because when transactions are queried, the codec needs to resolve
 	// the concrete type against ALL interfaces the type implements, not just sdk.Msg
-	// These messages used to implement Refundable but were later changed
+	r.RegisterCustomTypeURL((*rewardexported.Refundable)(nil), "/axelar.tss.v1beta1.HeartBeatRequest", &tsstypes.HeartBeatRequest{})
+	// Legacy URLs. These messages stopped being Refundable before v1.3.11.
 	r.RegisterCustomTypeURL((*rewardexported.Refundable)(nil), "/tss.v1beta1.HeartBeatRequest", &tsstypes.HeartBeatRequest{})
 	r.RegisterCustomTypeURL((*rewardexported.Refundable)(nil), "/tss.v1beta1.ProcessKeygenTrafficRequest", &tsstypes.ProcessKeygenTrafficRequest{})
 	r.RegisterCustomTypeURL((*rewardexported.Refundable)(nil), "/tss.v1beta1.VotePubKeyRequest", &tsstypes.VotePubKeyRequest{})

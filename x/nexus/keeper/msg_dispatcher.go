@@ -70,7 +70,8 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 	}
 
 	// If message already exists, then this is a no-op to avoid causing an error from reverting the whole message batch being routed in Amplifier
-	if _, ok := m.GetMessage(ctx, msg.ID); ok {
+	msgID := fmt.Sprintf("%s-%s", msg.SourceChain, msg.ID)
+	if _, ok := m.GetMessage(ctx, msgID); ok {
 		return nil
 	}
 
@@ -78,7 +79,7 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 	sender := exported.CrossChainAddress{Chain: sourceChain, Address: msg.SourceAddress}
 	recipient := exported.CrossChainAddress{Chain: destinationChain, Address: msg.DestinationAddress}
 
-	nexusMsg := exported.NewGeneralMessage(fmt.Sprintf("%s-%s", msg.SourceChain, msg.ID), sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
+	nexusMsg := exported.NewGeneralMessage(msgID, sender, recipient, msg.PayloadHash, msg.SourceTxID, msg.SourceTxIndex, nil)
 	if err := m.SetNewMessage(ctx, nexusMsg); err != nil {
 		return err
 	}

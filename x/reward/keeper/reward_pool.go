@@ -44,11 +44,23 @@ func (p rewardPool) getRewards(validator sdk.ValAddress) (sdk.Coins, bool) {
 }
 
 func (p *rewardPool) AddReward(validator sdk.ValAddress, coin sdk.Coin) {
-	defer func() {
-		p.k.Logger(p.ctx).Debug("adding rewards in pool", "pool", p.Name, "validator", validator.String(), "coin", coin.String())
+	p.AddRewards([]exported.Reward{{Validator: validator, Coin: coin}})
+}
 
-		p.k.setPool(p.ctx, p.Pool)
-	}()
+func (p *rewardPool) AddRewards(rewards []exported.Reward) {
+	if len(rewards) == 0 {
+		return
+	}
+
+	for _, reward := range rewards {
+		p.addReward(reward.Validator, reward.Coin)
+	}
+
+	p.k.setPool(p.ctx, p.Pool)
+}
+
+func (p *rewardPool) addReward(validator sdk.ValAddress, coin sdk.Coin) {
+	p.k.Logger(p.ctx).Debug("adding rewards in pool", "pool", p.Name, "validator", validator.String(), "coin", coin.String())
 
 	if coin.Amount.IsZero() {
 		return

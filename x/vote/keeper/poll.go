@@ -24,17 +24,28 @@ type poll struct {
 	ctx           sdk.Context
 	k             Keeper
 	passingWeight cached.Cached[math.Uint]
+	talliedVotes  cached.Cached[[]types.TalliedVote]
 }
 
+// newPoll creates a poll instance with cached tallied votes to prevent O(N²) storage reads
+// when HasVoted/HasVotedCorrectly are called in a loop for all voters.
 func newPoll(ctx sdk.Context, k Keeper, metadata exported.PollMetadata) *poll {
-	return &poll{
+	p := &poll{
 		ctx:          ctx,
 		k:            k,
 		PollMetadata: metadata,
 		passingWeight: cached.New(func() math.Uint {
 			return metadata.Snapshot.CalculateMinPassingWeight(metadata.VotingThreshold)
 		}),
+		talliedVotes: cached.New(func() []types.TalliedVote {
+			return k.getTalliedVotes(ctx, metadata.ID)
+		}),
 	}
+	return p
+}
+
+func (p *poll) getCachedTalliedVotes() []types.TalliedVote {
+	return p.talliedVotes.Value()
 }
 
 func (p poll) Logger() log.Logger {
@@ -55,15 +66,15 @@ func (p poll) tallyLogger(voter sdk.ValAddress, talliedVote types.TalliedVote) l
 	)
 }
 
-func (p poll) HasVotedCorrectly(voter sdk.ValAddress) bool {
+func (p *poll) HasVotedCorrectly(voter sdk.ValAddress) bool {
 	majorityVote := p.getMajorityVote()
 	_, ok := majorityVote.IsVoterLate[voter.String()]
 
 	return p.Is(exported.Completed) && ok
 }
 
-func (p poll) HasVoted(voter sdk.ValAddress) bool {
-	return slices.Any(p.k.getTalliedVotes(p.ctx, p.ID), func(talliedVote types.TalliedVote) bool {
+func (p *poll) HasVoted(voter sdk.ValAddress) bool {
+	return slices.Any(p.getCachedTalliedVotes(), func(talliedVote types.TalliedVote) bool {
 		_, ok := talliedVote.IsVoterLate[voter.String()]
 
 		return ok
@@ -114,17 +125,18 @@ func (p *poll) Vote(voter sdk.ValAddress, blockHeight int64, data codec.ProtoMar
 	}
 
 	if p.Is(exported.Failed) {
-		return exported.NoVote, nil
+		return exported.NoVote, errors.New("poll failed")
 	}
 
 	if p.Is(exported.Completed) && p.isInGracePeriod(blockHeight) {
 		p.voteLate(voter, data)
+		p.talliedVotes.Clear()
 
 		return exported.VotedLate, nil
 	}
 
 	if p.Is(exported.Completed) {
-		return exported.NoVote, fmt.Errorf("poll completed")
+		return exported.NoVote, errors.New("poll completed")
 	}
 
 	p.voteBeforeCompletion(voter, blockHeight, data)
@@ -167,6 +179,7 @@ func (p *poll) voteBeforeCompletion(voter sdk.ValAddress, blockHeight int64, dat
 
 	talliedVote.TallyVote(voter, p.Snapshot.GetParticipantWeight(voter), false)
 	p.k.setTalliedVote(p.ctx, talliedVote)
+	p.talliedVotes.Clear()
 
 	logger := p.tallyLogger(voter, talliedVote)
 	logger.Debug("received vote for poll")
@@ -226,10 +239,15 @@ func (p poll) isInGracePeriod(blockHeight int64) bool {
 	return blockHeight <= p.CompletedAt+p.GracePeriod
 }
 
-func (p poll) getMajorityVote() types.TalliedVote {
+// getMajorityVote returns the tallied vote with the highest weight using cached data.
+// IMPORTANT: This method MUST keep a pointer receiver. The cached.Cached type uses a pointer
+// receiver on Value(), so a value receiver here would cause each call through the exported.Poll
+// interface to operate on a copy of the cache, defeating memoization and causing O(N) storage
+// reads per call instead of O(1). See TestCache_InterfaceDispatchMustCacheReads.
+func (p *poll) getMajorityVote() types.TalliedVote {
 	var result types.TalliedVote
 
-	for i, talliedVote := range p.k.getTalliedVotes(p.ctx, p.ID) {
+	for i, talliedVote := range p.getCachedTalliedVotes() {
 		if i == 0 || talliedVote.Tally.GT(result.Tally) {
 			result = talliedVote
 		}

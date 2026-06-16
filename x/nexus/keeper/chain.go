@@ -184,7 +184,7 @@ func (k Keeper) SetChainMaintainerState(ctx sdk.Context, maintainerState exporte
 
 // GetChainMaintainers returns the maintainers of the given chain
 func (k Keeper) GetChainMaintainers(ctx sdk.Context, chain exported.Chain) []sdk.ValAddress {
-	return slices.Map(k.getChainMaintainerStates(ctx, chain.Name), types.MaintainerState.GetAddress)
+	return k.getChainMaintainerAddresses(ctx, chain.Name)
 }
 
 // IsChainMaintainer returns true if the given address is one of the given chain's maintainers; false otherwise
@@ -266,6 +266,28 @@ func (k Keeper) getChainMaintainerStates(ctx sdk.Context, chain exported.ChainNa
 	}
 
 	return results
+}
+
+// getChainMaintainerAddresses returns the maintainer addresses of the given chain
+func (k Keeper) getChainMaintainerAddresses(ctx sdk.Context, chain exported.ChainName) []sdk.ValAddress {
+	// Maintainer states are stored under "<statePrefix>_<chain>_<address>";
+	// iterate the "<statePrefix>_<chain>_" prefix and recover each trailing address.
+
+	prefix := chainMaintainerStatePrefix.Append(key.From(chain))
+	iter := k.getStore(ctx).IteratorNew(prefix)
+	defer utils.CloseLogError(iter, k.Logger(ctx))
+
+	addressOffset := len(prefix.Append(key.FromBz(nil)).Bytes())
+
+	var addresses []sdk.ValAddress
+	for ; iter.Valid(); iter.Next() {
+		fullKey := iter.Key()
+		addr := make(sdk.ValAddress, len(fullKey)-addressOffset)
+		copy(addr, fullKey[addressOffset:])
+		addresses = append(addresses, addr)
+	}
+
+	return addresses
 }
 
 func (k Keeper) getChainMaintainerState(ctx sdk.Context, chain exported.ChainName, address sdk.ValAddress) (ms types.MaintainerState, ok bool) {

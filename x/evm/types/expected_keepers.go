@@ -69,6 +69,7 @@ type ChainKeeper interface {
 	GetConfirmedEventQueue(ctx sdk.Context) utils.KVQueue
 	GetEvent(ctx sdk.Context, eventID EventID) (Event, bool)
 	SetConfirmedEvent(ctx sdk.Context, event Event) error
+	RetryEvent(ctx sdk.Context, eventID EventID) error
 	EnqueueConfirmedEvent(ctx sdk.Context, eventID EventID) error
 	SetEventCompleted(ctx sdk.Context, eventID EventID) error
 	SetEventFailed(ctx sdk.Context, eventID EventID) error

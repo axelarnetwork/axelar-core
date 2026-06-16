@@ -75,8 +75,7 @@ type BroadcastConfig struct {
 	MaxTimeout time.Duration `mapstructure:"max_timeout"`
 	// FeeGranter is the address of the fee granter account. Currently unused.
 	FeeGranter sdk.AccAddress `mapstructure:"fee_granter"`
-	// ConfirmationPollingInterval is how often to poll the node to check if a broadcast
-	// transaction has been included in a block.
+	// Deprecated: ConfirmationPollingInterval is no longer used.
 	ConfirmationPollingInterval time.Duration `mapstructure:"confirmation_polling_interval"`
 }
 
