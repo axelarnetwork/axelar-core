@@ -568,29 +568,19 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 		return nil, err
 	}
 
-	event, ok := keeper.GetEvent(ctx, req.EventID)
-	if !ok {
-		return nil, fmt.Errorf("event %s not found for chain %s", req.EventID, req.Chain)
+	if err := keeper.RetryEvent(ctx, req.EventID); err != nil {
+		return nil, err
 	}
 
-	if event.Status != types.EventFailed {
-		return nil, fmt.Errorf("event %s is not a failed event", req.EventID)
+	if err := keeper.EnqueueConfirmedEvent(ctx, req.EventID); err != nil {
+		return nil, err
 	}
-
-	event.Status = types.EventConfirmed
-	keeper.GetConfirmedEventQueue(ctx).Enqueue(getEventKey(req.EventID), &event)
 
 	s.Logger(ctx).Info(
 		"re-queued failed event",
 		types.AttributeKeyChain, chain.Name,
-		"eventID", event.GetID(),
+		"eventID", req.EventID,
 	)
-
-	events.Emit(ctx, &types.EVMEventRetryFailed{
-		Chain:   event.Chain,
-		EventID: event.GetID(),
-		Type:    event.GetEventType(),
-	})
 
 	return &types.RetryFailedEventResponse{}, nil
 }

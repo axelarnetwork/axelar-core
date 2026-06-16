@@ -56,6 +56,13 @@ func TestStatefulBroadcaster(t *testing.T) {
 
 	givenClientContext := Given("a client context in sync mode", func() {
 		clientMock = &mock2.ClientMock{}
+		// Set up Subscribe/Unsubscribe so the event-based block inclusion path works
+		clientMock.SubscribeFunc = func(_ context.Context, _ string, _ string, _ ...int) (<-chan coretypes.ResultEvent, error) {
+			return make(chan coretypes.ResultEvent, 1), nil
+		}
+		clientMock.UnsubscribeFunc = func(_ context.Context, _ string, _ string) error {
+			return nil
+		}
 		encodingConfig := app.MakeEncodingConfig()
 		clientCtx = client.Context{
 			BroadcastMode: flags.BroadcastSync,
@@ -90,8 +97,8 @@ func TestStatefulBroadcaster(t *testing.T) {
 	statefulBroadcaster := Given("a stateful broadcaster", func() {
 		broadcaster = broadcast.WithStateManager(
 			clientCtx,
+			clientMock,
 			txf,
-			broadcast.WithPollingInterval(1*time.Nanosecond),
 			broadcast.WithResponseTimeout(10*time.Millisecond),
 		)
 	})
@@ -138,35 +145,33 @@ func TestStatefulBroadcaster(t *testing.T) {
 	})
 
 	txsGetExecuted := When("txs get executed correctly", func() {
-		clientMock.TxFunc = func(context.Context, []byte, bool) (*coretypes.ResultTx, error) {
-			expectedResponse = &coretypes.ResultTx{TxResult: abci.ExecTxResult{
-				Code: abci.CodeTypeOK,
-				Log:  "some log",
-			}}
-			return expectedResponse, nil
-		}
-		clientMock.BlockFunc = func(_ context.Context, height *int64) (*coretypes.ResultBlock, error) {
-			return &coretypes.ResultBlock{Block: &tm.Block{}}, nil
+		expectedResponse = &coretypes.ResultTx{TxResult: abci.ExecTxResult{
+			Code: abci.CodeTypeOK,
+			Log:  "some log",
+		}}
+		clientMock.SubscribeFunc = func(_ context.Context, _ string, _ string, _ ...int) (<-chan coretypes.ResultEvent, error) {
+			ch := make(chan coretypes.ResultEvent, 1)
+			ch <- coretypes.ResultEvent{Data: tm.EventDataTx{TxResult: abci.TxResult{Result: expectedResponse.TxResult}}}
+			return ch, nil
 		}
 	})
 
 	txExecutionFailed := When("tx execution failed", func() {
-		clientMock.TxFunc = func(context.Context, []byte, bool) (*coretypes.ResultTx, error) {
-			expectedResponse = &coretypes.ResultTx{TxResult: abci.ExecTxResult{
-				Code: mathRand.Uint32(),
-				Log:  "tx failed",
-			}}
-			return expectedResponse, nil
-		}
-
-		clientMock.BlockFunc = func(_ context.Context, height *int64) (*coretypes.ResultBlock, error) {
-			return &coretypes.ResultBlock{Block: &tm.Block{}}, nil
+		expectedResponse = &coretypes.ResultTx{TxResult: abci.ExecTxResult{
+			Code: mathRand.Uint32(),
+			Log:  "tx failed",
+		}}
+		clientMock.SubscribeFunc = func(_ context.Context, _ string, _ string, _ ...int) (<-chan coretypes.ResultEvent, error) {
+			ch := make(chan coretypes.ResultEvent, 1)
+			ch <- coretypes.ResultEvent{Data: tm.EventDataTx{TxResult: abci.TxResult{Result: expectedResponse.TxResult}}}
+			return ch, nil
 		}
 	})
 
-	txNotFound := When("tx is not found", func() {
-		clientMock.TxFunc = func(context.Context, []byte, bool) (*coretypes.ResultTx, error) {
-			return nil, errors.New("not found")
+	txNotIncluded := When("tx is never included in a block", func() {
+		// Subscription never delivers an event, so the broadcast times out.
+		clientMock.SubscribeFunc = func(_ context.Context, _ string, _ string, _ ...int) (<-chan coretypes.ResultEvent, error) {
+			return make(chan coretypes.ResultEvent, 1), nil
 		}
 	})
 
@@ -218,7 +223,7 @@ func TestStatefulBroadcaster(t *testing.T) {
 		When2(accountExists).
 		When2(simulationSucceeds).
 		When2(broadcastSucceeds).
-		When2(txNotFound).
+		When2(txNotIncluded).
 		Then2(timeout).Run(t)
 
 	givenSetup.
@@ -480,6 +485,280 @@ func TestWithRetry(t *testing.T) {
 				assert.Len(t, broadcaster.BroadcastCalls(), 1)
 			}),
 	).Run(t)
+}
+
+func TestBroadcastInclusionViaSubscription(t *testing.T) {
+	var (
+		clientCtx        client.Context
+		clientMock       *mock2.ClientMock
+		accountRetriever *mock2.AccountRetrieverMock
+		txf              tx.Factory
+		broadcaster      broadcast.Broadcaster
+	)
+
+	givenClientContext := Given("a client context in sync mode", func() {
+		clientMock = &mock2.ClientMock{}
+		clientMock.UnsubscribeFunc = func(_ context.Context, _ string, _ string) error {
+			return nil
+		}
+		encodingConfig := app.MakeEncodingConfig()
+		clientCtx = client.Context{
+			BroadcastMode: flags.BroadcastSync,
+			Client:        clientMock,
+			TxConfig:      encodingConfig.TxConfig,
+			Codec:         encodingConfig.Codec,
+		}
+	})
+	txFactory := Given("a tx factory", func() {
+		priv := cryptotypes.PrivKey(ed25519.GenPrivKey())
+		pub := priv.PubKey()
+		record := funcs.Must(keyring.NewLocalRecord("testrecord", priv, pub))
+		accountRetriever = &mock2.AccountRetrieverMock{}
+
+		txf = tx.Factory{}.
+			WithChainID(rand.StrBetween(5, 20)).
+			WithSimulateAndExecute(true).
+			WithAccountRetriever(accountRetriever).
+			WithTxConfig(clientCtx.TxConfig).
+			WithKeybase(&mock2.KeyringMock{
+				KeyFunc: func(string) (*keyring.Record, error) {
+					return record, nil
+				},
+				SignFunc: func(string, []byte, signing.SignMode) ([]byte, cryptotypes.PubKey, error) {
+					return rand.Bytes(10), nil, nil
+				},
+				ListFunc: func() ([]*keyring.Record, error) {
+					return []*keyring.Record{record}, nil
+				},
+			})
+	})
+	statefulBroadcaster := Given("a stateful broadcaster", func() {
+		broadcaster = broadcast.WithStateManager(
+			clientCtx,
+			clientMock,
+			txf,
+			broadcast.WithResponseTimeout(10*time.Millisecond),
+		)
+	})
+
+	accountExists := When("the account exists", func() {
+		accountRetriever.EnsureExistsFunc = func(client.Context, sdk.AccAddress) error { return nil }
+		accountRetriever.GetAccountNumberSequenceFunc = func(client.Context, sdk.AccAddress) (uint64, uint64, error) {
+			return mathRand.Uint64(), mathRand.Uint64(), nil
+		}
+	})
+
+	simulationSucceeds := When("the simulation succeeds", func() {
+		clientMock.ABCIQueryWithOptionsFunc = func(context.Context, string, bytes.HexBytes, rpcclient.ABCIQueryOptions) (*coretypes.ResultABCIQuery, error) {
+			bz, _ := (&tx2.SimulateResponse{GasInfo: &sdk.GasInfo{}}).Marshal()
+			return &coretypes.ResultABCIQuery{Response: abci.ResponseQuery{Value: bz}}, nil
+		}
+	})
+
+	broadcastSucceeds := When("broadcast succeeds", func() {
+		clientMock.BroadcastTxSyncFunc = func(context.Context, tm.Tx) (*coretypes.ResultBroadcastTx, error) {
+			return &coretypes.ResultBroadcastTx{Code: abci.CodeTypeOK}, nil
+		}
+	})
+
+	givenSetup := givenClientContext.
+		Given2(txFactory).
+		Given2(statefulBroadcaster)
+
+	// Test: subscription delivers a successful tx event
+	givenSetup.
+		When2(accountExists).
+		When2(simulationSucceeds).
+		When2(broadcastSucceeds).
+		When("subscription delivers the tx event", func() {
+			clientMock.SubscribeFunc = func(_ context.Context, _ string, _ string, _ ...int) (<-chan coretypes.ResultEvent, error) {
+				ch := make(chan coretypes.ResultEvent, 1)
+				ch <- coretypes.ResultEvent{
+					Data: tm.EventDataTx{
+						TxResult: abci.TxResult{
+							Result: abci.ExecTxResult{
+								Code: abci.CodeTypeOK,
+								Log:  "success via subscription",
+							},
+						},
+					},
+				}
+				return ch, nil
+			}
+		}).
+		Then("return success from event data", func(t *testing.T) {
+			res, err := broadcaster.Broadcast(context.Background(), randomMsgs(3)...)
+			assert.NoError(t, err)
+			assert.Equal(t, "success via subscription", res.RawLog)
+		}).Run(t)
+
+	// Test: subscription delivers a tx event with a non-OK code
+	givenSetup.
+		When2(accountExists).
+		When2(simulationSucceeds).
+		When2(broadcastSucceeds).
+		When("subscription delivers a failed tx event", func() {
+			clientMock.SubscribeFunc = func(_ context.Context, _ string, _ string, _ ...int) (<-chan coretypes.ResultEvent, error) {
+				ch := make(chan coretypes.ResultEvent, 1)
+				ch <- coretypes.ResultEvent{
+					Data: tm.EventDataTx{
+						TxResult: abci.TxResult{
+							Result: abci.ExecTxResult{
+								Code: 5,
+								Log:  "execution failed",
+							},
+						},
+					},
+				}
+				return ch, nil
+			}
+		}).
+		Then("return an error code", func(t *testing.T) {
+			_, err := broadcaster.Broadcast(context.Background(), randomMsgs(3)...)
+			assert.Error(t, err)
+			assert.True(t, errors2.Is[*errorsmod.Error](err))
+		}).Run(t)
+
+	// Test: subscription never delivers an event before the timeout
+	givenSetup.
+		When2(accountExists).
+		When2(simulationSucceeds).
+		When2(broadcastSucceeds).
+		When("subscription times out without event", func() {
+			clientMock.SubscribeFunc = func(_ context.Context, _ string, _ string, _ ...int) (<-chan coretypes.ResultEvent, error) {
+				return make(chan coretypes.ResultEvent, 1), nil
+			}
+		}).
+		Then("return timeout error", func(t *testing.T) {
+			_, err := broadcaster.Broadcast(context.Background(), randomMsgs(3)...)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "timed out waiting for tx to be included in a block")
+		}).Run(t)
+
+	// Test: the subscription channel is closed before delivering an event
+	givenSetup.
+		When2(accountExists).
+		When2(simulationSucceeds).
+		When2(broadcastSucceeds).
+		When("the subscription channel is closed", func() {
+			clientMock.SubscribeFunc = func(_ context.Context, _ string, _ string, _ ...int) (<-chan coretypes.ResultEvent, error) {
+				ch := make(chan coretypes.ResultEvent)
+				close(ch)
+				return ch, nil
+			}
+		}).
+		Then("return a channel closed error", func(t *testing.T) {
+			_, err := broadcaster.Broadcast(context.Background(), randomMsgs(3)...)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "subscription channel closed")
+		}).Run(t)
+
+	// Test: the subscription delivers an event whose data is not an EventDataTx
+	givenSetup.
+		When2(accountExists).
+		When2(simulationSucceeds).
+		When2(broadcastSucceeds).
+		When("the subscription delivers an unexpected event type", func() {
+			clientMock.SubscribeFunc = func(_ context.Context, _ string, _ string, _ ...int) (<-chan coretypes.ResultEvent, error) {
+				ch := make(chan coretypes.ResultEvent, 1)
+				ch <- coretypes.ResultEvent{Data: tm.EventDataNewBlock{}}
+				return ch, nil
+			}
+		}).
+		Then("return an unexpected event data error", func(t *testing.T) {
+			_, err := broadcaster.Broadcast(context.Background(), randomMsgs(3)...)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "unexpected event data type")
+		}).Run(t)
+}
+
+func TestBroadcastSubscribeFailed(t *testing.T) {
+	var (
+		clientCtx        client.Context
+		clientMock       *mock2.ClientMock
+		accountRetriever *mock2.AccountRetrieverMock
+		txf              tx.Factory
+		broadcaster      broadcast.Broadcaster
+	)
+
+	givenClientContext := Given("a client context in sync mode", func() {
+		clientMock = &mock2.ClientMock{}
+		// Subscribe fails, so the broadcaster has no way to observe inclusion.
+		clientMock.SubscribeFunc = func(_ context.Context, _ string, _ string, _ ...int) (<-chan coretypes.ResultEvent, error) {
+			return nil, errors.New("subscribe failed")
+		}
+		clientMock.UnsubscribeFunc = func(_ context.Context, _ string, _ string) error {
+			return nil
+		}
+		encodingConfig := app.MakeEncodingConfig()
+		clientCtx = client.Context{
+			BroadcastMode: flags.BroadcastSync,
+			Client:        clientMock,
+			TxConfig:      encodingConfig.TxConfig,
+			Codec:         encodingConfig.Codec,
+		}
+	})
+	txFactory := Given("a tx factory", func() {
+		priv := cryptotypes.PrivKey(ed25519.GenPrivKey())
+		pub := priv.PubKey()
+		record := funcs.Must(keyring.NewLocalRecord("testrecord", priv, pub))
+		accountRetriever = &mock2.AccountRetrieverMock{}
+
+		txf = tx.Factory{}.
+			WithChainID(rand.StrBetween(5, 20)).
+			WithSimulateAndExecute(true).
+			WithAccountRetriever(accountRetriever).
+			WithTxConfig(clientCtx.TxConfig).
+			WithKeybase(&mock2.KeyringMock{
+				KeyFunc: func(string) (*keyring.Record, error) {
+					return record, nil
+				},
+				SignFunc: func(string, []byte, signing.SignMode) ([]byte, cryptotypes.PubKey, error) {
+					return rand.Bytes(10), nil, nil
+				},
+				ListFunc: func() ([]*keyring.Record, error) {
+					return []*keyring.Record{record}, nil
+				},
+			})
+	})
+	statefulBroadcaster := Given("a stateful broadcaster", func() {
+		broadcaster = broadcast.WithStateManager(
+			clientCtx,
+			clientMock,
+			txf,
+			broadcast.WithResponseTimeout(10*time.Millisecond),
+		)
+	})
+
+	accountExists := When("the account exists", func() {
+		accountRetriever.EnsureExistsFunc = func(client.Context, sdk.AccAddress) error { return nil }
+		accountRetriever.GetAccountNumberSequenceFunc = func(client.Context, sdk.AccAddress) (uint64, uint64, error) {
+			return mathRand.Uint64(), mathRand.Uint64(), nil
+		}
+	})
+
+	simulationSucceeds := When("the simulation succeeds", func() {
+		clientMock.ABCIQueryWithOptionsFunc = func(context.Context, string, bytes.HexBytes, rpcclient.ABCIQueryOptions) (*coretypes.ResultABCIQuery, error) {
+			bz, _ := (&tx2.SimulateResponse{GasInfo: &sdk.GasInfo{}}).Marshal()
+			return &coretypes.ResultABCIQuery{Response: abci.ResponseQuery{Value: bz}}, nil
+		}
+	})
+
+	givenSetup := givenClientContext.
+		Given2(txFactory).
+		Given2(statefulBroadcaster)
+
+	// Inclusion is confirmed only via the event subscription, so a failed
+	// subscription is a hard error: the broadcast fails loudly rather than
+	// proceeding with no way to observe whether the tx made it into a block.
+	givenSetup.
+		When2(accountExists).
+		When2(simulationSucceeds).
+		Then("broadcast fails because it cannot subscribe", func(t *testing.T) {
+			_, err := broadcaster.Broadcast(context.Background(), randomMsgs(3)...)
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "subscribe")
+		}).Run(t)
 }
 
 func TestSuppressExecutionErrs(t *testing.T) {

@@ -633,6 +633,27 @@ func (k chainKeeper) SetConfirmedEvent(ctx sdk.Context, event types.Event) error
 	return nil
 }
 
+func (k chainKeeper) RetryEvent(ctx sdk.Context, eventID types.EventID) error {
+	event, ok := k.GetEvent(ctx, eventID)
+	if !ok {
+		return fmt.Errorf("event %s not found for chain %s", eventID, k.chain)
+	}
+	if event.Status != types.EventFailed {
+		return fmt.Errorf("event %s is not a failed event", eventID)
+	}
+
+	event.Status = types.EventConfirmed
+	k.setEvent(ctx, event)
+
+	events.Emit(ctx, &types.EVMEventRetryFailed{
+		Chain:   event.Chain,
+		EventID: event.GetID(),
+		Type:    event.GetEventType(),
+	})
+
+	return nil
+}
+
 // EnqueueConfirmedEvent enqueues the confirmed event
 func (k chainKeeper) EnqueueConfirmedEvent(ctx sdk.Context, id types.EventID) error {
 	event, ok := k.GetEvent(ctx, id)

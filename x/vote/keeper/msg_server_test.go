@@ -120,3 +120,77 @@ func TestMsgServer_VoteGracePeriod(t *testing.T) {
 	_, err = server.Vote(ctx, types.NewVoteRequest(voter3Proxy, pollID, voteData))
 	assert.ErrorContains(t, err, "poll completed")
 }
+
+func TestMsgServer_VoteFailedPoll(t *testing.T) {
+	enc := appParams.MakeEncodingConfig()
+	types.RegisterLegacyAminoCodec(enc.Amino)
+	types.RegisterInterfaces(enc.InterfaceRegistry)
+	enc.InterfaceRegistry.RegisterImplementations((*codec.ProtoMarshaler)(nil), &evmtypes.VoteEvents{})
+	subspace := paramstypes.NewSubspace(enc.Codec, enc.Amino, store.NewKVStoreKey("voteParams"), store.NewKVStoreKey("tvoteParams"), "vote")
+
+	voter1Proxy, voter2Proxy, voter3Proxy, voter4Proxy := rand.AccAddr(), rand.AccAddr(), rand.AccAddr(), rand.AccAddr()
+	voter1Val, voter2Val, voter3Val, voter4Val := rand.ValAddr(), rand.ValAddr(), rand.ValAddr(), rand.ValAddr()
+
+	snapshotter := &mock.SnapshotterMock{
+		GetOperatorFunc: func(ctx sdk.Context, proxy sdk.AccAddress) sdk.ValAddress {
+			switch proxy.String() {
+			case voter1Proxy.String():
+				return voter1Val
+			case voter2Proxy.String():
+				return voter2Val
+			case voter3Proxy.String():
+				return voter3Val
+			case voter4Proxy.String():
+				return voter4Val
+			}
+			return nil
+		},
+	}
+
+	k := keeper.NewKeeper(enc.Codec, store.NewKVStoreKey(types.StoreKey), subspace, snapshotter, &mock.StakingKeeperMock{}, &mock.RewarderMock{})
+
+	voteHandler := &exportedMock.VoteHandlerMock{
+		IsFalsyResultFunc:       func(codec.ProtoMarshaler) bool { return false },
+		HandleResultFunc:        func(sdk.Context, codec.ProtoMarshaler) error { return nil },
+		HandleExpiredPollFunc:   func(sdk.Context, exported.Poll) error { return nil },
+		HandleFailedPollFunc:    func(sdk.Context, exported.Poll) error { return nil },
+		HandleCompletedPollFunc: func(sdk.Context, exported.Poll) error { return nil },
+	}
+	k.SetVoteRouter(types.NewRouter().AddHandler("test-module", voteHandler))
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), sdk.Context{}.BlockHeader(), false, log.NewTestLogger(t)).WithBlockHeight(100)
+	k.SetParams(ctx, types.DefaultParams())
+	server := keeper.NewMsgServerImpl(k)
+
+	participants := []snapshot.Participant{
+		snapshot.NewParticipant(voter1Val, math.NewUint(100)),
+		snapshot.NewParticipant(voter2Val, math.NewUint(100)),
+		snapshot.NewParticipant(voter3Val, math.NewUint(100)),
+		snapshot.NewParticipant(voter4Val, math.NewUint(100)),
+	}
+	pollBuilder := exported.NewPollBuilder(
+		"test-module",
+		utils.NewThreshold(51, 100),
+		snapshot.NewSnapshot(time.Now(), 1, participants, math.NewUint(400)),
+		ctx.BlockHeight()+100,
+	).GracePeriod(1)
+
+	pollID, err := k.InitializePoll(ctx, pollBuilder)
+	assert.NoError(t, err)
+
+	_, err = server.Vote(ctx, types.NewVoteRequest(voter1Proxy, pollID, &evmtypes.VoteEvents{Events: []evmtypes.Event{{}}}))
+	assert.NoError(t, err)
+
+	_, err = server.Vote(ctx, types.NewVoteRequest(voter2Proxy, pollID, &evmtypes.VoteEvents{Events: []evmtypes.Event{{}, {}}}))
+	assert.NoError(t, err)
+
+	_, err = server.Vote(ctx, types.NewVoteRequest(voter3Proxy, pollID, &evmtypes.VoteEvents{Events: []evmtypes.Event{{}, {}, {}}}))
+	assert.NoError(t, err)
+
+	poll, ok := k.GetPoll(ctx, pollID)
+	assert.True(t, ok)
+	assert.Equal(t, exported.Failed, poll.GetState())
+
+	_, err = server.Vote(ctx, types.NewVoteRequest(voter4Proxy, pollID, &evmtypes.VoteEvents{Events: []evmtypes.Event{{}}}))
+	assert.ErrorContains(t, err, "poll failed")
+}
