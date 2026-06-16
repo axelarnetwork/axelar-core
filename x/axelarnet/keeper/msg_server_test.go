@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
@@ -579,6 +580,113 @@ func TestUpdateParams(t *testing.T) {
 	assert.NoError(t, err)
 	got := k.GetParams(ctx)
 	assert.Equal(t, params, got)
+}
+
+// When an IBC transfer fails during EndBlocker (before the IBC packet is sent),
+// tokens should be re-locked to escrow.
+func TestEndBlocker_FailedTransferBreaksRetry(t *testing.T) {
+	ctx, k, channelK, _ := setup(t)
+	k.InitGenesis(ctx, types.DefaultGenesisState())
+
+	channelK.GetNextSequenceSendFunc = func(sdk.Context, string, string) (uint64, bool) {
+		return uint64(rand.I64Between(1, 99999)), true
+	}
+	channelK.GetChannelClientStateFunc = func(sdk.Context, string, string) (string, ibcclient.ClientState, error) {
+		return "07-tendermint-0", axelartestutils.ClientState(), nil
+	}
+
+	cosmosChain := types.CosmosChain{
+		Name:       nexus.ChainName("testchain"),
+		IBCPath:    "transfer/channel-0",
+		AddrPrefix: "cosmos",
+	}
+	funcs.MustNoErr(k.SetCosmosChain(ctx, cosmosChain))
+	funcs.MustNoErr(k.SetChainByIBCPath(ctx, cosmosChain.IBCPath, cosmosChain.Name))
+
+	tokensInEscrow := true
+	transferAmount := sdk.NewInt64Coin("test-token", 1000000)
+	testTransferID := nexus.TransferID(12345)
+
+	lockableAsset := &nexusmock.LockableAssetMock{
+		UnlockToFunc: func(ctx sdk.Context, toAddr sdk.AccAddress) error {
+			if !tokensInEscrow {
+				return fmt.Errorf("insufficient funds: tokens are not in escrow")
+			}
+			tokensInEscrow = false
+			return nil
+		},
+		LockFromFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
+			if tokensInEscrow {
+				return fmt.Errorf("tokens already in escrow")
+			}
+			tokensInEscrow = true
+			return nil
+		},
+		GetCoinFunc: func(ctx sdk.Context) sdk.Coin {
+			return transferAmount
+		},
+		GetAssetFunc: func() sdk.Coin {
+			return transferAmount
+		},
+	}
+
+	nexusK := &mock.NexusMock{
+		GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+			return nexus.Chain{Name: chain, Module: types.ModuleName}, true
+		},
+		GetChainByNativeAssetFunc: func(sdk.Context, string) (nexus.Chain, bool) {
+			return nexus.Chain{Name: "external"}, true
+		},
+		IsChainActivatedFunc:       func(sdk.Context, nexus.Chain) bool { return true },
+		ArchivePendingTransferFunc: func(sdk.Context, nexus.CrossChainTransfer) {},
+		NewLockableAssetFunc: func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+			return lockableAsset, nil
+		},
+		GetTransfersForChainPaginatedFunc: func(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, pageRequest *query.PageRequest) ([]nexus.CrossChainTransfer, *query.PageResponse, error) {
+			if state != nexus.Pending {
+				return nil, nil, nil
+			}
+			return []nexus.CrossChainTransfer{
+				{
+					ID: testTransferID,
+					Recipient: nexus.CrossChainAddress{
+						Chain:   chain,
+						Address: rand.AccAddr().String(),
+					},
+					Asset: transferAmount,
+				},
+			}, nil, nil
+		},
+	}
+
+	bankK := &mock.BankKeeperMock{}
+
+	ibcShouldFail := true
+	transferK := &mock.IBCTransferKeeperMock{
+		TransferFunc: func(context.Context, *ibctypes.MsgTransfer) (*ibctypes.MsgTransferResponse, error) {
+			if ibcShouldFail {
+				return nil, fmt.Errorf("IBC transfer failed: light client expired")
+			}
+			return &ibctypes.MsgTransferResponse{Sequence: 1}, nil
+		},
+	}
+
+	ibcK := keeper.NewIBCKeeper(k, transferK)
+	server := keeper.NewMsgServerImpl(k, nexusK, bankK, ibcK)
+
+	_, err := server.RouteIBCTransfers(sdk.WrapSDKContext(ctx), types.NewRouteIBCTransfersRequest(rand.AccAddr()))
+	assert.NoError(t, err)
+	assert.False(t, tokensInEscrow, "tokens should be in AxelarIBCAccount after RouteIBCTransfers")
+	assert.Equal(t, 1, len(lockableAsset.UnlockToCalls()), "UnlockTo should be called once")
+
+	_, err = axelarnet.EndBlocker(ctx, k, ibcK, nexusK, bankK)
+	assert.NoError(t, err)
+
+	ibcShouldFail = false
+	retryReq := types.NewRetryIBCTransferRequest(rand.AccAddr(), testTransferID)
+	_, err = server.RetryIBCTransfer(sdk.WrapSDKContext(ctx), retryReq)
+
+	assert.NoError(t, err, "RetryIBCTransfer should succeed")
 }
 
 func randomTransfer(asset string, chain nexus.ChainName) nexus.CrossChainTransfer {

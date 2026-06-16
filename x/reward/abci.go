@@ -26,22 +26,29 @@ func EndBlocker(ctx sdk.Context, k types.Rewarder, n types.Nexus, m mintkeeper.K
 func addRewardsByConsensusPower(ctx sdk.Context, s types.Staker, rewardPool exported.RewardPool, validators []snapshot.ValidatorI, totalReward sdk.DecCoin) {
 	totalAmount := totalReward.Amount
 	denom := totalReward.Denom
+	powerReduction := s.PowerReduction(ctx)
 
 	validatorsWithConsensusPower := slices.Filter(validators, func(v snapshot.ValidatorI) bool {
-		return v.GetConsensusPower(s.PowerReduction(ctx)) > 0
-	})
-	totalConsensusPower := slices.Reduce(validatorsWithConsensusPower, math.ZeroInt(), func(total math.Int, v snapshot.ValidatorI) math.Int {
-		return total.AddRaw(v.GetConsensusPower(s.PowerReduction(ctx)))
+		return v.GetConsensusPower(powerReduction) > 0
 	})
 
-	slices.ForEach(validatorsWithConsensusPower, func(v snapshot.ValidatorI) {
-		// Each validator receives reward weighted by consensus power
-		amount := totalAmount.MulInt64(v.GetConsensusPower(s.PowerReduction(ctx))).QuoInt(totalConsensusPower).RoundInt()
-		rewardPool.AddReward(
-			toValAddress(v.GetOperator()),
-			sdk.NewCoin(denom, amount),
-		)
+	if len(validatorsWithConsensusPower) == 0 {
+		return
+	}
+
+	totalConsensusPower := slices.Reduce(validatorsWithConsensusPower, math.ZeroInt(), func(total math.Int, v snapshot.ValidatorI) math.Int {
+		return total.AddRaw(v.GetConsensusPower(powerReduction))
 	})
+
+	rewards := slices.Map(validatorsWithConsensusPower, func(v snapshot.ValidatorI) exported.Reward {
+		amount := totalAmount.MulInt64(v.GetConsensusPower(powerReduction)).QuoInt(totalConsensusPower).RoundInt()
+		return exported.Reward{
+			Validator: toValAddress(v.GetOperator()),
+			Coin:      sdk.NewCoin(denom, amount),
+		}
+	})
+
+	rewardPool.AddRewards(rewards)
 }
 
 func excludeJailedOrTombstoned(ctx sdk.Context, slasher types.Slasher, v snapshot.ValidatorI) bool {

@@ -36,7 +36,7 @@ RUN go mod download
 # Use a compatible libwasmvm
 # Alpine Linux requires static linking against muslc: https://github.com/CosmWasm/wasmd/blob/v0.34.1/INTEGRATION.md#prerequisites
 RUN if [[ "${WASM}" == "true" ]]; then \
-    WASMVM_VERSION=v2.2.4 && \
+    WASMVM_VERSION=$(grep 'github.com/CosmWasm/wasmvm' go.sum | grep -v '/go.mod' | head -1 | awk '{print $2}') && \
     wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/libwasmvm_muslc.${ARCH}.a \
         -O /lib/libwasmvm_muslc.${ARCH}.a && \
     wget https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/checksums.txt -O /tmp/checksums.txt && \
