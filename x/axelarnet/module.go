@@ -158,7 +158,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 // EndBlock executes all state transitions this module requires at the end of each new block
 func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
 	return utils.RunCached(sdk.UnwrapSDKContext(ctx), am.keeper, func(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
-		return EndBlocker(ctx, am.keeper, am.ibcK)
+		return EndBlocker(ctx, am.keeper, am.ibcK, am.nexus, am.bank)
 	}), nil
 }
 

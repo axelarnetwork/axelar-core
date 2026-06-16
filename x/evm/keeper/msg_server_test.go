@@ -832,15 +832,17 @@ func TestRetryFailedEvent(t *testing.T) {
 
 	eventFound := func(found bool, eventStatus types.Event_Status) func() {
 		return func() {
-			ck.GetEventFunc = func(sdk.Context, types.EventID) (types.Event, bool) {
+			ck.RetryEventFunc = func(sdk.Context, types.EventID) error {
 				if !found {
-					return types.Event{}, false
+					return fmt.Errorf("event not found")
 				}
-				return types.Event{
-					Status: eventStatus,
-					Event: &types.Event_ContractCall{
-						ContractCall: &types.EventContractCall{},
-					}}, true
+				if eventStatus != types.EventFailed {
+					return fmt.Errorf("event is not a failed event")
+				}
+				return nil
+			}
+			ck.EnqueueConfirmedEventFunc = func(sdk.Context, types.EventID) error {
+				return nil
 			}
 		}
 	}
@@ -884,7 +886,7 @@ func TestRetryFailedEvent(t *testing.T) {
 		Then("should retry event", func(t *testing.T) {
 			_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
 			assert.NoError(t, err)
-			assert.Len(t, contractCallQueue.EnqueueCalls(), 1)
+			assert.Len(t, ck.EnqueueConfirmedEventCalls(), 1)
 		}).
 		Run(t)
 }

@@ -12,7 +12,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/gogoproto/protoc-gen-gogo/descriptor"
 
+	permexported "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 )
 
@@ -49,6 +51,11 @@ func (s msgServer) RefundMsg(c context.Context, req *types.RefundMsgRequest) (*t
 		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
 	}
 
+	// Make sure the inner Msg has the same permission_role.
+	if err := requireMatchingRole(req, msg); err != nil {
+		return nil, err
+	}
+
 	result, err := s.routeInnerMsg(ctx, msg)
 	if err != nil {
 		return nil, errorsmod.Wrapf(err, "failed to execute message")
@@ -82,6 +89,17 @@ func (s msgServer) routeInnerMsg(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, err
 	}
 
 	return msgResult, err
+}
+
+func requireMatchingRole(outerMsg, innerMsg sdk.Msg) error {
+	outerRole := permexported.GetPermissionRole(outerMsg.(descriptor.Message))
+	innerRole := permexported.GetPermissionRole(innerMsg.(descriptor.Message))
+	if outerRole != innerRole {
+		return errorsmod.Wrapf(sdkerrors.ErrUnauthorized,
+			"inner message %T has permission_role %s; wrapping %T requires permission_role %s",
+			innerMsg, innerRole, outerMsg, outerRole)
+	}
+	return nil
 }
 
 func (s msgServer) validateSigners(signer string, innerMsg sdk.Msg) error {

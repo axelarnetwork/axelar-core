@@ -9,6 +9,7 @@ import (
 	"cosmossdk.io/math"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -19,6 +20,7 @@ import (
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	permtypes "github.com/axelarnetwork/axelar-core/x/permission/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/keeper"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/types/mock"
@@ -83,6 +85,15 @@ func TestHandleMsgRefundRequest(t *testing.T) {
 			}).Then("should return error", func(t *testing.T) {
 				_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
 				assert.ErrorContains(t, err, "signers mismatch")
+			}),
+			When("inner message has mismatched permission_role", func() {
+				key := secp256k1.GenPrivKey()
+				sender := sdk.AccAddress(key.PubKey().Address())
+				msg = types.NewRefundMsgRequest(sender, permtypes.NewUpdateGovernanceKeyRequest(sender, 1, key.PubKey()))
+
+			}).Then("should return unauthorized error", func(t *testing.T) {
+				_, err := server.RefundMsg(sdk.WrapSDKContext(ctx), msg)
+				assert.ErrorContains(t, err, "wrapping *types.RefundMsgRequest requires permission_role ROLE_UNRESTRICTED")
 			}),
 			When("inner message is not routable", func() {
 				sender := rand2.AccAddr()
