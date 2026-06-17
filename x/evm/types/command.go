@@ -150,6 +150,9 @@ func NewApproveContractCallCommandGeneric(
 	sourceEventIndex uint64,
 	ID string,
 ) Command {
+	// commandID is derived from the message ID; see NewCommandID. Off-chain
+	// services predict this value for express, so changing it is a breaking
+	// protocol change.
 	commandID := NewCommandID([]byte(ID), chainID)
 	return Command{
 		ID:         commandID,
@@ -192,6 +195,9 @@ func NewApproveContractCallWithMintGeneric(
 	message nexus.GeneralMessage,
 	symbol string,
 ) Command {
+	// commandID is derived from the message ID; see NewCommandID. Off-chain
+	// services predict this value for express, so changing it is a breaking
+	// protocol change.
 	commandID := NewCommandID([]byte(message.ID), chainID)
 	contractAddress := common.HexToAddress(message.GetDestinationAddress())
 	payloadHash := common.BytesToHash(message.PayloadHash)
