@@ -304,6 +304,9 @@ func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.
 	// parse the transfer amount
 	amount := funcs.MustOk(math.NewIntFromString(data.Amount))
 
+	// The denom derived here sets the escrow address (fund custody); its resulting
+	// ibc/{hash} value must stay stable even if this derivation code changes. See
+	// the invariant on nexus exported.GetEscrowAddress.
 	var denom string
 	ibcDenom := ibctransfertypes.ExtractDenomFromPath(data.Denom)
 	if ibcDenom.HasPrefix(packet.GetSourcePort(), packet.GetSourceChannel()) {

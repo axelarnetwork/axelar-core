@@ -123,6 +123,9 @@ func toICS20(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, coin sdk.C
 		return sdk.Coin{}, err
 	}
 
+	// This ibc/{hash} is the bank denom funds are escrowed under; its value (not
+	// the derivation code) must stay stable. See the invariant on
+	// exported.GetEscrowAddress.
 	denom := ibctypes.ExtractDenomFromPath(fmt.Sprintf("%s/%s", path, coin.GetDenom()))
 
 	return sdk.NewCoin(denom.IBCDenom(), coin.Amount), nil
