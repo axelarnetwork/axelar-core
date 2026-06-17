@@ -643,6 +643,80 @@ func TestConstructWasmMessageV2(t *testing.T) {
 	})
 }
 
+func TestConstructDestinationCallbackMessageV1(t *testing.T) {
+	version := types.CosmWasmDestinationCallbackV1
+
+	t.Run("should return error if payload is not valid json", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		payload := axelartestutils.PackPayloadWithVersion(version, []byte(`{"key": "invalid json with open bracket"`))
+
+		_, err := types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "invalid json payload")
+	})
+
+	t.Run("should construct destination callback memo without modifying payload", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		msg.Sender.Chain.Name = "Ethereum"
+		msg.Sender.Address = "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+
+		callbackPayload := []byte(`{
+			"float": 4.51930,
+			"nested": {
+				"array": [1, 2, 3, 4],
+				"amount": 100000000000000000000000000000001
+			},
+			"array": [0, -32323, 84739338387784623428752342, -43785623.2342532],
+			"nil": null
+		}`)
+		payload := axelartestutils.PackPayloadWithVersion(version, callbackPayload)
+
+		translatedBz, err := types.TranslateMessage(msg, payload)
+		assert.NoError(t, err)
+
+		var decodedMsg struct {
+			DestCallback struct {
+				Address string `json:"address"`
+			} `json:"dest_callback"`
+			SourceChain   string          `json:"source_chain"`
+			SourceAddress string          `json:"source_address"`
+			Payload       json.RawMessage `json:"payload"`
+		}
+
+		err = json.Unmarshal(translatedBz, &decodedMsg)
+		assert.NoError(t, err)
+
+		assert.Equal(t, msg.GetDestinationAddress(), decodedMsg.DestCallback.Address)
+		assert.Equal(t, msg.GetSourceChain().String(), decodedMsg.SourceChain)
+		assert.Equal(t, msg.GetSourceAddress(), decodedMsg.SourceAddress)
+		assert.Equal(t, string(callbackPayload), string(decodedMsg.Payload))
+
+		var jsonObject map[string]interface{}
+		err = json.Unmarshal(translatedBz, &jsonObject)
+		assert.NoError(t, err)
+
+		destCallback, ok := jsonObject["dest_callback"].(map[string]interface{})
+		assert.True(t, ok)
+		assert.NotContains(t, destCallback, "gas_limit")
+	})
+
+	t.Run("should construct destination callback memo from json string payload", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		callbackPayload := []byte(`"raw string payload"`)
+		payload := axelartestutils.PackPayloadWithVersion(version, callbackPayload)
+
+		translatedBz, err := types.TranslateMessage(msg, payload)
+		assert.NoError(t, err)
+
+		var decodedMsg struct {
+			Payload json.RawMessage `json:"payload"`
+		}
+
+		err = json.Unmarshal(translatedBz, &decodedMsg)
+		assert.NoError(t, err)
+		assert.Equal(t, string(callbackPayload), string(decodedMsg.Payload))
+	})
+}
+
 func TestConstructNativeV1Message(t *testing.T) {
 	t.Run("should translate native payload", func(t *testing.T) {
 		payloadMsg := rand.Bytes(int(rand.I64Between(1, 50)))
