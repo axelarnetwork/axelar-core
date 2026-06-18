@@ -7,6 +7,7 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -77,5 +78,19 @@ func TestChainActivationICS4Wrapper(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, uint64(1), seq)
 		assert.Len(t, channel.SendPacketCalls(), 1)
+	})
+
+	t.Run("WriteAcknowledgement and GetAppVersion delegate to the wrapped channel", func(t *testing.T) {
+		setup()
+		channel.WriteAcknowledgementFunc = func(sdk.Context, ibcexported.PacketI, ibcexported.Acknowledgement) error { return nil }
+		channel.GetAppVersionFunc = func(sdk.Context, string, string) (string, bool) { return "ics20-1", true }
+
+		assert.NoError(t, wrapper.WriteAcknowledgement(ctx, nil, nil))
+		assert.Len(t, channel.WriteAcknowledgementCalls(), 1)
+
+		version, ok := wrapper.GetAppVersion(ctx, "transfer", "channel-0")
+		assert.True(t, ok)
+		assert.Equal(t, "ics20-1", version)
+		assert.Len(t, channel.GetAppVersionCalls(), 1)
 	})
 }
