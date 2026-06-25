@@ -40,7 +40,7 @@ func TestMsgServerActivateDeactivateWasm(t *testing.T) {
 	staking := mock.StakingKeeperMock{}
 	ax := mock.AxelarnetKeeperMock{}
 
-	msgServer := keeper.NewMsgServerImpl(k, &snap, &slashing, &staking, &ax)
+	msgServer := keeper.NewMsgServerImpl(k, &snap, &slashing, &staking, &ax, &mock.RewardKeeperMock{})
 
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t))
 
@@ -71,7 +71,7 @@ func TestUpdateParams(t *testing.T) {
 		subspace,
 	)
 
-	msgServer := keeper.NewMsgServerImpl(k, &mock.SnapshotterMock{}, &mock.SlashingKeeperMock{}, &mock.StakingKeeperMock{}, &mock.AxelarnetKeeperMock{})
+	msgServer := keeper.NewMsgServerImpl(k, &mock.SnapshotterMock{}, &mock.SlashingKeeperMock{}, &mock.StakingKeeperMock{}, &mock.AxelarnetKeeperMock{}, &mock.RewardKeeperMock{})
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t))
 
 	p := types.DefaultParams()
@@ -98,7 +98,7 @@ func TestRetryFailedMessage(t *testing.T) {
 	validators.Seal()
 	k.SetAddressValidators(validators)
 
-	msgServer := keeper.NewMsgServerImpl(k, &mock.SnapshotterMock{}, &mock.SlashingKeeperMock{}, &mock.StakingKeeperMock{}, &mock.AxelarnetKeeperMock{})
+	msgServer := keeper.NewMsgServerImpl(k, &mock.SnapshotterMock{}, &mock.SlashingKeeperMock{}, &mock.StakingKeeperMock{}, &mock.AxelarnetKeeperMock{}, &mock.RewardKeeperMock{})
 	ctx := sdk.NewContext(fake.NewMultiStore(), abci.Header{}, false, log.NewTestLogger(t))
 
 	k.SetMessageRouter(types.NewMessageRouter().AddRoute(evm.Ethereum.Module, func(_ sdk.Context, _ nexus.RoutingContext, _ nexus.GeneralMessage) error {
