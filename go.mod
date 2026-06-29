@@ -15,8 +15,8 @@ require (
 	cosmossdk.io/x/tx v0.14.0
 	cosmossdk.io/x/upgrade v0.2.0
 	github.com/BurntSushi/toml v1.5.0
-	github.com/CosmWasm/wasmd v0.60.7
-	github.com/CosmWasm/wasmvm/v2 v2.3.3
+	github.com/CosmWasm/wasmd v0.60.8
+	github.com/CosmWasm/wasmvm/v2 v2.3.4
 	github.com/axelarnetwork/tm-events v0.0.0-20251121130841-4c4b590f0d06
 	github.com/axelarnetwork/utils v0.0.0-20251121135440-7d92b8abb3a7
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5
