@@ -150,6 +150,8 @@ func NewApproveContractCallCommandGeneric(
 	sourceEventIndex uint64,
 	ID string,
 ) Command {
+	// The bytes passed as data (the message ID) are part of the commandID
+	// protocol invariant that off-chain relayers re-derive. See NewCommandID.
 	commandID := NewCommandID([]byte(ID), chainID)
 	return Command{
 		ID:         commandID,
@@ -192,6 +194,8 @@ func NewApproveContractCallWithMintGeneric(
 	message nexus.GeneralMessage,
 	symbol string,
 ) Command {
+	// The bytes passed as data (the message ID) are part of the commandID
+	// protocol invariant that off-chain relayers re-derive. See NewCommandID.
 	commandID := NewCommandID([]byte(message.ID), chainID)
 	contractAddress := common.HexToAddress(message.GetDestinationAddress())
 	payloadHash := common.BytesToHash(message.PayloadHash)
