@@ -211,6 +211,11 @@ func routeContractCallWithToken(ctx sdk.Context, event types.Event, bk types.Bas
 	return routeEventToNexus(ctx, n, event, &coin)
 }
 
+// routeEventToNexus stores the confirmed event as a nexus general message. The
+// message ID is set to the string event ID ("0x<txHash>-<index>"), which becomes
+// the commandID preimage on the destination chain (see evm/types.NewCommandID).
+// Off-chain express predictors derive the commandID from it, so the format must
+// stay stable; it is not an internal-only field.
 func routeEventToNexus(ctx sdk.Context, n types.Nexus, event types.Event, asset *sdk.Coin) error {
 	sourceChain := funcs.MustOk(n.GetChain(ctx, event.Chain))
 
