@@ -26,16 +26,18 @@ type msgServer struct {
 	slashing    types.SlashingKeeper
 	staking     types.StakingKeeper
 	axelarnet   types.AxelarnetKeeper
+	reward      types.RewardKeeper
 }
 
 // NewMsgServerImpl returns an implementation of the nexus MsgServiceServer interface for the provided Keeper.
-func NewMsgServerImpl(k types.Nexus, snapshotter types.Snapshotter, slashing types.SlashingKeeper, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper) types.MsgServiceServer {
+func NewMsgServerImpl(k types.Nexus, snapshotter types.Snapshotter, slashing types.SlashingKeeper, staking types.StakingKeeper, axelarnet types.AxelarnetKeeper, reward types.RewardKeeper) types.MsgServiceServer {
 	return msgServer{
 		Nexus:       k,
 		snapshotter: snapshotter,
 		slashing:    slashing,
 		staking:     staking,
 		axelarnet:   axelarnet,
+		reward:      reward,
 	}
 }
 
@@ -134,6 +136,8 @@ func (s msgServer) DeregisterChainMaintainer(c context.Context, req *types.Dereg
 		)
 
 		s.Logger(ctx).Info(fmt.Sprintf("validator %s deregistered maintainer for chain %s", validator.String(), chain.Name))
+
+		s.reward.GetPool(ctx, chain.Name.String()).ClearRewards(validator)
 		if err := s.RemoveChainMaintainer(ctx, chain, validator); err != nil {
 			return nil, err
 		}
