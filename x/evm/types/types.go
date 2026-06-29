@@ -682,7 +682,18 @@ const commandIDSize = 32
 // CommandID represents the unique command identifier
 type CommandID [commandIDSize]byte
 
-// NewCommandID is the constructor for CommandID
+// NewCommandID is the constructor for CommandID.
+//
+// PROTOCOL INVARIANT - do not change the inputs or encoding. This value is
+// re-derived off-chain from the source event alone, before the gateway approval
+// exists (the GMP API and the express relayer both predict it). Express
+// reconciliation is keyed solely on this commandID: if the off-chain and
+// on-chain derivations disagree, the express record orphans, the relayer is not
+// reimbursed, and the message is delivered twice.
+//
+// Changing this is a breaking protocol change affecting external services.
+// Making the unit tests pass for a new value is not a fix; the off-chain
+// predictors must match byte-for-byte.
 func NewCommandID(data []byte, chainID math.Int) CommandID {
 	var commandID CommandID
 	copy(commandID[:], crypto.Keccak256(append(data, chainID.BigInt().Bytes()...))[:commandIDSize])
@@ -1137,7 +1148,12 @@ func getType(val interface{}) string {
 // EventID ensures a correctly formatted event ID
 type EventID string
 
-// NewEventID returns a new event ID
+// NewEventID returns a new event ID, formatted as "0x<txHash>-<index>".
+//
+// This is not only a display string: its exact bytes (the "0x" prefix, hex
+// casing, "-" separator, decimal index) are the keccak preimage of the EVM
+// contract-call commandID (see NewCommandID). Changing the format changes every
+// commandID and breaks express reconciliation. Treat as a protocol invariant.
 func NewEventID(txID Hash, index uint64) EventID {
 	return EventID(fmt.Sprintf("%s-%d", txID.Hex(), index))
 }
