@@ -8,6 +8,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -33,7 +34,9 @@ func NewMessageRoute(
 			return fmt.Errorf("payload is required for routing messages to a cosmos chain")
 		}
 
-		bz, err := types.TranslateMessage(msg, routingCtx.Payload)
+		fixActive := utils.IsFixActive(ctx.ChainID(), ctx.BlockTime())
+
+		bz, err := types.TranslateMessage(msg, routingCtx.Payload, fixActive)
 		if err != nil {
 			return errorsmod.Wrap(err, "invalid payload")
 		}
