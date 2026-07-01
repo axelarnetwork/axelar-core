@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.4.8](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.8)
+
+### Bug Fixes
+
+* [#2352](https://github.com/axelarnetwork/axelar-core/pull/2352) Guard against super-linear ABI amplification when routing a MsgRouteMessage with a malformed payload
+
 ## [v1.4.7](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.7)
 
 ### Bug Fixes

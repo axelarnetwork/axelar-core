@@ -44,7 +44,7 @@ var (
 func TestTranslateMessage(t *testing.T) {
 	t.Run("should return error if version encoding is invalid", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
-		_, err := types.TranslateMessage(msg, []byte{0x01})
+		_, err := types.TranslateMessage(msg, []byte{0x01}, true)
 		assert.ErrorContains(t, err, "invalid versioned payload")
 	})
 
@@ -52,7 +52,7 @@ func TestTranslateMessage(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		payload := axelartestutils.PackPayloadWithVersion("0x99999999", rand.Bytes(64))
 
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "unknown payload version")
 	})
 }
@@ -116,7 +116,7 @@ func TestConstructWasmMessageV1Large(t *testing.T) {
 		},
 	}
 
-	msg, err := types.TranslateMessage(gm, payload)
+	msg, err := types.TranslateMessage(gm, payload, true)
 	assert.NoError(t, err)
 
 	jsonObject := make(map[string]interface{})
@@ -213,7 +213,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		payload := axelartestutils.PackPayloadWithVersion(version, rand.Bytes(10))
 
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "abi:")
 	})
 
@@ -232,7 +232,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		assert.NoError(t, err)
 
 		payload := axelartestutils.PackPayloadWithVersion(version, bz)
-		_, err = types.TranslateMessage(msg, payload)
+		_, err = types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "wrong data")
 	})
 
@@ -253,7 +253,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		assert.NoError(t, err)
 
 		payload := axelartestutils.PackPayloadWithVersion(version, bz)
-		_, err = types.TranslateMessage(msg, payload)
+		_, err = types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "payload argument name and type length mismatch")
 	})
 
@@ -274,7 +274,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		assert.NoError(t, err)
 
 		payload := axelartestutils.PackPayloadWithVersion(version, bz)
-		_, err = types.TranslateMessage(msg, payload)
+		_, err = types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "invalid argument type")
 	})
 
@@ -297,7 +297,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		assert.NoError(t, err)
 
 		payload := axelartestutils.PackPayloadWithVersion(version, bz)
-		_, err = types.TranslateMessage(msg, payload)
+		_, err = types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "wrong data")
 	})
 
@@ -310,7 +310,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 			[]interface{}{true, msg.GetSourceAddress()},
 		))
 
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "source chain must have type string")
 	})
 
@@ -323,7 +323,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 			[]interface{}{rand.Str(10), msg.GetSourceAddress()},
 		))
 
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "source chain does not match expected")
 	})
 
@@ -336,7 +336,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 			[]interface{}{msg.GetSourceChain().String(), uint64(1)},
 		))
 
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "source address does not match expected")
 	})
 
@@ -349,7 +349,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 			[]interface{}{msg.GetSourceChain().String(), "invalid"},
 		))
 
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "source address does not match expected")
 	})
 
@@ -372,7 +372,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 			[]interface{}{args.SourceChain, common.HexToAddress(args.SourceAddress)},
 		))
 
-		translatedMsg, err := types.TranslateMessage(msg, payload)
+		translatedMsg, err := types.TranslateMessage(msg, payload, true)
 		assert.NoError(t, err)
 
 		checkWasmMsg(t, translatedMsg, msg, method, args)
@@ -396,7 +396,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 			[]interface{}{args.SourceChain, args.SourceAddress},
 		))
 
-		translatedMsg, err := types.TranslateMessage(msg, payload)
+		translatedMsg, err := types.TranslateMessage(msg, payload, true)
 		assert.NoError(t, err)
 
 		checkWasmMsg(t, translatedMsg, msg, method, args)
@@ -422,7 +422,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 			[]interface{}{args.X, args.Y, args.SourceChain},
 		))
 
-		translatedMsg, err := types.TranslateMessage(msg, payload)
+		translatedMsg, err := types.TranslateMessage(msg, payload, true)
 		assert.NoError(t, err)
 
 		checkWasmMsg(t, translatedMsg, msg, method, args)
@@ -437,7 +437,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		wasmMsg := []byte(`"a json string"`)
 		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
 
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "cannot unmarshal string into Go value of type map[string]interface {}")
 	})
 
@@ -446,7 +446,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		wasmMsg := []byte(`{"key": "invalid json with open bracket"`)
 		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
 
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "unexpected end of JSON input")
 	})
 
@@ -461,7 +461,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		msg.Sender.Chain.Name = "ethereum"
 		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "invalid payload")
 	})
 
@@ -471,7 +471,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		msg.Sender.Chain.Name = "ethereum"
 		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "invalid arguments")
 	})
 
@@ -480,7 +480,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 
 		msg := nexustestutils.RandomMessage()
 		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "source chain must have type string")
 	})
 
@@ -489,7 +489,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 
 		msg := nexustestutils.RandomMessage()
 		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "source chain does not match expected")
 	})
 
@@ -503,7 +503,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		msg.Sender.Chain.Name = "ethereum"
 		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "source address does not match expected")
 	})
 
@@ -517,7 +517,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		msg.Sender.Chain.Name = "ethereum"
 		payload := axelartestutils.PackPayloadWithVersion(version, wasmMsg)
-		_, err := types.TranslateMessage(msg, payload)
+		_, err := types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "source address does not match expected")
 	})
 
@@ -538,7 +538,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		bz := []byte(fmt.Sprintf("\t\t\n\n\t{\"%s\":%s}\n\t\n\t", method, wasmArgs))
 
 		payload := axelartestutils.PackPayloadWithVersion(version, bz)
-		translatedMsg, err := types.TranslateMessage(msg, payload)
+		translatedMsg, err := types.TranslateMessage(msg, payload, true)
 		assert.NoError(t, err)
 
 		// whitespace is trimmed since checkWasmMsg only compares the arg json object
@@ -564,7 +564,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 
 		payload := axelartestutils.PackPayloadWithVersion(version, bz)
 
-		translatedMsg, err := types.TranslateMessage(msg, payload)
+		translatedMsg, err := types.TranslateMessage(msg, payload, true)
 		assert.NoError(t, err)
 
 		// whitespace is trimmed since checkWasmMsg only compares the arg json object
@@ -636,7 +636,7 @@ func TestConstructWasmMessageV2(t *testing.T) {
 		bz := []byte(fmt.Sprintf("{\"%s\": %s}", method, funcs.Must(json.MarshalIndent(wasmArgs, "", "    "))))
 		payload := axelartestutils.PackPayloadWithVersion(version, bz)
 
-		translatedBz, err := types.TranslateMessage(msg, payload)
+		translatedBz, err := types.TranslateMessage(msg, payload, true)
 		assert.NoError(t, err)
 
 		checkWasmMsg(t, translatedBz, msg, method, wasmArgs)
@@ -650,7 +650,7 @@ func TestConstructNativeV1Message(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		payload := axelartestutils.PackPayloadWithVersion(types.NativeV1, payloadMsg)
 
-		translatedBz, err := types.TranslateMessage(msg, payload)
+		translatedBz, err := types.TranslateMessage(msg, payload, true)
 		assert.NoError(t, err)
 
 		var decodedMsg struct {

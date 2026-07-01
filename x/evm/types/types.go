@@ -1068,6 +1068,8 @@ func (m EventMultisigOperatorshipTransferred) ValidateBasic() error {
 }
 
 // StrictDecode performs strict decode on evm encoded data, e.g. no byte can be left after the decoding
+// Never use user-typed arguments without proper input sanitisation mechanisms like checkBrackets and ABIInflationGuard.
+// And preferable only for simple non array types.
 func StrictDecode(arguments abi.Arguments, bz []byte) ([]interface{}, error) {
 	params, err := arguments.Unpack(bz)
 	if err != nil {
