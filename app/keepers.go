@@ -28,8 +28,6 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
@@ -42,13 +40,11 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	porttypes "github.com/cosmos/ibc-go/v8/modules/core/05-port/types"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
-	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	porttypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
+	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	"golang.org/x/mod/semver"
 
 	axelarParams "github.com/axelarnetwork/axelar-core/app/params"
@@ -132,7 +128,6 @@ func initParamsKeeper(encodingConfig axelarParams.EncodingConfig, key, tkey stor
 	paramsKeeper.Subspace(distrtypes.ModuleName)
 	paramsKeeper.Subspace(slashingtypes.ModuleName)
 	paramsKeeper.Subspace(govtypes.ModuleName)
-	paramsKeeper.Subspace(crisistypes.ModuleName)
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibcexported.ModuleName)
 	paramsKeeper.Subspace(wasm.ModuleName)
@@ -184,7 +179,6 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 		wasmkeeper.WithQueryPlugins(NewQueryPlugins(nexusK)),
 	)
 
-	scopedWasmK := GetKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(wasm.ModuleName)
 	ibcKeeper := GetKeeper[ibckeeper.Keeper](keepers)
 
 	wasmK := wasm.NewKeeper(
@@ -196,8 +190,6 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 		distrkeeper.NewQuerier(*GetKeeper[distrkeeper.Keeper](keepers)),
 		ibcKeeper.ChannelKeeper,
 		ibcKeeper.ChannelKeeper,
-		ibcKeeper.PortKeeper,
-		scopedWasmK,
 		GetKeeper[ibctransferkeeper.Keeper](keepers),
 		bApp.MsgServiceRouter(),
 		bApp.GRPCQueryRouter(),
@@ -291,31 +283,26 @@ func initRewardKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, k
 }
 
 func initIBCKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *ibckeeper.Keeper {
-	scopedIBCK := GetKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(ibcexported.ModuleName)
 	return ibckeeper.NewKeeper(
 		appCodec,
-		keys[ibcexported.StoreKey],
+		runtime.NewKVStoreService(keys[ibcexported.StoreKey]),
 		keepers.getSubspace(ibcexported.ModuleName),
-		GetKeeper[stakingkeeper.Keeper](keepers),
 		GetKeeper[upgradekeeper.Keeper](keepers),
-		scopedIBCK,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 }
 
-func initIBCTransferKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache, ics4Wrapper porttypes.ICS4Wrapper) *ibctransferkeeper.Keeper {
-	scopedTransferK := GetKeeper[capabilitykeeper.Keeper](keepers).ScopeToModule(ibctransfertypes.ModuleName)
+func initIBCTransferKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache, ics4Wrapper porttypes.ICS4Wrapper, msgServiceRouter *bam.MsgServiceRouter) *ibctransferkeeper.Keeper {
 	transferK := ibctransferkeeper.NewKeeper(
 		appCodec,
-		keys[ibctransfertypes.StoreKey],
+		runtime.NewKVStoreService(keys[ibctransfertypes.StoreKey]),
 		keepers.getSubspace(ibctransfertypes.ModuleName),
 		// Use the IBC middleware stack
 		ics4Wrapper,
 		GetKeeper[ibckeeper.Keeper](keepers).ChannelKeeper,
-		GetKeeper[ibckeeper.Keeper](keepers).PortKeeper,
+		msgServiceRouter,
 		GetKeeper[authkeeper.AccountKeeper](keepers),
 		GetKeeper[bankkeeper.BaseKeeper](keepers),
-		scopedTransferK,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 	return &transferK
@@ -331,11 +318,13 @@ func initAxelarIBCKeeper(keepers *KeeperCache) *axelarnetKeeper.IBCKeeper {
 }
 
 func initAxelarnetKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *axelarnetKeeper.Keeper {
+	ibcKeeper := GetKeeper[ibckeeper.Keeper](keepers)
 	axelarnetK := axelarnetKeeper.NewKeeper(
 		appCodec,
 		keys[axelarnetTypes.StoreKey],
 		keepers.getSubspace(axelarnetTypes.ModuleName),
-		GetKeeper[ibckeeper.Keeper](keepers).ChannelKeeper,
+		ibcKeeper.ChannelKeeper,
+		ibcKeeper.ClientKeeper,
 		GetKeeper[feegrantkeeper.Keeper](keepers),
 	)
 	return &axelarnetK
@@ -357,10 +346,6 @@ func initNexusKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, ke
 	nexusK.SetAddressValidators(addressValidators)
 
 	return &nexusK
-}
-
-func initCapabilityKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, memKeys map[string]*store.MemoryStoreKey) *capabilitykeeper.Keeper {
-	return capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
 }
 
 func initFeegrantKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *feegrantkeeper.Keeper {
@@ -392,18 +377,6 @@ func upgradeName(version string) string {
 		panic(fmt.Errorf("invalid app version %s", version))
 	}
 	return name
-}
-
-func initCrisisKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache, invCheckPeriod uint) *crisiskeeper.Keeper {
-	return crisiskeeper.NewKeeper(
-		appCodec,
-		runtime.NewKVStoreService(keys[crisistypes.StoreKey]),
-		invCheckPeriod,
-		GetKeeper[bankkeeper.BaseKeeper](keepers),
-		authtypes.FeeCollectorName,
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		GetKeeper[authkeeper.AccountKeeper](keepers).AddressCodec(),
-	)
 }
 
 func initSlashingKeeper(appCodec codec.Codec, legacyAmino *codec.LegacyAmino, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *slashingkeeper.Keeper {

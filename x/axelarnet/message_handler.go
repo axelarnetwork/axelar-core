@@ -8,9 +8,9 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
-	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	channeltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/axelarnetwork/axelar-core/utils"
@@ -304,36 +304,28 @@ func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.
 	// parse the transfer amount
 	amount := funcs.MustOk(math.NewIntFromString(data.Amount))
 
+	// The denom derived here sets the escrow address (fund custody); its resulting
+	// ibc/{hash} value must stay stable even if this derivation code changes. See
+	// the invariant on nexus exported.GetEscrowAddress.
 	var denom string
-	if ibctransfertypes.ReceiverChainIsSource(packet.GetSourcePort(), packet.GetSourceChannel(), data.Denom) {
+	ibcDenom := ibctransfertypes.ExtractDenomFromPath(data.Denom)
+	if ibcDenom.HasPrefix(packet.GetSourcePort(), packet.GetSourceChannel()) {
 		// sender chain is not the source, un-escrow token
 
 		// remove prefix added by sender chain
-		icsPrefix := ibctransfertypes.GetDenomPrefix(packet.GetSourcePort(), packet.GetSourceChannel())
-		unprefixedDenom := data.Denom[len(icsPrefix):]
-
-		// coin denomination used in sending from the escrow address
-		denom = unprefixedDenom
+		ibcDenom.Trace = ibcDenom.Trace[1:]
 
 		// the denomination used to send the coin is either
 		// -the native denom
 		// -the hash of the path if the denom is not native.
-		denomTrace := ibctransfertypes.ParseDenomTrace(unprefixedDenom)
-		if denomTrace.Path != "" {
-			denom = denomTrace.IBCDenom()
-		}
+		denom = ibcDenom.IBCDenom()
 	} else {
 		// sender chain is the source
 
 		// since SendPacket did not prefix the denomination, we must prefix denomination here
-		sourcePrefix := ibctransfertypes.GetDenomPrefix(packet.GetDestPort(), packet.GetDestChannel())
-		// NOTE: sourcePrefix contains the trailing "/"
-		prefixedDenom := sourcePrefix + data.Denom
+		ibcDenom.Trace = append([]ibctransfertypes.Hop{ibctransfertypes.NewHop(packet.GetDestPort(), packet.GetDestChannel())}, ibcDenom.Trace...)
 
-		// construct the denomination trace from the full raw denomination
-		denomTrace := ibctransfertypes.ParseDenomTrace(prefixedDenom)
-
-		denom = denomTrace.IBCDenom()
+		denom = ibcDenom.IBCDenom()
 	}
 
 	return n.NewLockableAsset(ctx, ibcK, b, sdk.NewCoin(denom, amount))

@@ -1,31 +1,27 @@
-## axelard query ibc channel upgrade
+## axelard query bank denom-owners-by-query
 
-Query the upgrade
-
-### Synopsis
-
-Query the upgrade for a given channel
+Execute the DenomOwnersByQuery RPC method
 
 ```
-axelard query ibc channel upgrade [port-id] [channel-id] [flags]
-```
-
-### Examples
-
-```
-axelard query ibc channel upgrade [port-id] [channel-id]
+axelard query bank denom-owners-by-query [flags]
 ```
 
 ### Options
 
 ```
+      --denom string       
       --grpc-addr string   the gRPC endpoint to use for this chain
       --grpc-insecure      allow gRPC over insecure channels, if not the server must use TLS
       --height int         Use a specific height to query state at (this can error if the node is pruning state)
-  -h, --help               help for upgrade
+  -h, --help               help for denom-owners-by-query
+      --no-indent          Do not indent JSON output
       --node string        <host>:<port> to CometBFT RPC interface for this chain (default "tcp://localhost:26657")
   -o, --output string      Output format (text|json) (default "text")
-      --prove              show proofs for the query results
+      --page-count-total   
+      --page-key binary    
+      --page-limit uint    
+      --page-offset uint   
+      --page-reverse       
 ```
 
 ### Options inherited from parent commands
@@ -39,4 +35,4 @@ axelard query ibc channel upgrade [port-id] [channel-id]
 
 ### SEE ALSO
 
-- [axelard query ibc channel](axelard_query_ibc_channel.md) - IBC channel query subcommands
+- [axelard query bank](axelard_query_bank.md) - Querying commands for the bank module

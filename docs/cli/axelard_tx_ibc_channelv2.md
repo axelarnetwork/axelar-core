@@ -1,15 +1,15 @@
-## axelard tx ibc channel
+## axelard tx ibc channelv2
 
-IBC channel transaction subcommands
+IBC channel/v2 transaction subcommands
 
 ```
-axelard tx ibc channel [flags]
+axelard tx ibc channelv2 [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for channel
+  -h, --help   help for channelv2
 ```
 
 ### Options inherited from parent commands
@@ -25,5 +25,3 @@ axelard tx ibc channel [flags]
 ### SEE ALSO
 
 - [axelard tx ibc](axelard_tx_ibc.md) - IBC transaction subcommands
-- [axelard tx ibc channel prune-acknowledgements](axelard_tx_ibc_channel_prune-acknowledgements.md) - Prune expired packet acknowledgements stored in IBC state
-- [axelard tx ibc channel upgrade-channels](axelard_tx_ibc_channel_upgrade-channels.md) - Upgrade IBC channels

@@ -35,8 +35,5 @@ axelard query ibc channel [flags]
 - [axelard query ibc channel packet-commitment](axelard_query_ibc_channel_packet-commitment.md) - Query a packet commitment
 - [axelard query ibc channel packet-commitments](axelard_query_ibc_channel_packet-commitments.md) - Query all packet commitments associated with a channel
 - [axelard query ibc channel packet-receipt](axelard_query_ibc_channel_packet-receipt.md) - Query a packet receipt
-- [axelard query ibc channel params](axelard_query_ibc_channel_params.md) - Query the current ibc channel parameters
 - [axelard query ibc channel unreceived-acks](axelard_query_ibc_channel_unreceived-acks.md) - Query all the unreceived acks associated with a channel
 - [axelard query ibc channel unreceived-packets](axelard_query_ibc_channel_unreceived-packets.md) - Query all the unreceived packets associated with a channel
-- [axelard query ibc channel upgrade](axelard_query_ibc_channel_upgrade.md) - Query the upgrade
-- [axelard query ibc channel upgrade-error](axelard_query_ibc_channel_upgrade-error.md) - Query the upgrade error

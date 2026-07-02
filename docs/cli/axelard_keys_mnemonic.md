@@ -15,6 +15,7 @@ axelard keys mnemonic [flags]
 ```
   -h, --help             help for mnemonic
       --unsafe-entropy   Prompt the user to supply their own entropy, instead of relying on the system
+  -y, --yes              Skip confirmation prompt when check input entropy length (default true)
 ```
 
 ### Options inherited from parent commands
