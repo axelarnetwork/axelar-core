@@ -70,6 +70,9 @@ func (m Messenger) routeMsg(ctx sdk.Context, msg exported.WasmMessage) error {
 	}
 
 	// If message already exists, then this is a no-op to avoid causing an error from reverting the whole message batch being routed in Amplifier
+	// For wasm/amplifier-origin messages this "<srcChain>-<id>" string is the
+	// commandID preimage on the destination EVM chain (see evm/types.NewCommandID).
+	// Off-chain express predictors must match it; keep the format stable.
 	msgID := fmt.Sprintf("%s-%s", msg.SourceChain, msg.ID)
 	if _, ok := m.GetMessage(ctx, msgID); ok {
 		return nil
