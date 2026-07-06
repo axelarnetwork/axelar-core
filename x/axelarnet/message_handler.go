@@ -307,28 +307,20 @@ func extractTokenFromPacketData(ctx sdk.Context, ibcK keeper.IBCKeeper, n types.
 	// The denom derived here sets the escrow address (fund custody); its resulting
 	// ibc/{hash} value must stay stable even if this derivation code changes. See
 	// the invariant on nexus exported.GetEscrowAddress.
-	var denom string
-	ibcDenom := ibctransfertypes.ExtractDenomFromPath(data.Denom)
-	if ibcDenom.HasPrefix(packet.GetSourcePort(), packet.GetSourceChannel()) {
+	parsedDenom := ibctransfertypes.ExtractDenomFromPath(data.Denom)
+	if parsedDenom.HasPrefix(packet.GetSourcePort(), packet.GetSourceChannel()) {
 		// sender chain is not the source, un-escrow token
 
 		// remove prefix added by sender chain
-		ibcDenom.Trace = ibcDenom.Trace[1:]
-
-		// the denomination used to send the coin is either
-		// -the native denom
-		// -the hash of the path if the denom is not native.
-		denom = ibcDenom.IBCDenom()
+		parsedDenom.Trace = parsedDenom.Trace[1:]
 	} else {
 		// sender chain is the source
 
 		// since SendPacket did not prefix the denomination, we must prefix denomination here
-		ibcDenom.Trace = append([]ibctransfertypes.Hop{ibctransfertypes.NewHop(packet.GetDestPort(), packet.GetDestChannel())}, ibcDenom.Trace...)
-
-		denom = ibcDenom.IBCDenom()
+		parsedDenom.Trace = append([]ibctransfertypes.Hop{ibctransfertypes.NewHop(packet.GetDestPort(), packet.GetDestChannel())}, parsedDenom.Trace...)
 	}
 
-	return n.NewLockableAsset(ctx, ibcK, b, sdk.NewCoin(denom, amount))
+	return n.NewLockableAsset(ctx, ibcK, b, sdk.NewCoin(parsedDenom.IBCDenom(), amount))
 }
 
 // deductFee pays the fee and returns the updated transfer amount with the fee deducted

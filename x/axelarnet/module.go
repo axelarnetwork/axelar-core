@@ -363,10 +363,10 @@ func (m AxelarnetIBCModule) setRoutedPacketFailed(ctx sdk.Context, packet channe
 func extractTokenFromAckOrTimeoutPacket(packet channeltypes.Packet) sdk.Coin {
 	data := funcs.Must(types.ToICS20Packet(packet))
 
-	denom := ibctransfertypes.ExtractDenomFromPath(data.Denom)
+	parsedDenom := ibctransfertypes.ExtractDenomFromPath(data.Denom)
 	amount := funcs.MustOk(math.NewIntFromString(data.Amount))
 
-	return sdk.NewCoin(denom.IBCDenom(), amount)
+	return sdk.NewCoin(parsedDenom.IBCDenom(), amount)
 }
 
 // Temporary logic to handle in-transit IBC transfers during upgrade. Previously IBC transfers were sent from the asset

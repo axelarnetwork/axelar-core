@@ -126,9 +126,9 @@ func toICS20(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, coin sdk.C
 	// This ibc/{hash} is the bank denom funds are escrowed under; its value (not
 	// the derivation code) must stay stable. See the invariant on
 	// exported.GetEscrowAddress.
-	denom := ibctypes.ExtractDenomFromPath(fmt.Sprintf("%s/%s", path, coin.GetDenom()))
+	parsedDenom := ibctypes.ExtractDenomFromPath(fmt.Sprintf("%s/%s", path, coin.GetDenom()))
 
-	return sdk.NewCoin(denom.IBCDenom(), coin.Amount), nil
+	return sdk.NewCoin(parsedDenom.IBCDenom(), coin.Amount), nil
 }
 
 func lock(ctx sdk.Context, bank types.BankKeeper, fromAddr sdk.AccAddress, coin sdk.Coin) error {
@@ -175,20 +175,20 @@ func toAssetAndType(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, coi
 	// check if the format of token denomination is 'ibc/{hash}' and it's a registered asset
 	case isICS20Denom(denom):
 		{
-			ibcDenom, err := ibc.ParseIBCDenom(ctx, denom)
+			parsedDenom, err := ibc.ParseIBCDenom(ctx, denom)
 			if err != nil {
 				return sdk.Coin{}, types.Unrecognized, err
 			}
 
-			path, err := getIBCPath(ctx, nexus, ibc, ibcDenom.Base)
+			path, err := getIBCPath(ctx, nexus, ibc, parsedDenom.Base)
 			if err != nil {
 				return sdk.Coin{}, types.Unrecognized, err
 			}
-			if fullPath := fmt.Sprintf("%s/%s", path, ibcDenom.Base); fullPath != ibcDenom.Path() {
-				return sdk.Coin{}, types.Unrecognized, fmt.Errorf("expected ics20 coin IBC path %s, got %s", fullPath, ibcDenom.Path())
+			if fullPath := fmt.Sprintf("%s/%s", path, parsedDenom.Base); fullPath != parsedDenom.Path() {
+				return sdk.Coin{}, types.Unrecognized, fmt.Errorf("expected ics20 coin IBC path %s, got %s", fullPath, parsedDenom.Path())
 			}
 
-			asset := sdk.NewCoin(ibcDenom.Base, coin.Amount)
+			asset := sdk.NewCoin(parsedDenom.Base, coin.Amount)
 
 			return asset, types.ICS20, nil
 		}
