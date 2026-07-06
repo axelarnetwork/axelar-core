@@ -8,7 +8,6 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
@@ -78,13 +77,9 @@ func (app *AxelarApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs
 		allowedAddrsMap[addr] = true
 	}
 
-	crisisKeeper := GetKeeper[crisiskeeper.Keeper](app.Keepers)
 	stakingKeeper := GetKeeper[stakingkeeper.Keeper](app.Keepers)
 	distrKeeper := GetKeeper[distrkeeper.Keeper](app.Keepers)
 	slashingKeeper := GetKeeper[slashingkeeper.Keeper](app.Keepers)
-
-	/* Just to be safe, assert the invariants on current state. */
-	crisisKeeper.AssertInvariants(ctx)
 
 	/* Handle fee distribution state. */
 

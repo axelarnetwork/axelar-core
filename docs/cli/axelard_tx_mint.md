@@ -25,3 +25,4 @@ axelard tx mint [flags]
 ### SEE ALSO
 
 - [axelard tx](axelard_tx.md) - Transactions subcommands
+- [axelard tx mint update-params-proposal](axelard_tx_mint_update-params-proposal.md) - Submit a proposal to update mint module params. Note: the entire params must be provided.

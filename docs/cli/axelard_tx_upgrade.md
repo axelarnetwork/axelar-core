@@ -22,4 +22,5 @@ Upgrade transaction subcommands
 
 - [axelard tx](axelard_tx.md) - Transactions subcommands
 - [axelard tx upgrade cancel-software-upgrade](axelard_tx_upgrade_cancel-software-upgrade.md) - Cancel the current software upgrade proposal
+- [axelard tx upgrade cancel-upgrade-proposal](axelard_tx_upgrade_cancel-upgrade-proposal.md) - Submit a proposal to cancel a planned chain upgrade.
 - [axelard tx upgrade software-upgrade](axelard_tx_upgrade_software-upgrade.md) - Submit a software upgrade proposal

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ibctypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	ibctypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -123,12 +123,12 @@ func toICS20(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, coin sdk.C
 		return sdk.Coin{}, err
 	}
 
-	trace := ibctypes.DenomTrace{
-		Path:      path,
-		BaseDenom: coin.GetDenom(),
-	}
+	// This ibc/{hash} is the bank denom funds are escrowed under; its value (not
+	// the derivation code) must stay stable. See the invariant on
+	// exported.GetEscrowAddress.
+	parsedDenom := ibctypes.ExtractDenomFromPath(fmt.Sprintf("%s/%s", path, coin.GetDenom()))
 
-	return sdk.NewCoin(trace.IBCDenom(), coin.Amount), nil
+	return sdk.NewCoin(parsedDenom.IBCDenom(), coin.Amount), nil
 }
 
 func lock(ctx sdk.Context, bank types.BankKeeper, fromAddr sdk.AccAddress, coin sdk.Coin) error {
@@ -175,20 +175,20 @@ func toAssetAndType(ctx sdk.Context, nexus types.Nexus, ibc types.IBCKeeper, coi
 	// check if the format of token denomination is 'ibc/{hash}' and it's a registered asset
 	case isICS20Denom(denom):
 		{
-			denomTrace, err := ibc.ParseIBCDenom(ctx, denom)
+			parsedDenom, err := ibc.ParseIBCDenom(ctx, denom)
 			if err != nil {
 				return sdk.Coin{}, types.Unrecognized, err
 			}
 
-			path, err := getIBCPath(ctx, nexus, ibc, denomTrace.GetBaseDenom())
+			path, err := getIBCPath(ctx, nexus, ibc, parsedDenom.Base)
 			if err != nil {
 				return sdk.Coin{}, types.Unrecognized, err
 			}
-			if path != denomTrace.GetPath() {
-				return sdk.Coin{}, types.Unrecognized, fmt.Errorf("expected ics20 coin IBC path %s, got %s", path, denomTrace.GetPath())
+			if fullPath := fmt.Sprintf("%s/%s", path, parsedDenom.Base); fullPath != parsedDenom.Path() {
+				return sdk.Coin{}, types.Unrecognized, fmt.Errorf("expected ics20 coin IBC path %s, got %s", fullPath, parsedDenom.Path())
 			}
 
-			asset := sdk.NewCoin(denomTrace.GetBaseDenom(), coin.Amount)
+			asset := sdk.NewCoin(parsedDenom.Base, coin.Amount)
 
 			return asset, types.ICS20, nil
 		}

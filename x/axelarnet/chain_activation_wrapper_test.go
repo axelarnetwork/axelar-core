@@ -6,8 +6,8 @@ import (
 	"cosmossdk.io/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
@@ -28,7 +28,7 @@ func TestChainActivationICS4Wrapper(t *testing.T) {
 	setup := func() {
 		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 		channel = &mock.ChannelKeeperMock{
-			SendPacketFunc: func(ctx sdk.Context, _ *capabilitytypes.Capability, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error) {
+			SendPacketFunc: func(ctx sdk.Context, sourcePort string, sourceChannel string, timeoutHeight clienttypes.Height, timeoutTimestamp uint64, data []byte) (uint64, error) {
 				return 1, nil
 			},
 		}
@@ -47,7 +47,7 @@ func TestChainActivationICS4Wrapper(t *testing.T) {
 		}
 		n.IsChainActivatedFunc = func(_ sdk.Context, _ nexus.Chain) bool { return true }
 
-		seq, err := wrapper.SendPacket(ctx, nil, "transfer", "channel-0", clienttypes.Height{}, 0, []byte("data"))
+		seq, err := wrapper.SendPacket(ctx, "transfer", "channel-0", clienttypes.Height{}, 0, []byte("data"))
 		assert.NoError(t, err)
 		assert.Equal(t, uint64(1), seq)
 		assert.Len(t, channel.SendPacketCalls(), 1)
@@ -63,7 +63,7 @@ func TestChainActivationICS4Wrapper(t *testing.T) {
 		}
 		n.IsChainActivatedFunc = func(_ sdk.Context, _ nexus.Chain) bool { return false }
 
-		_, err := wrapper.SendPacket(ctx, nil, "transfer", "channel-0", clienttypes.Height{}, 0, []byte("data"))
+		_, err := wrapper.SendPacket(ctx, "transfer", "channel-0", clienttypes.Height{}, 0, []byte("data"))
 		assert.ErrorContains(t, err, "deactivated")
 		assert.Len(t, channel.SendPacketCalls(), 0)
 	})
@@ -74,9 +74,23 @@ func TestChainActivationICS4Wrapper(t *testing.T) {
 			return "", false
 		}
 
-		seq, err := wrapper.SendPacket(ctx, nil, "transfer", "channel-99", clienttypes.Height{}, 0, []byte("data"))
+		seq, err := wrapper.SendPacket(ctx, "transfer", "channel-99", clienttypes.Height{}, 0, []byte("data"))
 		assert.NoError(t, err)
 		assert.Equal(t, uint64(1), seq)
 		assert.Len(t, channel.SendPacketCalls(), 1)
+	})
+
+	t.Run("WriteAcknowledgement and GetAppVersion delegate to the wrapped channel", func(t *testing.T) {
+		setup()
+		channel.WriteAcknowledgementFunc = func(sdk.Context, ibcexported.PacketI, ibcexported.Acknowledgement) error { return nil }
+		channel.GetAppVersionFunc = func(sdk.Context, string, string) (string, bool) { return "ics20-1", true }
+
+		assert.NoError(t, wrapper.WriteAcknowledgement(ctx, nil, nil))
+		assert.Len(t, channel.WriteAcknowledgementCalls(), 1)
+
+		version, ok := wrapper.GetAppVersion(ctx, "transfer", "channel-0")
+		assert.True(t, ok)
+		assert.Equal(t, "ics20-1", version)
+		assert.Len(t, channel.GetAppVersionCalls(), 1)
 	})
 }

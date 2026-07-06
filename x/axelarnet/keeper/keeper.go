@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	gogoprototypes "github.com/cosmos/gogoproto/types"
-	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	channeltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/key"
@@ -45,12 +45,13 @@ type Keeper struct {
 	params   params.Subspace
 
 	channelK  types.ChannelKeeper
+	clientK   types.ClientKeeper
 	feegrantK types.FeegrantKeeper
 }
 
 // NewKeeper returns a new axelarnet keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey store.StoreKey, paramSpace params.Subspace, channelK types.ChannelKeeper, feegrantK types.FeegrantKeeper) Keeper {
-	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable()), channelK: channelK, feegrantK: feegrantK}
+func NewKeeper(cdc codec.BinaryCodec, storeKey store.StoreKey, paramSpace params.Subspace, channelK types.ChannelKeeper, clientK types.ClientKeeper, feegrantK types.FeegrantKeeper) Keeper {
+	return Keeper{cdc: cdc, storeKey: storeKey, params: paramSpace.WithKeyTable(types.KeyTable()), channelK: channelK, clientK: clientK, feegrantK: feegrantK}
 }
 
 // Logger returns a module-specific logger.

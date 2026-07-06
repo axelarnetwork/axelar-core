@@ -23,6 +23,7 @@ axelard keys export <name> [flags]
   -h, --help            help for export
       --unarmored-hex   Export unarmored hex privkey. Requires --unsafe.
       --unsafe          Enable unsafe operations. This flag must be switched on along with all unsafe operation-specific options.
+  -y, --yes             Skip confirmation prompt when export unarmored hex privkey (default true)
 ```
 
 ### Options inherited from parent commands

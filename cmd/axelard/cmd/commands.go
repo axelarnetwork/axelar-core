@@ -23,7 +23,6 @@ import (
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	rosettaCmd "github.com/cosmos/rosetta/cmd"
 	"github.com/prometheus/client_golang/prometheus"
@@ -59,7 +58,6 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		AddGenesisEVMChainCmd(app.DefaultNodeHome),
 		SetGenesisMintCmd(app.DefaultNodeHome),
 		SetMultisigGovernanceCmd(app.DefaultNodeHome),
-		SetGenesisCrisisCmd(app.DefaultNodeHome),
 		SetGenesisAuthCmd(app.DefaultNodeHome),
 	)
 
@@ -150,7 +148,9 @@ func txCommand() *cobra.Command {
 }
 
 func addModuleInitFlags(startCmd *cobra.Command) {
-	crisis.AddModuleInitFlags(startCmd)
+	// x/crisis was removed from the app; keep accepting its start flag as a
+	// no-op so validator start scripts that still pass it don't fail on upgrade
+	startCmd.Flags().Bool("x-crisis-skip-assert-invariants", false, "deprecated: x/crisis was removed, this flag has no effect")
 	wasm.AddModuleInitFlags(startCmd)
 	startCmd.Flags().String(app.WasmDirFlag, "", "path to the wasm directory, by default set to 'wasm' directory inside the '--db_dir' directory")
 }
