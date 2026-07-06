@@ -101,8 +101,10 @@ func TestIBCKeeper_SendIBCTransfer_zeroClientHeight(t *testing.T) {
 	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 
 	channelK := &mock.ChannelKeeperMock{
-		GetNextSequenceSendFunc:   func(sdk.Context, string, string) (uint64, bool) { return 1, true },
-		GetChannelClientStateFunc: func(sdk.Context, string, string) (string, ibcexported.ClientState, error) { return "07-tendermint-0", nil, nil },
+		GetNextSequenceSendFunc: func(sdk.Context, string, string) (uint64, bool) { return 1, true },
+		GetChannelClientStateFunc: func(sdk.Context, string, string) (string, ibcexported.ClientState, error) {
+			return "07-tendermint-0", nil, nil
+		},
 	}
 	clientK := &mock.ClientKeeperMock{
 		GetClientLatestHeightFunc: func(sdk.Context, string) clienttypes.Height { return clienttypes.ZeroHeight() },
