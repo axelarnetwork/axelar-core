@@ -95,6 +95,25 @@ func TestIBCKeeper_SendIBCTransfer_timeoutHeightError(t *testing.T) {
 	assert.ErrorContains(t, err, "client state not found")
 }
 
+func TestIBCKeeper_SendIBCTransfer_zeroClientHeight(t *testing.T) {
+	encCfg := appParams.MakeEncodingConfig()
+	axelarnetSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("axelarnetKey"), store.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+
+	channelK := &mock.ChannelKeeperMock{
+		GetNextSequenceSendFunc:   func(sdk.Context, string, string) (uint64, bool) { return 1, true },
+		GetChannelClientStateFunc: func(sdk.Context, string, string) (string, ibcexported.ClientState, error) { return "07-tendermint-0", nil, nil },
+	}
+	clientK := &mock.ClientKeeperMock{
+		GetClientLatestHeightFunc: func(sdk.Context, string) clienttypes.Height { return clienttypes.ZeroHeight() },
+	}
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, clientK, &mock.FeegrantKeeperMock{})
+	ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
+
+	err := ibcK.SendIBCTransfer(ctx, axelartestutils.RandomIBCTransfer())
+	assert.ErrorContains(t, err, "zero height")
+}
+
 func TestKeeper_GetIBCPath(t *testing.T) {
 	repeats := 20
 

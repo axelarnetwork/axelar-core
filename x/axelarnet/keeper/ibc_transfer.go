@@ -94,6 +94,9 @@ func (i IBCKeeper) getPacketTimeoutHeight(ctx sdk.Context, portID, channelID str
 	}
 
 	latestHeight := i.clientK.GetClientLatestHeight(ctx, clientID)
+	if latestHeight.IsZero() {
+		return clienttypes.Height{}, errorsmod.Wrapf(clienttypes.ErrInvalidHeight, "client %s has zero height", clientID)
+	}
 
 	return clienttypes.NewHeight(latestHeight.GetRevisionNumber(), latestHeight.GetRevisionHeight()+i.GetRouteTimeoutWindow(ctx)), nil
 }
