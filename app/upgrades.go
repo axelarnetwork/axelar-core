@@ -61,7 +61,7 @@ var chainUpgrades = []chainUpgrade{
 
 func (app *AxelarApp) defaultUpgradeHandler(configurator module.Configurator, name string) upgradetypes.UpgradeHandler {
 	return func(ctx context.Context, _ upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
-		app.Logger().Info("Running upgrade handler", "name", name)
+		app.Logger().Info("Running upgrade handler", "name", name, "version", app.Version())
 		return app.mm.RunMigrations(ctx, configurator, fromVM)
 	}
 }
