@@ -278,6 +278,63 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		assert.ErrorContains(t, err, "invalid argument type")
 	})
 
+	t.Run("should return error if payload inflates beyond max cost", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+
+		hugeName := strings.Repeat("a", 1_100_000)
+
+		schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
+		bz, err := schema.Pack(
+			"method",
+			[]string{hugeName},
+			[]string{"uint256"},
+			[]byte{},
+		)
+		assert.NoError(t, err)
+
+		payload := axelartestutils.PackPayloadWithVersion(version, bz)
+		_, err = types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "exceeds maximum allowed cost")
+	})
+
+	t.Run("should return error if arg types exceed max brackets", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+
+		deepType := "uint256" + strings.Repeat("[1]", 101)
+
+		schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
+		bz, err := schema.Pack(
+			"method",
+			[]string{"x"},
+			[]string{deepType},
+			[]byte{},
+		)
+		assert.NoError(t, err)
+
+		payload := axelartestutils.PackPayloadWithVersion(version, bz)
+		_, err = types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "argument types exceeds maximum nesting")
+	})
+
+	t.Run("should return error if arg values inflate beyond max cost", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+
+		bigArrayType := "uint256[288230376151711744]"
+
+		schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
+		bz, err := schema.Pack(
+			"method",
+			[]string{"x"},
+			[]string{bigArrayType},
+			make([]byte, 32),
+		)
+		assert.NoError(t, err)
+
+		payload := axelartestutils.PackPayloadWithVersion(version, bz)
+		_, err = types.TranslateMessage(msg, payload)
+		assert.ErrorContains(t, err, "exceeds maximum allowed cost")
+	})
+
 	t.Run("should return error if mismatching arg length", func(t *testing.T) {
 		msg := nexustestutils.RandomMessage()
 		methodArguments := abi.Arguments([]abi.Argument{
