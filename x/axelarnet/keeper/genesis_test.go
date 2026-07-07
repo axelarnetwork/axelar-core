@@ -12,7 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	ibctypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	ibctypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -40,7 +40,7 @@ func TestGenesis(t *testing.T) {
 	givenKeeper := Given("a keeper",
 		func() {
 			subspace := paramstypes.NewSubspace(cfg.Codec, cfg.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "axelarnet")
-			k = keeper.NewKeeper(cfg.Codec, store.NewKVStoreKey(types.StoreKey), subspace, &mock.ChannelKeeperMock{}, &mock.FeegrantKeeperMock{})
+			k = keeper.NewKeeper(cfg.Codec, store.NewKVStoreKey(types.StoreKey), subspace, &mock.ChannelKeeperMock{}, &mock.ClientKeeperMock{}, &mock.FeegrantKeeperMock{})
 		})
 
 	givenGenesisState := Given("a genesis state",

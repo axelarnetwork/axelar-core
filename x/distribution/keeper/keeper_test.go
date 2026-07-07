@@ -7,6 +7,7 @@ import (
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
 	store "cosmossdk.io/store/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -123,6 +124,98 @@ func TestAllocateTokens(t *testing.T) {
 			assert.Equal(t, funcs.Must(k.FeePool.Get(ctx)).CommunityPool, tax)
 		}).
 		Run(t)
+}
+
+func TestBeginBlocker(t *testing.T) {
+	var (
+		k           keeper.Keeper
+		accBalances map[string]sdk.Coins
+		bk          *mock.BankKeeperMock
+		ctx         sdk.Context
+		err         error
+	)
+
+	fees := sdk.NewCoins(sdk.NewCoin(axelarnettypes.NativeAsset, math.NewInt(rand.PosI64())))
+	proposer := sdk.ConsAddress(rand.AccAddr())
+
+	given := Given("an axelar distribution keeper at a block proposed by a known validator", func() {
+		encCfg := params.MakeEncodingConfig()
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{ProposerAddress: proposer}, false, log.NewTestLogger(t)).
+			WithVoteInfos([]abci.VoteInfo{{Validator: abci.Validator{Power: rand.PosI64()}}})
+
+		accBalances = map[string]sdk.Coins{
+			authtypes.NewModuleAddress(authtypes.FeeCollectorName).String(): fees,
+		}
+		ak := &mock.AccountKeeperMock{
+			GetModuleAccountFunc: func(ctx context.Context, name string) sdk.ModuleAccountI {
+				return authtypes.NewEmptyModuleAccount(name)
+			},
+			GetModuleAddressFunc: func(name string) sdk.AccAddress {
+				return authtypes.NewModuleAddress(name)
+			},
+		}
+		bk = &mock.BankKeeperMock{
+			GetAllBalancesFunc: func(ctx context.Context, addr sdk.AccAddress) sdk.Coins {
+				return accBalances[addr.String()]
+			},
+			SendCoinsFromModuleToModuleFunc: func(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error {
+				senderModule = authtypes.NewModuleAddress(senderModule).String()
+				recipientModule = authtypes.NewModuleAddress(recipientModule).String()
+				accBalances[senderModule] = accBalances[senderModule].Sub(amt...)
+				accBalances[recipientModule] = accBalances[recipientModule].Add(amt...)
+				return nil
+			},
+			SendCoinsFromModuleToAccountFunc: func(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
+				senderModule = authtypes.NewModuleAddress(senderModule).String()
+				accBalances[senderModule] = accBalances[senderModule].Sub(amt...)
+				accBalances[recipientAddr.String()] = accBalances[recipientAddr.String()].Add(amt...)
+				return nil
+			},
+			BurnCoinsFunc: func(ctx context.Context, name string, amt sdk.Coins) error {
+				acc := authtypes.NewModuleAddress(name).String()
+				accBalances[acc] = accBalances[acc].Sub(amt...)
+				return nil
+			},
+			MintCoinsFunc: func(ctx context.Context, name string, amt sdk.Coins) error {
+				acc := authtypes.NewModuleAddress(name).String()
+				accBalances[acc] = accBalances[acc].Add(amt...)
+				return nil
+			},
+		}
+		sk := &mock.StakingKeeperMock{}
+
+		distriK := distribution.NewKeeper(encCfg.Codec, runtime.NewKVStoreService(store.NewKVStoreKey(distributiontypes.StoreKey)), ak, bk, sk, authtypes.FeeCollectorName, "")
+		k = keeper.NewKeeper(distriK, ak, bk, sk, authtypes.FeeCollectorName)
+		funcs.MustNoErr(k.FeePool.Set(ctx, distributiontypes.FeePool{CommunityPool: sdk.DecCoins{}}))
+		funcs.MustNoErr(k.Params.Set(ctx, distributiontypes.DefaultParams()))
+	})
+
+	given.Branch(
+		When("the block is past genesis (height > 1)", func() {
+			ctx = ctx.WithBlockHeight(rand.I64Between(2, 1000))
+			err = k.BeginBlocker(ctx)
+		}).
+			Then("it delegates to AllocateTokens and records the proposer", func(t *testing.T) {
+				assert.NoError(t, err)
+
+				// delegation to AllocateTokens happened (its fee math is covered by TestAllocateTokens)
+				assert.Len(t, bk.BurnCoinsCalls(), 1)
+				assert.Equal(t, proposer, funcs.Must(k.GetPreviousProposerConsAddr(ctx)))
+			}),
+
+		When("the block is genesis (height <= 1)", func() {
+			ctx = ctx.WithBlockHeight(1)
+			err = k.BeginBlocker(ctx)
+		}).
+			Then("it skips fee allocation but still records the proposer", func(t *testing.T) {
+				assert.NoError(t, err)
+
+				assert.Empty(t, bk.BurnCoinsCalls())
+				assert.True(t, funcs.Must(k.FeePool.Get(ctx)).CommunityPool.IsZero())
+
+				assert.Equal(t, proposer, funcs.Must(k.GetPreviousProposerConsAddr(ctx)))
+			}),
+	).Run(t)
 }
 
 func expectedBurnAndTax(ctx sdk.Context, k keeper.Keeper, fee sdk.Coins) (sdk.Coins, sdk.DecCoins) {

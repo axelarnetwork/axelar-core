@@ -1,15 +1,20 @@
 package keeper_test
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"testing"
 
 	"cosmossdk.io/log"
 	store "cosmossdk.io/store/types"
+	tmbytes "github.com/cometbft/cometbft/libs/bytes"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
+	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	"github.com/stretchr/testify/assert"
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
@@ -34,8 +39,81 @@ func setup(t log.TestingT) (sdk.Context, keeper.Keeper, *mock.ChannelKeeperMock,
 	channelK := &mock.ChannelKeeperMock{}
 	feegrantK := &mock.FeegrantKeeperMock{}
 
-	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, feegrantK)
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.ClientKeeperMock{
+		GetClientLatestHeightFunc: func(sdk.Context, string) clienttypes.Height {
+			return clienttypes.NewHeight(0, 5)
+		},
+	}, feegrantK)
 	return ctx, k, channelK, feegrantK
+}
+
+func TestIBCKeeper_ParseIBCDenom(t *testing.T) {
+	validHash := strings.Repeat("a", 64)
+
+	t.Run("returns the denom for a known ibc hash", func(t *testing.T) {
+		ctx, k, _, _ := setup(t)
+		want := ibctransfertypes.NewDenom("uatom", ibctransfertypes.NewHop("transfer", "channel-0"))
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
+			GetDenomFunc: func(sdk.Context, tmbytes.HexBytes) (ibctransfertypes.Denom, bool) { return want, true },
+		})
+
+		got, err := ibcK.ParseIBCDenom(ctx, "ibc/"+validHash)
+		assert.NoError(t, err)
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("errors on an invalid hash", func(t *testing.T) {
+		ctx, k, _, _ := setup(t)
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
+
+		_, err := ibcK.ParseIBCDenom(ctx, "ibc/notahexhash")
+		assert.Error(t, err)
+	})
+
+	t.Run("errors when the denom is not found", func(t *testing.T) {
+		ctx, k, _, _ := setup(t)
+		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
+			GetDenomFunc: func(sdk.Context, tmbytes.HexBytes) (ibctransfertypes.Denom, bool) {
+				return ibctransfertypes.Denom{}, false
+			},
+		})
+
+		_, err := ibcK.ParseIBCDenom(ctx, "ibc/"+validHash)
+		assert.Error(t, err)
+	})
+}
+
+func TestIBCKeeper_SendIBCTransfer_timeoutHeightError(t *testing.T) {
+	ctx, k, channelK, _ := setup(t)
+	channelK.GetNextSequenceSendFunc = func(sdk.Context, string, string) (uint64, bool) { return 1, true }
+	channelK.GetChannelClientStateFunc = func(sdk.Context, string, string) (string, ibcexported.ClientState, error) {
+		return "", nil, fmt.Errorf("client state not found")
+	}
+	ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
+
+	err := ibcK.SendIBCTransfer(ctx, axelartestutils.RandomIBCTransfer())
+	assert.ErrorContains(t, err, "client state not found")
+}
+
+func TestIBCKeeper_SendIBCTransfer_zeroClientHeight(t *testing.T) {
+	encCfg := appParams.MakeEncodingConfig()
+	axelarnetSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey("axelarnetKey"), store.NewKVStoreKey("tAxelarnetKey"), "axelarnet")
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+
+	channelK := &mock.ChannelKeeperMock{
+		GetNextSequenceSendFunc: func(sdk.Context, string, string) (uint64, bool) { return 1, true },
+		GetChannelClientStateFunc: func(sdk.Context, string, string) (string, ibcexported.ClientState, error) {
+			return "07-tendermint-0", nil, nil
+		},
+	}
+	clientK := &mock.ClientKeeperMock{
+		GetClientLatestHeightFunc: func(sdk.Context, string) clienttypes.Height { return clienttypes.ZeroHeight() },
+	}
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, clientK, &mock.FeegrantKeeperMock{})
+	ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
+
+	err := ibcK.SendIBCTransfer(ctx, axelartestutils.RandomIBCTransfer())
+	assert.ErrorContains(t, err, "zero height")
 }
 
 func TestKeeper_GetIBCPath(t *testing.T) {

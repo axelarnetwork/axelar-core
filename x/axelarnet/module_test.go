@@ -9,17 +9,16 @@ import (
 	"cosmossdk.io/math"
 	store "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	ibcTransfer "github.com/cosmos/ibc-go/v8/modules/apps/transfer"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	ibcTransfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
+	ibctransferkeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
 	"github.com/stretchr/testify/assert"
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
@@ -73,7 +72,11 @@ func TestIBCModule(t *testing.T) {
 			},
 		}
 
-		k = keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(types.ModuleName), subspace, channelK, &mock.FeegrantKeeperMock{})
+		k = keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(types.ModuleName), subspace, channelK, &mock.ClientKeeperMock{
+			GetClientLatestHeightFunc: func(sdk.Context, string) clienttypes.Height {
+				return clienttypes.NewHeight(0, 5)
+			},
+		}, &mock.FeegrantKeeperMock{})
 		ibcK := keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{})
 
 		accountK := &mock.AccountKeeperMock{
@@ -91,13 +94,12 @@ func TestIBCModule(t *testing.T) {
 			},
 			BurnCoinsFunc:      func(context.Context, string, sdk.Coins) error { return nil },
 			GetAllBalancesFunc: func(context.Context, sdk.AccAddress) sdk.Coins { return sdk.NewCoins() },
+			BlockedAddrFunc:    func(sdk.AccAddress) bool { return false },
 		}
 
-		scopeKeeper := capabilitykeeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey(capabilitytypes.StoreKey), store.NewKVStoreKey(capabilitytypes.MemStoreKey))
-		scopedTransferK := scopeKeeper.ScopeToModule(ibctransfertypes.ModuleName)
 		transferSubspace := params.NewSubspace(encCfg.Codec, encCfg.Amino, store.NewKVStoreKey(ibctransfertypes.StoreKey), store.NewKVStoreKey("tTrasferKey"), ibctransfertypes.ModuleName)
 
-		transferK = ibctransferkeeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("transfer"), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, &mock.PortKeeperMock{}, accountK, bankK, scopedTransferK, authtypes.NewModuleAddress(govtypes.ModuleName).String())
+		transferK = ibctransferkeeper.NewKeeper(encCfg.Codec, runtime.NewKVStoreService(store.NewKVStoreKey("transfer")), transferSubspace, &mock.ChannelKeeperMock{}, &mock.ChannelKeeperMock{}, nil, accountK, bankK, authtypes.NewModuleAddress(govtypes.ModuleName).String())
 
 		lockableAsset = &nexusmock.LockableAssetMock{}
 		n = &mock.NexusMock{
@@ -154,12 +156,12 @@ func TestIBCModule(t *testing.T) {
 	})
 
 	whenOnAck := When("on acknowledgement", func() {
-		err := ibcModule.OnAcknowledgementPacket(ctx, packet, ack.Acknowledgement(), nil)
+		err := ibcModule.OnAcknowledgementPacket(ctx, ibctransfertypes.V1, packet, ack.Acknowledgement(), nil)
 		assert.NoError(t, err)
 	})
 
 	whenOnTimeout := When("on timeout", func() {
-		err := ibcModule.OnTimeoutPacket(ctx, packet, nil)
+		err := ibcModule.OnTimeoutPacket(ctx, ibctransfertypes.V1, packet, nil)
 		assert.NoError(t, err)
 	})
 
@@ -210,7 +212,7 @@ func TestIBCModule(t *testing.T) {
 
 			whenPendingTransfersExist.
 				When("get invalid ack", func() {
-					err := ibcModule.OnAcknowledgementPacket(ctx, packet, rand.BytesBetween(1, 50), nil)
+					err := ibcModule.OnAcknowledgementPacket(ctx, ibctransfertypes.V1, packet, rand.BytesBetween(1, 50), nil)
 					assert.Error(t, err)
 				}).
 				Then2(shouldNotChangeTransferState),

@@ -443,7 +443,17 @@ type WasmQueryTxHashAndNonceResponse struct {
 	Nonce  uint64   `json:"nonce,omitempty"`   // the nonce of the current execution, which increments with each entry of any wasm execution
 }
 
-// GetEscrowAddress creates an address for the given denomination
+// GetEscrowAddress creates an address for the given denomination.
+//
+// Value-stability invariant: the escrow address is the first address.Len bytes
+// of sha256(denom), so the denom string is the custody key for every
+// locked/escrowed token. For ICS20 assets that denom is the ibc/{hash} from
+// ibc-go's transfer Denom.IBCDenom() (see nexus toICS20 and
+// axelarnet.extractTokenFromPacketData). The derivation code may change (e.g. an
+// ibc-go API change), but the resulting ibc/{hash} value for an existing token
+// must not: a different value re-homes its escrow address and strands the locked
+// funds. Any change that alters the value requires a state migration for
+// escrowed balances.
 func GetEscrowAddress(denom string) sdk.AccAddress {
 	hash := sha256.Sum256([]byte(denom))
 

@@ -8,7 +8,7 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	ibctypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	ibctypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
@@ -103,7 +103,7 @@ type AccountKeeper interface {
 
 // IBCKeeper provides functionality to send IBC transfer
 type IBCKeeper interface {
-	ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.DenomTrace, error)
+	ParseIBCDenom(ctx sdk.Context, ibcDenom string) (ibctypes.Denom, error)
 	GetIBCPath(ctx sdk.Context, chain exported.ChainName) (string, bool)
 }
 

@@ -26,3 +26,4 @@ axelard tx slashing [flags]
 
 - [axelard tx](axelard_tx.md) - Transactions subcommands
 - [axelard tx slashing unjail](axelard_tx_slashing_unjail.md) - Unjail a jailed validator
+- [axelard tx slashing update-params-proposal](axelard_tx_slashing_update-params-proposal.md) - Submit a proposal to update slashing module params. Note: the entire params must be provided.

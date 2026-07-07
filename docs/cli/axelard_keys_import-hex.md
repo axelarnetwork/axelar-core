@@ -9,7 +9,7 @@ Supported key-types can be obtained with:
 axelard list-key-types
 
 ```
-axelard keys import-hex <name> <hex> [flags]
+axelard keys import-hex <name> [hex] [flags]
 ```
 
 ### Options

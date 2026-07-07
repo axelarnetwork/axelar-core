@@ -18,10 +18,9 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	ibcchanneltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/assert"
 
@@ -56,7 +55,11 @@ func setup(t log.TestingT) (sdk.Context, keeper.Keeper, *mock.ChannelKeeperMock)
 		},
 	}
 
-	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.FeegrantKeeperMock{})
+	k := keeper.NewKeeper(encCfg.Codec, store.NewKVStoreKey("axelarnet"), axelarnetSubspace, channelK, &mock.ClientKeeperMock{
+		GetClientLatestHeightFunc: func(sdk.Context, string) clienttypes.Height {
+			return clienttypes.NewHeight(0, 5)
+		},
+	}, &mock.FeegrantKeeperMock{})
 	return ctx, k, channelK
 }
 
@@ -98,7 +101,7 @@ func TestHandleMessage(t *testing.T) {
 			IBCPath:    axelartestutils.RandomIBCPath(),
 			AddrPrefix: "cosmos",
 		}))
-		channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+		channelK.SendPacketFunc = func(sdk.Context, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
 			return mathrand.Uint64(), nil
 		}
 		n = &mock.NexusMock{
@@ -141,11 +144,8 @@ func TestHandleMessage(t *testing.T) {
 			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
-			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
-				return ibctransfertypes.DenomTrace{
-					Path:      fmt.Sprintf("%s/%s", ibctransfertypes.PortID, receiverChannel),
-					BaseDenom: rand.Denom(5, 10),
-				}, true
+			GetDenomFunc: func(ctx sdk.Context, denomHash tmbytes.HexBytes) (ibctransfertypes.Denom, bool) {
+				return ibctransfertypes.NewDenom(rand.Denom(5, 10), ibctransfertypes.NewHop(ibctransfertypes.PortID, receiverChannel)), true
 			},
 		})
 
@@ -463,7 +463,7 @@ func TestHandleMessageWithToken(t *testing.T) {
 			IBCPath:    path,
 			AddrPrefix: rand.StrBetween(5, 10),
 		}))
-		channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+		channelK.SendPacketFunc = func(sdk.Context, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
 			return mathrand.Uint64(), nil
 		}
 		lockableAsset = &nexusmock.LockableAssetMock{
@@ -511,11 +511,8 @@ func TestHandleMessageWithToken(t *testing.T) {
 			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
-			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
-				return ibctransfertypes.DenomTrace{
-					Path:      fmt.Sprintf("%s/%s", ibctransfertypes.PortID, receiverChannel),
-					BaseDenom: denom,
-				}, true
+			GetDenomFunc: func(ctx sdk.Context, denomHash tmbytes.HexBytes) (ibctransfertypes.Denom, bool) {
+				return ibctransfertypes.NewDenom(denom, ibctransfertypes.NewHop(ibctransfertypes.PortID, receiverChannel)), true
 			},
 		})
 		b = &mock.BankKeeperMock{
@@ -676,7 +673,7 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 			IBCPath:    axelartestutils.RandomIBCPath(),
 			AddrPrefix: "cosmos",
 		}))
-		channelK.SendPacketFunc = func(sdk.Context, *capabilitytypes.Capability, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
+		channelK.SendPacketFunc = func(sdk.Context, string, string, clienttypes.Height, uint64, []byte) (uint64, error) {
 			return mathrand.Uint64(), nil
 		}
 		lockableAsset = &nexusmock.LockableAssetMock{}
@@ -717,11 +714,8 @@ func TestTokenAndDestChainNotFound(t *testing.T) {
 			},
 		}
 		ibcK = keeper.NewIBCKeeper(k, &mock.IBCTransferKeeperMock{
-			GetDenomTraceFunc: func(ctx sdk.Context, denomTraceHash tmbytes.HexBytes) (ibctransfertypes.DenomTrace, bool) {
-				return ibctransfertypes.DenomTrace{
-					Path:      fmt.Sprintf("%s/%s", ibctransfertypes.PortID, receiverChannel),
-					BaseDenom: rand.Denom(5, 10),
-				}, true
+			GetDenomFunc: func(ctx sdk.Context, denomHash tmbytes.HexBytes) (ibctransfertypes.Denom, bool) {
+				return ibctransfertypes.NewDenom(rand.Denom(5, 10), ibctransfertypes.NewHop(ibctransfertypes.PortID, receiverChannel)), true
 			},
 		})
 
