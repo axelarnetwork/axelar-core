@@ -63,7 +63,7 @@ type message struct {
 }
 
 // TranslateMessage constructs the message gets passed to a cosmos chain from a versioned payload
-func TranslateMessage(msg nexus.GeneralMessage, versionedPayload []byte, fixActive bool) ([]byte, error) {
+func TranslateMessage(msg nexus.GeneralMessage, versionedPayload []byte) ([]byte, error) {
 	version, payload, err := unpackVersionedPayload(versionedPayload)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "invalid versioned payload")
@@ -77,7 +77,7 @@ func TranslateMessage(msg nexus.GeneralMessage, versionedPayload []byte, fixActi
 			return nil, errorsmod.Wrap(err, "failed to construct native payload")
 		}
 	case CosmWasmV1:
-		bz, err = ConstructWasmMessageV1(msg, payload, fixActive)
+		bz, err = ConstructWasmMessageV1(msg, payload)
 		if err != nil {
 			return nil, errorsmod.Wrap(err, "failed to construct wasm payload")
 		}
@@ -112,11 +112,9 @@ func unpackVersionedPayload(versionedPayload []byte) (version, []byte, error) {
 // - argument names ([]string)
 // - argument types ([]string)
 // - argument values (bytes)
-func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte, fixActive bool) ([]byte, error) {
-	if fixActive {
-		if err := evm.ABIInflationGuard(payloadArguments, payload, maxArgCost); err != nil {
-			return nil, err
-		}
+func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
+	if err := evm.ABIInflationGuard(payloadArguments, payload, maxArgCost); err != nil {
+		return nil, err
 	}
 
 	args, err := evm.StrictDecode(payloadArguments, payload)
@@ -132,10 +130,8 @@ func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte, fixActive b
 		return nil, fmt.Errorf("payload argument name and type length mismatch")
 	}
 
-	if fixActive {
-		if err := checkBrackets(argTypes); err != nil {
-			return nil, err
-		}
+	if err := checkBrackets(argTypes); err != nil {
+		return nil, err
 	}
 
 	abiArguments, err := buildArguments(argTypes)
@@ -143,10 +139,8 @@ func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte, fixActive b
 		return nil, err
 	}
 
-	if fixActive {
-		if err := evm.ABIInflationGuard(abiArguments, args[3].([]byte), maxArgCost); err != nil {
-			return nil, err
-		}
+	if err := evm.ABIInflationGuard(abiArguments, args[3].([]byte), maxArgCost); err != nil {
+		return nil, err
 	}
 
 	// unpack to actual argument values
