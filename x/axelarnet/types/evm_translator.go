@@ -31,6 +31,9 @@ const (
 	// - bytes4(2) To CosmWasm Contract with json encoded payload
 	versionSize = 4
 
+	maxArgCost     = 1024 * 1024 // 1MB inflation-cost budget
+	maxArgBrackets = 100
+
 	sourceChain   = "source_chain"
 	sourceAddress = "source_address"
 )
@@ -110,6 +113,10 @@ func unpackVersionedPayload(versionedPayload []byte) (version, []byte, error) {
 // - argument types ([]string)
 // - argument values (bytes)
 func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
+	if err := evm.ABIInflationGuard(payloadArguments, payload, maxArgCost); err != nil {
+		return nil, err
+	}
+
 	args, err := evm.StrictDecode(payloadArguments, payload)
 	if err != nil {
 		return nil, err
@@ -123,8 +130,16 @@ func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 		return nil, fmt.Errorf("payload argument name and type length mismatch")
 	}
 
+	if err := checkBrackets(argTypes); err != nil {
+		return nil, err
+	}
+
 	abiArguments, err := buildArguments(argTypes)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := evm.ABIInflationGuard(abiArguments, args[3].([]byte), maxArgCost); err != nil {
 		return nil, err
 	}
 
@@ -236,6 +251,19 @@ func buildArguments(argTypes []string) (abi.Arguments, error) {
 	}
 
 	return arguments, nil
+}
+
+func checkBrackets(argTypes []string) error {
+	brackets := 0
+	for _, typeStr := range argTypes {
+		brackets += strings.Count(typeStr, "[")
+	}
+
+	if brackets > maxArgBrackets {
+		return fmt.Errorf("argument types exceeds maximum nesting")
+	}
+
+	return nil
 }
 
 func checkSourceInfo(sender nexus.CrossChainAddress, msg map[string]interface{}) error {
