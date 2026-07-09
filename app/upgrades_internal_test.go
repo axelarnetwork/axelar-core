@@ -9,6 +9,7 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	dbm "github.com/cosmos/cosmos-db"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -29,7 +30,7 @@ func TestV15Upgrade(t *testing.T) {
 	require.NotNil(t, v15, "v1.5 must be in the upgrade registry")
 
 	assert.Equal(t, []string{"capability", "crisis"}, v15.storeUpgrades.Deleted)
-	assert.Empty(t, v15.storeUpgrades.Added)
+	assert.Equal(t, []string{"authz"}, v15.storeUpgrades.Added)
 	assert.Empty(t, v15.storeUpgrades.Renamed)
 
 	WasmEnabled, IBCWasmHooksEnabled = "true", "false"
@@ -46,4 +47,8 @@ func TestV15Upgrade(t *testing.T) {
 	)
 
 	assert.True(t, GetKeeper[upgradekeeper.Keeper](axelarApp.Keepers).HasHandler("v1.5"))
+
+	assert.NotNil(t, GetKeeper[authzkeeper.Keeper](axelarApp.Keepers))
+	assert.Contains(t, axelarApp.Keys, "authz")
+	assert.Contains(t, axelarApp.mm.GetVersionMap(), "authz")
 }
