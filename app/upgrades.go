@@ -49,8 +49,6 @@ var chainUpgrades = []chainUpgrade{
 		name: "v1.5",
 		storeUpgrades: store.StoreUpgrades{
 			Added: []string{
-				// x/authz is added in v1.5 so validators can delegate scoped
-				// actions (e.g. governance voting) to an operational key
 				authz.ModuleName,
 			},
 			Deleted: []string{

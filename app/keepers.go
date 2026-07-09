@@ -356,7 +356,8 @@ func initFeegrantKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey,
 }
 
 func initAuthzKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache, bApp *bam.BaseApp) *authzkeeper.Keeper {
-	authzK := authzkeeper.NewKeeper(runtime.NewKVStoreService(keys[authz.ModuleName]), appCodec, bApp.MsgServiceRouter(), GetKeeper[authkeeper.AccountKeeper](keepers))
+	authzK := authzkeeper.NewKeeper(runtime.NewKVStoreService(keys[authz.ModuleName]), appCodec, bApp.MsgServiceRouter(), GetKeeper[authkeeper.AccountKeeper](keepers)).
+		SetBankKeeper(GetKeeper[bankkeeper.BaseKeeper](keepers))
 	return &authzK
 }
 

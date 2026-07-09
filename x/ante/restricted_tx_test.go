@@ -14,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/ante"
 	"github.com/axelarnetwork/axelar-core/x/ante/types/mock"
+	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/permission/exported"
@@ -159,5 +160,39 @@ func TestAuthzMsgExecCannotBypassRestrictedTx(t *testing.T) {
 	}
 
 	assert.Error(t, execTx(&evm.CreateDeployTokenRequest{Sender: grantee.String()}))
+	assert.NoError(t, execTx(&govv1.MsgVote{Voter: grantee.String()}))
+}
+
+func TestAuthzMsgExecRejectsRoleGatedMsgs(t *testing.T) {
+	encodingConfig := app.MakeEncodingConfig()
+	grantee := rand.AccAddr()
+	roleHolder := rand.AccAddr()
+
+	permission := &mock.PermissionMock{
+		GetRoleFunc: func(_ sdk.Context, addr sdk.AccAddress) exported.Role {
+			if addr.Equals(roleHolder) {
+				return exported.ROLE_CHAIN_MANAGEMENT
+			}
+			return exported.ROLE_UNRESTRICTED
+		},
+	}
+
+	handler := sdk.ChainAnteDecorators(
+		ante.NewBatchDecorator(encodingConfig.Codec),
+		ante.NewAnteHandlerDecorator(
+			ante.ChainMessageAnteDecorators(ante.NewRestrictedTx(permission, encodingConfig.Codec)).ToAnteHandler()),
+	)
+	execTx := func(inner sdk.Msg) error {
+		exec := authz.NewMsgExec(grantee, []sdk.Msg{inner})
+		tx := &mock.FeeTxMock{GetMsgsFunc: func() []sdk.Msg { return []sdk.Msg{&exec} }}
+		_, err := handler(sdk.Context{}, tx, false)
+		return err
+	}
+
+	assert.Error(t, execTx(&evm.CreateDeployTokenRequest{Sender: roleHolder.String()}))
+
+	nested := auxiliarytypes.NewBatchRequest(roleHolder, []sdk.Msg{&evm.CreateDeployTokenRequest{Sender: roleHolder.String()}})
+	assert.Error(t, execTx(nested))
+
 	assert.NoError(t, execTx(&govv1.MsgVote{Voter: grantee.String()}))
 }

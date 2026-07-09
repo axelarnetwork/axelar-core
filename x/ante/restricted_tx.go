@@ -5,9 +5,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/authz"
 	"github.com/cosmos/gogoproto/protoc-gen-gogo/descriptor"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
+	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 )
 
@@ -28,6 +30,12 @@ func NewRestrictedTx(permission types.Permission, cdc codec.Codec) RestrictedTx 
 // AnteHandle fails if the signer is not authorized to send the transaction
 func (d RestrictedTx) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool, next MessageAnteHandler) (sdk.Context, error) {
 	for _, msg := range msgs {
+		if exec, ok := msg.(*authz.MsgExec); ok {
+			if inner, err := exec.GetMessages(); err == nil && containsRoleGatedMsg(inner) {
+				return ctx, errorsmod.Wrap(sdkerrors.ErrUnauthorized, "authz MsgExec must not wrap role-restricted messages")
+			}
+		}
+
 		var signer sdk.AccAddress
 
 		signers, _, err := d.cdc.GetMsgV1Signers(msg)
@@ -39,7 +47,7 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool,
 		}
 
 		signerRole := d.permission.GetRole(ctx, signer)
-		switch permission.GetPermissionRole((msg).(descriptor.Message)) {
+		switch permissionRole(msg) {
 		case permission.ROLE_ACCESS_CONTROL:
 			if permission.ROLE_ACCESS_CONTROL != signerRole {
 				return ctx, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "signer '%s' is not authorized to send transaction %T", signer, msg)
@@ -54,4 +62,34 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool,
 	}
 
 	return next(ctx, msgs, simulate)
+}
+
+func permissionRole(msg sdk.Msg) permission.Role {
+	dm, ok := msg.(descriptor.Message)
+	if !ok {
+		return permission.ROLE_UNSPECIFIED
+	}
+	return permission.GetPermissionRole(dm)
+}
+
+func containsRoleGatedMsg(msgs []sdk.Msg) bool {
+	for _, msg := range msgs {
+		switch permissionRole(msg) {
+		case permission.ROLE_ACCESS_CONTROL, permission.ROLE_CHAIN_MANAGEMENT:
+			return true
+		}
+
+		switch m := msg.(type) {
+		case *authz.MsgExec:
+			if inner, err := m.GetMessages(); err == nil && containsRoleGatedMsg(inner) {
+				return true
+			}
+		case *auxiliarytypes.BatchRequest:
+			if containsRoleGatedMsg(m.UnwrapMessages()) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
