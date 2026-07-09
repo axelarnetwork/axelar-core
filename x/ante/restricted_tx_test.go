@@ -4,7 +4,9 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
 
@@ -133,4 +135,29 @@ func TestRestrictedTx(t *testing.T) {
 				Then("stop tx", stopTx),
 		),
 	).Run(t, 20)
+}
+
+func TestAuthzMsgExecCannotBypassRestrictedTx(t *testing.T) {
+	encodingConfig := app.MakeEncodingConfig()
+	grantee := rand.AccAddr()
+
+	permission := &mock.PermissionMock{
+		GetRoleFunc: func(sdk.Context, sdk.AccAddress) exported.Role { return exported.ROLE_UNRESTRICTED },
+	}
+
+	handler := sdk.ChainAnteDecorators(
+		ante.NewBatchDecorator(encodingConfig.Codec),
+		ante.NewAnteHandlerDecorator(
+			ante.ChainMessageAnteDecorators(ante.NewRestrictedTx(permission, encodingConfig.Codec)).ToAnteHandler()),
+	)
+
+	execTx := func(inner sdk.Msg) error {
+		exec := authz.NewMsgExec(grantee, []sdk.Msg{inner})
+		tx := &mock.FeeTxMock{GetMsgsFunc: func() []sdk.Msg { return []sdk.Msg{&exec} }}
+		_, err := handler(sdk.Context{}, tx, false)
+		return err
+	}
+
+	assert.Error(t, execTx(&evm.CreateDeployTokenRequest{Sender: grantee.String()}))
+	assert.NoError(t, execTx(&govv1.MsgVote{Voter: grantee.String()}))
 }

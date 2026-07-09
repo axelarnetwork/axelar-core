@@ -5,6 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/authz"
 
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 )
@@ -56,8 +57,15 @@ func unpackMsgs(msgs []sdk.Msg) []sdk.Msg {
 	for _, msg := range msgs {
 		unpackedMsgs = append(unpackedMsgs, msg)
 
-		if batchReq, ok := msg.(*auxiliarytypes.BatchRequest); ok {
-			unpackedMsgs = append(unpackedMsgs, batchReq.UnwrapMessages()...)
+		switch m := msg.(type) {
+		case *auxiliarytypes.BatchRequest:
+			unpackedMsgs = append(unpackedMsgs, unpackMsgs(m.UnwrapMessages())...)
+		case *authz.MsgExec:
+			innerMsgs, err := m.GetMessages()
+			if err != nil {
+				continue
+			}
+			unpackedMsgs = append(unpackedMsgs, unpackMsgs(innerMsgs)...)
 		}
 	}
 

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
 	"github.com/stretchr/testify/assert"
 
 	appParams "github.com/axelarnetwork/axelar-core/app/params"
@@ -85,6 +86,30 @@ func TestBatch(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.Equal(t, 9, len(unwrappedMsgs))
+		}).
+		Run(t)
+
+	givenBatchAnteHandler.
+		When("a tx contains a nested authz MsgExec", func() {
+			inner := authz.NewMsgExec(sender, []sdk.Msg{
+				votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3)))),
+			})
+			exec := authz.NewMsgExec(sender, []sdk.Msg{&inner})
+			tx = &mock.FeeTxMock{
+				GetMsgsFunc: func() []sdk.Msg {
+					return []sdk.Msg{&exec}
+				},
+			}
+		}).
+		Then("should recursively unwrap the inner messages", func(t *testing.T) {
+			_, err := handler.AnteHandle(sdk.Context{}, tx, false,
+				func(_ sdk.Context, tx sdk.Tx, _ bool) (sdk.Context, error) {
+					unwrappedMsgs = tx.GetMsgs()
+					return sdk.Context{}, nil
+				})
+
+			assert.NoError(t, err)
+			assert.Equal(t, 3, len(unwrappedMsgs))
 		}).
 		Run(t)
 }
