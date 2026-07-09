@@ -26,6 +26,7 @@ axelard tx [flags]
 
 - [axelard](axelard.md) - Axelar App
 - [axelard tx auth](axelard_tx_auth.md) - Transactions commands for the auth module
+- [axelard tx authz](axelard_tx_authz.md) - Authorization transactions subcommands
 - [axelard tx auxiliary](axelard_tx_auxiliary.md) - Transactions commands for the auxiliary module
 - [axelard tx axelarnet](axelard_tx_axelarnet.md) - axelarnet transactions subcommands
 - [axelard tx bank](axelard_tx_bank.md) - Bank transaction subcommands
