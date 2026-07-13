@@ -53,7 +53,7 @@ func TestMigrate8to9(t *testing.T) {
 		When("the migration runs", func() {
 			assert.NoError(t, keeper.Migrate8to9(k)(ctx))
 		}).
-		Then("bitmap MaxSize should be capped and buffer shrinks on next Add", func(t *testing.T) {
+		Then("bitmap MaxSize and buffer should be shrunk eagerly", func(t *testing.T) {
 			ms, ok := k.GetChainMaintainerState(ctx, chain, addr)
 			assert.True(t, ok)
 
@@ -61,16 +61,15 @@ func TestMigrate8to9(t *testing.T) {
 			assert.Equal(t, int32(newMaxSize), maintainer.MissingVotes.TrueCountCache.MaxSize)
 			assert.Equal(t, int32(newMaxSize), maintainer.IncorrectVotes.TrueCountCache.MaxSize)
 
-			// The buffer is still large in storage until the next Add triggers shrink
-			assert.Greater(t, len(maintainer.MissingVotes.TrueCountCache.CumulativeValue), newMaxSize)
-
-			// After one more vote, shrink should trigger
-			maintainer.MarkMissingVote(false)
+			// The migration reallocates the buffer immediately; no further Add is
+			// needed, so maintainers on deactivated chains stop carrying oversized
+			// buffers in storage.
 			assert.Equal(t, newMaxSize, len(maintainer.MissingVotes.TrueCountCache.CumulativeValue))
+			assert.Equal(t, newMaxSize, len(maintainer.IncorrectVotes.TrueCountCache.CumulativeValue))
 
-			// Vote counts within a small window should still be correct after shrink.
-			// The window of 100 covers the 1 extra false vote plus the last 99 loop
-			// iterations (i=1425..1523). Votes where i%3==0 are true: 1425,1428,...,1521 = 33.
+			// Vote counts within a window smaller than the cap remain correct after
+			// the shrink. The most recent 100 votes are loop iterations i=1424..1523;
+			// those where i%3==0 are missing votes: 1425,1428,...,1521 = 33.
 			missingCount := maintainer.CountMissingVotes(100)
 			assert.Equal(t, uint64(33), missingCount)
 		}).
