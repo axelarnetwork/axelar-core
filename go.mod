@@ -95,8 +95,8 @@ require (
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
-	github.com/bytedance/sonic v1.15.0 // indirect
-	github.com/bytedance/sonic/loader v0.5.0 // indirect
+	github.com/bytedance/sonic v1.15.2 // indirect
+	github.com/bytedance/sonic/loader v0.5.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
@@ -277,7 +277,8 @@ replace github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
 replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 
 // patches contained in this:
-// https://github.com/axelarnetwork/rosetta/compare/release/v0.50.x...axelarnetwork:rosetta:9a97032c7833b130909b98818c7a6fc74f7223fb
-replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.13-0.20260408131525-9a97032c7833
+// https://github.com/axelarnetwork/rosetta/tree/axelar-core-v1.5.x-compatible
+// https://github.com/axelarnetwork/rosetta/compare/release/v0.50.x...axelarnetwork:rosetta:c9ce4236beef4596f3fefb8e7a35c5758ebe38e7
+replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.13-0.20260714134245-c9ce4236beef
 
 replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.53.7-0.20260609180346-f4253ddb9b33

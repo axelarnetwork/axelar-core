@@ -121,6 +121,11 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	if err != nil {
 		panic(err)
 	}
+
+	err = cfg.RegisterMigration(types.ModuleName, 8, keeper.Migrate8to9(am.keeper))
+	if err != nil {
+		panic(err)
+	}
 }
 
 // InitGenesis initializes the module's keeper from the given genesis state
@@ -151,7 +156,7 @@ func (AppModule) QuerierRoute() string {
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 8 }
+func (AppModule) ConsensusVersion() uint64 { return 9 }
 
 // IsOnePerModuleType implements the depinject.OnePerModuleType interface.
 func (am AppModule) IsOnePerModuleType() { // marker
