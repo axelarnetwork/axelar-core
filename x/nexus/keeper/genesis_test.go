@@ -216,6 +216,20 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	assertChainStatesEqual(t, expected, actual)
 }
 
+func TestInitGenesisPanicsOnDuplicateMessageID(t *testing.T) {
+	ctx, keeper := setup(t)
+	keeper.InitGenesis(ctx, types.DefaultGenesisState())
+
+	id, _, _ := keeper.GenerateMessageID(ctx)
+	msg := getRandomMessage(id)
+
+	genState := types.DefaultGenesisState()
+	genState.Messages = []exported.GeneralMessage{msg, msg}
+
+	ctx, keeper = setup(t)
+	assert.Panics(t, func() { keeper.InitGenesis(ctx, genState) })
+}
+
 func TestInitGenesisRebuildsProcessingMessageIndex(t *testing.T) {
 	ctx, keeper := setup(t)
 	keeper.InitGenesis(ctx, types.DefaultGenesisState())

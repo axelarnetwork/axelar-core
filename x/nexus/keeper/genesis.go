@@ -72,7 +72,13 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 		}
 	}
 
+	messageSeen := make(map[string]bool)
 	for _, msg := range genState.Messages {
+		if messageSeen[msg.ID] {
+			panic(fmt.Errorf("message %s already set", msg.ID))
+		}
+		messageSeen[msg.ID] = true
+
 		funcs.MustNoErr(k.setMessage(ctx, msg))
 
 		if msg.Is(exported.Processing) {
