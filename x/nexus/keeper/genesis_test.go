@@ -215,3 +215,23 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	assert.NoError(t, actual.Validate())
 	assertChainStatesEqual(t, expected, actual)
 }
+
+func TestInitGenesisRebuildsProcessingMessageIndex(t *testing.T) {
+	ctx, keeper := setup(t)
+	keeper.InitGenesis(ctx, types.DefaultGenesisState())
+
+	id, _, _ := keeper.GenerateMessageID(ctx)
+	msg := getRandomMessage(id)
+	funcs.MustNoErr(keeper.setMessage(ctx, msg))
+	funcs.MustNoErr(keeper.setProcessingMessageID(ctx, msg))
+
+	destChain := msg.GetDestinationChain()
+	assert.Len(t, keeper.GetProcessingMessages(ctx, destChain, 10), 1)
+
+	genState := keeper.ExportGenesis(ctx)
+
+	ctx, keeper = setup(t)
+	keeper.InitGenesis(ctx, genState)
+
+	assert.Len(t, keeper.GetProcessingMessages(ctx, destChain, 10), 1)
+}
