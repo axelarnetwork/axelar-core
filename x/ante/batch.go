@@ -86,10 +86,8 @@ func unpackMsgs(msgs []sdk.Msg) ([]sdk.Msg, error) {
 	return unpackedMsgs, nil
 }
 
-// ValidateWrappedMsgs rejects unsupported wrapper contents: an authz MsgExec must not
-// wrap a role-restricted message, another MsgExec, or a batch request, and a batch
-// request must not wrap a MsgExec. It is the sole gate preventing role-restricted
-// messages from being delegated via authz, so it must run at every ante entry point.
+// ValidateWrappedMsgs rejects an authz MsgExec wrapping a role-restricted msg, another
+// MsgExec, or a BatchRequest, and a BatchRequest wrapping a MsgExec.
 func ValidateWrappedMsgs(msgs []sdk.Msg) error {
 	for _, msg := range msgs {
 		switch m := msg.(type) {
