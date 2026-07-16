@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
+	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 )
 
 // txWithUnwrappedMsgs implements the FeeTx interface
@@ -22,7 +23,12 @@ func newTxWithUnwrappedMsgs(tx sdk.Tx) (txWithUnwrappedMsgs, error) {
 		return txWithUnwrappedMsgs{}, errorsmod.Wrap(sdkerrors.ErrTxDecode, "tx must be a FeeTx")
 	}
 
-	return txWithUnwrappedMsgs{feeTx, unpackMsgs(tx.GetMsgs())}, nil
+	unpacked, err := unpackMsgs(tx.GetMsgs())
+	if err != nil {
+		return txWithUnwrappedMsgs{}, err
+	}
+
+	return txWithUnwrappedMsgs{feeTx, unpacked}, nil
 }
 
 func (t txWithUnwrappedMsgs) GetMsgs() []sdk.Msg {
@@ -43,7 +49,7 @@ func NewBatchDecorator(cdc codec.Codec) BatchDecorator {
 
 // AnteHandle unwraps batch requests and passes them to the next AnteHandler
 func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	if err := validateWrappedMsgs(tx.GetMsgs()); err != nil {
+	if err := ValidateWrappedMsgs(tx.GetMsgs()); err != nil {
 		return ctx, err
 	}
 
@@ -55,7 +61,7 @@ func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, ne
 	return next(ctx, tx, simulate)
 }
 
-func unpackMsgs(msgs []sdk.Msg) []sdk.Msg {
+func unpackMsgs(msgs []sdk.Msg) ([]sdk.Msg, error) {
 	var unpackedMsgs []sdk.Msg
 
 	for _, msg := range msgs {
@@ -63,20 +69,28 @@ func unpackMsgs(msgs []sdk.Msg) []sdk.Msg {
 
 		switch m := msg.(type) {
 		case *auxiliarytypes.BatchRequest:
-			unpackedMsgs = append(unpackedMsgs, unpackMsgs(m.UnwrapMessages())...)
+			inner, err := unpackMsgs(m.UnwrapMessages())
+			if err != nil {
+				return nil, err
+			}
+			unpackedMsgs = append(unpackedMsgs, inner...)
 		case *authz.MsgExec:
 			innerMsgs, err := m.GetMessages()
 			if err != nil {
-				continue
+				return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 			}
 			unpackedMsgs = append(unpackedMsgs, innerMsgs...)
 		}
 	}
 
-	return unpackedMsgs
+	return unpackedMsgs, nil
 }
 
-func validateWrappedMsgs(msgs []sdk.Msg) error {
+// ValidateWrappedMsgs rejects unsupported wrapper contents: an authz MsgExec must not
+// wrap a role-restricted message, another MsgExec, or a batch request, and a batch
+// request must not wrap a MsgExec. It is the sole gate preventing role-restricted
+// messages from being delegated via authz, so it must run at every ante entry point.
+func ValidateWrappedMsgs(msgs []sdk.Msg) error {
 	for _, msg := range msgs {
 		switch m := msg.(type) {
 		case *authz.MsgExec:
@@ -102,11 +116,22 @@ func validateWrappedMsgs(msgs []sdk.Msg) error {
 					return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "batch request must not wrap an authz MsgExec")
 				}
 			}
-			if err := validateWrappedMsgs(innerMsgs); err != nil {
+			if err := ValidateWrappedMsgs(innerMsgs); err != nil {
 				return err
 			}
 		}
 	}
 
 	return nil
+}
+
+func containsRoleGatedMsg(msgs []sdk.Msg) bool {
+	for _, msg := range msgs {
+		switch permissionRole(msg) {
+		case permission.ROLE_ACCESS_CONTROL, permission.ROLE_CHAIN_MANAGEMENT:
+			return true
+		}
+	}
+
+	return false
 }

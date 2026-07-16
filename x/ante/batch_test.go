@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	"github.com/stretchr/testify/assert"
 
@@ -129,17 +130,17 @@ func TestBatchRejectsDisallowedNesting(t *testing.T) {
 
 	innerExec := authz.NewMsgExec(sender, []sdk.Msg{voteMsg})
 	execInExec := authz.NewMsgExec(sender, []sdk.Msg{&innerExec})
-	assert.Error(t, run(&execInExec))
+	assert.ErrorIs(t, run(&execInExec), sdkerrors.ErrUnauthorized)
 
 	batchInExec := authz.NewMsgExec(sender, []sdk.Msg{auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{voteMsg})})
-	assert.Error(t, run(&batchInExec))
+	assert.ErrorIs(t, run(&batchInExec), sdkerrors.ErrUnauthorized)
 
 	leafExec := authz.NewMsgExec(sender, []sdk.Msg{voteMsg})
 	execInBatch := auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{&leafExec})
-	assert.Error(t, run(execInBatch))
+	assert.ErrorIs(t, run(execInBatch), sdkerrors.ErrUnauthorized)
 
 	roleGatedInExec := authz.NewMsgExec(sender, []sdk.Msg{&evmTypes.CreateDeployTokenRequest{Sender: sender.String()}})
-	assert.Error(t, run(&roleGatedInExec))
+	assert.ErrorIs(t, run(&roleGatedInExec), sdkerrors.ErrUnauthorized)
 
 	flatExec := authz.NewMsgExec(sender, []sdk.Msg{voteMsg})
 	assert.NoError(t, run(&flatExec))

@@ -63,14 +63,3 @@ func permissionRole(msg sdk.Msg) permission.Role {
 	}
 	return permission.GetPermissionRole(dm)
 }
-
-func containsRoleGatedMsg(msgs []sdk.Msg) bool {
-	for _, msg := range msgs {
-		switch permissionRole(msg) {
-		case permission.ROLE_ACCESS_CONTROL, permission.ROLE_CHAIN_MANAGEMENT:
-			return true
-		}
-	}
-
-	return false
-}
