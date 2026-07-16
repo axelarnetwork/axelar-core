@@ -43,6 +43,10 @@ func NewBatchDecorator(cdc codec.Codec) BatchDecorator {
 
 // AnteHandle unwraps batch requests and passes them to the next AnteHandler
 func (b BatchDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+	if err := validateMsgNesting(tx.GetMsgs()); err != nil {
+		return ctx, err
+	}
+
 	tx, err := newTxWithUnwrappedMsgs(tx)
 	if err != nil {
 		return ctx, err
@@ -65,9 +69,41 @@ func unpackMsgs(msgs []sdk.Msg) []sdk.Msg {
 			if err != nil {
 				continue
 			}
-			unpackedMsgs = append(unpackedMsgs, unpackMsgs(innerMsgs)...)
+			unpackedMsgs = append(unpackedMsgs, innerMsgs...)
 		}
 	}
 
 	return unpackedMsgs
+}
+
+func validateMsgNesting(msgs []sdk.Msg) error {
+	for _, msg := range msgs {
+		switch m := msg.(type) {
+		case *authz.MsgExec:
+			innerMsgs, err := m.GetMessages()
+			if err != nil {
+				return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+			}
+			for _, innerMsg := range innerMsgs {
+				switch innerMsg.(type) {
+				case *authz.MsgExec:
+					return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "authz MsgExec must not wrap another MsgExec")
+				case *auxiliarytypes.BatchRequest:
+					return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "authz MsgExec must not wrap a batch request")
+				}
+			}
+		case *auxiliarytypes.BatchRequest:
+			innerMsgs := m.UnwrapMessages()
+			for _, innerMsg := range innerMsgs {
+				if _, ok := innerMsg.(*authz.MsgExec); ok {
+					return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "batch request must not wrap an authz MsgExec")
+				}
+			}
+			if err := validateMsgNesting(innerMsgs); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

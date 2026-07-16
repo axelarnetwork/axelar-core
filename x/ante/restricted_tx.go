@@ -9,7 +9,6 @@ import (
 	"github.com/cosmos/gogoproto/protoc-gen-gogo/descriptor"
 
 	"github.com/axelarnetwork/axelar-core/x/ante/types"
-	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
 )
 
@@ -77,17 +76,6 @@ func containsRoleGatedMsg(msgs []sdk.Msg) bool {
 		switch permissionRole(msg) {
 		case permission.ROLE_ACCESS_CONTROL, permission.ROLE_CHAIN_MANAGEMENT:
 			return true
-		}
-
-		switch m := msg.(type) {
-		case *authz.MsgExec:
-			if inner, err := m.GetMessages(); err == nil && containsRoleGatedMsg(inner) {
-				return true
-			}
-		case *auxiliarytypes.BatchRequest:
-			if containsRoleGatedMsg(m.UnwrapMessages()) {
-				return true
-			}
 		}
 	}
 

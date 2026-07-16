@@ -90,18 +90,17 @@ func TestBatch(t *testing.T) {
 		Run(t)
 
 	givenBatchAnteHandler.
-		When("a tx contains a nested authz MsgExec", func() {
-			inner := authz.NewMsgExec(sender, []sdk.Msg{
+		When("a tx contains an authz MsgExec wrapping messages", func() {
+			exec := authz.NewMsgExec(sender, []sdk.Msg{
 				votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3)))),
 			})
-			exec := authz.NewMsgExec(sender, []sdk.Msg{&inner})
 			tx = &mock.FeeTxMock{
 				GetMsgsFunc: func() []sdk.Msg {
 					return []sdk.Msg{&exec}
 				},
 			}
 		}).
-		Then("should recursively unwrap the inner messages", func(t *testing.T) {
+		Then("should unwrap the inner messages", func(t *testing.T) {
 			_, err := handler.AnteHandle(sdk.Context{}, tx, false,
 				func(_ sdk.Context, tx sdk.Tx, _ bool) (sdk.Context, error) {
 					unwrappedMsgs = tx.GetMsgs()
@@ -109,7 +108,37 @@ func TestBatch(t *testing.T) {
 				})
 
 			assert.NoError(t, err)
-			assert.Equal(t, 3, len(unwrappedMsgs))
+			assert.Equal(t, 2, len(unwrappedMsgs))
 		}).
 		Run(t)
+}
+
+func TestBatchRejectsDisallowedNesting(t *testing.T) {
+	encCfg := appParams.MakeEncodingConfig()
+	handler := ante.NewBatchDecorator(encCfg.Codec)
+	sender := rand.AccAddr()
+
+	voteMsg := votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3))))
+
+	run := func(msgs ...sdk.Msg) error {
+		tx := &mock.FeeTxMock{GetMsgsFunc: func() []sdk.Msg { return msgs }}
+		_, err := handler.AnteHandle(sdk.Context{}, tx, false,
+			func(sdk.Context, sdk.Tx, bool) (sdk.Context, error) { return sdk.Context{}, nil })
+		return err
+	}
+
+	innerExec := authz.NewMsgExec(sender, []sdk.Msg{voteMsg})
+	execInExec := authz.NewMsgExec(sender, []sdk.Msg{&innerExec})
+	assert.Error(t, run(&execInExec))
+
+	batchInExec := authz.NewMsgExec(sender, []sdk.Msg{auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{voteMsg})})
+	assert.Error(t, run(&batchInExec))
+
+	leafExec := authz.NewMsgExec(sender, []sdk.Msg{voteMsg})
+	execInBatch := auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{&leafExec})
+	assert.Error(t, run(execInBatch))
+
+	flatExec := authz.NewMsgExec(sender, []sdk.Msg{voteMsg})
+	assert.NoError(t, run(&flatExec))
+	assert.NoError(t, run(auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{voteMsg})))
 }

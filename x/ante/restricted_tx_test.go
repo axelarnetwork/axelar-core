@@ -14,7 +14,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/ante"
 	"github.com/axelarnetwork/axelar-core/x/ante/types/mock"
-	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	axelarnet "github.com/axelarnetwork/axelar-core/x/axelarnet/types"
 	evm "github.com/axelarnetwork/axelar-core/x/evm/types"
 	"github.com/axelarnetwork/axelar-core/x/permission/exported"
@@ -190,9 +189,6 @@ func TestAuthzMsgExecRejectsRoleGatedMsgs(t *testing.T) {
 	}
 
 	assert.Error(t, execTx(&evm.CreateDeployTokenRequest{Sender: roleHolder.String()}))
-
-	nested := auxiliarytypes.NewBatchRequest(roleHolder, []sdk.Msg{&evm.CreateDeployTokenRequest{Sender: roleHolder.String()}})
-	assert.Error(t, execTx(nested))
 
 	assert.NoError(t, execTx(&govv1.MsgVote{Voter: grantee.String()}))
 }
