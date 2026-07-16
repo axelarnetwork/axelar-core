@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.4.9](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.9)
+
+### Bug Fixes
+
+* [#2357](https://github.com/axelarnetwork/axelar-core/pull/2357) Broadcast an empty vote in `vald` when a gateway tx confirmation yields more than `MaxEventsPerVote` events, so the poll completes and maintainer rewards are not cleared
+
 ## [v1.4.8](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.8)
 
 ### Bug Fixes
