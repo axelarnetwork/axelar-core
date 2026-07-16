@@ -9,10 +9,10 @@ import (
 // Activation times for consensus-breaking bug fixes per chain.
 // Can be overridden via FIX_ACTIVATION_TIME environment variable (RFC3339 format).
 const (
-	MainnetFixActivationTime  = "2026-07-07T08:00:00Z"
-	TestnetFixActivationTime  = "2026-07-03T08:00:00Z"
-	StagenetFixActivationTime = "2026-07-02T12:00:00Z"
-	DevnetFixActivationTime   = "2026-07-02T12:00:00Z"
+	MainnetFixActivationTime  = "2026-07-29T08:00:00Z"
+	TestnetFixActivationTime  = "2026-07-28T08:00:00Z"
+	StagenetFixActivationTime = "2026-07-20T08:00:00Z"
+	DevnetFixActivationTime   = "2026-07-20T08:00:00Z"
 )
 
 func getFixActivationTime(chainID string) string {

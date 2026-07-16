@@ -301,19 +301,19 @@ func hugeWord() []byte {
 
 func assertFits(t *testing.T, args abi.Arguments, payload []byte, maxCost int) {
 	t.Helper()
-	err := ABIInflationGuard(args, payload, maxCost)
+	err := ABIInflationGuard(args, payload, maxCost, true)
 	assert.NoError(t, err)
 }
 
 func assertTooLarge(t *testing.T, args abi.Arguments, payload []byte, maxCost int) {
 	t.Helper()
-	err := ABIInflationGuard(args, payload, maxCost)
+	err := ABIInflationGuard(args, payload, maxCost, true)
 	assert.ErrorIs(t, err, ErrTooLarge)
 }
 
 func assertMalformed(t *testing.T, args abi.Arguments, payload []byte, maxCost int) {
 	t.Helper()
-	err := ABIInflationGuard(args, payload, maxCost)
+	err := ABIInflationGuard(args, payload, maxCost, true)
 	assert.ErrorIs(t, err, ErrMalformed)
 }
 
@@ -359,11 +359,10 @@ func TestABIInflationGuard(t *testing.T) {
 		assertBoundary(t, args, packed, 3) // 3 static elements
 	})
 
-	t.Run("empty dynamic array never inflates", func(t *testing.T) {
+	t.Run("empty dynamic array costs its element type", func(t *testing.T) {
 		args := argsOf(t, "uint256[]")
 		packed := funcs.Must(args.Pack([]*big.Int{}))
-		assertFits(t, args, packed, maxArgCost)
-		assertFits(t, args, packed, 0) // zero-cost, no reject threshold
+		assertBoundary(t, args, packed, 1)
 	})
 
 	t.Run("fixed array of dynamic elements", func(t *testing.T) {
@@ -531,7 +530,7 @@ func TestABIInflationGuard(t *testing.T) {
 	t.Run("unknown type yields an error", func(t *testing.T) {
 		// not producible by abi.NewType, but the defensive default branch is real.
 		args := abi.Arguments{{Type: abi.Type{T: 250}}}
-		err := ABIInflationGuard(args, make([]byte, 32), maxArgCost)
+		err := ABIInflationGuard(args, make([]byte, 32), maxArgCost, true)
 		require.Error(t, err)
 	})
 

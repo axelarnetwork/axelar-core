@@ -31,12 +31,23 @@ const (
 	// - bytes4(2) To CosmWasm Contract with json encoded payload
 	versionSize = 4
 
-	maxArgCost     = 1024 * 1024 // 1MB inflation-cost budget
+	oldMaxArgCost  = 1024 * 1024 // 1mb inflaction-cost budget
+	maxArgCost     = 50 * 1024   // 50kb inflation-cost budget
 	maxArgBrackets = 100
 
 	sourceChain   = "source_chain"
 	sourceAddress = "source_address"
 )
+
+var allowedArgTypes = map[string]struct{}{
+	"bool":     {},
+	"address":  {},
+	"string":   {},
+	"bytes":    {},
+	"uint8":    {},
+	"uint64":   {},
+	"string[]": {},
+}
 
 type version [versionSize]byte
 
@@ -114,7 +125,11 @@ func unpackVersionedPayload(versionedPayload []byte) (version, []byte, error) {
 // - argument values (bytes)
 func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte, fixActive bool) ([]byte, error) {
 	if fixActive {
-		if err := evm.ABIInflationGuard(payloadArguments, payload, maxArgCost); err != nil {
+		if err := evm.ABIInflationGuard(payloadArguments, payload, maxArgCost, fixActive); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := evm.ABIInflationGuard(payloadArguments, payload, oldMaxArgCost, fixActive); err != nil {
 			return nil, err
 		}
 	}
@@ -132,19 +147,21 @@ func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte, fixActive b
 		return nil, fmt.Errorf("payload argument name and type length mismatch")
 	}
 
-	if fixActive {
-		if err := checkBrackets(argTypes); err != nil {
-			return nil, err
-		}
+	if err := checkBrackets(argTypes); err != nil {
+		return nil, err
 	}
 
-	abiArguments, err := buildArguments(argTypes)
+	abiArguments, err := buildArguments(argTypes, fixActive)
 	if err != nil {
 		return nil, err
 	}
 
 	if fixActive {
-		if err := evm.ABIInflationGuard(abiArguments, args[3].([]byte), maxArgCost); err != nil {
+		if err := evm.ABIInflationGuard(abiArguments, args[3].([]byte), maxArgCost, fixActive); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := evm.ABIInflationGuard(abiArguments, args[3].([]byte), oldMaxArgCost, fixActive); err != nil {
 			return nil, err
 		}
 	}
@@ -245,9 +262,13 @@ func ConstructNativeMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 }
 
 // build abi arguments based on argument types to decode the actual wasm contract arguments
-func buildArguments(argTypes []string) (abi.Arguments, error) {
+func buildArguments(argTypes []string, fixActive bool) (abi.Arguments, error) {
 	var arguments abi.Arguments
 	for _, typeStr := range argTypes {
+		if _, ok := allowedArgTypes[typeStr]; fixActive && !ok {
+			return nil, fmt.Errorf("invalid argument type %s", typeStr)
+		}
+
 		argType, err := abi.NewType(typeStr, typeStr, nil)
 		if err != nil {
 			return nil, fmt.Errorf("invalid argument type %s", typeStr)

@@ -20,7 +20,7 @@ var (
 // decoder would do (nesting depth and per-element overhead inflate it). This
 // function walks the same length/offset prefixes that the abi.Arguments.Unpack
 // decoder would follow but only sums each value's cost without allocating.
-func ABIInflationGuard(arguments abi.Arguments, payload []byte, maxCost int) error {
+func ABIInflationGuard(arguments abi.Arguments, payload []byte, maxCost int, fixActive bool) error {
 	// the limit, and all cost counts, are measured in 32-byte words.
 	limit := maxCost / 32
 
@@ -30,7 +30,7 @@ func ABIInflationGuard(arguments abi.Arguments, payload []byte, maxCost int) err
 			continue
 		}
 
-		words, err := walk((index+virtualArgs)*32, arg.Type, payload, limit-total)
+		words, err := walk((index+virtualArgs)*32, arg.Type, payload, limit-total, false, fixActive)
 		if err != nil {
 			return err
 		}
@@ -52,72 +52,98 @@ func ABIInflationGuard(arguments abi.Arguments, payload []byte, maxCost int) err
 }
 
 // walk mirrors go-ethereum's toGoType (github.com/ethereum/go-ethereum/blob/master/accounts/abi/unpack.go#L224)
-func walk(index int, t abi.Type, output []byte, limit int) (int, error) {
-	if index+32 > len(output) {
-		// Changed: generic malformed error.
-		return 0, ErrMalformed
-	}
-
-	var (
-		returnOutput  []byte
-		begin, length int
-		err           error
-	)
-
-	if requiresLengthPrefix(t) {
-		begin, length, err = lengthPrefixPointsTo(index, output)
-		if err != nil {
+func walk(index int, t abi.Type, output []byte, limit int, typeOnly bool, fixActive bool) (int, error) {
+	// Changed: added a possibility to walk the type with empty output
+	// needed to get cost of a type that eventually initialise to an empty array, while the type creation is still slow
+	if !typeOnly {
+		if index+32 > len(output) {
 			// Changed: generic malformed error.
 			return 0, ErrMalformed
 		}
-	} else {
-		returnOutput = output[index : index+32]
-	}
 
-	switch t.T {
-	case abi.TupleTy:
-		if isDynamicType(t) {
-			begin, err := tuplePointsTo(index, output)
+		var (
+			returnOutput  []byte
+			begin, length int
+			err           error
+		)
+
+		if requiresLengthPrefix(t) {
+			begin, length, err = lengthPrefixPointsTo(index, output)
 			if err != nil {
 				// Changed: generic malformed error.
 				return 0, ErrMalformed
 			}
-			return walkTuple(t, output[begin:], limit)
+		} else {
+			returnOutput = output[index : index+32]
 		}
-		return walkTuple(t, output[index:], limit)
 
-	case abi.SliceTy:
-		return walkElements(t, output[begin:], 0, length, limit)
-
-	case abi.ArrayTy:
-		if isDynamicType(*t.Elem) {
-			offset := binary.BigEndian.Uint64(returnOutput[len(returnOutput)-8:])
-			if offset > uint64(len(output)) {
-				return 0, ErrMalformed
+		switch t.T {
+		case abi.TupleTy:
+			if isDynamicType(t) {
+				begin, err := tuplePointsTo(index, output)
+				if err != nil {
+					// Changed: generic malformed error.
+					return 0, ErrMalformed
+				}
+				return walkTuple(t, output[begin:], limit, false, fixActive)
 			}
-			return walkElements(t, output[offset:], 0, t.Size, limit)
+			return walkTuple(t, output[index:], limit, false, fixActive)
+
+		case abi.SliceTy:
+			return walkElements(t, output[begin:], 0, length, limit, false, fixActive)
+
+		case abi.ArrayTy:
+			if isDynamicType(*t.Elem) {
+				offset := binary.BigEndian.Uint64(returnOutput[len(returnOutput)-8:])
+				if offset > uint64(len(output)) {
+					return 0, ErrMalformed
+				}
+				return walkElements(t, output[offset:], 0, t.Size, limit, false, fixActive)
+			}
+			return walkElements(t, output[index:], 0, t.Size, limit, false, fixActive)
+
+		// Changed: calculate cost instead of returning data.
+		case abi.StringTy, abi.BytesTy:
+			return (length + 31) / 32, nil
+
+		// Changed: calculate cost instead of returning data.
+		case abi.IntTy, abi.UintTy, abi.BoolTy, abi.AddressTy, abi.HashTy, abi.FixedBytesTy, abi.FunctionTy:
+			return 1, nil
+
+		default:
+			return 0, fmt.Errorf("abi: unknown type %d", t.T)
 		}
-		return walkElements(t, output[index:], 0, t.Size, limit)
+	} else {
+		// Changed: mirrors the non-typedOnly version, but now with empty output.
+		// Logic changes in that version should also be reflected here.
+		switch t.T {
+		case abi.TupleTy:
+			return walkTuple(t, output, limit, true, fixActive)
 
-	// Changed: calculate cost instead of returning data.
-	case abi.StringTy, abi.BytesTy:
-		return (length + 31) / 32, nil
+		case abi.SliceTy:
+			return walkElements(t, output, 0, 0, limit, true, fixActive)
 
-	// Changed: calculate cost instead of returning data.
-	case abi.IntTy, abi.UintTy, abi.BoolTy, abi.AddressTy, abi.HashTy, abi.FixedBytesTy, abi.FunctionTy:
-		return 1, nil
+		case abi.ArrayTy:
+			return walkElements(t, output, 0, t.Size, limit, true, fixActive)
 
-	default:
-		return 0, fmt.Errorf("abi: unknown type %d", t.T)
+		case abi.StringTy, abi.BytesTy:
+			return 1, nil // Changed: increased from 0 to 1 to combat multiplication by 0.
+
+		case abi.IntTy, abi.UintTy, abi.BoolTy, abi.AddressTy, abi.HashTy, abi.FixedBytesTy, abi.FunctionTy:
+			return 1, nil
+
+		default:
+			return 0, fmt.Errorf("abi: unknown type %d", t.T)
+		}
 	}
 }
 
 // walkTuple mirrors go-ethereum's forTupleUnpack (github.com/ethereum/go-ethereum/blob/master/accounts/abi/unpack.go#L192)
-func walkTuple(t abi.Type, output []byte, limit int) (int, error) {
+func walkTuple(t abi.Type, output []byte, limit int, typeOnly bool, fixActive bool) (int, error) {
 	total, virtualArgs := 0, 0
 	for index, elem := range t.TupleElems {
 		// Changed: get cost instead of marshalledValue back.
-		words, err := walk((index+virtualArgs)*32, *elem, output, limit-total)
+		words, err := walk((index+virtualArgs)*32, *elem, output, limit-total, typeOnly, fixActive)
 		if err != nil {
 			return 0, err
 		}
@@ -136,7 +162,7 @@ func walkTuple(t abi.Type, output []byte, limit int) (int, error) {
 }
 
 // walkElements mirrors go-ethereum's forEachUnpack (github.com/ethereum/go-ethereum/blob/master/accounts/abi/unpack.go#L152)
-func walkElements(t abi.Type, output []byte, start, size, limit int) (int, error) {
+func walkElements(t abi.Type, output []byte, start, size, limit int, typeOnly bool, fixActive bool) (int, error) {
 	if size < 0 {
 		// Changed: generic malformed error.
 		return 0, ErrMalformed
@@ -144,7 +170,12 @@ func walkElements(t abi.Type, output []byte, start, size, limit int) (int, error
 	// Removed: a check that can overflow, but not needed as we do real counting.
 	// Added: shortcut for when item size is zero.
 	if t.T != abi.ArrayTy && size == 0 {
-		return 0, nil
+		if fixActive {
+			// No payload left, but the decoder still materialises the element type
+			return walk(start, *t.Elem, output, limit, true, fixActive)
+		} else {
+			return 0, nil
+		}
 	}
 
 	elem := *t.Elem
@@ -156,7 +187,7 @@ func walkElements(t abi.Type, output []byte, start, size, limit int) (int, error
 		if t.T == abi.ArrayTy && size < 2 {
 			size = 2
 		}
-		each, err := walk(start, elem, output, limit)
+		each, err := walk(start, elem, output, limit, typeOnly, fixActive)
 		if err != nil {
 			return 0, err
 		}
@@ -180,7 +211,7 @@ func walkElements(t abi.Type, output []byte, start, size, limit int) (int, error
 	// Removed: elemSize calculation. The dynamic type's head is always 32.
 	// As the static type is done above, we can calculate here with 32.
 	for i, j := start, 0; j < size; i, j = i+32, j+1 {
-		words, err := walk(i, elem, output, limit-total)
+		words, err := walk(i, elem, output, limit-total, typeOnly, fixActive)
 		if err != nil {
 			return 0, err
 		}

@@ -29,16 +29,13 @@ import (
 )
 
 var (
-	boolType              = funcs.Must(abi.NewType("bool", "bool", nil))
-	addressType           = funcs.Must(abi.NewType("address", "address", nil))
-	stringType            = funcs.Must(abi.NewType("string", "string", nil))
-	bytesType             = funcs.Must(abi.NewType("bytes", "bytes", nil))
-	uint8Type             = funcs.Must(abi.NewType("uint8", "uint8", nil))
-	uint64Type            = funcs.Must(abi.NewType("uint64", "uint64", nil))
-	uint64ArrayType       = funcs.Must(abi.NewType("uint64[]", "uint64[]", nil))
-	uint64ArrayNestedType = funcs.Must(abi.NewType("uint64[][]", "uint64[][]", nil))
-	stringArrayType       = funcs.Must(abi.NewType("string[]", "string[]", nil))
-	stringArrayNestedType = funcs.Must(abi.NewType("string[][]", "string[][]", nil))
+	boolType        = funcs.Must(abi.NewType("bool", "bool", nil))
+	addressType     = funcs.Must(abi.NewType("address", "address", nil))
+	stringType      = funcs.Must(abi.NewType("string", "string", nil))
+	bytesType       = funcs.Must(abi.NewType("bytes", "bytes", nil))
+	uint8Type       = funcs.Must(abi.NewType("uint8", "uint8", nil))
+	uint64Type      = funcs.Must(abi.NewType("uint64", "uint64", nil))
+	stringArrayType = funcs.Must(abi.NewType("string[]", "string[]", nil))
 )
 
 func TestTranslateMessage(t *testing.T) {
@@ -66,13 +63,10 @@ func TestConstructWasmMessageV1Large(t *testing.T) {
 	boolTrue := true
 
 	stringArray := slices.Expand2(rand.AccAddr().String, 10)
-	uint64Array := slices.Expand2(func() uint64 { return math.MaxUint64 }, 10)
-	uint64NestedArray := slices.Expand2(func() []uint64 { return uint64Array }, 5)
-	stringNestedArray := slices.Expand2(func() []string { return stringArray }, 5)
 	bz := rand.Bytes(int(rand.I64Between(1, 1000)))
 	hexBzStr := hex.EncodeToString(bz)
 
-	argumentNames := []string{"str", "max_uint256_str", "max_uint8", "max_uint64", "bool_true", "string_array", "uint64_array", "uint64_array_nested", "string_array_nested", "bytes", "hex_string"}
+	argumentNames := []string{"str", "max_uint256_str", "max_uint8", "max_uint64", "bool_true", "string_array", "bytes", "hex_string"}
 
 	payload := funcs.Must(constructABIPayload(
 		methodName,
@@ -84,9 +78,6 @@ func TestConstructWasmMessageV1Large(t *testing.T) {
 			uint64Type,
 			boolType,
 			stringArrayType,
-			uint64ArrayType,
-			uint64ArrayNestedType,
-			stringArrayNestedType,
 			bytesType,
 			stringType},
 		[]interface{}{
@@ -96,9 +87,6 @@ func TestConstructWasmMessageV1Large(t *testing.T) {
 			maxUint64,
 			boolTrue,
 			stringArray,
-			uint64Array,
-			uint64NestedArray,
-			stringNestedArray,
 			bz,
 			hexBzStr,
 		},
@@ -176,26 +164,6 @@ func TestConstructWasmMessageV1Large(t *testing.T) {
 	arrayInterface, _ := executeMsg["string_array"].([]interface{})
 	actualStringArray := slices.Map(arrayInterface, func(t interface{}) string { return t.(string) })
 	assert.Equal(t, stringArray, actualStringArray)
-
-	arrayInterface, _ = executeMsg["uint64_array"].([]interface{})
-	uint64StrArray := slices.Map(arrayInterface, func(t interface{}) string { return t.(json.Number).String() })
-	assert.Equal(t, uint64Array, slices.Map(uint64StrArray, func(t string) uint64 { return funcs.Must(strconv.ParseUint(t, 10, 64)) }))
-
-	arrayInterface, _ = executeMsg["uint64_array_nested"].([]interface{})
-	actualUint64NestedArray := slices.Map(arrayInterface, func(inner interface{}) []uint64 {
-		return slices.Map(inner.([]interface{}), func(t interface{}) uint64 {
-			return funcs.Must(strconv.ParseUint(t.(json.Number).String(), 10, 64))
-		})
-	})
-	assert.Equal(t, uint64NestedArray, actualUint64NestedArray)
-
-	arrayInterface, _ = executeMsg["string_array_nested"].([]interface{})
-	actualStringNestedArray := slices.Map(arrayInterface, func(inner interface{}) []string {
-		return slices.Map(inner.([]interface{}), func(t interface{}) string {
-			return t.(string)
-		})
-	})
-	assert.Equal(t, stringNestedArray, actualStringNestedArray)
 
 	base64BzString, ok := executeMsg["bytes"].(string)
 	assert.True(t, ok)
@@ -276,6 +244,66 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		payload := axelartestutils.PackPayloadWithVersion(version, bz)
 		_, err = types.TranslateMessage(msg, payload, true)
 		assert.ErrorContains(t, err, "invalid argument type")
+	})
+
+	t.Run("should return error if arg type is valid abi but not allowlisted", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+		methodArguments := abi.Arguments([]abi.Argument{{Type: uint64Type}})
+		argValues, err := methodArguments.Pack(uint64(1))
+		assert.NoError(t, err)
+
+		schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
+
+		bz, err := schema.Pack(
+			"method",
+			[]string{"x"},
+			[]string{"uint256[]"},
+			argValues,
+		)
+		assert.NoError(t, err)
+
+		payload := axelartestutils.PackPayloadWithVersion(version, bz)
+
+		_, err = types.TranslateMessage(msg, payload, true)
+		assert.ErrorContains(t, err, " invalid argument type uint256[]")
+	})
+
+	t.Run("should return error if payload inflates beyond max cost", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+
+		hugeName := strings.Repeat("a", 1_100_000)
+
+		schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
+		bz, err := schema.Pack(
+			"method",
+			[]string{hugeName},
+			[]string{"uint256"},
+			[]byte{},
+		)
+		assert.NoError(t, err)
+
+		payload := axelartestutils.PackPayloadWithVersion(version, bz)
+		_, err = types.TranslateMessage(msg, payload, true)
+		assert.ErrorContains(t, err, "exceeds maximum allowed cost")
+	})
+
+	t.Run("should return error if arg types exceed max brackets", func(t *testing.T) {
+		msg := nexustestutils.RandomMessage()
+
+		deepType := "uint256" + strings.Repeat("[1]", 101)
+
+		schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
+		bz, err := schema.Pack(
+			"method",
+			[]string{"x"},
+			[]string{deepType},
+			[]byte{},
+		)
+		assert.NoError(t, err)
+
+		payload := axelartestutils.PackPayloadWithVersion(version, bz)
+		_, err = types.TranslateMessage(msg, payload, true)
+		assert.ErrorContains(t, err, "argument types exceeds maximum nesting")
 	})
 
 	t.Run("should return error if mismatching arg length", func(t *testing.T) {
