@@ -138,6 +138,9 @@ func TestBatchRejectsDisallowedNesting(t *testing.T) {
 	execInBatch := auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{&leafExec})
 	assert.Error(t, run(execInBatch))
 
+	roleGatedInExec := authz.NewMsgExec(sender, []sdk.Msg{&evmTypes.CreateDeployTokenRequest{Sender: sender.String()}})
+	assert.Error(t, run(&roleGatedInExec))
+
 	flatExec := authz.NewMsgExec(sender, []sdk.Msg{voteMsg})
 	assert.NoError(t, run(&flatExec))
 	assert.NoError(t, run(auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{voteMsg})))
