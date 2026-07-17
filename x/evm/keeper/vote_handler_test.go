@@ -402,3 +402,71 @@ func randContractCallEvents(chain nexus.ChainName, destinationChain nexus.ChainN
 
 	return events
 }
+
+func TestHandleCompletedPoll(t *testing.T) {
+	voter := rand.ValAddr()
+	var (
+		ctx        sdk.Context
+		n          *mock.NexusMock
+		rewardPool *rewardmock.RewardPoolMock
+		poll       *votemock.PollMock
+		handler    vote.VoteHandler
+	)
+
+	givenVoteHandler := Given("the vote handler", func() {
+		ctx = sdk.NewContext(&fakemock.MultiStoreMock{}, tmproto.Header{}, false, log.NewTestLogger(t))
+		encCfg := params.MakeEncodingConfig()
+
+		k := &mock.BaseKeeperMock{
+			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.NewTestLogger(t) },
+		}
+		n = &mock.NexusMock{
+			GetChainFunc: func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+				return nexus.Chain{
+					Name:                  chain,
+					SupportsForeignAssets: true,
+					Module:                types.ModuleName,
+				}, true
+			},
+			SetChainMaintainerStateFunc: func(sdk.Context, nexus.MaintainerState) error { return nil },
+		}
+		rewardPool = &rewardmock.RewardPoolMock{
+			ReleaseRewardsFunc: func(sdk.ValAddress) error { return nil },
+			ClearRewardsFunc:   func(sdk.ValAddress) {},
+		}
+		r := &mock.RewarderMock{
+			GetPoolFunc: func(sdk.Context, string) reward.RewardPool { return rewardPool },
+		}
+		handler = keeper.NewVoteHandler(encCfg.Codec, k, n, r)
+	})
+
+	givenVoteHandler.
+		When("the poll completes with an empty result and the voter voted correctly", func() {
+			maintainerState := &nexusmock.MaintainerStateMock{
+				MarkMissingVoteFunc:   func(bool) {},
+				MarkIncorrectVoteFunc: func(bool) {},
+			}
+			n.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
+				return maintainerState, true
+			}
+
+			poll = &votemock.PollMock{
+				GetIDFunc:             func() vote.PollID { return vote.PollID(rand.I64Between(10, 100)) },
+				GetResultFunc:         func() codec.ProtoMarshaler { return types.NewVoteEvents(exported.Ethereum.Name) },
+				GetRewardPoolNameFunc: func() (string, bool) { return rand.NormalizedStr(3), true },
+				GetMetaDataFunc:       func() (codec.ProtoMarshaler, bool) { return &types.PollMetadata{Chain: exported.Ethereum.Name}, true },
+				GetVotersFunc:         func() []sdk.ValAddress { return []sdk.ValAddress{voter} },
+				HasVotedFunc:          func(sdk.ValAddress) bool { return true },
+				HasVotedCorrectlyFunc: func(sdk.ValAddress) bool { return true },
+			}
+		}).
+		Then("should release rewards and not clear them", func(t *testing.T) {
+			err := handler.HandleCompletedPoll(ctx, poll)
+
+			assert.NoError(t, err)
+			assert.Len(t, rewardPool.ReleaseRewardsCalls(), 1)
+			assert.Equal(t, voter, rewardPool.ReleaseRewardsCalls()[0].ValAddress)
+			assert.Empty(t, rewardPool.ClearRewardsCalls())
+		}).
+		Run(t)
+}
