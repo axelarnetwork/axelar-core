@@ -54,6 +54,9 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
+	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
+	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -237,6 +240,7 @@ func NewAxelarApp(
 	SetKeeper(keepers, initUpgradeKeeper(appCodec, keys, skipUpgradeHeights, homePath, bApp))
 	SetKeeper(keepers, initEvidenceKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initFeegrantKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initAuthzKeeper(appCodec, keys, keepers, bApp))
 	SetKeeper(keepers, initIBCKeeper(appCodec, keys, keepers))
 
 	// set up custom axelar keepers
@@ -546,6 +550,13 @@ func initAppModules(keepers *KeeperCache, keys map[string]*store.KVStoreKey, bAp
 			*GetKeeper[feegrantkeeper.Keeper](keepers),
 			encodingConfig.InterfaceRegistry,
 		),
+		authzmodule.NewAppModule(
+			appCodec,
+			*GetKeeper[authzkeeper.Keeper](keepers),
+			GetKeeper[authkeeper.AccountKeeper](keepers),
+			GetKeeper[bankkeeper.BaseKeeper](keepers),
+			encodingConfig.InterfaceRegistry,
+		),
 		snapshot.NewAppModule(*GetKeeper[snapKeeper.Keeper](keepers)),
 		multisig.NewAppModule(
 			*GetKeeper[multisigKeeper.Keeper](keepers),
@@ -555,7 +566,7 @@ func initAppModules(keepers *KeeperCache, keys map[string]*store.KVStoreKey, bAp
 			GetKeeper[rewardKeeper.Keeper](keepers),
 			GetKeeper[nexusKeeper.Keeper](keepers),
 		),
-		tss.NewAppModule(keys[tssTypes.StoreKey]),
+		tss.NewAppModule(),
 		vote.NewAppModule(*GetKeeper[voteKeeper.Keeper](keepers)),
 		nexus.NewAppModule(
 			*GetKeeper[nexusKeeper.Keeper](keepers),
@@ -713,6 +724,7 @@ func orderMigrations() []string {
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		feegrant.ModuleName,
+		authz.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
@@ -763,6 +775,7 @@ func orderBeginBlockers() []string {
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		feegrant.ModuleName,
+		authz.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
@@ -787,6 +800,7 @@ func orderEndBlockers() []string {
 		ibctransfertypes.ModuleName,
 		ibcexported.ModuleName,
 		feegrant.ModuleName,
+		authz.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
 		distrtypes.ModuleName,
@@ -839,6 +853,7 @@ func orderModulesForGenesis() []string {
 		ibcexported.ModuleName,
 		ibctransfertypes.ModuleName,
 		feegrant.ModuleName,
+		authz.ModuleName,
 		paramstypes.ModuleName,
 		upgradetypes.ModuleName,
 		vestingtypes.ModuleName,
@@ -884,6 +899,7 @@ func CreateStoreKeys() map[string]*store.KVStoreKey {
 		ibcexported.StoreKey,
 		ibctransfertypes.StoreKey,
 		feegrant.StoreKey,
+		authz.ModuleName,
 		consensusparamtypes.StoreKey,
 
 		voteTypes.StoreKey,
@@ -1018,6 +1034,7 @@ func GetModuleBasics() module.BasicManager {
 		params.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		feegrantmodule.AppModuleBasic{},
+		authzmodule.AppModuleBasic{},
 		upgrade.AppModuleBasic{},
 		evidence.AppModuleBasic{},
 		vesting.AppModuleBasic{},

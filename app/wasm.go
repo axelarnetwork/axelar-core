@@ -44,6 +44,12 @@ func (m AnteHandlerMessenger) DispatchMsg(ctx sdk.Context, contractAddr sdk.AccA
 			return nil, nil, nil, err
 		}
 
+		// this dispatch path skips the BatchDecorator, so enforce the wrapper-message
+		// invariant (no role-restricted / nested msgs inside authz MsgExec) here too
+		if err := ante.ValidateWrappedMsgs(sdkMsgs); err != nil {
+			return nil, nil, nil, err
+		}
+
 		// we can't know if this is a simulation or not at this stage, so we treat it as a regular execution
 		ctx, err = m.anteHandle(ctx, sdkMsgs, false)
 		if err != nil {

@@ -25,6 +25,8 @@ import (
 	authcodec "github.com/cosmos/cosmos-sdk/x/auth/codec"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
+	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
@@ -366,6 +368,12 @@ func initNexusKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, ke
 func initFeegrantKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *feegrantkeeper.Keeper {
 	feegrantK := feegrantkeeper.NewKeeper(appCodec, runtime.NewKVStoreService(keys[feegrant.StoreKey]), GetKeeper[authkeeper.AccountKeeper](keepers))
 	return &feegrantK
+}
+
+func initAuthzKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache, bApp *bam.BaseApp) *authzkeeper.Keeper {
+	authzK := authzkeeper.NewKeeper(runtime.NewKVStoreService(keys[authz.ModuleName]), appCodec, bApp.MsgServiceRouter(), GetKeeper[authkeeper.AccountKeeper](keepers)).
+		SetBankKeeper(GetKeeper[bankkeeper.BaseKeeper](keepers))
+	return &authzK
 }
 
 func initEvidenceKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *evidencekeeper.Keeper {
