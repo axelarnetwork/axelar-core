@@ -117,12 +117,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrNexus, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.axelarnet))
 
-	err := cfg.RegisterMigration(types.ModuleName, 7, keeper.Migrate7to8(am.keeper))
-	if err != nil {
-		panic(err)
-	}
-
-	err = cfg.RegisterMigration(types.ModuleName, 8, keeper.Migrate8to9(am.keeper))
+	err := cfg.RegisterMigration(types.ModuleName, 8, keeper.Migrate8to9(am.keeper))
 	if err != nil {
 		panic(err)
 	}
