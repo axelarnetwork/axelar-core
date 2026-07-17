@@ -9,6 +9,7 @@ import (
 
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	permission "github.com/axelarnetwork/axelar-core/x/permission/exported"
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 )
 
 // txWithUnwrappedMsgs implements the FeeTx interface
@@ -86,8 +87,8 @@ func unpackMsgs(msgs []sdk.Msg) ([]sdk.Msg, error) {
 	return unpackedMsgs, nil
 }
 
-// ValidateWrappedMsgs rejects an authz MsgExec wrapping a role-restricted msg, and any
-// authz MsgExec or BatchRequest wrapping another MsgExec or BatchRequest.
+// ValidateWrappedMsgs rejects an authz MsgExec that wraps a role-restricted msg or another
+// wrapper (MsgExec, BatchRequest, RefundMsgRequest), and a BatchRequest that wraps a MsgExec.
 func ValidateWrappedMsgs(msgs []sdk.Msg) error {
 	for _, msg := range msgs {
 		switch m := msg.(type) {
@@ -103,12 +104,12 @@ func ValidateWrappedMsgs(msgs []sdk.Msg) error {
 			if gated {
 				return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "authz MsgExec must not wrap role-restricted messages")
 			}
-			if containsNestingMsg(innerMsgs) {
-				return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "authz MsgExec must not wrap a BatchRequest or another MsgExec")
+			if containsWrapperMsg(innerMsgs) {
+				return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "authz MsgExec must not wrap a MsgExec, BatchRequest, or RefundMsgRequest")
 			}
 		case *auxiliarytypes.BatchRequest:
-			if containsNestingMsg(m.UnwrapMessages()) {
-				return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "BatchRequest must not wrap a BatchRequest or an authz MsgExec")
+			if containsMsgExec(m.UnwrapMessages()) {
+				return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "BatchRequest must not wrap an authz MsgExec")
 			}
 		}
 	}
@@ -131,10 +132,20 @@ func containsRoleGatedMsg(msgs []sdk.Msg) (bool, error) {
 	return false, nil
 }
 
-func containsNestingMsg(msgs []sdk.Msg) bool {
+func containsMsgExec(msgs []sdk.Msg) bool {
+	for _, msg := range msgs {
+		if _, ok := msg.(*authz.MsgExec); ok {
+			return true
+		}
+	}
+
+	return false
+}
+
+func containsWrapperMsg(msgs []sdk.Msg) bool {
 	for _, msg := range msgs {
 		switch msg.(type) {
-		case *authz.MsgExec, *auxiliarytypes.BatchRequest:
+		case *authz.MsgExec, *auxiliarytypes.BatchRequest, *rewardtypes.RefundMsgRequest:
 			return true
 		}
 	}

@@ -15,6 +15,7 @@ import (
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	. "github.com/axelarnetwork/utils/test"
@@ -142,10 +143,11 @@ func TestBatchRejectsDisallowedNesting(t *testing.T) {
 	roleGatedInExec := authz.NewMsgExec(sender, []sdk.Msg{&evmTypes.CreateDeployTokenRequest{Sender: sender.String()}})
 	assert.ErrorIs(t, run(&roleGatedInExec), sdkerrors.ErrUnauthorized)
 
-	batchInBatch := auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{voteMsg})})
-	assert.ErrorIs(t, run(batchInBatch), sdkerrors.ErrUnauthorized)
+	refundInExec := authz.NewMsgExec(sender, []sdk.Msg{rewardtypes.NewRefundMsgRequest(sender, voteMsg)})
+	assert.ErrorIs(t, run(&refundInExec), sdkerrors.ErrUnauthorized)
 
 	flatExec := authz.NewMsgExec(sender, []sdk.Msg{voteMsg})
 	assert.NoError(t, run(&flatExec))
 	assert.NoError(t, run(auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{voteMsg})))
+	assert.NoError(t, run(auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{rewardtypes.NewRefundMsgRequest(sender, voteMsg)})))
 }
