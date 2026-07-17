@@ -92,7 +92,23 @@ func isRefundMsgRequest(msg sdk.Msg) bool {
 func (d CheckRefundFeeDecorator) validateRefundQualification(ctx sdk.Context, msgs []sdk.Msg) error {
 	// If we allow txs to be refunded when there are msgs that are not RefundMsgRequests we open the door to slip all kinds of msgs in to get them refunded.
 	// So we need to make sure that all msgs in the batch are refundable, otherwise reject the tx.
+
+	// the ante flattens each RefundMsgRequest's inner message into the tx so the message
+	// decorators can inspect it; those inners are validated through their wrapper, so skip them here
+	refundedInner := make(map[sdk.Msg]struct{})
 	for _, msg := range msgs {
+		if req, ok := msg.(*rewardtypes.RefundMsgRequest); ok {
+			if inner := req.GetInnerMessage(); inner != nil {
+				refundedInner[inner] = struct{}{}
+			}
+		}
+	}
+
+	for _, msg := range msgs {
+		if _, ok := refundedInner[msg]; ok {
+			continue
+		}
+
 		switch msg := msg.(type) {
 		case *rewardtypes.RefundMsgRequest:
 			if !msgRegistered(d.cdc.InterfaceRegistry(), msg.InnerMessage.TypeUrl) {
