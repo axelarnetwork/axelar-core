@@ -555,7 +555,7 @@ func initAppModules(keepers *KeeperCache, keys map[string]*store.KVStoreKey, bAp
 			GetKeeper[rewardKeeper.Keeper](keepers),
 			GetKeeper[nexusKeeper.Keeper](keepers),
 		),
-		tss.NewAppModule(keys[tssTypes.StoreKey]),
+		tss.NewAppModule(),
 		vote.NewAppModule(*GetKeeper[voteKeeper.Keeper](keepers)),
 		nexus.NewAppModule(
 			*GetKeeper[nexusKeeper.Keeper](keepers),

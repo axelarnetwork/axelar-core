@@ -148,11 +148,6 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrAxelarnet, Logger: am.keeper.Logger}, msgServer)
 
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus))
-
-	err := cfg.RegisterMigration(types.ModuleName, 7, keeper.Migrate7to8(am.keeper))
-	if err != nil {
-		panic(err)
-	}
 }
 
 // EndBlock executes all state transitions this module requires at the end of each new block
