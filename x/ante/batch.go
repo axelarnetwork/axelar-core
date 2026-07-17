@@ -86,8 +86,8 @@ func unpackMsgs(msgs []sdk.Msg) ([]sdk.Msg, error) {
 	return unpackedMsgs, nil
 }
 
-// ValidateWrappedMsgs rejects an authz MsgExec wrapping a role-restricted msg, another
-// MsgExec, or a BatchRequest, and a BatchRequest wrapping a MsgExec.
+// ValidateWrappedMsgs rejects an authz MsgExec wrapping a role-restricted msg, and any
+// authz MsgExec or BatchRequest wrapping another MsgExec or BatchRequest.
 func ValidateWrappedMsgs(msgs []sdk.Msg) error {
 	for _, msg := range msgs {
 		switch m := msg.(type) {
@@ -96,26 +96,19 @@ func ValidateWrappedMsgs(msgs []sdk.Msg) error {
 			if err != nil {
 				return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 			}
-			if containsRoleGatedMsg(innerMsgs) {
+			gated, err := containsRoleGatedMsg(innerMsgs)
+			if err != nil {
+				return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+			}
+			if gated {
 				return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "authz MsgExec must not wrap role-restricted messages")
 			}
-			for _, innerMsg := range innerMsgs {
-				switch innerMsg.(type) {
-				case *authz.MsgExec:
-					return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "authz MsgExec must not wrap another MsgExec")
-				case *auxiliarytypes.BatchRequest:
-					return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "authz MsgExec must not wrap a batch request")
-				}
+			if containsNestingMsg(innerMsgs) {
+				return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "authz MsgExec must not wrap a BatchRequest or another MsgExec")
 			}
 		case *auxiliarytypes.BatchRequest:
-			innerMsgs := m.UnwrapMessages()
-			for _, innerMsg := range innerMsgs {
-				if _, ok := innerMsg.(*authz.MsgExec); ok {
-					return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "batch request must not wrap an authz MsgExec")
-				}
-			}
-			if err := ValidateWrappedMsgs(innerMsgs); err != nil {
-				return err
+			if containsNestingMsg(m.UnwrapMessages()) {
+				return errorsmod.Wrap(sdkerrors.ErrUnauthorized, "BatchRequest must not wrap a BatchRequest or an authz MsgExec")
 			}
 		}
 	}
@@ -123,10 +116,25 @@ func ValidateWrappedMsgs(msgs []sdk.Msg) error {
 	return nil
 }
 
-func containsRoleGatedMsg(msgs []sdk.Msg) bool {
+func containsRoleGatedMsg(msgs []sdk.Msg) (bool, error) {
 	for _, msg := range msgs {
-		switch permissionRole(msg) {
+		role, err := permissionRole(msg)
+		if err != nil {
+			return false, err
+		}
+		switch role {
 		case permission.ROLE_ACCESS_CONTROL, permission.ROLE_CHAIN_MANAGEMENT:
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func containsNestingMsg(msgs []sdk.Msg) bool {
+	for _, msg := range msgs {
+		switch msg.(type) {
+		case *authz.MsgExec, *auxiliarytypes.BatchRequest:
 			return true
 		}
 	}
