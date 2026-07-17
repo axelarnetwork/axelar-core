@@ -64,6 +64,10 @@
       - [module-account [module-name]](axelard_query_auth_module-account.md) - Query module account info by module name
       - [module-accounts](axelard_query_auth_module-accounts.md) - Query all module accounts
       - [params](axelard_query_auth_params.md) - Query the current auth parameters
+    - [authz](axelard_query_authz.md) - Querying commands for the authz module
+      - [grants [granter-addr] [grantee-addr] \<msg-type-url>](axelard_query_authz_grants.md) - Query grants for a granter-grantee pair and optionally a msg-type-url
+      - [grants-by-grantee [grantee-addr]](axelard_query_authz_grants-by-grantee.md) - Query authorization grants granted to a grantee
+      - [grants-by-granter [granter-addr]](axelard_query_authz_grants-by-granter.md) - Query authorization grants granted by granter
     - [axelarnet](axelard_query_axelarnet.md) - Querying commands for the axelarnet module
       - [chain-by-ibc-path [ibc path]](axelard_query_axelarnet_chain-by-ibc-path.md) - Returns the Cosmos chain for the given IBC path
       - [ibc-path [chain]](axelard_query_axelarnet_ibc-path.md) - Returns the registered IBC path for the given Cosmos chain
@@ -290,6 +294,10 @@
   - [tx](axelard_tx.md) - Transactions subcommands
     - [auth](axelard_tx_auth.md) - Transactions commands for the auth module
       - [update-params-proposal [params]](axelard_tx_auth_update-params-proposal.md) - Submit a proposal to update auth module params. Note: the entire params must be provided.
+    - [authz](axelard_tx_authz.md) - Authorization transactions subcommands
+      - [exec [tx-json-file] --from [grantee]](axelard_tx_authz_exec.md) - execute tx on behalf of granter account
+      - [grant \<grantee> \<authorization_type="send"|"generic"|"delegate"|"unbond"|"redelegate"> --from \<granter>](axelard_tx_authz_grant.md) - Grant authorization to an address
+      - [revoke [grantee] [msg-type-url] --from=[granter]](axelard_tx_authz_revoke.md) - revoke authorization
     - [auxiliary](axelard_tx_auxiliary.md) - Transactions commands for the auxiliary module
       - [batch](axelard_tx_auxiliary_batch.md) - Execute the Batch RPC method
     - [axelarnet](axelard_tx_axelarnet.md) - axelarnet transactions subcommands
