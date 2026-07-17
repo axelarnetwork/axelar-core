@@ -187,7 +187,10 @@ func TestInitExportGenesis(t *testing.T) {
 				assert.Error(t, k.AssignKey(ctx, chain.Name, keyID))
 				assert.NoError(t, k.RotateKey(ctx, chain.Name))
 				assert.NoError(t, k.Sign(ctx, keyID, rand.Bytes(exported.HashLength), chain.Module))
-				assert.Len(t, k.ExportGenesis(ctx).SigningSessions, 2)
+				// the session started by whenSigningSessionExists expired during the
+				// EndBlocker loop of the second whenKeyExists, so only the session
+				// started right above is left
+				assert.Len(t, k.ExportGenesis(ctx).SigningSessions, 1)
 			}).
 			Run(t)
 
