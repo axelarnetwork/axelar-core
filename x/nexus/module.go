@@ -116,6 +116,11 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	msgServer := keeper.NewMsgServerImpl(am.keeper, am.snapshotter, am.slashing, am.staking, am.axelarnet, am.reward)
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrNexus, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.axelarnet))
+
+	err := cfg.RegisterMigration(types.ModuleName, 8, keeper.Migrate8to9(am.keeper))
+	if err != nil {
+		panic(err)
+	}
 }
 
 // InitGenesis initializes the module's keeper from the given genesis state
@@ -146,7 +151,7 @@ func (AppModule) QuerierRoute() string {
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 8 }
+func (AppModule) ConsensusVersion() uint64 { return 9 }
 
 // IsOnePerModuleType implements the depinject.OnePerModuleType interface.
 func (am AppModule) IsOnePerModuleType() { // marker
