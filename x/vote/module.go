@@ -128,11 +128,6 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	msgServer := keeper.NewMsgServerImpl(am.keeper)
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrVote, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper))
-
-	err := cfg.RegisterMigration(types.ModuleName, 2, keeper.GetMigrationHandler(am.keeper))
-	if err != nil {
-		panic(err)
-	}
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.

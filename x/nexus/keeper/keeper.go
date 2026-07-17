@@ -33,6 +33,7 @@ var (
 	processingMessagePrefix    = key.RegisterStaticKey(types.ModuleName, 5)
 	messageNonceKey            = key.RegisterStaticKey(types.ModuleName, 6)
 	wasmActivation             = key.RegisterStaticKey(types.ModuleName, 7)
+	_                          = key.RegisterStaticKey(types.ModuleName, 8) // retired
 
 	// temporary
 	// TODO: add description about what temporary means
