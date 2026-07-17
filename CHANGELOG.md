@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.4.10](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.10)
+
+### Bug Fixes
+
+* [#2362](https://github.com/axelarnetwork/axelar-core/pull/2362) Add extra guards for ABI encoding and decoding
+
 ## [v1.4.9](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.9)
 
 ### Bug Fixes
