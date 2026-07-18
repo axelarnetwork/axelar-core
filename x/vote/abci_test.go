@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/log"
+	store "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -155,4 +156,128 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 		}).
 		Run(t)
 
+	givenPollQueue.
+		When2(withPoll(true, exported.Pending)).
+		When("the poll does not exist", func() {
+			keeper.GetPollFunc = func(sdk.Context, exported.PollID) (exported.Poll, bool) { return nil, false }
+		}).
+		Then("should skip the poll without halting", func(t *testing.T) {
+			assert.NotPanics(t, func() {
+				assert.NoError(t, handlePollsAtExpiry(ctx, keeper))
+			})
+			assert.Len(t, keeper.DeletePollCalls(), 0)
+		}).
+		Run(t, repeats)
+
+	givenPollQueue.
+		When2(withPoll(true, exported.Completed)).
+		When("the vote handler fails", func() {
+			poll.GetResultFunc = func() codec.ProtoMarshaler { return &gogoprototypes.StringValue{} }
+			voteHandler.IsFalsyResultFunc = func(codec.ProtoMarshaler) bool { return false }
+			voteHandler.HandleCompletedPollFunc = func(ctx sdk.Context, poll exported.Poll) error {
+				return fmt.Errorf("handler failed")
+			}
+		}).
+		Then("should roll back the handler, delete the poll and not halt", func(t *testing.T) {
+			storeKey := store.NewKVStoreKey("cache")
+			handledKey := []byte("handled")
+			deletedKey := []byte("deleted")
+			voteHandler.HandleCompletedPollFunc = func(ctx sdk.Context, poll exported.Poll) error {
+				ctx.MultiStore().GetKVStore(storeKey).Set(handledKey, []byte{})
+				return fmt.Errorf("handler failed")
+			}
+			keeper.DeletePollFunc = func(ctx sdk.Context, _ exported.PollID) {
+				ctx.MultiStore().GetKVStore(storeKey).Set(deletedKey, []byte{})
+			}
+
+			assert.NotPanics(t, func() {
+				assert.NoError(t, handlePollsAtExpiry(ctx, keeper))
+			})
+			assert.False(t, ctx.MultiStore().GetKVStore(storeKey).Has(handledKey))
+			assert.True(t, ctx.MultiStore().GetKVStore(storeKey).Has(deletedKey))
+			assert.Len(t, keeper.DeletePollCalls(), 1)
+		}).
+		Run(t, repeats)
+
+	givenPollQueue.
+		When2(withPoll(true, exported.Pending)).
+		When("the vote handler panics", func() {
+			voteHandler.HandleExpiredPollFunc = func(ctx sdk.Context, poll exported.Poll) error {
+				panic("panic in vote handler")
+			}
+		}).
+		Then("should recover, delete the poll and not halt", func(t *testing.T) {
+			assert.NotPanics(t, func() {
+				assert.NoError(t, handlePollsAtExpiry(ctx, keeper))
+			})
+			assert.Len(t, keeper.DeletePollCalls(), 1)
+		}).
+		Run(t, repeats)
+
+	givenPollQueue.
+		When2(withPoll(true, exported.NonExistent)).
+		Then("should delete the poll and not halt on unexpected state", func(t *testing.T) {
+			assert.NotPanics(t, func() {
+				assert.NoError(t, handlePollsAtExpiry(ctx, keeper))
+			})
+			assert.Len(t, keeper.DeletePollCalls(), 1)
+		}).
+		Run(t, repeats)
+
+	givenPollQueue.
+		When("two expired completed polls where the first handler fails", func() {
+			failingPoll := &exportedMock.PollMock{
+				GetIDFunc:     func() exported.PollID { return exported.PollID(1) },
+				GetModuleFunc: func() string { return evmtypes.ModuleName },
+				GetStateFunc:  func() exported.PollState { return exported.Completed },
+				GetResultFunc: func() codec.ProtoMarshaler { return &gogoprototypes.StringValue{} },
+			}
+			healthyPoll := &exportedMock.PollMock{
+				GetIDFunc:     func() exported.PollID { return exported.PollID(2) },
+				GetModuleFunc: func() string { return evmtypes.ModuleName },
+				GetStateFunc:  func() exported.PollState { return exported.Completed },
+				GetResultFunc: func() codec.ProtoMarshaler { return &gogoprototypes.StringValue{} },
+			}
+
+			dequeued := 0
+			pollQueue.DequeueIfFunc = func(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
+				if dequeued >= 2 {
+					return false
+				}
+				dequeued++
+
+				pollMetadata := exported.PollMetadata{
+					ID:        exported.PollID(dequeued),
+					State:     exported.Completed,
+					ExpiresAt: ctx.BlockHeight(),
+				}
+				bz, _ := pollMetadata.Marshal()
+				if err := value.Unmarshal(bz); err != nil {
+					panic(err)
+				}
+
+				return true
+			}
+			keeper.GetPollFunc = func(_ sdk.Context, id exported.PollID) (exported.Poll, bool) {
+				if id == exported.PollID(1) {
+					return failingPoll, true
+				}
+				return healthyPoll, true
+			}
+			voteHandler.IsFalsyResultFunc = func(codec.ProtoMarshaler) bool { return false }
+			voteHandler.HandleCompletedPollFunc = func(_ sdk.Context, p exported.Poll) error {
+				if p.GetID() == exported.PollID(1) {
+					return fmt.Errorf("handler failed")
+				}
+				return nil
+			}
+		}).
+		Then("should still handle the second poll", func(t *testing.T) {
+			assert.NotPanics(t, func() {
+				assert.NoError(t, handlePollsAtExpiry(ctx, keeper))
+			})
+			assert.Len(t, voteHandler.HandleCompletedPollCalls(), 2)
+			assert.Len(t, keeper.DeletePollCalls(), 2)
+		}).
+		Run(t, repeats)
 }
