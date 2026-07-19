@@ -41,7 +41,6 @@ func GetTxCmd() *cobra.Command {
 		GetCmdCreateConfirmGatewayTx(),
 		GetCmdCreateConfirmGatewayTxs(),
 		GetCmdCreateDeployToken(),
-		GetCmdCreateBurnTokens(),
 		GetCmdCreateTransferOperatorship(),
 		GetCmdSignCommands(),
 		GetCmdAddChain(),
@@ -222,29 +221,6 @@ func GetCmdCreateDeployToken() *cobra.Command {
 		return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 	}
 
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdCreateBurnTokens returns the cli command to create burn commands for all confirmed token deposits in an EVM chain
-// Deprecated: link-deposit protocol is being disabled
-func GetCmdCreateBurnTokens() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:        "create-burn-tokens [chain]",
-		Short:      "Create burn commands for all confirmed token deposits in an EVM chain",
-		Deprecated: "link-deposit protocol is being disabled",
-		Args:       cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewCreateBurnTokensRequest(cliCtx.GetFromAddress(), args[0])
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }
