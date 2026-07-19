@@ -68,6 +68,12 @@ func handlePollsAtExpiry(ctx sdk.Context, k types.Voter) error {
 
 		if !handled {
 			logger.Error("failed to handle poll at expiry, dropping poll")
+
+			if poll.GetState() == exported.Completed {
+				_ = utils.RunCached(ctx, k, func(cachedCtx sdk.Context) (struct{}, error) {
+					return struct{}{}, k.GetVoteRouter().GetHandler(poll.GetModule()).HandleFailedPoll(cachedCtx, poll)
+				})
+			}
 		}
 
 		k.DeletePoll(ctx, pollID)
