@@ -342,3 +342,31 @@ func TestNewSequenceKVQueue(t *testing.T) {
 	}).Repeat(repeats))
 
 }
+
+func TestGeneralKVQueueDanglingEntry(t *testing.T) {
+	ctx, cdc := setup(t)
+	ns := NewNormalizedStore(ctx.KVStore(store.NewKVStoreKey("dangling")), cdc)
+
+	kvQueue := NewGeneralKVQueue("test-queue", ns, log.NewTestLogger(t), func(value codec.ProtoMarshaler) Key {
+		v := value.(*gogoprototypes.UInt64Value)
+		bz := make([]byte, 8)
+		binary.BigEndian.PutUint64(bz, v.Value)
+
+		return KeyFromBz(bz)
+	})
+
+	first := gogoprototypes.UInt64Value{Value: 1}
+	second := gogoprototypes.UInt64Value{Value: 2}
+	kvQueue.Enqueue(KeyFromStr("first"), &first)
+	kvQueue.Enqueue(KeyFromStr("second"), &second)
+
+	// simulate a broken invariant: the first item's data record is gone
+	ns.Delete(KeyFromStr("first"))
+
+	var actual gogoprototypes.UInt64Value
+	assert.True(t, kvQueue.Dequeue(&actual))
+	assert.Equal(t, second, actual)
+
+	// the dangling entry must not keep blocking the head of the queue
+	assert.True(t, kvQueue.IsEmpty())
+}
