@@ -149,7 +149,7 @@ func (q Querier) KeygenSession(c context.Context, req *types.KeygenSessionReques
 	}, nil
 }
 
-// Params returns the reward module params
+// Params returns the multisig module params
 func (q Querier) Params(c context.Context, req *types.ParamsRequest) (*types.ParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 

@@ -31,7 +31,7 @@ func NewGRPCQuerier(k Keeper, a types.AxelarnetKeeper) Querier {
 	}
 }
 
-// Params returns the reward module params
+// Params returns the nexus module params
 func (q Querier) Params(c context.Context, req *types.ParamsRequest) (*types.ParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 

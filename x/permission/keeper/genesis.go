@@ -6,7 +6,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/permission/types"
 )
 
-// InitGenesis initializes the reward module's state from a given genesis state.
+// InitGenesis initializes the permission module's state from a given genesis state.
 func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 	k.setParams(ctx, genState.Params)
 
@@ -19,7 +19,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 	}
 }
 
-// ExportGenesis returns the reward module's genesis state.
+// ExportGenesis returns the permission module's genesis state.
 func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 	governanceKey, ok := k.GetGovernanceKey(ctx)
 	if !ok {
