@@ -242,6 +242,8 @@ const (
 	CosmWasmV1 = "0x00000001"
 	// CosmWasmV2 indicates the payload is json encoded
 	CosmWasmV2 = "0x00000002"
+	// CosmWasmDestinationCallbackV1 indicates the payload is json encoded for IBC destination callbacks
+	CosmWasmDestinationCallbackV1 = "0x00000003"
 )
 
 var (
