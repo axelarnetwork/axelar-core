@@ -151,6 +151,15 @@ func TestCheckRefundFeeDecorator_AnteHandle(t *testing.T) {
 				&axelarnet.LinkRequest{},
 			},
 		},
+		{
+			label:       "standalone message identical to a refund inner is rejected (skipped by pointer, not value)",
+			succeeds:    false,
+			refundCount: 0,
+			msgs: []sdk.Msg{
+				rewardtypes.NewRefundMsgRequest(sender, &votetypes.VoteRequest{}),
+				&votetypes.VoteRequest{},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
