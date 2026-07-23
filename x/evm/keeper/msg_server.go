@@ -568,6 +568,18 @@ func (s msgServer) RetryFailedEvent(c context.Context, req *types.RetryFailedEve
 		return nil, err
 	}
 
+	// events of deprecated types left in storage from before v1.4 must never re-enter the confirmed event queue
+	if event, ok := keeper.GetEvent(ctx, req.EventID); ok {
+		switch event.GetEvent().(type) {
+		case *types.Event_ContractCall,
+			*types.Event_ContractCallWithToken,
+			*types.Event_TokenDeployed,
+			*types.Event_MultisigOperatorshipTransferred:
+		default:
+			return nil, fmt.Errorf("event %s has deprecated type %T and cannot be retried", req.EventID, event.GetEvent())
+		}
+	}
+
 	if err := keeper.RetryEvent(ctx, req.EventID); err != nil {
 		return nil, err
 	}
