@@ -61,14 +61,14 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// GetParams returns the total set of reward parameters.
+// GetParams returns the total set of vote parameters.
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	k.paramSpace.GetParamSet(ctx, &params)
 
 	return params
 }
 
-// SetParams sets the total set of reward parameters.
+// SetParams sets the total set of vote parameters.
 func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 	k.paramSpace.SetParamSet(ctx, &params)
 }
@@ -113,7 +113,7 @@ func (k *Keeper) SetVoteRouter(router types.VoteRouter) {
 	k.voteRouter.Seal()
 }
 
-// GetVoteRouter returns the nexus router. If no router was set, it returns a (sealed) router with no handlers
+// GetVoteRouter returns the vote router. If no router was set, it returns a (sealed) router with no handlers
 func (k Keeper) GetVoteRouter() types.VoteRouter {
 	if k.voteRouter == nil {
 		k.SetVoteRouter(types.NewRouter())

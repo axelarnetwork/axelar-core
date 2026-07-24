@@ -6,7 +6,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/snapshot/types"
 )
 
-// InitGenesis initializes the reward module's state from a given genesis state.
+// InitGenesis initializes the snapshot module's state from a given genesis state.
 func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 	k.SetParams(ctx, genState.Params)
 
@@ -15,7 +15,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 	}
 }
 
-// ExportGenesis returns the reward module's genesis state.
+// ExportGenesis returns the snapshot module's genesis state.
 func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 	return types.NewGenesisState(
 		k.GetParams(ctx),

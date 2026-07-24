@@ -56,7 +56,7 @@ func (q Querier) PendingIBCTransferCount(c context.Context, _ *types.PendingIBCT
 	return &types.PendingIBCTransferCountResponse{TransfersByChain: counts}, nil
 }
 
-// Params returns the reward module params
+// Params returns the axelarnet module params
 func (q Querier) Params(c context.Context, req *types.ParamsRequest) (*types.ParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
