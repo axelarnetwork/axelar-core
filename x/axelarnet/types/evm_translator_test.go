@@ -313,7 +313,7 @@ func TestConstructWasmMessageV1(t *testing.T) {
 		// a string[] whose declared element count alone exceeds the inflation budget
 		const elements = 50*1024/32 + 1
 		argValues := make([]byte, 64+elements)
-		argValues[31] = 32                                    // offset of the array
+		argValues[31] = 32                                     // offset of the array
 		binary.BigEndian.PutUint64(argValues[56:64], elements) // declared element count
 
 		schema := abi.Arguments{{Type: stringType}, {Type: stringArrayType}, {Type: stringArrayType}, {Type: bytesType}}
