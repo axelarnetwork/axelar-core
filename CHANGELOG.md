@@ -4,6 +4,8 @@
 
 Pre-release for the v1.5 upgrade. Not intended for network deployment; use v1.5.1 or later.
 
+Every fix released in 1.4.x, security fixes included, is accounted for here: carried as-is or superseded by later work.
+
 ### State Machine Breaking
 
 * [#2349](https://github.com/axelarnetwork/axelar-core/pull/2349) Migrate to cosmos-sdk v0.53, ibc-go v10, and wasmd v0.60. Removes the `x/crisis` and `x/capability` modules and their stores, registers the 07-tendermint light client as a modular route, and runs the ibc core (6 -> 8) and ibc transfer (5 -> 6, `DenomTrace` -> `Denom`) state migrations at the upgrade height. The ibc transfer REST/CLI query surface is renamed upstream (`denom_traces` -> `denoms`); `x/tss` remains for historical transaction decoding
