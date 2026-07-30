@@ -215,3 +215,24 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 	assert.NoError(t, actual.Validate())
 	assertChainStatesEqual(t, expected, actual)
 }
+
+// TestInitGenesisRebuildsProcessingIndex verifies that importing a processing
+// message rebuilds the FIFO order index (setMessage alone only writes the record),
+// so the message is returned by GetProcessingMessages after import.
+func TestInitGenesisRebuildsProcessingIndex(t *testing.T) {
+	ctx, keeper := setup(t)
+
+	id, _, _ := keeper.GenerateMessageID(ctx)
+	msg := getRandomMessage(id) // Status == Processing
+
+	genState := types.DefaultGenesisState()
+	genState.Messages = []exported.GeneralMessage{msg}
+
+	keeper.InitGenesis(ctx, genState)
+
+	got := keeper.GetProcessingMessages(ctx, msg.GetDestinationChain(), 100)
+	assert.Len(t, got, 1)
+	if len(got) == 1 {
+		assert.Equal(t, msg.ID, got[0].ID)
+	}
+}
