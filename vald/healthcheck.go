@@ -93,9 +93,9 @@ func execCheck(ctx context.Context, clientCtx client.Context, serverCtx *server.
 }
 
 func checkTofnd(ctx context.Context, _ client.Context, serverCtx *server.Context) error {
-	valdCfg := config.DefaultValdConfig()
-	if err := serverCtx.Viper.Unmarshal(&valdCfg); err != nil {
-		panic(err)
+	valdCfg, err := loadValdConfig(serverCtx)
+	if err != nil {
+		return fmt.Errorf("failed to load vald config: %w", err)
 	}
 
 	conn, err := tss.Connect(valdCfg.TssConfig.Host, valdCfg.TssConfig.Port, valdCfg.TssConfig.DialTimeout)
@@ -128,6 +128,15 @@ func checkTofnd(ctx context.Context, _ client.Context, serverCtx *server.Context
 	}
 
 	return nil
+}
+
+func loadValdConfig(serverCtx *server.Context) (config.ValdConfig, error) {
+	valdCfg := config.DefaultValdConfig()
+	if err := serverCtx.Viper.Unmarshal(&valdCfg, config.AddDecodeHooks); err != nil {
+		return config.ValdConfig{}, err
+	}
+
+	return valdCfg, nil
 }
 
 func checkBroadcaster(ctx context.Context, clientCtx client.Context, serverCtx *server.Context) error {
