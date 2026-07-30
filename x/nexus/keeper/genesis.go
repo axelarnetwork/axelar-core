@@ -74,6 +74,11 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 
 	for _, msg := range genState.Messages {
 		funcs.MustNoErr(k.setMessage(ctx, msg))
+
+		// rebuild the FIFO processing index (setMessage only writes the record)
+		if msg.Is(exported.Processing) {
+			funcs.MustNoErr(k.setProcessingMessageID(ctx, msg))
+		}
 	}
 
 	utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx)).Set(ctx, genState.MessageNonce)
