@@ -109,6 +109,9 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/evm"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	"github.com/axelarnetwork/axelar-core/x/feepolicy"
+	feepolicyKeeper "github.com/axelarnetwork/axelar-core/x/feepolicy/keeper"
+	feepolicyTypes "github.com/axelarnetwork/axelar-core/x/feepolicy/types"
 	"github.com/axelarnetwork/axelar-core/x/multisig"
 	multisigKeeper "github.com/axelarnetwork/axelar-core/x/multisig/keeper"
 	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
@@ -249,6 +252,7 @@ func NewAxelarApp(
 	SetKeeper(keepers, initSnapshotKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initVoteKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initPermissionKeeper(appCodec, keys, keepers))
+	SetKeeper(keepers, initFeePolicyKeeper(keepers))
 
 	// set up ibc/wasm keepers
 	wasmHooks := InitWasmHooks(keys)
@@ -591,6 +595,7 @@ func initAppModules(keepers *KeeperCache, keys map[string]*store.KVStoreKey, bAp
 			encodingConfig.Codec,
 		),
 		permission.NewAppModule(*GetKeeper[permissionKeeper.Keeper](keepers)),
+		feepolicy.NewAppModule(*GetKeeper[feepolicyKeeper.Keeper](keepers)),
 		auxiliary.NewAppModule(encodingConfig.Codec, bApp.MsgServiceRouter()),
 	)
 	return appModules
@@ -619,13 +624,25 @@ func initAnteHandlers(encodingConfig axelarParams.EncodingConfig, keys map[strin
 		panic(err)
 	}
 
-	customAnteDecorators := InitCustomAnteDecorators(encodingConfig, keys, keepers, appOpts)
-	anteDecorators := append([]sdk.AnteDecorator{ante.NewAnteHandlerDecorator(baseAnteHandler)}, customAnteDecorators...)
+	preDecorators := InitCustomAntePreDecorators(keepers)
+	postDecorators := InitCustomAntePostDecorators(encodingConfig, keys, keepers, appOpts)
+
+	anteDecorators := make([]sdk.AnteDecorator, 0, len(preDecorators)+1+len(postDecorators))
+	anteDecorators = append(anteDecorators, preDecorators...)
+	anteDecorators = append(anteDecorators, ante.NewAnteHandlerDecorator(baseAnteHandler))
+	anteDecorators = append(anteDecorators, postDecorators...)
 
 	return sdk.ChainAnteDecorators(anteDecorators...)
 }
 
-func InitCustomAnteDecorators(
+func InitCustomAntePreDecorators(keepers *KeeperCache) []sdk.AnteDecorator {
+	return []sdk.AnteDecorator{
+		// reject fees in non-allowlisted denominations
+		ante.NewLimitFeeDenomDecorator(GetKeeper[feepolicyKeeper.Keeper](keepers)),
+	}
+}
+
+func InitCustomAntePostDecorators(
 	encodingConfig axelarParams.EncodingConfig,
 	keys map[string]*store.KVStoreKey,
 	keepers *KeeperCache,
@@ -738,6 +755,7 @@ func orderMigrations() []string {
 		permissionTypes.ModuleName,
 		snapTypes.ModuleName,
 		axelarnetTypes.ModuleName,
+		feepolicyTypes.ModuleName,
 		auxiliarytypes.ModuleName,
 	)
 	return migrationOrder
@@ -834,6 +852,7 @@ func orderModulesForGenesis() []string {
 		slashingtypes.ModuleName,
 		govtypes.ModuleName,
 		minttypes.ModuleName,
+		feepolicyTypes.ModuleName,
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		ibcexported.ModuleName,
@@ -1035,6 +1054,7 @@ func GetModuleBasics() module.BasicManager {
 		axelarnet.AppModuleBasic{},
 		reward.AppModuleBasic{},
 		permission.AppModuleBasic{},
+		feepolicy.AppModuleBasic{},
 		auxiliary.AppModuleBasic{},
 	}
 

@@ -1,0 +1,11 @@
+syntax = "proto3";
+package axelar.feepolicy.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/feepolicy/types";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+
+// Params represent the genesis parameters for the module
+message Params { repeated string allowed_fee_denoms = 1; }

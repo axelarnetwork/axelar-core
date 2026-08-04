@@ -37,6 +37,7 @@ axelard tx [flags]
 - [axelard tx evidence](axelard_tx_evidence.md) - Evidence transaction subcommands
 - [axelard tx evm](axelard_tx_evm.md) - evm transactions subcommands
 - [axelard tx feegrant](axelard_tx_feegrant.md) - Feegrant transactions sub-commands
+- [axelard tx feepolicy](axelard_tx_feepolicy.md) - Transactions commands for the feepolicy module
 - [axelard tx gov](axelard_tx_gov.md) - Governance transactions subcommands
 - [axelard tx ibc](axelard_tx_ibc.md) - IBC transaction subcommands
 - [axelard tx ibc-transfer](axelard_tx_ibc-transfer.md) - IBC fungible token transfer transaction subcommands

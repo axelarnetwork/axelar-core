@@ -54,6 +54,8 @@ import (
 	axelardistrkeeper "github.com/axelarnetwork/axelar-core/x/distribution/keeper"
 	evmKeeper "github.com/axelarnetwork/axelar-core/x/evm/keeper"
 	evmTypes "github.com/axelarnetwork/axelar-core/x/evm/types"
+	feepolicyKeeper "github.com/axelarnetwork/axelar-core/x/feepolicy/keeper"
+	feepolicyTypes "github.com/axelarnetwork/axelar-core/x/feepolicy/types"
 	multisigKeeper "github.com/axelarnetwork/axelar-core/x/multisig/keeper"
 	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	nexusKeeper "github.com/axelarnetwork/axelar-core/x/nexus/keeper"
@@ -138,6 +140,7 @@ func initParamsKeeper(encodingConfig axelarParams.EncodingConfig, key, tkey stor
 	paramsKeeper.Subspace(rewardTypes.ModuleName)
 	paramsKeeper.Subspace(voteTypes.ModuleName)
 	paramsKeeper.Subspace(permissionTypes.ModuleName)
+	paramsKeeper.Subspace(feepolicyTypes.ModuleName)
 
 	return &paramsKeeper
 }
@@ -218,6 +221,11 @@ func initGovernanceKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKe
 	)
 
 	return govK
+}
+
+func initFeePolicyKeeper(keepers *KeeperCache) *feepolicyKeeper.Keeper {
+	feePolicyK := feepolicyKeeper.NewKeeper(keepers.getSubspace(feepolicyTypes.ModuleName))
+	return &feePolicyK
 }
 
 func initPermissionKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *permissionKeeper.Keeper {
