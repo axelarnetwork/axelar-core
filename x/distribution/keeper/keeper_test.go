@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"context"
+	"math/big"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -224,4 +225,116 @@ func expectedBurnAndTax(ctx sdk.Context, k keeper.Keeper, fee sdk.Coins) (sdk.Co
 	burnAmt, remainder := feesDec.Sub(tax).TruncateDecimal()
 
 	return burnAmt, tax.Add(remainder...)
+}
+
+// buildDistrKeeper wires an axelar distribution keeper backed by the given
+// mutable balance map, mirroring the setup in TestAllocateTokens.
+func buildDistrKeeper(t *testing.T, ctx sdk.Context, accBalances map[string]sdk.Coins) (keeper.Keeper, *mock.BankKeeperMock) {
+	encCfg := params.MakeEncodingConfig()
+	ak := &mock.AccountKeeperMock{
+		GetModuleAccountFunc: func(_ context.Context, name string) sdk.ModuleAccountI {
+			return authtypes.NewEmptyModuleAccount(name)
+		},
+		GetModuleAddressFunc: func(name string) sdk.AccAddress { return authtypes.NewModuleAddress(name) },
+	}
+	bk := &mock.BankKeeperMock{
+		GetAllBalancesFunc: func(_ context.Context, addr sdk.AccAddress) sdk.Coins { return accBalances[addr.String()] },
+		SendCoinsFromModuleToModuleFunc: func(_ context.Context, s, r string, amt sdk.Coins) error {
+			s, r = authtypes.NewModuleAddress(s).String(), authtypes.NewModuleAddress(r).String()
+			accBalances[s], accBalances[r] = accBalances[s].Sub(amt...), accBalances[r].Add(amt...)
+			return nil
+		},
+		SendCoinsFromModuleToAccountFunc: func(_ context.Context, s string, r sdk.AccAddress, amt sdk.Coins) error {
+			s = authtypes.NewModuleAddress(s).String()
+			accBalances[s], accBalances[r.String()] = accBalances[s].Sub(amt...), accBalances[r.String()].Add(amt...)
+			return nil
+		},
+		BurnCoinsFunc: func(_ context.Context, name string, amt sdk.Coins) error {
+			a := authtypes.NewModuleAddress(name).String()
+			accBalances[a] = accBalances[a].Sub(amt...)
+			return nil
+		},
+		MintCoinsFunc: func(_ context.Context, name string, amt sdk.Coins) error {
+			a := authtypes.NewModuleAddress(name).String()
+			accBalances[a] = accBalances[a].Add(amt...)
+			return nil
+		},
+	}
+	sk := &mock.StakingKeeperMock{}
+
+	distriK := distribution.NewKeeper(encCfg.Codec, runtime.NewKVStoreService(store.NewKVStoreKey(distributiontypes.StoreKey)), ak, bk, sk, authtypes.FeeCollectorName, "")
+	k := keeper.NewKeeper(distriK, ak, bk, sk, authtypes.FeeCollectorName)
+	funcs.MustNoErr(k.FeePool.Set(ctx, distributiontypes.FeePool{CommunityPool: sdk.DecCoins{}}))
+	funcs.MustNoErr(k.Params.Set(ctx, distributiontypes.DefaultParams()))
+
+	return k, bk
+}
+
+func maxInt() math.Int {
+	return math.NewIntFromBigInt(new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(1)))
+}
+
+func TestAllocateTokensBurnsButRollsBackOverflowingTracker(t *testing.T) {
+	const denom = "ibc/OVERFLOW"
+	feeCollector := authtypes.NewModuleAddress(authtypes.FeeCollectorName).String()
+	burnedDenom := types.WithBurnedPrefix(sdk.NewCoin(denom, math.OneInt())).Denom
+	fee := math.NewInt(1_000_000)
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+	accBalances := map[string]sdk.Coins{
+		feeCollector: sdk.NewCoins(sdk.NewCoin(denom, fee)),
+		// the cumulative burned-<denom> tracker is already at the 256-bit max, so
+		// minting more of it would overflow
+		types.ZeroAddress.String(): sdk.NewCoins(sdk.NewCoin(burnedDenom, maxInt())),
+	}
+
+	k, bk := buildDistrKeeper(t, ctx, accBalances)
+
+	// AllocateTokens must not panic ...
+	assert.NotPanics(t, func() { funcs.MustNoErr(k.AllocateTokens(ctx, 0, nil)) })
+
+	// ... the fee is processed out of the fee collector (not left stuck) ...
+	assert.True(t, accBalances[feeCollector].AmountOf(denom).IsZero())
+
+	// ... it is still burned ...
+	assert.NotEmpty(t, bk.BurnCoinsCalls())
+	if len(bk.BurnCoinsCalls()) > 0 {
+		assert.True(t, bk.BurnCoinsCalls()[0].Amt.AmountOf(denom).IsPositive())
+	}
+
+	// ... but the burned-<denom> tracker was not grown (update rolled back).
+	assert.Equal(t, maxInt(), accBalances[types.ZeroAddress.String()].AmountOf(burnedDenom))
+}
+
+func TestAllocateTokensTracksHealthyDenomsWhenAnotherOverflows(t *testing.T) {
+	const overflowDenom = "ibc/OVERFLOW"
+	const healthyDenom = "uaxl"
+	feeCollector := authtypes.NewModuleAddress(authtypes.FeeCollectorName).String()
+	burnedOverflow := types.WithBurnedPrefix(sdk.NewCoin(overflowDenom, math.OneInt())).Denom
+	burnedHealthy := types.WithBurnedPrefix(sdk.NewCoin(healthyDenom, math.OneInt())).Denom
+
+	ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+	accBalances := map[string]sdk.Coins{
+		feeCollector: sdk.NewCoins(
+			sdk.NewCoin(overflowDenom, math.NewInt(1_000_000)),
+			sdk.NewCoin(healthyDenom, math.NewInt(1_000_000)),
+		),
+		// only the overflow denom's tracker is maxed out
+		types.ZeroAddress.String(): sdk.NewCoins(sdk.NewCoin(burnedOverflow, maxInt())),
+	}
+
+	k, bk := buildDistrKeeper(t, ctx, accBalances)
+
+	assert.NotPanics(t, func() { funcs.MustNoErr(k.AllocateTokens(ctx, 0, nil)) })
+
+	// both denoms are drained from the fee collector and burned
+	assert.True(t, accBalances[feeCollector].IsZero())
+	assert.Len(t, bk.BurnCoinsCalls(), 1)
+	assert.True(t, bk.BurnCoinsCalls()[0].Amt.AmountOf(overflowDenom).IsPositive())
+	assert.True(t, bk.BurnCoinsCalls()[0].Amt.AmountOf(healthyDenom).IsPositive())
+
+	// the overflowing denom's tracker is left untouched ...
+	assert.Equal(t, maxInt(), accBalances[types.ZeroAddress.String()].AmountOf(burnedOverflow))
+	// ... but the healthy denom is still tracked
+	assert.True(t, accBalances[types.ZeroAddress.String()].AmountOf(burnedHealthy).IsPositive())
 }
