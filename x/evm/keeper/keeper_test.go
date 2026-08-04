@@ -191,6 +191,26 @@ func TestBaseKeeper(t *testing.T) {
 		assert.Error(t, err)
 	})
 
+	// the params keeper holds its subspaces in memory, outside of the versioned store, so a subspace
+	// registered by a chain creation whose state writes are discarded (failed tx, simulation) is left
+	// behind. Re-registering it must not panic, otherwise the retry diverges from a restarted node.
+	thenChainCanBeCreatedAfterDiscardedCreation := Then("a chain can be created after a discarded creation registered its subspace", func(t *testing.T) {
+		ps := types.DefaultParams()[0]
+		ps.Chain = nexustestutils.RandomChainName()
+
+		cacheCtx, _ := ctx.CacheContext()
+		assert.NoError(t, keeper.CreateChain(cacheCtx, ps))
+		// cacheCtx is never written, so the state writes are gone but the subspace stays registered
+
+		assert.NotPanics(t, func() {
+			assert.NoError(t, keeper.CreateChain(ctx, ps))
+
+			ck, err := keeper.ForChain(ctx, ps.Chain)
+			assert.NoError(t, err)
+			assert.Equal(t, ps, ck.GetParams(ctx))
+		})
+	})
+
 	thenSecondInitChainsPanics := Then("a second chain initialization panics", func(t *testing.T) {
 		assert.Panics(t, func() {
 			keeper.InitChains(ctx)
@@ -222,6 +242,12 @@ func TestBaseKeeper(t *testing.T) {
 		When2(whenInitChains).
 		Then2(thenCreateExistingChainFails).
 		Then2(thenGetChainKeeperForExistingChain).Run(t)
+
+	givenBaseKeeper.
+		Given2(givenCtx).
+		Given2(givenNoChainsExist).
+		When2(whenInitChains).
+		Then2(thenChainCanBeCreatedAfterDiscardedCreation).Run(t)
 
 	givenBaseKeeper.
 		Given2(givenCtx).
