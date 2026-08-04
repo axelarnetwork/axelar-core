@@ -1,5 +1,17 @@
 # Changelog
 
+## [v1.5.1](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.1)
+
+### State Machine Breaking
+
+* [#2370](https://github.com/axelarnetwork/axelar-core/pull/2370) Limit a transaction to paying fees in a single denomination, taken from a governance-controlled allowlist held by the new `x/feepolicy` module (default `["uaxl"]`)
+* [#2373](https://github.com/axelarnetwork/axelar-core/pull/2373) Order the nexus EVM processing-message queue by insertion sequence (FIFO) so messages are delivered in arrival order rather than by message ID
+* [#2378](https://github.com/axelarnetwork/axelar-core/pull/2378) Stop queueing messages whose destination route needs the original payload, which the nexus `EndBlocker` can never supply
+* [#2376](https://github.com/axelarnetwork/axelar-core/pull/2376) Resolve the completed-poll chain from the poll metadata instead of the vote result, so a result naming an unregistered chain can no longer stall the `x/vote` `EndBlocker`
+* [#2375](https://github.com/axelarnetwork/axelar-core/pull/2375) Skip the missing-vote penalty when an EVM poll expires with zero votes, so it no longer marks every maintainer missing and clears their rewards
+* [#2371](https://github.com/axelarnetwork/axelar-core/pull/2371) Guard the cumulative burned-fee tracker against overflow, rolling back the tracker update for that denomination instead of failing the block
+* [#2381](https://github.com/axelarnetwork/axelar-core/pull/2381) Reuse an already registered EVM chain param subspace when creating a chain, instead of panicking on the attempt to register it again
+
 ## [v1.5.0](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.0)
 
 Pre-release for the v1.5 upgrade. Not intended for network deployment; use v1.5.1 or later.
