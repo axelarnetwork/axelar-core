@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.5.2](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.2)
+
+### State Machine Breaking
+
+* [#2384](https://github.com/axelarnetwork/axelar-core/pull/2384) Seed the `x/feepolicy` allowed fee denoms from the staking bond denom in the v1.5 upgrade handler, instead of leaving the module's default genesis allowlist of `uaxl` on chains that bond a different denom
+
 ## [v1.5.1](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.1)
 
 ### State Machine Breaking
