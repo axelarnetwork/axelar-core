@@ -67,7 +67,7 @@ func (s msgServer) Vote(c context.Context, req *types.VoteRequest) (*types.VoteR
 	case vote.Completed:
 		if voteResult == vote.VoteInTime {
 			voteHandler := s.GetVoteRouter().GetHandler(poll.GetModule())
-			if err := voteHandler.HandleResult(ctx, poll.GetResult()); err != nil {
+			if err := voteHandler.HandleResult(ctx, poll); err != nil {
 				return &types.VoteResponse{Log: fmt.Sprintf("vote handler failed %s", err.Error())}, nil
 			}
 		}

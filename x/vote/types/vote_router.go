@@ -77,8 +77,8 @@ func (w handlerWrapper) IsFalsyResult(result codec.ProtoMarshaler) bool {
 	return w.handler.IsFalsyResult(result)
 }
 
-func (w handlerWrapper) HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error {
-	return cache(w.handler.HandleResult)(ctx, result)
+func (w handlerWrapper) HandleResult(ctx sdk.Context, poll exported.Poll) error {
+	return cache(w.handler.HandleResult)(ctx, poll)
 }
 
 func (w handlerWrapper) HandleFailedPoll(ctx sdk.Context, poll exported.Poll) error {
