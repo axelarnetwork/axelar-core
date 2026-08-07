@@ -159,21 +159,31 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 	return nil
 }
 
-func (v voteHandler) HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error {
+func (v voteHandler) HandleResult(ctx sdk.Context, poll vote.Poll) error {
+	result := poll.GetResult()
 	voteEvents := result.(*types.VoteEvents)
 
 	if v.IsFalsyResult(result) {
 		return nil
 	}
 
-	chain, ok := v.nexus.GetChain(ctx, voteEvents.Chain)
+	md := mustGetMetadata(poll)
+
+	// the poll's chain is fixed when the poll is created, the result's chain is voter-supplied,
+	// so a mismatch means the voters tried to confirm events for a chain they were not polled on
+	if voteEvents.Chain != md.Chain {
+		return fmt.Errorf("vote result chain %s does not match poll %s chain %s", voteEvents.Chain, poll.GetID().String(), md.Chain)
+	}
+
+	// resolve the chain from poll metadata, not the voter-supplied result
+	chain, ok := v.nexus.GetChain(ctx, md.Chain)
 	if !ok {
-		return fmt.Errorf("%s is not a registered chain", voteEvents.Chain)
+		return fmt.Errorf("%s is not a registered chain", md.Chain)
 	}
 
 	ck, err := v.keeper.ForChain(ctx, chain.Name)
 	if err != nil {
-		return fmt.Errorf("%s is not an evm chain", voteEvents.Chain)
+		return fmt.Errorf("%s is not an evm chain", chain.Name)
 	}
 
 	for _, event := range voteEvents.Events {

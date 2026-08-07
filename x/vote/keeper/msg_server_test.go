@@ -72,7 +72,7 @@ func TestMsgServer_VoteGracePeriod(t *testing.T) {
 	// Register a mock vote handler for test-module
 	voteHandler := &exportedMock.VoteHandlerMock{
 		IsFalsyResultFunc:       func(codec.ProtoMarshaler) bool { return false },
-		HandleResultFunc:        func(sdk.Context, codec.ProtoMarshaler) error { return nil },
+		HandleResultFunc:        func(sdk.Context, exported.Poll) error { return nil },
 		HandleExpiredPollFunc:   func(sdk.Context, exported.Poll) error { return nil },
 		HandleFailedPollFunc:    func(sdk.Context, exported.Poll) error { return nil },
 		HandleCompletedPollFunc: func(sdk.Context, exported.Poll) error { return nil },
@@ -151,7 +151,7 @@ func TestMsgServer_VoteFailedPoll(t *testing.T) {
 
 	voteHandler := &exportedMock.VoteHandlerMock{
 		IsFalsyResultFunc:       func(codec.ProtoMarshaler) bool { return false },
-		HandleResultFunc:        func(sdk.Context, codec.ProtoMarshaler) error { return nil },
+		HandleResultFunc:        func(sdk.Context, exported.Poll) error { return nil },
 		HandleExpiredPollFunc:   func(sdk.Context, exported.Poll) error { return nil },
 		HandleFailedPollFunc:    func(sdk.Context, exported.Poll) error { return nil },
 		HandleCompletedPollFunc: func(sdk.Context, exported.Poll) error { return nil },

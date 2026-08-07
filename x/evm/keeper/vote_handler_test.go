@@ -228,13 +228,22 @@ func TestHandleExpiredPoll(t *testing.T) {
 
 func TestHandleResult(t *testing.T) {
 	var (
-		ctx     sdk.Context
-		basek   *mock.BaseKeeperMock
-		chaink  *mock.ChainKeeperMock
-		nexusK  *mock.NexusMock
-		result  codec.ProtoMarshaler
-		handler vote.VoteHandler
+		ctx       sdk.Context
+		basek     *mock.BaseKeeperMock
+		chaink    *mock.ChainKeeperMock
+		nexusK    *mock.NexusMock
+		result    codec.ProtoMarshaler
+		poll      *votemock.PollMock
+		pollChain nexus.ChainName
+		handler   vote.VoteHandler
 	)
+
+	// setResult sets the voter-supplied result and, by default, a poll whose metadata
+	// chain agrees with it
+	setResult := func(voteEvents *types.VoteEvents) {
+		result = voteEvents
+		pollChain = voteEvents.Chain
+	}
 
 	setup := func() {
 		multiStore := fakemock.MultiStoreMock{}
@@ -248,6 +257,11 @@ func TestHandleResult(t *testing.T) {
 			LoggerFunc: func(ctx sdk.Context) log.Logger { return log.NewTestLogger(t) },
 		}
 		nexusK = &mock.NexusMock{}
+		poll = &votemock.PollMock{
+			GetIDFunc:       func() vote.PollID { return vote.PollID(rand.I64Between(10, 100)) },
+			GetResultFunc:   func() codec.ProtoMarshaler { return result },
+			GetMetaDataFunc: func() (codec.ProtoMarshaler, bool) { return &types.PollMetadata{Chain: pollChain}, true },
+		}
 
 		handler = keeper.NewVoteHandler(params.MakeEncodingConfig().Codec, basek, nexusK, &mock.RewarderMock{})
 	}
@@ -257,38 +271,58 @@ func TestHandleResult(t *testing.T) {
 	givenHandler.
 		When("result is falsy", func() {
 			chain := nexus.ChainName(rand.Str(5))
-			result = &types.VoteEvents{
+			setResult(&types.VoteEvents{
 				Chain:  chain,
 				Events: nil,
-			}
+			})
 		}).
 		Then("should return nil and do nothing", func(t *testing.T) {
-			assert.NoError(t, handler.HandleResult(ctx, result))
+			assert.NoError(t, handler.HandleResult(ctx, poll))
+		}).
+		Run(t)
+
+	givenHandler.
+		When("the result chain does not match the poll chain", func() {
+			setResult(&types.VoteEvents{
+				Chain:  exported.Ethereum.Name,
+				Events: randTokenDeployedEvents(exported.Ethereum.Name, rand.I64Between(5, 10)),
+			})
+			pollChain = nexus.ChainName(rand.Str(5))
+
+			nexusK.GetChainFunc = func(_ sdk.Context, _ nexus.ChainName) (nexus.Chain, bool) { return exported.Ethereum, true }
+			basek.ForChainFunc = func(_ sdk.Context, _ nexus.ChainName) (types.ChainKeeper, error) { return chaink, nil }
+			chaink.SetConfirmedEventFunc = func(_ sdk.Context, _ types.Event) error { return nil }
+			chaink.EnqueueConfirmedEventFunc = func(_ sdk.Context, _ types.EventID) error { return nil }
+		}).
+		Then("should return error and confirm nothing", func(t *testing.T) {
+			assert.ErrorContains(t, handler.HandleResult(ctx, poll), "does not match poll")
+			assert.Empty(t, chaink.SetConfirmedEventCalls())
+			assert.Empty(t, chaink.EnqueueConfirmedEventCalls())
 		}).
 		Run(t)
 
 	givenHandler.
 		When("source chain is not registered", func() {
 			chain := nexus.ChainName(rand.Str(5))
-			result = &types.VoteEvents{
+			setResult(&types.VoteEvents{
 				Chain:  chain,
 				Events: randTokenDeployedEvents(chain, rand.I64Between(5, 10)),
-			}
+			})
 
 			nexusK.GetChainFunc = func(_ sdk.Context, _ nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false }
 		}).
 		Then("should return error", func(t *testing.T) {
-			assert.ErrorContains(t, handler.HandleResult(ctx, result), "is not a registered chain")
+			assert.ErrorContains(t, handler.HandleResult(ctx, poll), "is not a registered chain")
 		}).
 		Run(t)
 
 	givenHandler.
 		When("source chain is not an evm chain", func() {
 			chain := nexus.ChainName(rand.Str(5))
-			result = &types.VoteEvents{
+			setResult(&types.VoteEvents{
 				Chain:  chain,
 				Events: randTokenDeployedEvents(chain, rand.I64Between(5, 10)),
-			}
+			})
 
 			nexusK.GetChainFunc = func(_ sdk.Context, _ nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, true }
 			basek.ForChainFunc = func(_ sdk.Context, _ nexus.ChainName) (types.ChainKeeper, error) {
@@ -296,15 +330,15 @@ func TestHandleResult(t *testing.T) {
 			}
 		}).
 		Then("should return error", func(t *testing.T) {
-			assert.ErrorContains(t, handler.HandleResult(ctx, result), "is not an evm chain")
+			assert.ErrorContains(t, handler.HandleResult(ctx, poll), "is not an evm chain")
 		}).
 		Run(t)
 
 	givenHandler.
 		When("source chain is an evm chain", func() {
-			result = &types.VoteEvents{
+			setResult(&types.VoteEvents{
 				Chain: exported.Ethereum.Name,
-			}
+			})
 
 			nexusK.GetChainFunc = func(_ sdk.Context, chainName nexus.ChainName) (nexus.Chain, bool) {
 				switch chainName {
@@ -327,7 +361,7 @@ func TestHandleResult(t *testing.T) {
 				chaink.SetConfirmedEventFunc = func(_ sdk.Context, _ types.Event) error { return fmt.Errorf("failed to set confirmed event") }
 			}).
 				Then("should return error", func(t *testing.T) {
-					assert.ErrorContains(t, handler.HandleResult(ctx, result), "failed to set confirmed event")
+					assert.ErrorContains(t, handler.HandleResult(ctx, poll), "failed to set confirmed event")
 				}),
 
 			When("event is not contract call", func() {
@@ -339,7 +373,7 @@ func TestHandleResult(t *testing.T) {
 				Then("should enqueue the confirmed event", func(t *testing.T) {
 					chaink.EnqueueConfirmedEventFunc = func(_ sdk.Context, _ types.EventID) error { return nil }
 
-					assert.NoError(t, handler.HandleResult(ctx, result))
+					assert.NoError(t, handler.HandleResult(ctx, poll))
 					assert.Len(t, chaink.EnqueueConfirmedEventCalls(), 5)
 				}),
 
@@ -354,7 +388,7 @@ func TestHandleResult(t *testing.T) {
 				Then("should enqueue the confirmed event", func(t *testing.T) {
 					chaink.EnqueueConfirmedEventFunc = func(_ sdk.Context, _ types.EventID) error { return nil }
 
-					assert.NoError(t, handler.HandleResult(ctx, result))
+					assert.NoError(t, handler.HandleResult(ctx, poll))
 					assert.Len(t, chaink.EnqueueConfirmedEventCalls(), 5)
 				}),
 		).

@@ -37,7 +37,7 @@ type VoteHandler interface {
 	HandleExpiredPoll(ctx sdk.Context, poll Poll) error
 	HandleFailedPoll(ctx sdk.Context, poll Poll) error
 	HandleCompletedPoll(ctx sdk.Context, poll Poll) error
-	HandleResult(ctx sdk.Context, result codec.ProtoMarshaler) error
+	HandleResult(ctx sdk.Context, poll Poll) error
 }
 
 // PollID represents ID of polls
