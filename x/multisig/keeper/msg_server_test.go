@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"crypto/sha256"
 	"errors"
 	"testing"
 
@@ -75,8 +76,10 @@ func TestMsgServer(t *testing.T) {
 		assert.Len(t, k.GetKeygenSessionsByExpiry(ctx, ctx.BlockHeight()+5), 0) // KeygenGracePeriod from custom params
 	})
 	requestIsMade := When("a request is made", func() {
+		sender := rand2.AccAddr()
 		sk := funcs.Must(btcec.NewPrivateKey())
-		req = types.NewSubmitPubKeyRequest(rand2.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
+		hash := sha256.Sum256([]byte(sender.String()))
+		req = types.NewSubmitPubKeyRequest(sender, keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, hash[:]).Serialize())
 	})
 	pubKeyFails := Then("submit pubkey fails", func(t *testing.T) {
 		_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
@@ -116,6 +119,40 @@ func TestMsgServer(t *testing.T) {
 					When2(keySessionExists).
 					When2(requestIsMade).
 					Then2(pubKeyFails),
+
+				whenSenderIsProxy.
+					When2(keySessionExists).
+					When("a request with a mismatched proof of ownership is made", func() {
+						sender := rand2.AccAddr()
+						sk := funcs.Must(btcec.NewPrivateKey())
+						hash := sha256.Sum256([]byte("not the sender"))
+
+						req = types.NewSubmitPubKeyRequest(sender, keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, hash[:]).Serialize())
+						assert.NoError(t, req.ValidateBasic())
+					}).
+					Then("submit pubkey fails and the verification is still charged for", func(t *testing.T) {
+						before := ctx.GasMeter().GasConsumed()
+						_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
+
+						assert.Error(t, err)
+						assert.GreaterOrEqual(t, ctx.GasMeter().GasConsumed()-before, uint64(types.PubKeyOwnershipVerifyCost))
+					}),
+
+				When("the sender is a proxy of a non-participant", func() {
+					snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return rand2.ValAddr() }
+				}).
+					When2(keySessionExists).
+					When("a request with a mismatched proof of ownership is made", func() {
+						sender := rand2.AccAddr()
+						sk := funcs.Must(btcec.NewPrivateKey())
+						hash := sha256.Sum256([]byte("not the sender"))
+
+						req = types.NewSubmitPubKeyRequest(sender, keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, hash[:]).Serialize())
+					}).
+					Then("submit pubkey fails before the proof of ownership is verified", func(t *testing.T) {
+						_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
+						assert.ErrorContains(t, err, "not a participant")
+					}),
 
 				whenSenderIsProxy.
 					When2(keySessionExists).
@@ -164,8 +201,10 @@ func TestMsgServer(t *testing.T) {
 						for _, v := range validators {
 							snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return v.Address }
 
+							sender := rand2.AccAddr()
 							sk := funcs.Must(btcec.NewPrivateKey())
-							req = types.NewSubmitPubKeyRequest(rand2.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
+							hash := sha256.Sum256([]byte(sender.String()))
+							req = types.NewSubmitPubKeyRequest(sender, keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, hash[:]).Serialize())
 
 							_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
 							assert.NoError(t, err)
@@ -207,8 +246,10 @@ func TestMsgServer(t *testing.T) {
 						for _, v := range validators {
 							snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return v.Address }
 
+							sender := rand2.AccAddr()
 							sk := funcs.Must(btcec.NewPrivateKey())
-							req = types.NewSubmitPubKeyRequest(rand2.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize())
+							hash := sha256.Sum256([]byte(sender.String()))
+							req = types.NewSubmitPubKeyRequest(sender, keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, hash[:]).Serialize())
 
 							_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
 							assert.NoError(t, err)
