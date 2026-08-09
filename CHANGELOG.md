@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.5.3](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.3)
+
+### State Machine Breaking
+
+* [#2388](https://github.com/axelarnetwork/axelar-core/pull/2388) Resolve the source chain in the EVM vote handler's `HandleResult` from the poll metadata instead of the voter-supplied result, and reject a result whose chain does not match the poll's. `vote.VoteHandler.HandleResult` now takes the poll rather than the result
+* [#2389](https://github.com/axelarnetwork/axelar-core/pull/2389) Speed up `SubmitPubKey` by verifying the proof of public key ownership in the message handler after the cheaper keygen-session checks, charging a fixed 200,000 gas for the verification, and memoizing `GetPermissionRole` per message type
+
 ## [v1.5.2](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.2)
 
 ### State Machine Breaking
