@@ -14,7 +14,7 @@ on:
 jobs:
   check-pr-title-issue-refs:
     runs-on: ubuntu-latest
-    if: github.repository == 'axelarnetwork/axelar-core-private'
+    if: endsWith(github.repository, '-private')
 
     steps:
       - name: Ensure the title ends with (#<public issue>, private:#<private issue>)
