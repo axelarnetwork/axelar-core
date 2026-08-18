@@ -15,7 +15,10 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	ibchooks "github.com/cosmos/ibc-apps/modules/ibc-hooks/v10"
+	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	ibcclient "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
+	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/app"
@@ -23,6 +26,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/cmd/axelard/cmd"
 	"github.com/axelarnetwork/axelar-core/testutils/fake"
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
+	"github.com/axelarnetwork/axelar-core/x/axelarnet"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	nexusmock "github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
 	"github.com/axelarnetwork/utils/funcs"
@@ -289,6 +293,14 @@ func TestICSMiddleWare(t *testing.T) {
 			// this is the focus of the test, we need to ensure that the hooks and wrapper are correctly set up for each valid wasm/hooks flag combination
 			wasmHooks := app.InitWasmHooks(keys)
 			ics4Wrapper := app.InitICS4Wrapper(axelarApp.Keepers, wasmHooks)
+
+			transferRoute, hasRoute := app.GetKeeper[ibckeeper.Keeper](axelarApp.Keepers).PortKeeper.Router.Route(ibctransfertypes.ModuleName)
+			assert.True(t, hasRoute)
+			if testCase.hooks == "true" {
+				assert.IsType(t, ibchooks.IBCMiddleware{}, transferRoute)
+			} else {
+				assert.IsType(t, axelarnet.AxelarnetIBCModule{}, transferRoute)
+			}
 
 			ctx := sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
 			packet := &mock.PacketIMock{
