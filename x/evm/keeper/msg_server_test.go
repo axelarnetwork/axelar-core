@@ -832,6 +832,15 @@ func TestRetryFailedEvent(t *testing.T) {
 
 	eventFound := func(found bool, eventStatus types.Event_Status) func() {
 		return func() {
+			ck.GetEventFunc = func(sdk.Context, types.EventID) (types.Event, bool) {
+				if !found {
+					return types.Event{}, false
+				}
+				return types.Event{
+					Status: eventStatus,
+					Event:  &types.Event_ContractCall{ContractCall: &types.EventContractCall{}},
+				}, true
+			}
 			ck.RetryEventFunc = func(sdk.Context, types.EventID) error {
 				if !found {
 					return fmt.Errorf("event not found")
@@ -889,6 +898,37 @@ func TestRetryFailedEvent(t *testing.T) {
 			assert.Len(t, ck.EnqueueConfirmedEventCalls(), 1)
 		}).
 		Run(t)
+
+	deprecatedEventStored := func(event types.Event) func() {
+		return func() {
+			ck.GetEventFunc = func(sdk.Context, types.EventID) (types.Event, bool) {
+				return event, true
+			}
+			ck.RetryEventFunc = func(sdk.Context, types.EventID) error { return nil }
+			ck.EnqueueConfirmedEventFunc = func(sdk.Context, types.EventID) error { return nil }
+		}
+	}
+
+	for _, deprecatedEvent := range []types.Event{
+		{Status: types.EventFailed, Event: &types.Event_Transfer{Transfer: &types.EventTransfer{}}},
+		{Status: types.EventFailed, Event: &types.Event_TokenSent{TokenSent: &types.EventTokenSent{}}},
+		{Status: types.EventFailed, Event: &types.Event_MultisigOwnershipTransferred{MultisigOwnershipTransferred: &types.EventMultisigOwnershipTransferred{}}},
+	} {
+		When("chain is found", chainFound(true)).
+			When("chain is activated", isChainActivated(true)).
+			When(fmt.Sprintf("stored failed event has deprecated type %T", deprecatedEvent.GetEvent()), deprecatedEventStored(deprecatedEvent)).
+			Then("should return error without modifying the event or the queue", func(t *testing.T) {
+				retryCalls := len(ck.RetryEventCalls())
+				enqueueCalls := len(ck.EnqueueConfirmedEventCalls())
+
+				_, err := msgServer.RetryFailedEvent(sdk.WrapSDKContext(ctx), req)
+
+				assert.ErrorContains(t, err, "deprecated")
+				assert.Len(t, ck.RetryEventCalls(), retryCalls)
+				assert.Len(t, ck.EnqueueConfirmedEventCalls(), enqueueCalls)
+			}).
+			Run(t)
+	}
 }
 
 func TestHandleMsgConfirmGatewayTxs(t *testing.T) {

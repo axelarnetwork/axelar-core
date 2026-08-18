@@ -175,23 +175,11 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts serverty
 	)
 }
 
-func export(encCfg params.EncodingConfig) servertypes.AppExporter {
-	return func(logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailAllowedAddrs []string,
-		appOpts servertypes.AppOptions, modulesToExport []string) (servertypes.ExportedApp, error) {
-
-		homePath := cast.ToString(appOpts.Get(flags.FlagHome))
-		if homePath == "" {
-			return servertypes.ExportedApp{}, errors.New("application home not set")
-		}
-
-		aApp := app.NewAxelarApp(logger, db, traceStore, height == -1,
-			encCfg, appOpts, []wasm.Option{})
-		if height != -1 {
-			if err := aApp.LoadHeight(height); err != nil {
-				return servertypes.ExportedApp{}, err
-			}
-		}
-
-		return aApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
+// export is intentionally unsupported. axelar-core performs upgrades exclusively via
+// in-place store migrations (x/upgrade), never by exporting and re-importing genesis.
+func export(_ params.EncodingConfig) servertypes.AppExporter {
+	return func(_ log.Logger, _ dbm.DB, _ io.Writer, _ int64, _ bool, _ []string,
+		_ servertypes.AppOptions, _ []string) (servertypes.ExportedApp, error) {
+		return servertypes.ExportedApp{}, errors.New("state export is not supported: axelar-core upgrades via in-place store migrations, not genesis export/import")
 	}
 }

@@ -359,11 +359,10 @@ func TestABIInflationGuard(t *testing.T) {
 		assertBoundary(t, args, packed, 3) // 3 static elements
 	})
 
-	t.Run("empty dynamic array never inflates", func(t *testing.T) {
+	t.Run("empty dynamic array costs its element type", func(t *testing.T) {
 		args := argsOf(t, "uint256[]")
 		packed := funcs.Must(args.Pack([]*big.Int{}))
-		assertFits(t, args, packed, maxArgCost)
-		assertFits(t, args, packed, 0) // zero-cost, no reject threshold
+		assertBoundary(t, args, packed, 1)
 	})
 
 	t.Run("fixed array of dynamic elements", func(t *testing.T) {

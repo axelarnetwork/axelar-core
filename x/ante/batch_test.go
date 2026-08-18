@@ -113,6 +113,28 @@ func TestBatch(t *testing.T) {
 			assert.Equal(t, 2, len(unwrappedMsgs))
 		}).
 		Run(t)
+
+	givenBatchAnteHandler.
+		When("a tx contains a RefundMsgRequest", func() {
+			tx = &mock.FeeTxMock{
+				GetMsgsFunc: func() []sdk.Msg {
+					return []sdk.Msg{
+						rewardtypes.NewRefundMsgRequest(sender, votetypes.NewVoteRequest(sender, vote.PollID(rand.PosI64()), evmTypes.NewVoteEvents(nexus.ChainName(rand.NormalizedStr(3))))),
+					}
+				},
+			}
+		}).
+		Then("should unwrap the refund inner message", func(t *testing.T) {
+			_, err := handler.AnteHandle(sdk.Context{}, tx, false,
+				func(_ sdk.Context, tx sdk.Tx, _ bool) (sdk.Context, error) {
+					unwrappedMsgs = tx.GetMsgs()
+					return sdk.Context{}, nil
+				})
+
+			assert.NoError(t, err)
+			assert.Equal(t, 2, len(unwrappedMsgs))
+		}).
+		Run(t)
 }
 
 func TestBatchRejectsDisallowedNesting(t *testing.T) {

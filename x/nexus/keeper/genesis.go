@@ -11,7 +11,7 @@ import (
 	"github.com/axelarnetwork/utils/funcs"
 )
 
-// InitGenesis initializes the reward module's state from a given genesis state.
+// InitGenesis initializes the nexus module's state from a given genesis state.
 func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 	k.SetParams(ctx, genState.Params)
 
@@ -79,7 +79,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 	utils.NewCounter[uint64](messageNonceKey, k.getStore(ctx)).Set(ctx, genState.MessageNonce)
 }
 
-// ExportGenesis returns the reward module's genesis state.
+// ExportGenesis returns the nexus module's genesis state.
 func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 	return types.NewGenesisState(
 		k.GetParams(ctx),
