@@ -1,0 +1,45 @@
+# Ensures PR titles carry both the public and the private issue number, e.g.
+#   feat: add some feature (#2415, private:#56)
+# The title becomes the squash-merge commit message, so both references must be present.
+name: "CI: Check PR title issue refs"
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+jobs:
+  check-pr-title-issue-refs:
+    runs-on: ubuntu-latest
+    if: endsWith(github.repository, '-private')
+
+    steps:
+      - name: Ensure the title ends with (#<public issue>, private:#<private issue>)
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='\(#[0-9]+, *private:#[0-9]+\)[[:space:]]*$'
+
+          if printf '%s' "$PR_TITLE" | grep -Eq "$pattern"; then
+            echo "PR title \"$PR_TITLE\" contains both issue references"
+            exit 0
+          fi
+
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ### PR title is missing issue references
+
+          The title
+          \`\`\`
+          $PR_TITLE
+          \`\`\`
+          must end with both the public and the private issue number, for example:
+          \`\`\`
+          feat: add some feature (#2415, private:#56)
+          \`\`\`
+          EOF
+
+          echo "::error title=Invalid PR title::\"$PR_TITLE\" must end with (#<public issue>, private:#<private issue>), e.g. 'feat: add some feature (#2415, private:#56)'"
+          exit 1
