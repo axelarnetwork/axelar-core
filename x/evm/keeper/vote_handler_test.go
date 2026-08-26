@@ -498,4 +498,38 @@ func TestHandleCompletedPoll(t *testing.T) {
 			assert.Empty(t, rewardPool.ClearRewardsCalls())
 		}).
 		Run(t)
+
+	givenVoteHandler.
+		When("the result names an unregistered chain but the poll metadata chain is registered", func() {
+			n.GetChainFunc = func(_ sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) {
+				if chain != exported.Ethereum.Name {
+					return nexus.Chain{}, false
+				}
+				return nexus.Chain{Name: chain, SupportsForeignAssets: true, Module: types.ModuleName}, true
+			}
+			n.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
+				return &nexusmock.MaintainerStateMock{
+					MarkMissingVoteFunc:   func(bool) {},
+					MarkIncorrectVoteFunc: func(bool) {},
+				}, true
+			}
+
+			poll = &votemock.PollMock{
+				GetIDFunc:             func() vote.PollID { return vote.PollID(rand.I64Between(10, 100)) },
+				GetResultFunc:         func() codec.ProtoMarshaler { return types.NewVoteEvents(nexus.ChainName("nosuchchain")) },
+				GetRewardPoolNameFunc: func() (string, bool) { return rand.NormalizedStr(3), true },
+				GetMetaDataFunc:       func() (codec.ProtoMarshaler, bool) { return &types.PollMetadata{Chain: exported.Ethereum.Name}, true },
+				GetVotersFunc:         func() []sdk.ValAddress { return []sdk.ValAddress{voter} },
+				HasVotedFunc:          func(sdk.ValAddress) bool { return true },
+				HasVotedCorrectlyFunc: func(sdk.ValAddress) bool { return true },
+			}
+		}).
+		Then("should resolve the chain from metadata and not error", func(t *testing.T) {
+			err := handler.HandleCompletedPoll(ctx, poll)
+
+			assert.NoError(t, err)
+			assert.Len(t, rewardPool.ReleaseRewardsCalls(), 1)
+			assert.Equal(t, exported.Ethereum.Name, n.GetChainCalls()[0].Chain)
+		}).
+		Run(t)
 }

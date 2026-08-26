@@ -25,7 +25,7 @@ func (k Keeper) GovernanceKey(c context.Context, req *types.QueryGovernanceKeyRe
 	}, nil
 }
 
-// Params returns the reward module params
+// Params returns the permission module params
 func (q Keeper) Params(c context.Context, req *types.ParamsRequest) (*types.ParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
