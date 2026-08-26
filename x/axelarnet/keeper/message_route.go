@@ -33,6 +33,8 @@ func NewMessageRoute(
 			return fmt.Errorf("payload is required for routing messages to a cosmos chain")
 		}
 
+		ctx.GasMeter().ConsumeGas(gasCost, "execute-message")
+
 		bz, err := types.TranslateMessage(msg, routingCtx.Payload)
 		if err != nil {
 			return errorsmod.Wrap(err, "invalid payload")
@@ -42,8 +44,6 @@ func NewMessageRoute(
 		if err != nil {
 			return err
 		}
-
-		ctx.GasMeter().ConsumeGas(gasCost, "execute-message")
 
 		return ibcK.SendMessage(sdk.WrapSDKContext(ctx), msg.Recipient, asset, string(bz), msg.ID)
 	}

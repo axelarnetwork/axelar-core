@@ -36,14 +36,11 @@ func GetTxCmd() *cobra.Command {
 
 	evmTxCmd.AddCommand(
 		GetCmdSetGateway(),
-		GetCmdLink(),
 		GetCmdConfirmERC20TokenDeployment(),
-		GetCmdConfirmERC20Deposit(),
 		GetCmdConfirmTransferOperatorship(),
 		GetCmdCreateConfirmGatewayTx(),
 		GetCmdCreateConfirmGatewayTxs(),
 		GetCmdCreateDeployToken(),
-		GetCmdCreateBurnTokens(),
 		GetCmdCreateTransferOperatorship(),
 		GetCmdSignCommands(),
 		GetCmdAddChain(),
@@ -81,29 +78,6 @@ func GetCmdSetGateway() *cobra.Command {
 	return cmd
 }
 
-// GetCmdLink links a cross chain address to an EVM chain address created by Axelar
-// Deprecated: link-deposit protocol is being disabled
-func GetCmdLink() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:        "link [chain] [recipient chain] [recipient address] [asset name]",
-		Short:      "Link a cross chain address to an EVM chain address created by Axelar",
-		Deprecated: "link-deposit protocol is being disabled",
-		Args:       cobra.ExactArgs(4),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewLinkRequest(cliCtx.GetFromAddress(), args[0], args[1], args[2], args[3])
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
 // GetCmdConfirmERC20TokenDeployment returns the cli command to confirm a ERC20 token deployment
 func GetCmdConfirmERC20TokenDeployment() *cobra.Command {
 	cmd := &cobra.Command{
@@ -122,33 +96,6 @@ func GetCmdConfirmERC20TokenDeployment() *cobra.Command {
 			asset := types.NewAsset(originChain, originAsset)
 			txID := common.HexToHash(args[3])
 			msg := types.NewConfirmTokenRequest(cliCtx.GetFromAddress(), chain, asset, txID)
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdConfirmERC20Deposit returns the cli command to confirm an ERC20 deposit
-// Deprecated: link-deposit protocol is being disabled
-func GetCmdConfirmERC20Deposit() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:        "confirm-erc20-deposit [chain] [txID] [burnerAddr]",
-		Short:      "Confirm ERC20 deposits in an EVM chain transaction to a burner address",
-		Deprecated: "link-deposit protocol is being disabled",
-		Args:       cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			chain := args[0]
-			txID := common.HexToHash(args[1])
-			burnerAddr := common.HexToAddress(args[2])
-
-			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), chain, txID, burnerAddr)
 
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 		},
@@ -274,29 +221,6 @@ func GetCmdCreateDeployToken() *cobra.Command {
 		return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
 	}
 
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdCreateBurnTokens returns the cli command to create burn commands for all confirmed token deposits in an EVM chain
-// Deprecated: link-deposit protocol is being disabled
-func GetCmdCreateBurnTokens() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:        "create-burn-tokens [chain]",
-		Short:      "Create burn commands for all confirmed token deposits in an EVM chain",
-		Deprecated: "link-deposit protocol is being disabled",
-		Args:       cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewCreateBurnTokensRequest(cliCtx.GetFromAddress(), args[0])
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
 	flags.AddTxFlagsToCmd(cmd)
 	return cmd
 }

@@ -342,3 +342,154 @@ func TestEIP7702TransactionProperties(t *testing.T) {
 	t.Logf("Value: %s", tx.Value().String())
 	t.Logf("Data length: %d bytes", len(tx.Data()))
 }
+
+// TestMgr_ProcessGatewayTxsConfirmationTooManyEventsVotesEmpty verifies that when a
+// transaction receipt yields more than MaxEventsPerVote gateway events, vald broadcasts
+// an empty vote rather than an oversized one that the chain would reject. Rejection would
+// leave the poll un-votable, expire it, and clear the honest maintainers' rewards.
+func TestMgr_ProcessGatewayTxsConfirmationTooManyEventsVotesEmpty(t *testing.T) {
+	chain := nexus.ChainName("polygon")
+	gatewayAddress := types.Address(common.HexToAddress("0x6f015F16De9fC8791b234eF68D486d2bF203FBA8"))
+	txID := types.Hash{1}
+	txHash := common.BytesToHash(txID[:])
+	blockNumber := big.NewInt(78233976)
+
+	// Reuse the one real gateway ContractCall log from testdata and duplicate it past
+	// MaxEventsPerVote so the receipt yields more events than a single vote can carry.
+	allLogs := loadLogsFromTestdata(t, txHash, blockNumber.Uint64())
+	var gatewayLog *geth.Log
+	for _, l := range allLogs {
+		if l.Address == common.Address(gatewayAddress) && len(l.Topics) > 0 &&
+			(l.Topics[0] == evm.ContractCallSig || l.Topics[0] == evm.ContractCallWithTokenSig) {
+			gatewayLog = l
+			break
+		}
+	}
+	require.NotNil(t, gatewayLog, "expected a gateway event log in testdata")
+
+	logs := make([]*geth.Log, types.MaxEventsPerVote+1)
+	for i := range logs {
+		logCopy := *gatewayLog
+		logCopy.Index = uint(i)
+		logs[i] = &logCopy
+	}
+
+	receipt := &geth.Receipt{
+		Status:      geth.ReceiptStatusSuccessful,
+		TxHash:      txHash,
+		BlockNumber: blockNumber,
+		Logs:        logs,
+	}
+
+	rpcClient := &mock.ClientMock{
+		TransactionReceiptsFunc: func(_ context.Context, _ []common.Hash) ([]evmRpc.TxReceiptResult, error) {
+			return []evmRpc.TxReceiptResult{evmRpc.TxReceiptResult(results.FromOk(*receipt))}, nil
+		},
+	}
+	cache := &evmmock.LatestFinalizedBlockCacheMock{
+		GetFunc: func(nexus.ChainName) *big.Int { return big.NewInt(78375520) },
+	}
+
+	var broadcastedMsg sdk.Msg
+	broadcaster := &mock2.BroadcasterMock{
+		BroadcastFunc: func(_ context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+			require.Len(t, msgs, 1)
+			broadcastedMsg = msgs[0]
+			return &sdk.TxResponse{}, nil
+		},
+	}
+
+	valAddr := rand.ValAddr()
+	mgr := evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, broadcaster, valAddr, rand.AccAddr(), cache)
+
+	err := mgr.ProcessGatewayTxsConfirmation(&types.ConfirmGatewayTxsStarted{
+		PollMappings:   []types.PollMapping{{TxID: txID, PollID: 10}},
+		Participants:   []sdk.ValAddress{valAddr},
+		Chain:          chain,
+		GatewayAddress: gatewayAddress,
+	})
+	require.NoError(t, err)
+
+	require.NotNil(t, broadcastedMsg, "should have broadcast a vote")
+	voteMsg, ok := broadcastedMsg.(*votetypes.VoteRequest)
+	require.True(t, ok, "broadcasted message should be VoteRequest, got %T", broadcastedMsg)
+
+	voteEvents, ok := voteMsg.Vote.GetCachedValue().(*types.VoteEvents)
+	require.True(t, ok, "vote content should be VoteEvents, got %T", voteMsg.Vote.GetCachedValue())
+
+	require.Empty(t, voteEvents.Events, "a tx with more than MaxEventsPerVote events must produce an empty vote")
+}
+
+// TestMgr_ProcessGatewayTxsConfirmationExactlyMaxEventsVotesNormally verifies the boundary:
+// a receipt with exactly MaxEventsPerVote events is still votable (VoteEvents.ValidateBasic
+// rejects only counts strictly greater than the maximum), so vald votes with all of them.
+func TestMgr_ProcessGatewayTxsConfirmationExactlyMaxEventsVotesNormally(t *testing.T) {
+	chain := nexus.ChainName("polygon")
+	gatewayAddress := types.Address(common.HexToAddress("0x6f015F16De9fC8791b234eF68D486d2bF203FBA8"))
+	txID := types.Hash{1}
+	txHash := common.BytesToHash(txID[:])
+	blockNumber := big.NewInt(78233976)
+
+	allLogs := loadLogsFromTestdata(t, txHash, blockNumber.Uint64())
+	var gatewayLog *geth.Log
+	for _, l := range allLogs {
+		if l.Address == common.Address(gatewayAddress) && len(l.Topics) > 0 &&
+			(l.Topics[0] == evm.ContractCallSig || l.Topics[0] == evm.ContractCallWithTokenSig) {
+			gatewayLog = l
+			break
+		}
+	}
+	require.NotNil(t, gatewayLog, "expected a gateway event log in testdata")
+
+	logs := make([]*geth.Log, types.MaxEventsPerVote)
+	for i := range logs {
+		logCopy := *gatewayLog
+		logCopy.Index = uint(i)
+		logs[i] = &logCopy
+	}
+
+	receipt := &geth.Receipt{
+		Status:      geth.ReceiptStatusSuccessful,
+		TxHash:      txHash,
+		BlockNumber: blockNumber,
+		Logs:        logs,
+	}
+
+	rpcClient := &mock.ClientMock{
+		TransactionReceiptsFunc: func(_ context.Context, _ []common.Hash) ([]evmRpc.TxReceiptResult, error) {
+			return []evmRpc.TxReceiptResult{evmRpc.TxReceiptResult(results.FromOk(*receipt))}, nil
+		},
+	}
+	cache := &evmmock.LatestFinalizedBlockCacheMock{
+		GetFunc: func(nexus.ChainName) *big.Int { return big.NewInt(78375520) },
+	}
+
+	var broadcastedMsg sdk.Msg
+	broadcaster := &mock2.BroadcasterMock{
+		BroadcastFunc: func(_ context.Context, msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+			require.Len(t, msgs, 1)
+			broadcastedMsg = msgs[0]
+			return &sdk.TxResponse{}, nil
+		},
+	}
+
+	valAddr := rand.ValAddr()
+	mgr := evm.NewMgr(map[string]evmRpc.Client{chain.String(): rpcClient}, broadcaster, valAddr, rand.AccAddr(), cache)
+
+	err := mgr.ProcessGatewayTxsConfirmation(&types.ConfirmGatewayTxsStarted{
+		PollMappings:   []types.PollMapping{{TxID: txID, PollID: 10}},
+		Participants:   []sdk.ValAddress{valAddr},
+		Chain:          chain,
+		GatewayAddress: gatewayAddress,
+	})
+	require.NoError(t, err)
+
+	require.NotNil(t, broadcastedMsg, "should have broadcast a vote")
+	voteMsg, ok := broadcastedMsg.(*votetypes.VoteRequest)
+	require.True(t, ok, "broadcasted message should be VoteRequest, got %T", broadcastedMsg)
+
+	voteEvents, ok := voteMsg.Vote.GetCachedValue().(*types.VoteEvents)
+	require.True(t, ok, "vote content should be VoteEvents, got %T", voteMsg.Vote.GetCachedValue())
+
+	require.Len(t, voteEvents.Events, types.MaxEventsPerVote, "a tx with exactly MaxEventsPerVote events must be voted in full")
+}

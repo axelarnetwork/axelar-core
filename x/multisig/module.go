@@ -128,11 +128,6 @@ func (AppModule) QuerierRoute() string {
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.staker))
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrMultisig, Logger: am.keeper.Logger}, keeper.NewMsgServer(am.keeper, am.snapshotter, am.staker, am.nexus))
-
-	err := cfg.RegisterMigration(types.ModuleName, 2, keeper.Migrate2To3(am.keeper))
-	if err != nil {
-		panic(err)
-	}
 }
 
 // EndBlock executes all state transitions this module requires at the end of each new block

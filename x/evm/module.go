@@ -139,7 +139,8 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServiceServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrEVM, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServiceServer(cfg.QueryServer(), keeper.NewGRPCQuerier(am.keeper, am.nexus, am.multisig))
 
-	err := cfg.RegisterMigration(types.ModuleName, 10, keeper.AlwaysMigrateBytecode(am.keeper, am.nexus, keeper.Migrate10to11(am.keeper, am.nexus)))
+	// The wrapped migration is currently a no-op; add future store migrations there and bump ConsensusVersion
+	err := cfg.RegisterMigration(types.ModuleName, 10, keeper.AlwaysMigrateBytecode(am.keeper, am.nexus, keeper.NoOpMigration))
 	if err != nil {
 		panic(err)
 	}

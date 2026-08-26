@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 
 	"cosmossdk.io/core/appmodule"
-	store "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -19,7 +18,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	"github.com/axelarnetwork/axelar-core/x/tss/keeper"
 	"github.com/axelarnetwork/axelar-core/x/tss/types"
 )
 
@@ -66,14 +64,12 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command { return nil }
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	storeKey store.StoreKey
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(storeKey store.StoreKey) AppModule {
+func NewAppModule() AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
-		storeKey:       storeKey,
 	}
 }
 
@@ -89,12 +85,7 @@ func (am AppModule) ExportGenesis(_ sdk.Context, cdc codec.JSONCodec) json.RawMe
 }
 
 // RegisterServices registers module services.
-func (am AppModule) RegisterServices(cfg module.Configurator) {
-	// Register migration to clean up state
-	if err := cfg.RegisterMigration(types.ModuleName, 3, keeper.GetMigrationHandler(am.storeKey)); err != nil {
-		panic(err)
-	}
-}
+func (am AppModule) RegisterServices(module.Configurator) {}
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
 func (AppModule) ConsensusVersion() uint64 { return 4 }

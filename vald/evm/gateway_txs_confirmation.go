@@ -43,9 +43,15 @@ func (mgr Mgr) ProcessGatewayTxsConfirmation(event *types.ConfirmGatewayTxsStart
 			logger.Infof("broadcasting empty vote for poll %s: %s", pollID.String(), txReceipt.Err().Error())
 		} else {
 			events := mgr.processGatewayTxLogs(event.Chain, event.GatewayAddress, txReceipt.Ok().Logs)
-			votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
+			if len(events) > types.MaxEventsPerVote {
+				votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain)))
 
-			logger.Infof("broadcasting vote %v for poll %s", events, pollID.String())
+				logger.Infof("broadcasting empty vote for poll %s: too many events (%d exceeds maximum of %d)", pollID.String(), len(events), types.MaxEventsPerVote)
+			} else {
+				votes = append(votes, voteTypes.NewVoteRequest(mgr.proxy, pollID, types.NewVoteEvents(event.Chain, events...)))
+
+				logger.Infof("broadcasting vote %v for poll %s", events, pollID.String())
+			}
 		}
 	}
 

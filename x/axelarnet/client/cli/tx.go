@@ -31,8 +31,6 @@ func GetTxCmd() *cobra.Command {
 	}
 
 	axelarTxCmd.AddCommand(
-		GetCmdLink(),
-		GetCmdConfirmDeposit(),
 		GetCmdExecutePendingTransfersTx(),
 		GetCmdAddCosmosBasedChain(),
 		GetCmdRegisterAsset(),
@@ -43,57 +41,6 @@ func GetTxCmd() *cobra.Command {
 	)
 
 	return axelarTxCmd
-}
-
-// GetCmdLink links a cross chain address to an Axelar chain address
-// Deprecated: link-deposit protocol is being disabled
-func GetCmdLink() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:        "link [recipient chain] [recipient address] [asset]",
-		Short:      "Link a cross chain address to an Axelar address",
-		Deprecated: "link-deposit protocol is being disabled",
-		Args:       cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewLinkRequest(clientCtx.GetFromAddress(), args[0], args[1], args[2])
-
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
-}
-
-// GetCmdConfirmDeposit returns the cli command to confirm a deposit
-// Deprecated: link-deposit protocol is being disabled
-func GetCmdConfirmDeposit() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:        "confirm-deposit [denom] [burnerAddr]",
-		Short:      "Confirm a deposit to Axelar chain that sent given the asset denomination and the burner address",
-		Deprecated: "link-deposit protocol is being disabled",
-		Args:       cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			burnerAddr, err := sdk.AccAddressFromBech32(args[1])
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewConfirmDepositRequest(cliCtx.GetFromAddress(), args[0], burnerAddr)
-
-			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), msg)
-		},
-	}
-	flags.AddTxFlagsToCmd(cmd)
-	return cmd
 }
 
 // GetCmdExecutePendingTransfersTx returns the cli command to transfer all pending token transfers to Axelar chain

@@ -1,5 +1,57 @@
 # Changelog
 
+## [v1.5.0](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.0)
+
+Pre-release for the v1.5 upgrade. Not intended for network deployment; use v1.5.1 or later.
+
+### State Machine Breaking
+
+* [#2349](https://github.com/axelarnetwork/axelar-core/pull/2349) Migrate to cosmos-sdk v0.53, ibc-go v10, and wasmd v0.60. Removes the `x/crisis` and `x/capability` modules and their stores, registers the 07-tendermint light client as a modular route, and runs the ibc core (6 -> 8) and ibc transfer (5 -> 6, `DenomTrace` -> `Denom`) state migrations at the upgrade height. The ibc transfer REST/CLI query surface is renamed upstream (`denom_traces` -> `denoms`); `x/tss` remains for historical transaction decoding
+* [#2358](https://github.com/axelarnetwork/axelar-core/pull/2358) Add the `x/authz` module, enabling scoped, revocable, expiring authorization grants (e.g. a validator delegating governance voting to an operational key). `MsgExec` is restricted to flat messages: it cannot wrap another `MsgExec` or a batch request, and a batch request cannot wrap a `MsgExec`
+* [#2353](https://github.com/axelarnetwork/axelar-core/pull/2353) Add nexus migration (8 -> 9) that eagerly reallocates existing `MaintainerState` bitmaps down to the reduced max size, so stored states stop carrying oversized buffers in the KV store even for maintainers on deactivated chains that never vote again
+* [#2359](https://github.com/axelarnetwork/axelar-core/pull/2359) Raise the wasm static validation limits (`MaxFunctionLocals` 2048, `MaxTotalFunctionLocals` 20,000) above the wasmvm v2.3.4 defaults, which reject optimizer-built amplifier contracts at store-code time
+* [#2362](https://github.com/axelarnetwork/axelar-core/pull/2362) Tighten the ABI inflation guard for `CosmWasmV1` payloads: lower the inflation budget to 50kb, restrict wasm argument types to an allowlist, and charge for element types of empty dynamic arrays
+
+### Features
+
+* [#2344](https://github.com/axelarnetwork/axelar-core/pull/2344) Confirm transaction inclusion via CometBFT event subscriptions instead of indexer polling, so `vald` can broadcast against nodes with the transaction indexer disabled and no longer polls for every tx
+* [#2361](https://github.com/axelarnetwork/axelar-core/pull/2361) Reject `MsgRetryFailedEvent` for deprecated pre-v1.4 event types with a clear error instead of a recovered panic
+
+### Bug Fixes
+
+* [#2356](https://github.com/axelarnetwork/axelar-core/pull/2356) Charge execution gas before translating the message payload so the decode and ABI inflation guards are metered before they run
+* [#2365](https://github.com/axelarnetwork/axelar-core/pull/2365) Flatten a `RefundMsgRequest`'s inner message in the ante handler so it passes through the message ante decorators (`RestrictedTx`, `CheckProxy`, etc.), consistent with how authz `MsgExec` and auxiliary `BatchRequest` inner messages are handled
+* [#2341](https://github.com/axelarnetwork/axelar-core/pull/2341) Reject `RefundMsg` requests whose inner message has a different `permission_role` than the wrapping request
+* [#2346](https://github.com/axelarnetwork/axelar-core/pull/2346) Derive the refund sender from each msg, not the first
+* [#2351](https://github.com/axelarnetwork/axelar-core/pull/2351) Clear accrued rewards when a chain maintainer voluntarily deregisters, matching the automatic removal path
+
+### Improvements
+
+* [#2349](https://github.com/axelarnetwork/axelar-core/pull/2349) Bump wasmd to v0.60.8 and wasmvm to v2.3.4, patching CWA-2026-005 (high-severity block-production delay via wasm execution)
+* [#2377](https://github.com/axelarnetwork/axelar-core/pull/2377) Bump the cosmos-sdk fork to v0.53.8 and cometbft to v0.38.25
+* [#2363](https://github.com/axelarnetwork/axelar-core/pull/2363) Bump the `github.com/cosmos/rosetta` fork to the `axelar-core-v1.5.x-compatible` branch (commit c9ce423) for compatibility with the v1.5 cosmos-sdk v0.53 / ibc-go v10 stack
+* [#2355](https://github.com/axelarnetwork/axelar-core/pull/2355) Bump grpc (v1.82.0), x/net (v0.56.0), go-ethereum (v1.16.9), xz (v0.5.15), and go-getter (v1.7.9) to address security advisories
+* [#2348](https://github.com/axelarnetwork/axelar-core/pull/2348) Bump ledger-cosmos-go to v0.15.0 and zondax/ledger-go to v1.0.0 (plus transitive dependency updates) so the CLI can talk to devices running the latest Ledger firmware and Cosmos app
+* [#2369](https://github.com/axelarnetwork/axelar-core/pull/2369) Disable `axelard export`: state export to genesis is not supported, since axelar-core upgrades via in-place store migrations rather than genesis export/import. The command now returns a clear error instead of silently producing non-round-trippable genesis (in-flight IBC correlation, the nexus processing-message index, the wasm activation flag, and in-flight vote tallies are not round-trippable)
+* [#2367](https://github.com/axelarnetwork/axelar-core/pull/2367) Remove the dead link-deposit CLI commands (`evm link`, `evm confirm-erc20-deposit`, `evm create-burn-tokens`, `axelarnet link`, `axelarnet confirm-deposit`) whose backing Msg RPCs were removed in [#2321](https://github.com/axelarnetwork/axelar-core/pull/2321)
+* [#2360](https://github.com/axelarnetwork/axelar-core/pull/2360) Remove the superseded nexus (6 -> 7, 7 -> 8) and axelarnet (7 -> 8) in-place store migrations and their registrations. Consensus versions are unchanged (nexus 9, axelarnet 8)
+* [#2364](https://github.com/axelarnetwork/axelar-core/pull/2364) Remove the superseded multisig (2 -> 3), permission (1 -> 2), reward (1 -> 2), tss (3 -> 4), vote (2 -> 3), and evm (10 -> 11 link-deposit cleanup) in-place store migrations and their registrations. All networks store these modules at their current consensus versions, so the handlers can no longer be invoked. The evm bytecode migration stays registered wrapping a no-op
+* [#2343](https://github.com/axelarnetwork/axelar-core/pull/2343) Speed up block catch-up by persisting the reward pool once per batch instead of re-marshaling and writing it for every reward added
+* [#2342](https://github.com/axelarnetwork/axelar-core/pull/2342) Speed up block catch-up by recovering maintainer addresses directly from store keys instead of unmarshaling each stored value
+* [#2350](https://github.com/axelarnetwork/axelar-core/pull/2350) Add regression tests pinning the per-source `CommandID` (EVM, Cosmos, amplifier) for the nexus to EVM message delivery route
+
+## [v1.4.9](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.9)
+
+### Bug Fixes
+
+* [#2357](https://github.com/axelarnetwork/axelar-core/pull/2357) Broadcast an empty vote in `vald` when a gateway tx confirmation yields more than `MaxEventsPerVote` events, so the poll completes and maintainer rewards are not cleared
+
+## [v1.4.8](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.8)
+
+### Bug Fixes
+
+* [#2352](https://github.com/axelarnetwork/axelar-core/pull/2352) Guard against super-linear ABI amplification when routing a MsgRouteMessage with a malformed payload
+
 ## [v1.4.7](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.4.7)
 
 ### Bug Fixes

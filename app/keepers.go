@@ -16,6 +16,7 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v2/types"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -24,6 +25,8 @@ import (
 	authcodec "github.com/cosmos/cosmos-sdk/x/auth/codec"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
+	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
@@ -157,6 +160,20 @@ func initStakingKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, 
 	)
 }
 
+// WasmVMConfig returns the static validation limits enforced when wasm code is stored on chain.
+// The locals limits are raised above the wasmvm defaults, which are too strict for optimizer-built contracts
+func WasmVMConfig() wasmtypes.VMConfig {
+	maxFunctionLocals := uint32(2048)
+	maxTotalFunctionLocals := uint32(20_000)
+
+	return wasmtypes.VMConfig{
+		WasmLimits: wasmvmtypes.WasmLimits{
+			MaxFunctionLocals:      &maxFunctionLocals,
+			MaxTotalFunctionLocals: &maxTotalFunctionLocals,
+		},
+	}
+}
+
 func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]*store.KVStoreKey, keepers *KeeperCache, bApp *bam.BaseApp, appOpts types.AppOptions, wasmOpts []wasm.Option, wasmDir string) *wasm.Keeper {
 	wasmConfig := mustReadWasmConfig(appOpts)
 	nexusK := GetKeeper[nexusKeeper.Keeper](keepers)
@@ -198,7 +215,7 @@ func initWasmKeeper(encodingConfig axelarParams.EncodingConfig, keys map[string]
 		bApp.GRPCQueryRouter(),
 		wasmDir,
 		wasmConfig,
-		wasmtypes.VMConfig{},
+		WasmVMConfig(),
 		wasmkeeper.BuiltInCapabilities(),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		wasmOpts...,
@@ -359,6 +376,12 @@ func initNexusKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, ke
 func initFeegrantKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *feegrantkeeper.Keeper {
 	feegrantK := feegrantkeeper.NewKeeper(appCodec, runtime.NewKVStoreService(keys[feegrant.StoreKey]), GetKeeper[authkeeper.AccountKeeper](keepers))
 	return &feegrantK
+}
+
+func initAuthzKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache, bApp *bam.BaseApp) *authzkeeper.Keeper {
+	authzK := authzkeeper.NewKeeper(runtime.NewKVStoreService(keys[authz.ModuleName]), appCodec, bApp.MsgServiceRouter(), GetKeeper[authkeeper.AccountKeeper](keepers)).
+		SetBankKeeper(GetKeeper[bankkeeper.BaseKeeper](keepers))
+	return &authzK
 }
 
 func initEvidenceKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *evidencekeeper.Keeper {

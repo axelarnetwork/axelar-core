@@ -89,8 +89,13 @@ func (m *CircularBuffer) grow() {
 	m.CumulativeValue = newBuffer
 }
 
-// SetMaxSize sets the max size of the buffer to the given value.
-// The buffer size gets updated accordingly the next time a value is added.
+// SetMaxSize sets the max size of the buffer to the given value. When the new
+// max size is smaller than the current buffer, the underlying buffer is
+// reallocated immediately so the reduced size takes effect without waiting for
+// the next Add.
 func (m *CircularBuffer) SetMaxSize(size int) {
 	m.MaxSize = int32(size)
+	if m.isGTMaxSize() {
+		m.shrink()
+	}
 }

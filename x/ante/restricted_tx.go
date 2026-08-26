@@ -1,6 +1,8 @@
 package ante
 
 import (
+	"fmt"
+
 	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -38,8 +40,13 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool,
 			signer = signers[0]
 		}
 
+		role, err := permissionRole(msg)
+		if err != nil {
+			return ctx, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
+		}
+
 		signerRole := d.permission.GetRole(ctx, signer)
-		switch permission.GetPermissionRole((msg).(descriptor.Message)) {
+		switch role {
 		case permission.ROLE_ACCESS_CONTROL:
 			if permission.ROLE_ACCESS_CONTROL != signerRole {
 				return ctx, errorsmod.Wrapf(sdkerrors.ErrInvalidRequest, "signer '%s' is not authorized to send transaction %T", signer, msg)
@@ -54,4 +61,12 @@ func (d RestrictedTx) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool,
 	}
 
 	return next(ctx, msgs, simulate)
+}
+
+func permissionRole(msg sdk.Msg) (permission.Role, error) {
+	dm, ok := msg.(descriptor.Message)
+	if !ok {
+		return permission.ROLE_UNSPECIFIED, fmt.Errorf("message %T does not implement descriptor.Message", msg)
+	}
+	return permission.GetPermissionRole(dm), nil
 }

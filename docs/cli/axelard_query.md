@@ -26,6 +26,7 @@ axelard query [flags]
 
 - [axelard](axelard.md) - Axelar App
 - [axelard query auth](axelard_query_auth.md) - Querying commands for the auth module
+- [axelard query authz](axelard_query_authz.md) - Querying commands for the authz module
 - [axelard query axelarnet](axelard_query_axelarnet.md) - Querying commands for the axelarnet module
 - [axelard query bank](axelard_query_bank.md) - Querying commands for the bank module
 - [axelard query block](axelard_query_block.md) - Query for a committed block by height, hash, or event(s)

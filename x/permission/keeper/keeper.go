@@ -27,7 +27,7 @@ type Keeper struct {
 	params   params.Subspace
 }
 
-// NewKeeper returns a new reward keeper
+// NewKeeper returns a new permission keeper
 func NewKeeper(cdc codec.BinaryCodec, storeKey store.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{
 		cdc:      cdc,

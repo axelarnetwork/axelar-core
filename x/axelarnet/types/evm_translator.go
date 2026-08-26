@@ -31,9 +31,22 @@ const (
 	// - bytes4(2) To CosmWasm Contract with json encoded payload
 	versionSize = 4
 
+	maxArgCost     = 50 * 1024 // 50kb inflation-cost budget
+	maxArgBrackets = 100
+
 	sourceChain   = "source_chain"
 	sourceAddress = "source_address"
 )
+
+var allowedArgTypes = map[string]struct{}{
+	"bool":     {},
+	"address":  {},
+	"string":   {},
+	"bytes":    {},
+	"uint8":    {},
+	"uint64":   {},
+	"string[]": {},
+}
 
 type version [versionSize]byte
 
@@ -110,6 +123,10 @@ func unpackVersionedPayload(versionedPayload []byte) (version, []byte, error) {
 // - argument types ([]string)
 // - argument values (bytes)
 func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte) ([]byte, error) {
+	if err := evm.ABIInflationGuard(payloadArguments, payload, maxArgCost); err != nil {
+		return nil, err
+	}
+
 	args, err := evm.StrictDecode(payloadArguments, payload)
 	if err != nil {
 		return nil, err
@@ -123,8 +140,16 @@ func ConstructWasmMessageV1(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 		return nil, fmt.Errorf("payload argument name and type length mismatch")
 	}
 
+	if err := checkBrackets(argTypes); err != nil {
+		return nil, err
+	}
+
 	abiArguments, err := buildArguments(argTypes)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := evm.ABIInflationGuard(abiArguments, args[3].([]byte), maxArgCost); err != nil {
 		return nil, err
 	}
 
@@ -227,6 +252,10 @@ func ConstructNativeMessage(gm nexus.GeneralMessage, payload []byte) ([]byte, er
 func buildArguments(argTypes []string) (abi.Arguments, error) {
 	var arguments abi.Arguments
 	for _, typeStr := range argTypes {
+		if _, ok := allowedArgTypes[typeStr]; !ok {
+			return nil, fmt.Errorf("invalid argument type %s", typeStr)
+		}
+
 		argType, err := abi.NewType(typeStr, typeStr, nil)
 		if err != nil {
 			return nil, fmt.Errorf("invalid argument type %s", typeStr)
@@ -236,6 +265,19 @@ func buildArguments(argTypes []string) (abi.Arguments, error) {
 	}
 
 	return arguments, nil
+}
+
+func checkBrackets(argTypes []string) error {
+	brackets := 0
+	for _, typeStr := range argTypes {
+		brackets += strings.Count(typeStr, "[")
+	}
+
+	if brackets > maxArgBrackets {
+		return fmt.Errorf("argument types exceeds maximum nesting")
+	}
+
+	return nil
 }
 
 func checkSourceInfo(sender nexus.CrossChainAddress, msg map[string]interface{}) error {

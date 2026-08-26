@@ -35,11 +35,9 @@ var (
 	confirmedEventQueueName     = "confirmed_event_queue"
 	commandQueueName            = "cmd_queue"
 
-	// DEPRECATED: The following storage keys are deprecated and cleaned up by Migrate10to11.
-	// They were used for the link-deposit protocol which has been removed.
-	burnerAddrPrefix       = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 1)
-	confirmedDepositPrefix = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 2)
-	burnedDepositPrefix    = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 3)
+	_ = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 1) // retired (link-deposit burner address)
+	_ = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 2) // retired (link-deposit confirmed deposit)
+	_ = key.RegisterStaticKey(types.ModuleName+types.ChainNamespace, 3) // retired (link-deposit burned deposit)
 )
 
 var _ types.ChainKeeper = chainKeeper{}

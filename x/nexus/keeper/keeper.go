@@ -26,13 +26,16 @@ var (
 	transferFee              = utils.KeyFromStr("fee")
 	assetFeePrefix           = utils.KeyFromStr("asset_fee")
 
-	chainMaintainerStatePrefix = key.RegisterStaticKey(types.ModuleName, 1)
-	rateLimitPrefix            = key.RegisterStaticKey(types.ModuleName, 2)
-	transferEpochPrefix        = key.RegisterStaticKey(types.ModuleName, 3)
-	generalMessagePrefix       = key.RegisterStaticKey(types.ModuleName, 4)
-	processingMessagePrefix    = key.RegisterStaticKey(types.ModuleName, 5)
-	messageNonceKey            = key.RegisterStaticKey(types.ModuleName, 6)
-	wasmActivation             = key.RegisterStaticKey(types.ModuleName, 7)
+	chainMaintainerStatePrefix   = key.RegisterStaticKey(types.ModuleName, 1)
+	_                            = key.RegisterStaticKey(types.ModuleName, 2) // retired
+	_                            = key.RegisterStaticKey(types.ModuleName, 3) // retired
+	generalMessagePrefix         = key.RegisterStaticKey(types.ModuleName, 4)
+	processingMessagePrefix      = key.RegisterStaticKey(types.ModuleName, 5)
+	messageNonceKey              = key.RegisterStaticKey(types.ModuleName, 6)
+	wasmActivation               = key.RegisterStaticKey(types.ModuleName, 7)
+	_                            = key.RegisterStaticKey(types.ModuleName, 8) // retired
+	processingMessageOrderPrefix = key.RegisterStaticKey(types.ModuleName, 9)
+	processingMessageSeqKey      = key.RegisterStaticKey(types.ModuleName, 10)
 
 	// temporary
 	// TODO: add description about what temporary means

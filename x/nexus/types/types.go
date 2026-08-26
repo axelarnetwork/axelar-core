@@ -12,6 +12,9 @@ import (
 
 const maxBitmapSize = 1 << 10 // 1,024
 
+// MaxBitmapSize returns the maximum bitmap size for maintainer state
+func MaxBitmapSize() int { return maxBitmapSize }
+
 // NewMaintainerState is the constructor for MaintainerState
 func NewMaintainerState(chain exported.ChainName, address sdk.ValAddress) *MaintainerState {
 	return &MaintainerState{

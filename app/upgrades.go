@@ -10,6 +10,7 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -47,6 +48,9 @@ var chainUpgrades = []chainUpgrade{
 		// state migrations.
 		name: "v1.5",
 		storeUpgrades: store.StoreUpgrades{
+			Added: []string{
+				authz.ModuleName,
+			},
 			Deleted: []string{
 				// x/capability is removed entirely at ibc-go v10
 				"capability",
