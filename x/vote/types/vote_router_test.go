@@ -7,7 +7,6 @@ import (
 	"cosmossdk.io/log"
 	store "cosmossdk.io/store/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
@@ -42,7 +41,7 @@ func TestVoteRouter(t *testing.T) {
 	}).Run(t)
 
 	withRegisteredHandler.When("handler changes state and emits event", func() {
-		handler.HandleResultFunc = func(ctx sdk.Context, _ codec.ProtoMarshaler) error {
+		handler.HandleResultFunc = func(ctx sdk.Context, _ exported.Poll) error {
 			ctx.KVStore(storeKey).Set([]byte("key1"), []byte("value"))
 
 			events.Emit(ctx, &Voted{})
@@ -84,7 +83,7 @@ func TestVoteRouter(t *testing.T) {
 		}).Run(t)
 
 	withRegisteredHandler.When("handler returns error", func() {
-		handler.HandleResultFunc = func(ctx sdk.Context, _ codec.ProtoMarshaler) error {
+		handler.HandleResultFunc = func(ctx sdk.Context, _ exported.Poll) error {
 			ctx.KVStore(storeKey).Set([]byte("key1"), []byte("value"))
 
 			events.Emit(ctx, &Voted{})
