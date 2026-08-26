@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"crypto/sha256"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -92,8 +93,10 @@ func TestInitExportGenesis(t *testing.T) {
 		for _, v := range validators {
 			snapshotter.GetOperatorFunc = func(sdk.Context, sdk.AccAddress) sdk.ValAddress { return v.Address }
 
+			sender := rand.AccAddr()
 			sk := funcs.Must(btcec.NewPrivateKey())
-			msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), types.NewSubmitPubKeyRequest(rand.AccAddr(), keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, []byte(keyID)).Serialize()))
+			hash := sha256.Sum256([]byte(sender.String()))
+			msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), types.NewSubmitPubKeyRequest(sender, keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, hash[:]).Serialize()))
 		}
 
 		// Call EndBlocker for every block until timeout
