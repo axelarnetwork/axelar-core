@@ -288,6 +288,11 @@ func (k Keeper) EnqueueRouteMessage(ctx sdk.Context, id string) error {
 		return fmt.Errorf("general message has to be approved or failed")
 	}
 
+	if types.RequiresPayload(msg.Recipient.Chain.Module) {
+		k.Logger(ctx).Debug("payload is required for routing messages to a cosmos chain")
+		return nil
+	}
+
 	k.getRouteMessageQueue(ctx).Enqueue(utils.KeyFromBz(getMessageKey(id).Bytes()), &msg)
 
 	return nil
