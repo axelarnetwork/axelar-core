@@ -723,3 +723,56 @@ func TestGetSentMessages(t *testing.T) {
 	assert.Equal(t, dest3Msgs, toMap(consumeSent(chain3.Name, 100)))
 	assert.Equal(t, dest4Msgs, toMap(consumeSent(chain4.Name, 100)))
 }
+
+// TestGetProcessingMessagesFIFO verifies delivery order is insertion order, not
+// message-ID order: a low-ID message routed after a high-ID one must not jump it.
+func TestGetProcessingMessagesFIFO(t *testing.T) {
+	cfg := app.MakeEncodingConfig()
+	k, ctx := setup(cfg, t)
+
+	sourceChain := nexustestutils.RandomChain()
+	sourceChain.Module = axelarnet.ModuleName
+	destChain := nexustestutils.RandomChain()
+	destChain.Module = evmtypes.ModuleName
+	k.SetChain(ctx, sourceChain)
+	k.SetChain(ctx, destChain)
+	k.ActivateChain(ctx, sourceChain)
+	k.ActivateChain(ctx, destChain)
+	k.SetMessageRouter(types.NewMessageRouter().AddRoute(destChain.Module,
+		func(_ sdk.Context, _ exported.RoutingContext, _ exported.GeneralMessage) error { return nil }))
+
+	route := func(id string) {
+		msg := exported.GeneralMessage{
+			ID:            id,
+			Sender:        exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
+			Recipient:     exported.CrossChainAddress{Chain: destChain, Address: evmtestutils.RandomAddress().Hex()},
+			Status:        exported.Approved,
+			PayloadHash:   crypto.Keccak256Hash(rand.Bytes(32)).Bytes(),
+			SourceTxID:    evmtestutils.RandomHash().Bytes(),
+			SourceTxIndex: 0,
+		}
+		funcs.MustNoErr(k.SetNewMessage(ctx, msg))
+		funcs.MustNoErr(k.RouteMessage(ctx, msg.ID))
+	}
+
+	ids := func(msgs []exported.GeneralMessage) []string {
+		out := make([]string, len(msgs))
+		for i, m := range msgs {
+			out[i] = m.ID
+		}
+		return out
+	}
+
+	// high-ID enters FIRST, low-ID enters SECOND
+	highID := "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff-0"
+	lowID := "0x0000000000000000000000000000000000000000000000000000000000000001-0"
+	route(highID)
+	route(lowID)
+
+	// delivered in insertion order, not ID order
+	assert.Equal(t, []string{highID, lowID}, ids(k.GetProcessingMessages(ctx, destChain.Name, 100)))
+
+	// delete-by-id removes the correct entry and keeps the rest ordered
+	funcs.MustNoErr(k.SetMessageExecuted(ctx, highID))
+	assert.Equal(t, []string{lowID}, ids(k.GetProcessingMessages(ctx, destChain.Name, 100)))
+}
