@@ -10,19 +10,19 @@ import (
 
 var _ types.QueryServiceServer = Querier{}
 
-// Querier implements the grpc queries for the nexus module
+// Querier implements the grpc queries for the vote module
 type Querier struct {
 	keeper Keeper
 }
 
-// NewGRPCQuerier creates a new nexus Querier
+// NewGRPCQuerier creates a new vote Querier
 func NewGRPCQuerier(k Keeper) Querier {
 	return Querier{
 		keeper: k,
 	}
 }
 
-// Params returns the reward module params
+// Params returns the vote module params
 func (q Querier) Params(c context.Context, req *types.ParamsRequest) (*types.ParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 

@@ -20,11 +20,11 @@ require (
 	github.com/axelarnetwork/tm-events v0.0.0-20251121130841-4c4b590f0d06
 	github.com/axelarnetwork/utils v0.0.0-20251121135440-7d92b8abb3a7
 	github.com/btcsuite/btcd/btcec/v2 v2.3.5
-	github.com/cometbft/cometbft v0.38.23
+	github.com/cometbft/cometbft v0.38.25
 	github.com/cometbft/cometbft-db v0.14.1
 	github.com/cosmos/cosmos-db v1.1.3
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
-	github.com/cosmos/cosmos-sdk v0.53.7
+	github.com/cosmos/cosmos-sdk v0.53.8
 	github.com/cosmos/gogoproto v1.7.2
 	github.com/cosmos/ibc-apps/modules/ibc-hooks/v10 v10.0.0
 	github.com/cosmos/ibc-go/v10 v10.7.0
@@ -281,4 +281,4 @@ replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.2021
 // https://github.com/axelarnetwork/rosetta/compare/release/v0.50.x...axelarnetwork:rosetta:c9ce4236beef4596f3fefb8e7a35c5758ebe38e7
 replace github.com/cosmos/rosetta => github.com/axelarnetwork/rosetta v0.50.13-0.20260714134245-c9ce4236beef
 
-replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.53.7-0.20260609180346-f4253ddb9b33
+replace github.com/cosmos/cosmos-sdk => github.com/axelarnetwork/cosmos-sdk v0.53.8-0.20260727171651-58987c2bcde6

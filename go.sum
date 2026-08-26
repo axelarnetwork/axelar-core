@@ -752,8 +752,8 @@ github.com/aws/aws-sdk-go-v2/service/route53 v1.1.1/go.mod h1:rLiOUrPLW/Er5kRcQ7
 github.com/aws/aws-sdk-go-v2/service/sso v1.1.1/go.mod h1:SuZJxklHxLAXgLTc1iFXbEWkXs7QRTQpCLGaKIprQW0=
 github.com/aws/aws-sdk-go-v2/service/sts v1.1.1/go.mod h1:Wi0EBZwiz/K44YliU0EKxqTCJGUfYTWXrrBwkq736bM=
 github.com/aws/smithy-go v1.1.0/go.mod h1:EzMw8dbp/YJL4A5/sbhGddag+NPT7q084agLbB9LgIw=
-github.com/axelarnetwork/cosmos-sdk v0.53.7-0.20260609180346-f4253ddb9b33 h1:1n3h2sbHwS4ezFGTuBu5jxJnI0JbmmkQraCgjsxmVPg=
-github.com/axelarnetwork/cosmos-sdk v0.53.7-0.20260609180346-f4253ddb9b33/go.mod h1:N6YuprhAabInbT3YGumGDKONbvPX5dNro7RjHvkQoKE=
+github.com/axelarnetwork/cosmos-sdk v0.53.8-0.20260727171651-58987c2bcde6 h1:2slxfclcikgoHOeex8ITxNTvmS6d6luFhStcgloJmSg=
+github.com/axelarnetwork/cosmos-sdk v0.53.8-0.20260727171651-58987c2bcde6/go.mod h1:b/De6uhCfooGEy4kE5G4C0A+MxK9aPr0nZNMyR+PmY0=
 github.com/axelarnetwork/rosetta v0.50.13-0.20260714134245-c9ce4236beef h1:rN32Y7m0/UJiPYgwRUP1ms63X68q+wb76HKDSHirohw=
 github.com/axelarnetwork/rosetta v0.50.13-0.20260714134245-c9ce4236beef/go.mod h1:97R1+QA1t4u4gACmI9uj7rG6QbimaHl2VHZ1daAepo0=
 github.com/axelarnetwork/tm-events v0.0.0-20251121130841-4c4b590f0d06 h1:R7rrsY44+AJB7iQTttGFBeiL2gSalycC/LWVRUyvbos=
@@ -883,8 +883,8 @@ github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd/go.mod h1:sE
 github.com/coinbase/kryptology v1.8.0/go.mod h1:RYXOAPdzOGUe3qlSFkMGn58i3xUA8hmxYHksuq+8ciI=
 github.com/coinbase/rosetta-sdk-go v0.7.9 h1:lqllBjMnazTjIqYrOGv8h8jxjg9+hJazIGZr9ZvoCcA=
 github.com/coinbase/rosetta-sdk-go v0.7.9/go.mod h1:0/knutI7XGVqXmmH4OQD8OckFrbQ8yMsUZTG7FXCR2M=
-github.com/cometbft/cometbft v0.38.23 h1:jtCe5Do4EcHVf/FCyZMvkBm+AmsRGGyvswImXYAabdM=
-github.com/cometbft/cometbft v0.38.23/go.mod h1:jtH//cs5e2U5dNiaYIPMBwWXZsedXJfIie77gVhuRaA=
+github.com/cometbft/cometbft v0.38.25 h1:jtGSyssudmkjED2fk9wFGfd/fNyPKvLIinW62ELxZH4=
+github.com/cometbft/cometbft v0.38.25/go.mod h1:jtH//cs5e2U5dNiaYIPMBwWXZsedXJfIie77gVhuRaA=
 github.com/cometbft/cometbft-db v0.14.1 h1:SxoamPghqICBAIcGpleHbmoPqy+crij/++eZz3DlerQ=
 github.com/cometbft/cometbft-db v0.14.1/go.mod h1:KHP1YghilyGV/xjD5DP3+2hyigWx0WTp9X+0Gnx0RxQ=
 github.com/consensys/bavard v0.1.8-0.20210406032232-f3452dc9b572/go.mod h1:Bpd0/3mZuaj6Sj+PqrmIquiOKy397AKGThQPaGzNXAQ=

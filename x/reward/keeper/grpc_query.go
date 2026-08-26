@@ -13,14 +13,14 @@ import (
 
 var _ types.QueryServiceServer = Querier{}
 
-// Querier implements the grpc queries for the nexus module
+// Querier implements the grpc queries for the reward module
 type Querier struct {
 	keeper Keeper
 	minter mintkeeper.Keeper
 	nexus  types.Nexus
 }
 
-// NewGRPCQuerier creates a new nexus Querier
+// NewGRPCQuerier creates a new reward Querier
 func NewGRPCQuerier(k Keeper, m mintkeeper.Keeper, n types.Nexus) Querier {
 	return Querier{
 		keeper: k,

@@ -56,7 +56,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 	})
 }
 
-// ExportGenesis returns the reward module's genesis state.
+// ExportGenesis returns the axelarnet module's genesis state.
 func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 	collector, _ := k.GetFeeCollector(ctx)
 
