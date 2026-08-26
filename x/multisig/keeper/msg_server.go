@@ -66,6 +66,15 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 		return nil, fmt.Errorf("sender %s is not a registered proxy", req.Sender)
 	}
 
+	if err := keygenSession.CanAddKey(ctx.BlockHeight(), participant, req.PubKey); err != nil {
+		return nil, errorsmod.Wrap(err, "unable to add public key for keygen")
+	}
+
+	ctx.GasMeter().ConsumeGas(types.PubKeyOwnershipVerifyCost, "verify pub key ownership")
+	if err := req.VerifyPubKeyOwnership(); err != nil {
+		return nil, err
+	}
+
 	err = keygenSession.AddKey(ctx.BlockHeight(), participant, req.PubKey)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "unable to add public key for keygen")

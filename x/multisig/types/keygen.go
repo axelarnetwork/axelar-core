@@ -77,13 +77,8 @@ func (m KeygenSession) GetKeyID() exported.KeyID {
 	return m.Key.ID
 }
 
-// AddKey adds a new public key for the given participant into the keygen session
-func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pubKey exported.PublicKey) error {
-	if m.Key.PubKeys == nil {
-		m.Key.PubKeys = make(map[string]exported.PublicKey)
-		m.IsPubKeyReceived = make(map[string]bool)
-	}
-
+// CanAddKey returns an error if the given public key cannot be added to the keygen session.
+func (m KeygenSession) CanAddKey(blockHeight int64, participant sdk.ValAddress, pubKey exported.PublicKey) error {
 	if m.isExpired(blockHeight) {
 		return fmt.Errorf("keygen session %s has expired", m.GetKeyID())
 	}
@@ -102,6 +97,20 @@ func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pu
 
 	if m.State == exported.Completed && !m.isWithinGracePeriod(blockHeight) {
 		return fmt.Errorf("keygen session %s has closed", m.GetKeyID())
+	}
+
+	return nil
+}
+
+// AddKey adds a new public key for the given participant into the keygen session
+func (m *KeygenSession) AddKey(blockHeight int64, participant sdk.ValAddress, pubKey exported.PublicKey) error {
+	if err := m.CanAddKey(blockHeight, participant, pubKey); err != nil {
+		return err
+	}
+
+	if m.Key.PubKeys == nil {
+		m.Key.PubKeys = make(map[string]exported.PublicKey)
+		m.IsPubKeyReceived = make(map[string]bool)
 	}
 
 	m.addKey(participant, pubKey)

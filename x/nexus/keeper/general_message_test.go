@@ -723,3 +723,141 @@ func TestGetSentMessages(t *testing.T) {
 	assert.Equal(t, dest3Msgs, toMap(consumeSent(chain3.Name, 100)))
 	assert.Equal(t, dest4Msgs, toMap(consumeSent(chain4.Name, 100)))
 }
+
+// TestEnqueueRouteMessagePayloadRequired: a destination whose route needs the original
+// payload can never be routed by the EndBlocker (which routes with an empty RoutingContext)
+func TestEnqueueRouteMessagePayloadRequired(t *testing.T) {
+	// the destination module whose route needs the payload; see types.RequiresPayload
+	const payloadRequiredModule = types.AxelarnetModule
+
+	var (
+		msg    exported.GeneralMessage
+		ctx    sdk.Context
+		keeper nexus.Keeper
+	)
+
+	cfg := app.MakeEncodingConfig()
+	noopRoute := func(_ sdk.Context, _ exported.RoutingContext, _ exported.GeneralMessage) error { return nil }
+
+	givenKeeper := Given("a keeper with a payload-required route", func() {
+		keeper, ctx = setup(cfg, t)
+		keeper.SetMessageRouter(
+			types.NewMessageRouter().
+				AddRoute(evm.Ethereum.Module, noopRoute).
+				AddRoute(payloadRequiredModule, noopRoute),
+		)
+	})
+
+	newApprovedMsgTo := func(destinationModule string) exported.GeneralMessage {
+		destinationChain := nexustestutils.RandomChain()
+		destinationChain.Module = destinationModule
+
+		m := randMsg(exported.Approved)
+		m.Sender = exported.CrossChainAddress{Chain: evm.Ethereum, Address: evmtestutils.RandomAddress().Hex()}
+		m.Recipient = exported.CrossChainAddress{Chain: destinationChain, Address: rand.NormalizedStr(20)}
+		funcs.MustNoErr(keeper.SetNewMessage(ctx, m))
+
+		return m
+	}
+
+	givenKeeper.
+		Branch(
+			When("the destination route requires the payload", func() {
+				msg = newApprovedMsgTo(payloadRequiredModule)
+			}).
+				Then("should enqueue nothing", func(t *testing.T) {
+					// NOTE: reports success without enqueueing -- see EnqueueRouteMessage's doc comment
+					assert.NoError(t, keeper.EnqueueRouteMessage(ctx, msg.ID))
+
+					// nothing was queued, so the EndBlocker has no guaranteed-fail work to do
+					_, ok := keeper.DequeueRouteMessage(ctx)
+					assert.False(t, ok)
+
+					// the message itself is untouched and still deliverable via a RouteMessage tx
+					actual, ok := keeper.GetMessage(ctx, msg.ID)
+					assert.True(t, ok)
+					assert.Equal(t, msg, actual)
+					assert.True(t, actual.Is(exported.Approved))
+				}),
+
+			When("the destination route does not require the payload", func() {
+				msg = newApprovedMsgTo(evm.Ethereum.Module)
+			}).
+				Then("should enqueue as before", func(t *testing.T) {
+					assert.NoError(t, keeper.EnqueueRouteMessage(ctx, msg.ID))
+
+					actual, ok := keeper.DequeueRouteMessage(ctx)
+					assert.True(t, ok)
+					assert.Equal(t, msg, actual)
+				}),
+
+			When("a payload-required message is enqueued alongside a routable one", func() {
+				msg = newApprovedMsgTo(evm.Ethereum.Module)
+				blocked := newApprovedMsgTo(payloadRequiredModule)
+				funcs.MustNoErr(keeper.EnqueueRouteMessage(ctx, blocked.ID)) // skipped, not queued
+				funcs.MustNoErr(keeper.EnqueueRouteMessage(ctx, msg.ID))
+			}).
+				Then("only the routable one occupies the queue", func(t *testing.T) {
+					actual, ok := keeper.DequeueRouteMessage(ctx)
+					assert.True(t, ok)
+					assert.Equal(t, msg.ID, actual.ID)
+
+					_, ok = keeper.DequeueRouteMessage(ctx)
+					assert.False(t, ok)
+				}),
+		).
+		Run(t)
+}
+
+// TestGetProcessingMessagesFIFO verifies delivery order is insertion order, not
+// message-ID order: a low-ID message routed after a high-ID one must not jump it.
+func TestGetProcessingMessagesFIFO(t *testing.T) {
+	cfg := app.MakeEncodingConfig()
+	k, ctx := setup(cfg, t)
+
+	sourceChain := nexustestutils.RandomChain()
+	sourceChain.Module = axelarnet.ModuleName
+	destChain := nexustestutils.RandomChain()
+	destChain.Module = evmtypes.ModuleName
+	k.SetChain(ctx, sourceChain)
+	k.SetChain(ctx, destChain)
+	k.ActivateChain(ctx, sourceChain)
+	k.ActivateChain(ctx, destChain)
+	k.SetMessageRouter(types.NewMessageRouter().AddRoute(destChain.Module,
+		func(_ sdk.Context, _ exported.RoutingContext, _ exported.GeneralMessage) error { return nil }))
+
+	route := func(id string) {
+		msg := exported.GeneralMessage{
+			ID:            id,
+			Sender:        exported.CrossChainAddress{Chain: sourceChain, Address: genCosmosAddr(sourceChain.Name.String())},
+			Recipient:     exported.CrossChainAddress{Chain: destChain, Address: evmtestutils.RandomAddress().Hex()},
+			Status:        exported.Approved,
+			PayloadHash:   crypto.Keccak256Hash(rand.Bytes(32)).Bytes(),
+			SourceTxID:    evmtestutils.RandomHash().Bytes(),
+			SourceTxIndex: 0,
+		}
+		funcs.MustNoErr(k.SetNewMessage(ctx, msg))
+		funcs.MustNoErr(k.RouteMessage(ctx, msg.ID))
+	}
+
+	ids := func(msgs []exported.GeneralMessage) []string {
+		out := make([]string, len(msgs))
+		for i, m := range msgs {
+			out[i] = m.ID
+		}
+		return out
+	}
+
+	// high-ID enters FIRST, low-ID enters SECOND
+	highID := "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff-0"
+	lowID := "0x0000000000000000000000000000000000000000000000000000000000000001-0"
+	route(highID)
+	route(lowID)
+
+	// delivered in insertion order, not ID order
+	assert.Equal(t, []string{highID, lowID}, ids(k.GetProcessingMessages(ctx, destChain.Name, 100)))
+
+	// delete-by-id removes the correct entry and keeps the rest ordered
+	funcs.MustNoErr(k.SetMessageExecuted(ctx, highID))
+	assert.Equal(t, []string{lowID}, ids(k.GetProcessingMessages(ctx, destChain.Name, 100)))
+}

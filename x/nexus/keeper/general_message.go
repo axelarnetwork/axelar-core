@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils/key"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
+	"github.com/axelarnetwork/utils/convert"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -26,6 +28,22 @@ func getMessageKey(id string) key.Key {
 
 func getProcessingMessageKey(destinationChain exported.ChainName, id string) key.Key {
 	return processingMessagePrefix.Append(key.From(destinationChain)).Append(key.FromStr(id))
+}
+
+// getProcessingMessageOrderKey keys a processing message by insertion sequence (FIFO).
+func getProcessingMessageOrderKey(destinationChain exported.ChainName, seq uint64) key.Key {
+	return processingMessageOrderPrefix.Append(key.From(destinationChain)).Append(key.FromUInt(seq))
+}
+
+// getProcessingMessageSeq returns the order-index sequence recorded for a processing
+// message; ok is false if the message is not indexed.
+func (k Keeper) getProcessingMessageSeq(ctx sdk.Context, destinationChain exported.ChainName, id string) (uint64, bool) {
+	bz := k.getStore(ctx).GetRawNew(getProcessingMessageKey(destinationChain, id))
+	if bz == nil {
+		return 0, false
+	}
+
+	return binary.BigEndian.Uint64(bz), true
 }
 
 // GenerateMessageID generates a unique general message ID, and returns the message ID, current transacation ID and a unique integer nonce
@@ -98,12 +116,24 @@ func (k Keeper) setProcessingMessageID(ctx sdk.Context, m exported.GeneralMessag
 		return fmt.Errorf("general message is not processing")
 	}
 
-	k.getStore(ctx).SetRawNew(getProcessingMessageKey(m.GetDestinationChain(), m.ID), []byte(m.ID))
+	if _, ok := k.getProcessingMessageSeq(ctx, m.GetDestinationChain(), m.ID); ok {
+		return nil
+	}
+
+	seq := utils.NewCounter[uint64](processingMessageSeqKey, k.getStore(ctx)).Incr(ctx)
+	k.getStore(ctx).SetRawNew(getProcessingMessageOrderKey(m.GetDestinationChain(), seq), []byte(m.ID))
+	k.getStore(ctx).SetRawNew(getProcessingMessageKey(m.GetDestinationChain(), m.ID), convert.IntToBytes(seq))
 
 	return nil
 }
 
 func (k Keeper) deleteProcessingMessageID(ctx sdk.Context, m exported.GeneralMessage) {
+	seq, ok := k.getProcessingMessageSeq(ctx, m.GetDestinationChain(), m.ID)
+	if !ok {
+		return
+	}
+
+	k.getStore(ctx).DeleteNew(getProcessingMessageOrderKey(m.GetDestinationChain(), seq))
 	k.getStore(ctx).DeleteNew(getProcessingMessageKey(m.GetDestinationChain(), m.ID))
 }
 
@@ -133,7 +163,7 @@ func (k Keeper) GetProcessingMessages(ctx sdk.Context, chain exported.ChainName,
 		CountTotal: false,
 		Reverse:    false,
 	}
-	keyPrefix := append(processingMessagePrefix.Append(key.From(chain)).Bytes(), []byte(key.DefaultDelimiter)...)
+	keyPrefix := append(processingMessageOrderPrefix.Append(key.From(chain)).Bytes(), []byte(key.DefaultDelimiter)...)
 
 	// it's unexpected to get a retrieval/iterator error from IAVL db
 	funcs.Must(query.Paginate(prefix.NewStore(k.getStore(ctx).KVStore, keyPrefix), pageRequest, func(key []byte, value []byte) error {
@@ -256,6 +286,11 @@ func (k Keeper) EnqueueRouteMessage(ctx sdk.Context, id string) error {
 
 	if !(msg.Is(exported.Approved) || msg.Is(exported.Failed)) {
 		return fmt.Errorf("general message has to be approved or failed")
+	}
+
+	if types.RequiresPayload(msg.Recipient.Chain.Module) {
+		k.Logger(ctx).Debug("payload is required for routing messages to a cosmos chain")
+		return nil
 	}
 
 	k.getRouteMessageQueue(ctx).Enqueue(utils.KeyFromBz(getMessageKey(id).Bytes()), &msg)
