@@ -147,7 +147,7 @@ func TestHandleExpiredPoll(t *testing.T) {
 				return maintainerState, true
 			}
 		}).
-		Then("should clear rewards and mark voters missing vote", func(t *testing.T) {
+		Then("should not penalize any voter because the poll received no votes", func(t *testing.T) {
 			maintainerState.MarkMissingVoteFunc = func(bool) {}
 			n.SetChainMaintainerStateFunc = func(ctx sdk.Context, maintainerState nexus.MaintainerState) error { return nil }
 			rewardPool.ClearRewardsFunc = func(sdk.ValAddress) {}
@@ -155,12 +155,9 @@ func TestHandleExpiredPoll(t *testing.T) {
 			err := handler.HandleExpiredPoll(ctx, poll)
 
 			assert.NoError(t, err)
-			assert.Len(t, maintainerState.MarkMissingVoteCalls(), 10)
-			for _, call := range maintainerState.MarkMissingVoteCalls() {
-				assert.True(t, call.MissingVote)
-			}
-			assert.Len(t, n.SetChainMaintainerStateCalls(), 10)
-			assert.Len(t, rewardPool.ClearRewardsCalls(), 10)
+			assert.Empty(t, maintainerState.MarkMissingVoteCalls())
+			assert.Empty(t, n.SetChainMaintainerStateCalls())
+			assert.Empty(t, rewardPool.ClearRewardsCalls())
 		}).
 		Run(t)
 
@@ -182,13 +179,13 @@ func TestHandleExpiredPoll(t *testing.T) {
 				return nil, false
 			}
 		}).
-		Then("should clear rewards and not mark voters missing vote", func(t *testing.T) {
+		Then("should not clear rewards because the poll received no votes", func(t *testing.T) {
 			rewardPool.ClearRewardsFunc = func(sdk.ValAddress) {}
 
 			err := handler.HandleExpiredPoll(ctx, poll)
 
 			assert.NoError(t, err)
-			assert.Len(t, rewardPool.ClearRewardsCalls(), 10)
+			assert.Empty(t, rewardPool.ClearRewardsCalls())
 		}).
 		Run(t)
 
@@ -222,6 +219,38 @@ func TestHandleExpiredPoll(t *testing.T) {
 				assert.False(t, call.MissingVote)
 			}
 			assert.Len(t, n.SetChainMaintainerStateCalls(), 10)
+		}).
+		Run(t)
+
+	givenVoteHandler.
+		When("only one voter voted for poll", func() {
+			voter := rand.ValAddr()
+			poll = &votemock.PollMock{
+				GetIDFunc:             func() vote.PollID { return vote.PollID(rand.I64Between(10, 100)) },
+				GetRewardPoolNameFunc: func() (string, bool) { return rand.NormalizedStr(3), true },
+				GetMetaDataFunc:       func() (codec.ProtoMarshaler, bool) { return &types.PollMetadata{Chain: exported.Ethereum.Name}, true },
+				GetVotersFunc: func() []sdk.ValAddress {
+					return append(slices.Expand(func(int) sdk.ValAddress { return rand.ValAddr() }, 9), voter)
+				},
+				HasVotedFunc: func(address sdk.ValAddress) bool { return address.Equals(voter) },
+			}
+		}).
+		When("the voters are chain maintainers", func() {
+			maintainerState = &nexusmock.MaintainerStateMock{}
+			n.GetChainMaintainerStateFunc = func(sdk.Context, nexus.Chain, sdk.ValAddress) (nexus.MaintainerState, bool) {
+				return maintainerState, true
+			}
+		}).
+		Then("should penalize the voters that missed because the poll did receive a vote", func(t *testing.T) {
+			maintainerState.MarkMissingVoteFunc = func(bool) {}
+			n.SetChainMaintainerStateFunc = func(sdk.Context, nexus.MaintainerState) error { return nil }
+			rewardPool.ClearRewardsFunc = func(sdk.ValAddress) {}
+
+			err := handler.HandleExpiredPoll(ctx, poll)
+
+			assert.NoError(t, err)
+			assert.Len(t, maintainerState.MarkMissingVoteCalls(), 10)
+			assert.Len(t, rewardPool.ClearRewardsCalls(), 9)
 		}).
 		Run(t)
 }
