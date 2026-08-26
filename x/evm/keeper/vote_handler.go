@@ -11,6 +11,7 @@ import (
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	vote "github.com/axelarnetwork/axelar-core/x/vote/exported"
 	"github.com/axelarnetwork/utils/funcs"
+	"github.com/axelarnetwork/utils/slices"
 )
 
 var _ vote.VoteHandler = &voteHandler{}
@@ -59,25 +60,29 @@ func (v voteHandler) HandleExpiredPoll(ctx sdk.Context, poll vote.Poll) error {
 	if !ok {
 		return fmt.Errorf("%s is not a registered chain", md.Chain)
 	}
-	// Penalize voters who failed to vote
-	for _, voter := range poll.GetVoters() {
-		hasVoted := poll.HasVoted(voter)
-		if maintainerState, ok := v.nexus.GetChainMaintainerState(ctx, chain, voter); ok {
-			maintainerState.MarkMissingVote(!hasVoted)
-			funcs.MustNoErr(v.nexus.SetChainMaintainerState(ctx, maintainerState))
+	voters := poll.GetVoters()
 
-			v.keeper.Logger(ctx).Debug(fmt.Sprintf("marked voter %s behaviour", voter.String()),
-				"voter", voter.String(),
-				"missing_vote", !hasVoted,
-				"poll", poll.GetID().String(),
-			)
-		}
+	// Penalize voters who failed to vote (skip when nobody voted)
+	if slices.Any(voters, poll.HasVoted) {
+		for _, voter := range voters {
+			hasVoted := poll.HasVoted(voter)
+			if maintainerState, ok := v.nexus.GetChainMaintainerState(ctx, chain, voter); ok {
+				maintainerState.MarkMissingVote(!hasVoted)
+				funcs.MustNoErr(v.nexus.SetChainMaintainerState(ctx, maintainerState))
 
-		if !hasVoted {
-			rewardPool.ClearRewards(voter)
-			v.keeper.Logger(ctx).Debug(fmt.Sprintf("penalized voter %s due to timeout", voter.String()),
-				"voter", voter.String(),
-				"poll", poll.GetID().String())
+				v.keeper.Logger(ctx).Debug(fmt.Sprintf("marked voter %s behaviour", voter.String()),
+					"voter", voter.String(),
+					"missing_vote", !hasVoted,
+					"poll", poll.GetID().String(),
+				)
+			}
+
+			if !hasVoted {
+				rewardPool.ClearRewards(voter)
+				v.keeper.Logger(ctx).Debug(fmt.Sprintf("penalized voter %s due to timeout", voter.String()),
+					"voter", voter.String(),
+					"poll", poll.GetID().String())
+			}
 		}
 	}
 
@@ -92,10 +97,12 @@ func (v voteHandler) HandleExpiredPoll(ctx sdk.Context, poll vote.Poll) error {
 
 func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error {
 	voteEvents := poll.GetResult().(*types.VoteEvents)
+	md := mustGetMetadata(poll)
 
-	chain, ok := v.nexus.GetChain(ctx, voteEvents.Chain)
+	// resolve the chain from poll metadata, not the voter-supplied result
+	chain, ok := v.nexus.GetChain(ctx, md.Chain)
 	if !ok {
-		return fmt.Errorf("%s is not a registered chain", voteEvents.Chain)
+		return fmt.Errorf("%s is not a registered chain", md.Chain)
 	}
 
 	rewardPoolName, ok := poll.GetRewardPoolName()
@@ -141,7 +148,6 @@ func (v voteHandler) HandleCompletedPoll(ctx sdk.Context, poll vote.Poll) error 
 		}
 	}
 
-	md := mustGetMetadata(poll)
 	if v.IsFalsyResult(voteEvents) {
 		events.Emit(ctx, &types.NoEventsConfirmed{
 			TxID:   md.TxID,
