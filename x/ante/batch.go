@@ -81,6 +81,10 @@ func unpackMsgs(msgs []sdk.Msg) ([]sdk.Msg, error) {
 				return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, err.Error())
 			}
 			unpackedMsgs = append(unpackedMsgs, innerMsgs...)
+		case *rewardtypes.RefundMsgRequest:
+			if inner := m.GetInnerMessage(); inner != nil {
+				unpackedMsgs = append(unpackedMsgs, inner)
+			}
 		}
 	}
 
