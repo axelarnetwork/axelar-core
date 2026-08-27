@@ -132,6 +132,8 @@
       - [grant [granter] [grantee]](axelard_query_feegrant_grant.md) - Query details of a single grant
       - [grants-by-grantee [grantee]](axelard_query_feegrant_grants-by-grantee.md) - Query all grants of a grantee
       - [grants-by-granter [granter]](axelard_query_feegrant_grants-by-granter.md) - Query all grants by a granter
+    - [feepolicy](axelard_query_feepolicy.md) - Querying commands for the feepolicy module
+      - [params](axelard_query_feepolicy_params.md) - Returns the params for the feepolicy module
     - [gov](axelard_query_gov.md) - Querying commands for the gov module
       - [constitution](axelard_query_gov_constitution.md) - Query the current chain constitution
       - [deposit [proposal-id] [depositer-addr]](axelard_query_gov_deposit.md) - Query details of a deposit
@@ -342,6 +344,8 @@
       - [grant [granter_key_or_address] [grantee]](axelard_tx_feegrant_grant.md) - Grant Fee allowance to an address
       - [prune](axelard_tx_feegrant_prune.md) - Prune expired allowances
       - [revoke [granter] [grantee]](axelard_tx_feegrant_revoke.md) - Revoke a fee grant
+    - [feepolicy](axelard_tx_feepolicy.md) - Transactions commands for the feepolicy module
+      - [update-params](axelard_tx_feepolicy_update-params.md) - Execute the UpdateParams RPC method
     - [gov](axelard_tx_gov.md) - Governance transactions subcommands
       - [cancel-proposal [proposal-id]](axelard_tx_gov_cancel-proposal.md) - Cancel governance proposal before the voting period ends. Must be signed by the proposal creator.
       - [deposit [proposal-id] [deposit]](axelard_tx_gov_deposit.md) - Deposit tokens for an active proposal
