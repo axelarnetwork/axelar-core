@@ -3,16 +3,17 @@ package keeper
 import (
 	"context"
 
+	"cosmossdk.io/log"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	distribution "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distributionTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/distribution/types"
 	"github.com/axelarnetwork/utils/funcs"
-	"github.com/axelarnetwork/utils/slices"
 )
 
 // Keeper wraps the distribution keeper to customize fee allocation mechanism
@@ -36,6 +37,11 @@ func NewKeeper(
 		stakingKeeper:    sk,
 		feeCollectorName: feeCollectorName,
 	}
+}
+
+// Logger returns a module-specific logger.
+func (k Keeper) Logger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", "x/"+distributionTypes.ModuleName)
 }
 
 // AllocateTokens modifies the fee distribution by:
@@ -86,14 +92,29 @@ func (k Keeper) AllocateTokens(ctx context.Context, _ int64, _ []abci.VoteInfo) 
 		Coins: feesToBurn,
 	})
 
-	// track cumulative burned fees
-	feesBurned := slices.Map(feesToBurn, types.WithBurnedPrefix)
-	err = k.bankKeeper.MintCoins(ctx, distributionTypes.ModuleName, feesBurned)
-	if err != nil {
-		return err
+	// Track cumulative burned fees
+	for _, coin := range feesToBurn {
+		success := utils.RunCached(sdkCtx, k, func(ctx sdk.Context) (bool, error) {
+			feesBurned := sdk.NewCoins(types.WithBurnedPrefix(coin))
+			if err := k.bankKeeper.MintCoins(ctx, distributionTypes.ModuleName, feesBurned); err != nil {
+				return false, err
+			}
+			if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, distributionTypes.ModuleName, types.ZeroAddress, feesBurned); err != nil {
+				return false, err
+			}
+
+			return true, nil
+		})
+
+		if !success {
+			k.Logger(sdkCtx).Error("burned-fee tracker update rolled back; fees are still burned",
+				"denom", coin.Denom,
+				"amount", coin.Amount.String(),
+			)
+		}
 	}
 
-	return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, distributionTypes.ModuleName, types.ZeroAddress, feesBurned)
+	return nil
 }
 
 // BeginBlocker mirrors the cosmos-sdk distribution keeper's BeginBlocker
