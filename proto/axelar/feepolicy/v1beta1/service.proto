@@ -1,0 +1,28 @@
+syntax = "proto3";
+package axelar.feepolicy.v1beta1;
+
+option go_package = "github.com/axelarnetwork/axelar-core/x/feepolicy/types";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "axelar/feepolicy/v1beta1/tx.proto";
+import "axelar/feepolicy/v1beta1/query.proto";
+
+option (gogoproto.goproto_registration) = true;
+
+// Msg defines the feepolicy Msg service.
+service MsgService {
+  rpc UpdateParams(UpdateParamsRequest) returns (UpdateParamsResponse) {
+    option (google.api.http) = {
+      post : "/axelar/feepolicy/v1beta1/params"
+      body : "*"
+    };
+  }
+}
+
+// QueryService defines the gRPC querier service.
+service QueryService {
+  rpc Params(ParamsRequest) returns (ParamsResponse) {
+    option (google.api.http).get = "/axelar/feepolicy/v1beta1/params";
+  }
+}

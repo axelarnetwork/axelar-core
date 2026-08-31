@@ -48,3 +48,9 @@ type Reward interface {
 type Permission interface {
 	GetRole(ctx sdk.Context, address sdk.AccAddress) permission.Role
 }
+
+// FeePolicy provides the governance-controlled set of denominations that may be
+// used to pay transaction fees (see the x/feepolicy module).
+type FeePolicy interface {
+	GetAllowedFeeDenoms(ctx sdk.Context) []string
+}
