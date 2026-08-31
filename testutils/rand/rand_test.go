@@ -17,7 +17,7 @@ func TestIntGen(t *testing.T) {
 
 func TestRandBoolGen(t *testing.T) {
 	t.Run("return given number of elements", boolTake13)
-	t.Run("correct ratio", ratioConvergesToOneEigth)
+	t.Run("correct ratio", ratioConvergesToOneEighth)
 }
 
 func TestUintGen(t *testing.T) {
@@ -84,7 +84,7 @@ func boolTake13(t *testing.T) {
 }
 
 // this test is testing distribution sampling, so in very rare cases the test can fail (outlier sampling)
-func ratioConvergesToOneEigth(t *testing.T) {
+func ratioConvergesToOneEighth(t *testing.T) {
 	expectedRatio := 1.0 / 8
 	g := Bools(expectedRatio)
 
