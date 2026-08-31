@@ -8,6 +8,7 @@ import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	v2 "github.com/CosmWasm/wasmd/x/wasm/migrations/v2"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
@@ -18,11 +19,15 @@ import (
 	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	ibcclienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 	ibcconnectiontypes "github.com/cosmos/ibc-go/v10/modules/core/03-connection/types"
 	ibcexported "github.com/cosmos/ibc-go/v10/modules/core/exported"
+
+	feepolicyKeeper "github.com/axelarnetwork/axelar-core/x/feepolicy/keeper"
+	feepolicyTypes "github.com/axelarnetwork/axelar-core/x/feepolicy/types"
 )
 
 // upgrade defines a coordinated chain upgrade: the name matched against the
@@ -60,7 +65,43 @@ var chainUpgrades = []chainUpgrade{
 				"crisis",
 			},
 		},
+		createHandler: v15UpgradeHandler,
 	},
+}
+
+// v15UpgradeHandler runs the default migrations and then seeds the x/feepolicy
+// allowed fee denoms from the staking bond denom.
+//
+// x/feepolicy is new in v1.5, so RunMigrations initializes it from the module's
+// default genesis, whose allowlist is hardcoded to uaxl. Overwriting it with the
+// chain's own bond denom afterwards makes the upgrade correct on every network
+// (mainnet, testnets and devnets) without a per-chain governance proposal, and
+// leaves mainnet, where the bond denom already is uaxl, unchanged. Governance can
+// still extend the allowlist later via MsgUpdateParams.
+func v15UpgradeHandler(app *AxelarApp, configurator module.Configurator, keepers *KeeperCache) upgradetypes.UpgradeHandler {
+	return func(ctx context.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
+		toVM, err := app.defaultUpgradeHandler(configurator, "v1.5")(ctx, plan, fromVM)
+		if err != nil {
+			return nil, err
+		}
+
+		bondDenom, err := GetKeeper[stakingkeeper.Keeper](keepers).BondDenom(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		params := feepolicyTypes.Params{AllowedFeeDenoms: []string{bondDenom}}
+		// the param setter panics on invalid params, so fail the upgrade with an
+		// error instead if the bond denom is somehow not a usable fee denom
+		if err := params.Validate(); err != nil {
+			return nil, err
+		}
+
+		GetKeeper[feepolicyKeeper.Keeper](keepers).SetParams(sdk.UnwrapSDKContext(ctx), params)
+		app.Logger().Info("seeded allowed fee denoms from the bond denom", "denoms", params.AllowedFeeDenoms)
+
+		return toVM, nil
+	}
 }
 
 func (app *AxelarApp) defaultUpgradeHandler(configurator module.Configurator, name string) upgradetypes.UpgradeHandler {
