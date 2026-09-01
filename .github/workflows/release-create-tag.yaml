@@ -44,22 +44,28 @@ jobs:
           input_string: ${{ steps.release.outputs.tag }}
 
       - name: Generate release
+        env:
+          GITHUB_REF: ${{ github.ref }}
+          BUMP_TYPE: ${{ github.event.inputs.bumpType }}
+          PARSED_MAJOR: ${{ steps.parsed-release.outputs.major }}
+          PARSED_MINOR: ${{ steps.parsed-release.outputs.minor }}
+          NEW_TAG: ${{ steps.release.outputs.new_tag }}
         run: |
           new_release_branch=""
 
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            if [ "${{ github.event.inputs.bumpType }}" = "major" ]; then
-              let new_major=${{ steps.parsed-release.outputs.major }}+1
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            if [ "$BUMP_TYPE" = "major" ]; then
+              let new_major=$PARSED_MAJOR+1
               new_release_branch="releases/$new_major.0.x"
-            elif [ "${{ github.event.inputs.bumpType }}" = "minor" ]; then
-              let new_minor=${{ steps.parsed-release.outputs.minor }}+1
-              new_release_branch="releases/${{ steps.parsed-release.outputs.major }}.$new_minor.x"
+            elif [ "$BUMP_TYPE" = "minor" ]; then
+              let new_minor=$PARSED_MINOR+1
+              new_release_branch="releases/${PARSED_MAJOR}.$new_minor.x"
             else
               echo "cannot make patch release from main branch"
               exit 1
             fi
-          elif [[ "${{ github.ref }}" = refs/heads/releases/* ]]; then
-            if [ "${{ github.event.inputs.bumpType }}" != "patch" ]; then
+          elif [[ "$GITHUB_REF" = refs/heads/releases/* ]]; then
+            if [ "$BUMP_TYPE" != "patch" ]; then
               echo "cannot make major/minor release from release branch"
               exit 1
             fi
@@ -71,7 +77,7 @@ jobs:
           git config --global user.email "cicd@interoplabs.io"
           git config --global user.name "axelar-cicd-bot"
 
-          git commit --allow-empty -m "${{ steps.release.outputs.new_tag }}"
+          git commit --allow-empty -m "$NEW_TAG"
           git push
 
           if [ -n "$new_release_branch" ]; then
