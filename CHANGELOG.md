@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.5.4](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.4)
+
+### State Machine Breaking
+
+This fix is only required for stagenet and devnet-amplifier. On mainnet and testnet this is a no-op.
+
+* [#2419](https://github.com/axelarnetwork/axelar-core/pull/2419) Gate the fixed 200,000 gas charged for the `SubmitPubKey` proof of ownership verification (introduced in v1.5.3) per network: it applies from the first v1.5 block on mainnet and testnet, which run the v1.5 upgrade on v1.5.3, and activates at 2026-10-20T08:00:00Z on stagenet and devnet, which ran the v1.5 upgrade on v1.5.2 without the charge
+
 ## [v1.5.3](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.3)
 
 ### State Machine Breaking
