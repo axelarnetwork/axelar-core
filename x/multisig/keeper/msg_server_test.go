@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"testing"
+	"time"
 
 	"cosmossdk.io/math"
 	store "cosmossdk.io/store/types"
@@ -136,6 +137,28 @@ func TestMsgServer(t *testing.T) {
 
 						assert.Error(t, err)
 						assert.GreaterOrEqual(t, ctx.GasMeter().GasConsumed()-before, uint64(types.PubKeyOwnershipVerifyCost))
+					}),
+
+				whenSenderIsProxy.
+					When2(keySessionExists).
+					When("the block time is before the verification gas charge activates", func() {
+						// stagenet keeps the v1.5.2 semantics until its activation time
+						ctx = ctx.WithChainID("axelar-stagenet-724").
+							WithBlockTime(time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC))
+
+						sender := rand2.AccAddr()
+						sk := funcs.Must(btcec.NewPrivateKey())
+						hash := sha256.Sum256([]byte("not the sender"))
+
+						req = types.NewSubmitPubKeyRequest(sender, keyID, sk.PubKey().SerializeCompressed(), ecdsa.Sign(sk, hash[:]).Serialize())
+						assert.NoError(t, req.ValidateBasic())
+					}).
+					Then("submit pubkey fails without charging for the verification", func(t *testing.T) {
+						before := ctx.GasMeter().GasConsumed()
+						_, err := msgServer.SubmitPubKey(sdk.WrapSDKContext(ctx), req)
+
+						assert.Error(t, err)
+						assert.Less(t, ctx.GasMeter().GasConsumed()-before, uint64(types.PubKeyOwnershipVerifyCost))
 					}),
 
 				When("the sender is a proxy of a non-participant", func() {

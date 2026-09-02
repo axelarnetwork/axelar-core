@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 )
@@ -70,7 +71,9 @@ func (s msgServer) SubmitPubKey(c context.Context, req *types.SubmitPubKeyReques
 		return nil, errorsmod.Wrap(err, "unable to add public key for keygen")
 	}
 
-	ctx.GasMeter().ConsumeGas(types.PubKeyOwnershipVerifyCost, "verify pub key ownership")
+	if utils.IsV153Active(ctx.ChainID(), ctx.BlockTime()) {
+		ctx.GasMeter().ConsumeGas(types.PubKeyOwnershipVerifyCost, "verify pub key ownership")
+	}
 	if err := req.VerifyPubKeyOwnership(); err != nil {
 		return nil, err
 	}
