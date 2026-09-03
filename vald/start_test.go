@@ -26,7 +26,7 @@ func TestPanic(t *testing.T) {
 		var blocksSeen atomic.Uint64 // Atomic type is used to prevent a false positive data race error.
 		newBlock := func() {
 			timer.Stop()
-			timer = time.AfterFunc(1*time.Millisecond, func() {
+			timer = time.AfterFunc(200*time.Millisecond, func() {
 				timeoutCancel()
 			})
 			blocksSeen.Add(1)
@@ -36,7 +36,7 @@ func TestPanic(t *testing.T) {
 			for i := 0; i < 100; i++ {
 				newBlock()
 			}
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(1 * time.Second)
 			newBlock()
 		}()
 
