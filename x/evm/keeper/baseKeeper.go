@@ -109,6 +109,10 @@ func (k BaseKeeper) forChain(ctx sdk.Context, chain nexus.ChainName) (chainKeepe
 
 func (k BaseKeeper) createSubspace(ctx sdk.Context, chain nexus.ChainName) params.Subspace {
 	chainKey := key.FromStr(types.ModuleName).Append(key.From(chain))
+	if subspace, ok := k.paramsKeeper.GetSubspace(chainKey.String()); ok {
+		return subspace
+	}
+
 	k.Logger(ctx).Debug(fmt.Sprintf("initialized evm subspace %s", chain))
 	return k.paramsKeeper.Subspace(chainKey.String()).WithKeyTable(types.KeyTable())
 }

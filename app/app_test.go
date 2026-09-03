@@ -133,8 +133,9 @@ func prepareAnteHandler(cfg params.EncodingConfig, t log.TestingT) sdk.AnteHandl
 		[]wasm.Option{},
 	)
 
-	anteHandler := app.InitCustomAnteDecorators(cfg, axelarApp.Keys, axelarApp.Keepers, simtestutil.EmptyAppOptions{})
-	return sdk.ChainAnteDecorators(anteHandler...)
+	preDecorators := app.InitCustomAntePreDecorators(axelarApp.Keepers)
+	postDecorators := app.InitCustomAntePostDecorators(cfg, axelarApp.Keys, axelarApp.Keepers, simtestutil.EmptyAppOptions{})
+	return sdk.ChainAnteDecorators(append(preDecorators, postDecorators...)...)
 }
 
 func prepareCtx(t log.TestingT) sdk.Context {

@@ -38,6 +38,7 @@ axelard query [flags]
 - [axelard query evidence](axelard_query_evidence.md) - Querying commands for the evidence module
 - [axelard query evm](axelard_query_evm.md) - Querying commands for the evm module
 - [axelard query feegrant](axelard_query_feegrant.md) - Querying commands for the feegrant module
+- [axelard query feepolicy](axelard_query_feepolicy.md) - Querying commands for the feepolicy module
 - [axelard query gov](axelard_query_gov.md) - Querying commands for the gov module
 - [axelard query ibc](axelard_query_ibc.md) - Querying commands for the IBC module
 - [axelard query ibc-transfer](axelard_query_ibc-transfer.md) - IBC fungible token transfer query subcommands
