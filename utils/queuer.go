@@ -92,7 +92,10 @@ func (q GeneralKVQueue) dequeue(value codec.ProtoMarshaler, iter db.Iterator, fi
 		q.store.cdc.MustUnmarshalLengthPrefixed(iter.Value(), &key)
 
 		if ok := q.store.Get(KeyFromBz(key.Value), value); !ok {
-			return false
+			q.logger.Error(fmt.Sprintf("dropping dangling queue entry pointing to %s", string(key.Value)))
+			q.store.Delete(KeyFromBz(iter.Key()))
+
+			continue
 		}
 
 		isQualified := filter(value)
