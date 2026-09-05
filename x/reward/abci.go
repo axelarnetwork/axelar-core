@@ -7,6 +7,7 @@ import (
 	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	"github.com/axelarnetwork/axelar-core/utils"
 	multisigTypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
 	"github.com/axelarnetwork/axelar-core/x/reward/exported"
 	"github.com/axelarnetwork/axelar-core/x/reward/types"
@@ -17,10 +18,16 @@ import (
 
 // EndBlocker is called at the end of every block, process external chain voting inflation
 func EndBlocker(ctx sdk.Context, k types.Rewarder, n types.Nexus, m mintkeeper.Keeper, s types.Staker, slasher types.Slasher, msig types.MultiSig, ss types.Snapshotter) ([]abci.ValidatorUpdate, error) {
-	handleExternalChainVotingInflation(ctx, k, n, m, s, slasher, ss)
-	err := handleKeyMgmtInflation(ctx, k, m, s, slasher, msig, ss)
+	_ = utils.RunCached(ctx, k, func(cachedCtx sdk.Context) (struct{}, error) {
+		handleExternalChainVotingInflation(cachedCtx, k, n, m, s, slasher, ss)
+		return struct{}{}, nil
+	})
 
-	return nil, err
+	_ = utils.RunCached(ctx, k, func(cachedCtx sdk.Context) (struct{}, error) {
+		return struct{}{}, handleKeyMgmtInflation(cachedCtx, k, m, s, slasher, msig, ss)
+	})
+
+	return nil, nil
 }
 
 func addRewardsByConsensusPower(ctx sdk.Context, s types.Staker, rewardPool exported.RewardPool, validators []snapshot.ValidatorI, totalReward sdk.DecCoin) {
