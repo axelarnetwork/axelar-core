@@ -914,8 +914,8 @@ github.com/cosmos/gogogateway v1.2.0/go.mod h1:iQpLkGWxYcnCdz5iAdLcRBSw3h7NXeOkZ
 github.com/cosmos/gogoproto v1.4.2/go.mod h1:cLxOsn1ljAHSV527CHOtaIP91kK6cCrZETRBrkzItWU=
 github.com/cosmos/gogoproto v1.7.2 h1:5G25McIraOC0mRFv9TVO139Uh3OklV2hczr13KKVHCA=
 github.com/cosmos/gogoproto v1.7.2/go.mod h1:8S7w53P1Y1cHwND64o0BnArT6RmdgIvsBuco6uTllsk=
-github.com/cosmos/iavl v1.2.4 h1:IHUrG8dkyueKEY72y92jajrizbkZKPZbMmG14QzsEkw=
-github.com/cosmos/iavl v1.2.4/go.mod h1:GiM43q0pB+uG53mLxLDzimxM9l/5N9UuSY3/D0huuVw=
+github.com/cosmos/iavl v1.2.8 h1:55F96BGUJ7KT7h+Ky/cEqS+pEvhFqsU4O8Th3F0N1js=
+github.com/cosmos/iavl v1.2.8/go.mod h1:FRHN4tO+6crf0p2zsqye+nAbsMgiwdkxpWm18DyP6+Y=
 github.com/cosmos/ibc-apps/modules/ibc-hooks/v10 v10.0.0 h1:mQHn+4JZDq+woZPS8/T32e7gR8+ofPvuL2m31kCcP0U=
 github.com/cosmos/ibc-apps/modules/ibc-hooks/v10 v10.0.0/go.mod h1:YQmJRjlqccu5hFwnPeY4xcOQoJ2SEuMQGD1u32jREc0=
 github.com/cosmos/ibc-go/v10 v10.7.0 h1:lE1nsilDP4SUiD7mhgdF9X3f1T4sa7Lt8CiH8Qy1jzg=
