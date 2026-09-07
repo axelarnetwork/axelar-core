@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.5.5](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.5)
+
+### Improvements
+
+* [#2421](https://github.com/axelarnetwork/axelar-core/pull/2421) Build all release binaries and Docker images as position-independent executables (PIE), linking the static musl build with `-static-pie`, so ASLR randomizes the executable's load address. Linux operators should run the static binary with `kernel.randomize_va_space = 2`
+
 ## [v1.5.4](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.4)
 
 ### State Machine Breaking

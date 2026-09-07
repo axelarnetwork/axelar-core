@@ -25,12 +25,14 @@ WASM_CAPABILITIES := "iterator,staking,stargate,cosmwasm_1_1,cosmwasm_1_2,cosmwa
 endif
 
 ifeq ($(MUSLC), true)
-STATIC_LINK_FLAGS := -linkmode=external -extldflags '-Wl,-z,muldefs -static'
+STATIC_LINK_FLAGS := -linkmode=external -extldflags '-Wl,-z,muldefs -static-pie'
 BUILD_TAGS := ledger,muslc
 else
 STATIC_LINK_FLAGS := ""
 BUILD_TAGS := ledger
 endif
+
+PIE_BUILD_FLAGS := -buildmode=pie
 
 ARCH := x86_64
 ifeq ($(shell uname -m), arm64)
@@ -51,7 +53,7 @@ ldflags = "-X github.com/cosmos/cosmos-sdk/version.Name=axelar \
 	-X github.com/axelarnetwork/axelar-core/app.MaxWasmSize=${MAX_WASM_SIZE} \
 	-w -s ${STATIC_LINK_FLAGS}"
 
-BUILD_FLAGS := -tags $(BUILD_TAGS) -ldflags $(ldflags) -trimpath
+BUILD_FLAGS := -tags $(BUILD_TAGS) -ldflags $(ldflags) -trimpath $(PIE_BUILD_FLAGS)
 USER_ID := $(shell id -u)
 GROUP_ID := $(shell id -g)
 OS := $(shell echo $$OS_TYPE | sed -e 's/ubuntu-22.04/linux/; s/macos-latest/darwin/')

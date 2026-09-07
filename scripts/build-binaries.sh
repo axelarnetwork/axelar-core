@@ -13,7 +13,11 @@ do
     echo "ld_flags: ${ldflags}"
     echo "build_tags: ${build_tags}"
     echo "version: ${version}"
-    GOOS=$os GOARCH=$arch go build -o ./bin/axelard-"$os"-"$arch"-"$version" -mod=readonly -tags "$build_tags" -ldflags "$ldflags" ./cmd/axelard
+    buildmode_flags=""
+    if [ "$os" != "darwin" ]; then
+        buildmode_flags="-buildmode=pie"
+    fi
+    GOOS=$os GOARCH=$arch go build $buildmode_flags -o ./bin/axelard-"$os"-"$arch"-"$version" -mod=readonly -tags "$build_tags" -ldflags "$ldflags" ./cmd/axelard
 done
 
 cd bin || exit 1
