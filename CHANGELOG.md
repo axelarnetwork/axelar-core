@@ -1,5 +1,52 @@
 # Changelog
 
+## [v1.6.0](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.6.0)
+
+Pre-release for the v1.6 upgrade. Not intended for network deployment; use v1.6.1 or later.
+
+### Improvements
+
+* [#2422](https://github.com/axelarnetwork/axelar-core/pull/2422) Bump IAVL from v1.2.4 to v1.2.8 so the async pruner keeps going when a version is missing instead of stopping for good (iavl#1065), and to pick up the fixes for the latest-version lookup after a failed legacy prune (iavl#1067) and the fast-node cache/commit race (iavl#1142). Node-local; does not affect consensus
+
+## [v1.5.5](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.5)
+
+### Improvements
+
+* [#2421](https://github.com/axelarnetwork/axelar-core/pull/2421) Build all release binaries and Docker images as position-independent executables (PIE), linking the static musl build with `-static-pie`, so ASLR randomizes the executable's load address. Linux operators should run the static binary with `kernel.randomize_va_space = 2`
+
+## [v1.5.4](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.4)
+
+### State Machine Breaking
+
+This fix is only required for stagenet and devnet-amplifier. On mainnet and testnet this is a no-op.
+
+* [#2419](https://github.com/axelarnetwork/axelar-core/pull/2419) Gate the fixed 200,000 gas charged for the `SubmitPubKey` proof of ownership verification (introduced in v1.5.3) per network: it applies from the first v1.5 block on mainnet and testnet, which run the v1.5 upgrade on v1.5.3, and activates at 2026-10-20T08:00:00Z on stagenet and devnet, which ran the v1.5 upgrade on v1.5.2 without the charge
+
+## [v1.5.3](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.3)
+
+### State Machine Breaking
+
+* [#2388](https://github.com/axelarnetwork/axelar-core/pull/2388) Resolve the source chain in the EVM vote handler's `HandleResult` from the poll metadata instead of the voter-supplied result, and reject a result whose chain does not match the poll's. `vote.VoteHandler.HandleResult` now takes the poll rather than the result
+* [#2389](https://github.com/axelarnetwork/axelar-core/pull/2389) Speed up `SubmitPubKey` by verifying the proof of public key ownership in the message handler after the cheaper keygen-session checks, charging a fixed 200,000 gas for the verification, and memoizing `GetPermissionRole` per message type
+
+## [v1.5.2](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.2)
+
+### State Machine Breaking
+
+* [#2384](https://github.com/axelarnetwork/axelar-core/pull/2384) Seed the `x/feepolicy` allowed fee denoms from the staking bond denom in the v1.5 upgrade handler, instead of leaving the module's default genesis allowlist of `uaxl` on chains that bond a different denom
+
+## [v1.5.1](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.1)
+
+### State Machine Breaking
+
+* [#2370](https://github.com/axelarnetwork/axelar-core/pull/2370) Limit a transaction to paying fees in a single denomination, taken from a governance-controlled allowlist held by the new `x/feepolicy` module (default `["uaxl"]`)
+* [#2373](https://github.com/axelarnetwork/axelar-core/pull/2373) Order the nexus EVM processing-message queue by insertion sequence (FIFO) so messages are delivered in arrival order rather than by message ID
+* [#2378](https://github.com/axelarnetwork/axelar-core/pull/2378) Stop queueing messages whose destination route needs the original payload, which the nexus `EndBlocker` can never supply
+* [#2376](https://github.com/axelarnetwork/axelar-core/pull/2376) Resolve the completed-poll chain from the poll metadata instead of the vote result, so a result naming an unregistered chain can no longer stall the `x/vote` `EndBlocker`
+* [#2375](https://github.com/axelarnetwork/axelar-core/pull/2375) Skip the missing-vote penalty when an EVM poll expires with zero votes, so it no longer marks every maintainer missing and clears their rewards
+* [#2371](https://github.com/axelarnetwork/axelar-core/pull/2371) Guard the cumulative burned-fee tracker against overflow, rolling back the tracker update for that denomination instead of failing the block
+* [#2381](https://github.com/axelarnetwork/axelar-core/pull/2381) Reuse an already registered EVM chain param subspace when creating a chain, instead of panicking on the attempt to register it again
+
 ## [v1.5.0](https://github.com/axelarnetwork/axelar-core/releases/tag/v1.5.0)
 
 Pre-release for the v1.5 upgrade. Not intended for network deployment; use v1.5.1 or later.
