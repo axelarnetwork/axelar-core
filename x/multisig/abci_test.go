@@ -10,6 +10,7 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	gogoproto "github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
 
@@ -311,26 +312,124 @@ func TestEndBlocker(t *testing.T) {
 						sigHandler.HandleCompletedFunc = func(sdk.Context, utils.ValidatedProtoMarshaler, codec.ProtoMarshaler) error {
 							return fmt.Errorf("some error")
 						}
+						sigHandler.HandleFailedFunc = func(sdk.Context, codec.ProtoMarshaler) error { return nil }
 					}).
-					Then("recover and roll back state", func(t *testing.T) {
+					Then("keep session cleanup and abort the signing", func(t *testing.T) {
+						storeKey := store.NewKVStoreKey("cache")
+						deletedKey := []byte("deleted")
+						clearedKey := []byte("rewards-cleared")
+						// the pool writes through the ctx it was requested with, so a
+						// ClearRewards call on a rolled-back cached ctx leaves no trace
+						rewarder.GetPoolFunc = func(c sdk.Context, _ string) reward.RewardPool {
+							return &rewardmock.RewardPoolMock{
+								ClearRewardsFunc:   func(sdk.ValAddress) { c.MultiStore().GetKVStore(storeKey).Set(clearedKey, []byte{}) },
+								ReleaseRewardsFunc: func(sdk.ValAddress) error { return nil },
+							}
+						}
+						k.DeleteSigningSessionFunc = func(ctx sdk.Context, _ uint64) {
+							ctx.MultiStore().GetKVStore(storeKey).Set(deletedKey, []byte{})
+						}
+						_, err := multisig.EndBlocker(ctx, k, rewarder)
+						assert.NoError(t, err)
+						assert.True(t, ctx.MultiStore().GetKVStore(storeKey).Has(deletedKey))
+						assert.True(t, ctx.MultiStore().GetKVStore(storeKey).Has(clearedKey))
+						assert.Equal(t, len(k.DeleteSigningSessionCalls()), len(k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+1)))
+						assert.Equal(t, len(sigHandler.HandleFailedCalls()), len(k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+1)))
+					}),
+
+				When("multiple completed signing sessions are triggered", func() {
+					k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
+						if expiry != ctx.BlockHeight()+1 {
+							return nil
+						}
+						return []types.SigningSession{
+							newSigningSession(module),
+							newSigningSession(module),
+						}
+					}
+				}).
+					When("sigHandler panics", func() {
+						sigHandler.HandleCompletedFunc = func(sdk.Context, utils.ValidatedProtoMarshaler, codec.ProtoMarshaler) error {
+							panic("panic in sig handler")
+						}
+						sigHandler.HandleFailedFunc = func(sdk.Context, codec.ProtoMarshaler) error { return nil }
+					}).
+					Then("recover, keep session cleanup and abort the signing", func(t *testing.T) {
 						pool := rewardmock.RewardPoolMock{
 							ClearRewardsFunc:   func(sdk.ValAddress) {},
 							ReleaseRewardsFunc: func(sdk.ValAddress) error { return nil },
 						}
 						rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
 						storeKey := store.NewKVStoreKey("cache")
-						rolledBackKey := []byte("ephemeral")
+						deletedKey := []byte("deleted")
 						k.DeleteSigningSessionFunc = func(ctx sdk.Context, _ uint64) {
-							ctx.MultiStore().GetKVStore(storeKey).Set(rolledBackKey, []byte{})
+							ctx.MultiStore().GetKVStore(storeKey).Set(deletedKey, []byte{})
 						}
-						_, err := multisig.EndBlocker(ctx, k, rewarder)
-						assert.NoError(t, err)
-						assert.False(t, ctx.MultiStore().GetKVStore(storeKey).Has(rolledBackKey))
-						assert.Equal(t, len(k.DeleteSigningSessionCalls()), len(k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+1)))
+
+						assert.NotPanics(t, func() {
+							_, err := multisig.EndBlocker(ctx, k, rewarder)
+							assert.NoError(t, err)
+						})
+						assert.True(t, ctx.MultiStore().GetKVStore(storeKey).Has(deletedKey))
+						assert.Len(t, k.DeleteSigningSessionCalls(), 2)
+						assert.Len(t, sigHandler.HandleFailedCalls(), 2)
+					}),
+
+				When("a pending signing session expiry equal to the block height", func() {
+					k.GetSigningSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.SigningSession {
+						if expiry != ctx.BlockHeight()+1 {
+							return nil
+						}
+
+						return []types.SigningSession{{
+							ID:     uint64(rand.PosI64()),
+							Module: module,
+							Key:    typestestutils.Key(),
+							State:  exported.Pending,
+						}}
+					}
+				}).
+					When("HandleFailed panics", func() {
+						sigHandler.HandleFailedFunc = func(sdk.Context, codec.ProtoMarshaler) error {
+							panic("panic in HandleFailed")
+						}
+					}).
+					Then("recover, keep session cleanup, forfeited rewards and expiry event", func(t *testing.T) {
+						storeKey := store.NewKVStoreKey("cache")
+						deletedKey := []byte("deleted")
+						clearedKey := []byte("rewards-cleared")
+						rewarder.GetPoolFunc = func(c sdk.Context, _ string) reward.RewardPool {
+							return &rewardmock.RewardPoolMock{
+								ClearRewardsFunc: func(sdk.ValAddress) { c.MultiStore().GetKVStore(storeKey).Set(clearedKey, []byte{}) },
+							}
+						}
+						k.DeleteSigningSessionFunc = func(ctx sdk.Context, _ uint64) {
+							ctx.MultiStore().GetKVStore(storeKey).Set(deletedKey, []byte{})
+						}
+
+						assert.NotPanics(t, func() {
+							_, err := multisig.EndBlocker(ctx, k, rewarder)
+							assert.NoError(t, err)
+						})
+						assert.True(t, ctx.MultiStore().GetKVStore(storeKey).Has(deletedKey))
+						assert.True(t, ctx.MultiStore().GetKVStore(storeKey).Has(clearedKey))
+						assert.True(t, hasEvent(ctx, &types.SigningExpired{}))
+						assert.Len(t, k.DeleteSigningSessionCalls(), 1)
 					}),
 			).
 			Run(t, 20)
 	})
+}
+
+func hasEvent(ctx sdk.Context, event gogoproto.Message) bool {
+	eventType := gogoproto.MessageName(event)
+	for _, e := range ctx.EventManager().Events() {
+		if e.Type == eventType {
+			return true
+		}
+	}
+
+	return false
 }
 
 func newSigningSession(module string) types.SigningSession {
