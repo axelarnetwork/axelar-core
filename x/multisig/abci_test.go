@@ -39,6 +39,8 @@ func TestEndBlocker(t *testing.T) {
 		k             *mock.KeeperMock
 		rewarder      *mock.RewarderMock
 		keygenSession types.KeygenSession
+		failingKeygen types.KeygenSession
+		healthyKeygen types.KeygenSession
 	)
 
 	givenKeepersAndCtx := Given("keepers", func() {
@@ -148,6 +150,96 @@ func TestEndBlocker(t *testing.T) {
 				missingCount := len(keygenSession.GetMissingParticipants())
 				assert.Len(t, pool.ReleaseRewardsCalls(), len(keygenSession.Key.Snapshot.GetParticipantAddresses())-missingCount)
 				assert.Len(t, pool.ClearRewardsCalls(), missingCount)
+			}).
+			Run(t, 20)
+
+		givenKeepersAndCtx.
+			When("a completed keygen session whose reward release fails", func() {
+				keygenSession = types.KeygenSession{
+					Key:   typestestutils.Key(),
+					State: exported.Completed,
+				}
+				k.GetKeygenSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.KeygenSession {
+					if expiry != ctx.BlockHeight()+1 {
+						return nil
+					}
+
+					return []types.KeygenSession{keygenSession}
+				}
+			}).
+			Then("recover, keep session cleanup and not set the key", func(t *testing.T) {
+				pool := rewardmock.RewardPoolMock{
+					ClearRewardsFunc:   func(sdk.ValAddress) {},
+					ReleaseRewardsFunc: func(sdk.ValAddress) error { return fmt.Errorf("reward release failed") },
+				}
+				rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
+				storeKey := store.NewKVStoreKey("cache")
+				deletedKey := []byte("deleted")
+				keySetKey := []byte("key-set")
+				k.DeleteKeygenSessionFunc = func(ctx sdk.Context, _ exported.KeyID) {
+					ctx.MultiStore().GetKVStore(storeKey).Set(deletedKey, []byte{})
+				}
+				k.SetKeyFunc = func(ctx sdk.Context, _ types.Key) {
+					ctx.MultiStore().GetKVStore(storeKey).Set(keySetKey, []byte{})
+				}
+
+				assert.NotPanics(t, func() {
+					_, err := multisig.EndBlocker(ctx, k, rewarder)
+					assert.NoError(t, err)
+				})
+				assert.True(t, ctx.MultiStore().GetKVStore(storeKey).Has(deletedKey))
+				assert.False(t, ctx.MultiStore().GetKVStore(storeKey).Has(keySetKey))
+				assert.Len(t, k.DeleteKeygenSessionCalls(), 1)
+			}).
+			Run(t, 20)
+
+		givenKeepersAndCtx.
+			When("two completed keygen sessions where the first one fails", func() {
+				failingKeygen = types.KeygenSession{
+					Key:   typestestutils.Key(),
+					State: exported.Completed,
+				}
+				healthyKeygen = types.KeygenSession{
+					Key:   typestestutils.Key(),
+					State: exported.Completed,
+				}
+				k.GetKeygenSessionsByExpiryFunc = func(_ sdk.Context, expiry int64) []types.KeygenSession {
+					if expiry != ctx.BlockHeight()+1 {
+						return nil
+					}
+
+					return []types.KeygenSession{failingKeygen, healthyKeygen}
+				}
+			}).
+			Then("still process the second one", func(t *testing.T) {
+				failingParticipants := make(map[string]bool)
+				for _, p := range failingKeygen.Key.GetParticipants() {
+					failingParticipants[p.String()] = true
+				}
+
+				pool := rewardmock.RewardPoolMock{
+					ClearRewardsFunc: func(sdk.ValAddress) {},
+					ReleaseRewardsFunc: func(p sdk.ValAddress) error {
+						if failingParticipants[p.String()] {
+							return fmt.Errorf("reward release failed")
+						}
+						return nil
+					},
+				}
+				rewarder.GetPoolFunc = func(sdk.Context, string) reward.RewardPool { return &pool }
+				storeKey := store.NewKVStoreKey("cache")
+				k.DeleteKeygenSessionFunc = func(sdk.Context, exported.KeyID) {}
+				k.SetKeyFunc = func(ctx sdk.Context, key types.Key) {
+					ctx.MultiStore().GetKVStore(storeKey).Set([]byte(key.ID), []byte{})
+				}
+
+				assert.NotPanics(t, func() {
+					_, err := multisig.EndBlocker(ctx, k, rewarder)
+					assert.NoError(t, err)
+				})
+				assert.True(t, ctx.MultiStore().GetKVStore(storeKey).Has([]byte(healthyKeygen.Key.ID)))
+				assert.False(t, ctx.MultiStore().GetKVStore(storeKey).Has([]byte(failingKeygen.Key.ID)))
+				assert.Len(t, k.DeleteKeygenSessionCalls(), 2)
 			}).
 			Run(t, 20)
 	})
