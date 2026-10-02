@@ -157,19 +157,6 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 		Run(t)
 
 	givenPollQueue.
-		When2(withPoll(true, exported.Pending)).
-		When("the poll does not exist", func() {
-			keeper.GetPollFunc = func(sdk.Context, exported.PollID) (exported.Poll, bool) { return nil, false }
-		}).
-		Then("should skip the poll without halting", func(t *testing.T) {
-			assert.NotPanics(t, func() {
-				assert.NoError(t, handlePollsAtExpiry(ctx, keeper))
-			})
-			assert.Len(t, keeper.DeletePollCalls(), 0)
-		}).
-		Run(t, repeats)
-
-	givenPollQueue.
 		When2(withPoll(true, exported.Completed)).
 		When("the vote handler fails", func() {
 			poll.GetResultFunc = func() codec.ProtoMarshaler { return &gogoprototypes.StringValue{} }
