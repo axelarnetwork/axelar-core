@@ -12,9 +12,7 @@ import (
 
 // EndBlocker called every block
 func EndBlocker(ctx sdk.Context, n types.Nexus, r types.RewardKeeper, s types.Snapshotter) ([]abci.ValidatorUpdate, error) {
-	if err := checkChainMaintainers(ctx, n, r, s); err != nil {
-		return nil, err
-	}
+	checkChainMaintainers(ctx, n, r, s)
 
 	routeQueuedMessages(ctx, n)
 
@@ -25,13 +23,12 @@ func EndBlocker(ctx sdk.Context, n types.Nexus, r types.RewardKeeper, s types.Sn
 // - if a chain maintainer has missed voting for too many polls, then it will be de-registered
 // - if a chain maintainer has voted incorrectly for too many polls, then it will be de-registered
 // - if a chain maintainer does not active proxy set, then it will be de-registered
-func checkChainMaintainers(ctx sdk.Context, n types.Nexus, r types.RewardKeeper, s types.Snapshotter) error {
+func checkChainMaintainers(ctx sdk.Context, n types.Nexus, r types.RewardKeeper, s types.Snapshotter) {
 	for _, chain := range n.GetChains(ctx) {
 		if !n.IsChainActivated(ctx, chain) {
 			continue
 		}
 
-		rewardPool := r.GetPool(ctx, chain.Name.String())
 		params := n.GetParams(ctx)
 		window := int(params.ChainMaintainerCheckWindow)
 
@@ -46,26 +43,34 @@ func checkChainMaintainers(ctx sdk.Context, n types.Nexus, r types.RewardKeeper,
 				continue
 			}
 
-			rewardPool.ClearRewards(maintainerState.GetAddress())
-			if err := n.RemoveChainMaintainer(ctx, chain, maintainerState.GetAddress()); err != nil {
-				return err
-			}
+			deregistered := utils.RunCached(ctx, n, func(cachedCtx sdk.Context) (bool, error) {
+				r.GetPool(cachedCtx, chain.Name.String()).ClearRewards(maintainerState.GetAddress())
 
-			ctx.EventManager().EmitEvent(
-				sdk.NewEvent(
-					types.EventTypeChainMaintainer,
-					sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-					sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDeregister),
-					sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
-					sdk.NewAttribute(types.AttributeKeyChainMaintainerAddress, maintainerState.GetAddress().String()),
-				),
-			)
+				if err := n.RemoveChainMaintainer(cachedCtx, chain, maintainerState.GetAddress()); err != nil {
+					return false, err
+				}
+
+				cachedCtx.EventManager().EmitEvent(
+					sdk.NewEvent(
+						types.EventTypeChainMaintainer,
+						sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+						sdk.NewAttribute(sdk.AttributeKeyAction, types.AttributeValueDeregister),
+						sdk.NewAttribute(types.AttributeKeyChain, chain.Name.String()),
+						sdk.NewAttribute(types.AttributeKeyChainMaintainerAddress, maintainerState.GetAddress().String()),
+					),
+				)
+
+				return true, nil
+			})
+
+			if !deregistered {
+				n.Logger(ctx).Error(fmt.Sprintf("failed to deregister validator %s as maintainer for chain %s", maintainerState.GetAddress().String(), chain.Name))
+				continue
+			}
 
 			n.Logger(ctx).Info(fmt.Sprintf("deregistered validator %s as maintainer for chain %s", maintainerState.GetAddress().String(), chain.Name))
 		}
 	}
-
-	return nil
 }
 
 func routeQueuedMessages(ctx sdk.Context, n types.Nexus) {
