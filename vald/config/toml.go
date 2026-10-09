@@ -74,7 +74,7 @@ func convertValue(v interface{}) (interface{}, error) {
 		switch d {
 		case rpc.NoOverride:
 			return nil, nil
-		case rpc.Confirmation:
+		case rpc.Confirmation, rpc.ConfirmationIfAhead:
 			return strings.ToLower(d.String()), nil
 		}
 	}
