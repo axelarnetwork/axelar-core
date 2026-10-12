@@ -35,3 +35,15 @@ func (q Keeper) Params(c context.Context, req *types.ParamsRequest) (*types.Para
 		Params: params,
 	}, nil
 }
+
+// IsPaused returns the emergency pause state
+func (k Keeper) IsPaused(c context.Context, _ *types.IsPausedRequest) (*types.IsPausedResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	level := k.GetPauseLevel(ctx)
+
+	return &types.IsPausedResponse{
+		Paused: level.IsPaused(),
+		Level:  level,
+	}, nil
+}

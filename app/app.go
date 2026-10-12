@@ -333,6 +333,8 @@ func NewAxelarApp(
 	mm.SetOrderEndBlockers(orderEndBlockers()...)
 	mm.SetOrderInitGenesis(orderModulesForGenesis()...)
 
+	bApp.SetCircuitBreaker(permissionKeeper.NewCircuitBreaker(*GetKeeper[permissionKeeper.Keeper](keepers)))
+
 	configurator := module.NewConfigurator(appCodec, bApp.MsgServiceRouter(), bApp.GRPCQueryRouter())
 	mm.RegisterServices(configurator)
 
@@ -605,7 +607,7 @@ func initAppModules(keepers *KeeperCache, keys map[string]*store.KVStoreKey, bAp
 			bApp.MsgServiceRouter(),
 			encodingConfig.Codec,
 		),
-		permission.NewAppModule(*GetKeeper[permissionKeeper.Keeper](keepers)),
+		permission.NewAppModule(*GetKeeper[permissionKeeper.Keeper](keepers), GetKeeper[upgradekeeper.Keeper](keepers)),
 		feepolicy.NewAppModule(*GetKeeper[feepolicyKeeper.Keeper](keepers)),
 		auxiliary.NewAppModule(encodingConfig.Codec, bApp.MsgServiceRouter()),
 	)
@@ -664,6 +666,10 @@ func InitCustomAntePostDecorators(
 	// unwrap batch messages, must be done before any other custom decorators
 	anteDecorators = append(anteDecorators, ante.NewBatchDecorator(encodingConfig.Codec))
 
+	// reject messages that are not allowed during an emergency pause before any other custom decorator.
+	anteDecorators = append(anteDecorators, ante.NewAnteHandlerDecorator(
+		ante.ChainMessageAnteDecorators(ante.NewEmergencyPause(GetKeeper[permissionKeeper.Keeper](keepers))).ToAnteHandler()))
+
 	// enforce wasm limits earlier in the ante handler chain
 	if IsWasmEnabled() {
 		wasmConfig := mustReadWasmConfig(appOpts)
@@ -694,6 +700,7 @@ func InitCustomAntePostDecorators(
 
 func initMessageAnteDecorators(encodingConfig axelarParams.EncodingConfig, keepers *KeeperCache) ante.MessageAnteHandler {
 	return ante.ChainMessageAnteDecorators(
+		ante.NewEmergencyPause(GetKeeper[permissionKeeper.Keeper](keepers)),
 		ante.NewLogMsgDecorator(encodingConfig.Codec),
 		ante.NewCheckCommissionRate(GetKeeper[stakingkeeper.Keeper](keepers)),
 		ante.NewUndelegateDecorator(

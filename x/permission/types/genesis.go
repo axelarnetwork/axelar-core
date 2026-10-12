@@ -37,6 +37,12 @@ func (m GenesisState) Validate() error {
 		}
 	}
 
+	if m.PauseLevel.IsPaused() {
+		if err := m.PauseLevel.ValidatePauseLevel(); err != nil {
+			return getValidateError(err)
+		}
+	}
+
 	accessControlSet := false
 	for _, account := range m.GovAccounts {
 		if err := account.Validate(); err != nil {

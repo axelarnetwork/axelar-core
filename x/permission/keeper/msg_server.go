@@ -2,8 +2,11 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strconv"
 
+	upgradetypes "cosmossdk.io/x/upgrade/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -13,11 +16,12 @@ import (
 
 type msgServer struct {
 	Keeper
+	upgrade types.UpgradeKeeper
 }
 
 // NewMsgServerImpl returns a new msg server instance
-func NewMsgServerImpl(keeper Keeper) types.MsgServer {
-	return msgServer{Keeper: keeper}
+func NewMsgServerImpl(keeper Keeper, upgrade types.UpgradeKeeper) types.MsgServer {
+	return msgServer{Keeper: keeper, upgrade: upgrade}
 }
 
 func (s msgServer) UpdateGovernanceKey(c context.Context, req *types.UpdateGovernanceKeyRequest) (*types.UpdateGovernanceKeyResponse, error) {
@@ -74,4 +78,93 @@ func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsReques
 
 	s.setParams(ctx, req.Params)
 	return &types.UpdateParamsResponse{}, nil
+}
+
+// Pause pauses the chain at the requested level, or changes the level of an ongoing pause
+func (s msgServer) Pause(c context.Context, req *types.PauseRequest) (*types.PauseResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	previous := s.GetPauseLevel(ctx)
+	if previous == req.Level {
+		return nil, fmt.Errorf("chain is already paused at level %s", req.Level)
+	}
+
+	s.setPauseLevel(ctx, req.Level)
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeEmergencyPause,
+		sdk.NewAttribute(types.AttributeKeySigner, req.Sender),
+		sdk.NewAttribute(types.AttributeKeyReason, req.Reason),
+		sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(ctx.BlockHeight(), 10)),
+		sdk.NewAttribute(types.AttributeKeyPauseLevel, req.Level.String()),
+		sdk.NewAttribute(types.AttributeKeyPreviousPauseLevel, previous.String()),
+	))
+	s.Logger(ctx).Info("emergency pause", "level", req.Level.String(), "previous_level", previous.String(), "signer", req.Sender, "reason", req.Reason)
+
+	return &types.PauseResponse{}, nil
+}
+
+// Unpause lifts the emergency pause
+func (s msgServer) Unpause(c context.Context, req *types.UnpauseRequest) (*types.UnpauseResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	previous := s.GetPauseLevel(ctx)
+	if !previous.IsPaused() {
+		return nil, fmt.Errorf("chain is not paused")
+	}
+
+	s.setPauseLevel(ctx, exported.PAUSE_LEVEL_UNSPECIFIED)
+
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeEmergencyUnpause,
+		sdk.NewAttribute(types.AttributeKeySigner, req.Sender),
+		sdk.NewAttribute(types.AttributeKeyReason, req.Reason),
+		sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(ctx.BlockHeight(), 10)),
+		sdk.NewAttribute(types.AttributeKeyPreviousPauseLevel, previous.String()),
+	))
+	s.Logger(ctx).Info("emergency unpause", "previous_level", previous.String(), "signer", req.Sender, "reason", req.Reason)
+
+	return &types.UnpauseResponse{}, nil
+}
+
+// HaltChain schedules an upgrade plan at the next block height.
+func (s msgServer) HaltChain(c context.Context, req *types.HaltChainRequest) (*types.HaltChainResponse, error) {
+	ctx := sdk.UnwrapSDKContext(c)
+
+	pending, err := s.upgrade.GetUpgradePlan(ctx)
+	hasPending := err == nil
+	switch {
+	case err != nil && !errors.Is(err, upgradetypes.ErrNoUpgradePlanFound):
+		return nil, err
+	case hasPending && !req.OverridePendingUpgrade:
+		return nil, fmt.Errorf("upgrade plan %s is already scheduled at height %d, set override_pending_upgrade to replace it", pending.Name, pending.Height)
+	}
+
+	height := ctx.BlockHeight() + 1
+	plan := upgradetypes.Plan{
+		Name:   exported.EmergencyHaltPlanName(height),
+		Height: height,
+		Info:   req.Reason,
+	}
+
+	if err := s.upgrade.ScheduleUpgrade(ctx, plan); err != nil {
+		return nil, err
+	}
+
+	attributes := []sdk.Attribute{
+		sdk.NewAttribute(types.AttributeKeySigner, req.Sender),
+		sdk.NewAttribute(types.AttributeKeyReason, req.Reason),
+		sdk.NewAttribute(types.AttributeKeyHeight, strconv.FormatInt(ctx.BlockHeight(), 10)),
+		sdk.NewAttribute(types.AttributeKeyHaltHeight, strconv.FormatInt(height, 10)),
+		sdk.NewAttribute(types.AttributeKeyPlanName, plan.Name),
+	}
+	if hasPending {
+		attributes = append(attributes,
+			sdk.NewAttribute(types.AttributeKeyReplacedPlanName, pending.Name),
+			sdk.NewAttribute(types.AttributeKeyReplacedPlanHeight, strconv.FormatInt(pending.Height, 10)),
+			sdk.NewAttribute(types.AttributeKeyReplacedPlanInfo, pending.Info),
+		)
+	}
+	ctx.EventManager().EmitEvent(sdk.NewEvent(types.EventTypeEmergencyHalt, attributes...))
+	s.Logger(ctx).Info("emergency halt scheduled", "halt_height", height, "plan", plan.Name, "signer", req.Sender, "reason", req.Reason, "replaced_plan", pending.Name)
+
+	return &types.HaltChainResponse{HaltHeight: height, PlanName: plan.Name}, nil
 }

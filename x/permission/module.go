@@ -80,16 +80,19 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 // AppModule implements module.AppModule
 type AppModule struct {
 	AppModuleBasic
-	keeper keeper.Keeper
+	keeper  keeper.Keeper
+	upgrade types.UpgradeKeeper
 }
 
 // NewAppModule creates a new AppModule object
 func NewAppModule(
 	k keeper.Keeper,
+	upgrade types.UpgradeKeeper,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
+		upgrade:        upgrade,
 	}
 }
 
@@ -120,7 +123,7 @@ func (AppModule) QuerierRoute() string {
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	msgServer := keeper.NewMsgServerImpl(am.keeper)
+	msgServer := keeper.NewMsgServerImpl(am.keeper, am.upgrade)
 	types.RegisterMsgServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrGov, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 }

@@ -47,6 +47,7 @@ type Reward interface {
 // Permission provides access to the permission functionality
 type Permission interface {
 	GetRole(ctx sdk.Context, address sdk.AccAddress) permission.Role
+	GetPauseLevel(ctx sdk.Context) permission.PauseLevel
 }
 
 // FeePolicy provides the governance-controlled set of denominations that may be

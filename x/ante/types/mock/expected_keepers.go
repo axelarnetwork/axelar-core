@@ -23,6 +23,9 @@ var _ types.Permission = &PermissionMock{}
 //
 //		// make and configure a mocked types.Permission
 //		mockedPermission := &PermissionMock{
+//			GetPauseLevelFunc: func(ctx sdk.Context) permission.PauseLevel {
+//				panic("mock out the GetPauseLevel method")
+//			},
 //			GetRoleFunc: func(ctx sdk.Context, address sdk.AccAddress) permission.Role {
 //				panic("mock out the GetRole method")
 //			},
@@ -33,11 +36,19 @@ var _ types.Permission = &PermissionMock{}
 //
 //	}
 type PermissionMock struct {
+	// GetPauseLevelFunc mocks the GetPauseLevel method.
+	GetPauseLevelFunc func(ctx sdk.Context) permission.PauseLevel
+
 	// GetRoleFunc mocks the GetRole method.
 	GetRoleFunc func(ctx sdk.Context, address sdk.AccAddress) permission.Role
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetPauseLevel holds details about calls to the GetPauseLevel method.
+		GetPauseLevel []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 		// GetRole holds details about calls to the GetRole method.
 		GetRole []struct {
 			// Ctx is the ctx argument value.
@@ -46,7 +57,40 @@ type PermissionMock struct {
 			Address sdk.AccAddress
 		}
 	}
-	lockGetRole sync.RWMutex
+	lockGetPauseLevel sync.RWMutex
+	lockGetRole       sync.RWMutex
+}
+
+// GetPauseLevel calls GetPauseLevelFunc.
+func (mock *PermissionMock) GetPauseLevel(ctx sdk.Context) permission.PauseLevel {
+	if mock.GetPauseLevelFunc == nil {
+		panic("PermissionMock.GetPauseLevelFunc: method is nil but Permission.GetPauseLevel was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetPauseLevel.Lock()
+	mock.calls.GetPauseLevel = append(mock.calls.GetPauseLevel, callInfo)
+	mock.lockGetPauseLevel.Unlock()
+	return mock.GetPauseLevelFunc(ctx)
+}
+
+// GetPauseLevelCalls gets all the calls that were made to GetPauseLevel.
+// Check the length with:
+//
+//	len(mockedPermission.GetPauseLevelCalls())
+func (mock *PermissionMock) GetPauseLevelCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetPauseLevel.RLock()
+	calls = mock.calls.GetPauseLevel
+	mock.lockGetPauseLevel.RUnlock()
+	return calls
 }
 
 // GetRole calls GetRoleFunc.

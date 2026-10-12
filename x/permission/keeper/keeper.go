@@ -18,6 +18,7 @@ import (
 var (
 	governanceKey = utils.KeyFromStr("governance")
 	accountPrefix = utils.KeyFromStr("account")
+	pauseLevelKey = utils.KeyFromStr("pause_level")
 )
 
 // Keeper provides access to all state changes regarding the gov module

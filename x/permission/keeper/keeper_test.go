@@ -14,6 +14,7 @@ import (
 	"github.com/axelarnetwork/axelar-core/x/permission/exported"
 	"github.com/axelarnetwork/axelar-core/x/permission/keeper"
 	"github.com/axelarnetwork/axelar-core/x/permission/types"
+	"github.com/axelarnetwork/axelar-core/x/permission/types/mock"
 )
 
 func TestKeeper_GetRole_nil_Address_Return_Unrestricted(t *testing.T) {
@@ -33,7 +34,7 @@ func TestMsgServer_UpdateParams(t *testing.T) {
 	k := keeper.NewKeeper(encCfg.Codec, key, subspace)
 	ctx := sdk.NewContext(fake.NewMultiStore(), sdk.Context{}.BlockHeader(), false, log.NewTestLogger(t))
 
-	server := keeper.NewMsgServerImpl(k)
+	server := keeper.NewMsgServerImpl(k, &mock.UpgradeKeeperMock{})
 
 	p := types.DefaultParams()
 	_, err := server.UpdateParams(ctx, &types.UpdateParamsRequest{Authority: "", Params: p})
