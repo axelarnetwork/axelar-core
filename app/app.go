@@ -291,7 +291,7 @@ func NewAxelarApp(
 
 	// set routers
 	GetKeeper[nexusKeeper.Keeper](keepers).SetMessageRouter(initMessageRouter(keepers))
-	GetKeeper[ibckeeper.Keeper](keepers).SetRouter(initIBCRouter(keepers, initIBCMiddleware(keepers, ics4Wrapper)))
+	GetKeeper[ibckeeper.Keeper](keepers).SetRouter(initIBCRouter(keepers, initIBCMiddleware(keepers, ics4Wrapper, wasmHooks)))
 
 	// light clients are no longer implicit in ibc-go v10; they must be registered
 	// as modular routes on the client keeper
@@ -406,7 +406,7 @@ func InitICS4Wrapper(keepers *KeeperCache, wasmHooks *ibchooks.WasmHooks) ibchoo
 	}
 }
 
-func initIBCMiddleware(keepers *KeeperCache, ics4Middleware ibchooks.ICS4Middleware) ibchooks.IBCMiddleware {
+func initIBCMiddleware(keepers *KeeperCache, ics4Middleware ibchooks.ICS4Middleware, wasmHooks *ibchooks.WasmHooks) porttypes.IBCModule {
 	// IBCModule deals with received IBC packets.
 	ibcModule := axelarnet.NewAxelarnetIBCModule(
 		transfer.NewIBCModule(*GetKeeper[ibctransferkeeper.Keeper](keepers)),
@@ -414,6 +414,10 @@ func initIBCMiddleware(keepers *KeeperCache, ics4Middleware ibchooks.ICS4Middlew
 		GetKeeper[nexusKeeper.Keeper](keepers),
 		axelarbankkeeper.NewBankKeeper(GetKeeper[bankkeeper.BaseKeeper](keepers)),
 	)
+
+	if wasmHooks == nil {
+		return ibcModule
+	}
 
 	// By merging the middlewares the receiving IBC Module has access to all registered hooks in the ICS4Middleware
 	return ibchooks.NewIBCMiddleware(ibcModule, &ics4Middleware)
