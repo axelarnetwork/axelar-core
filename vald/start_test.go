@@ -2,17 +2,62 @@ package vald
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	sdklog "cosmossdk.io/log"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/axelarnetwork/axelar-core/app"
+	errors2 "github.com/axelarnetwork/axelar-core/utils/errors"
 	"github.com/axelarnetwork/axelar-core/x/multisig/types"
 	tmEvents "github.com/axelarnetwork/tm-events/events"
+	"github.com/axelarnetwork/utils/log"
 )
+
+func TestLogErrorWithContextDoesNotAccumulateErrorFields(t *testing.T) {
+	t.Cleanup(log.Reset)
+
+	entries := make(chan recordedLogEntry, 2)
+	log.Setup(&recordingSDKLogger{entries: entries})
+	ctx := context.Background()
+
+	logErrorWithContext(ctx, errors2.With(fmt.Errorf("first failure"), "error_id", "first"))
+	logErrorWithContext(ctx, errors2.With(fmt.Errorf("second failure"), "error_id", "second"))
+
+	assert.Equal(t, recordedLogEntry{message: "first failure", keyvals: []any{"error_id", "first"}}, <-entries)
+	assert.Equal(t, recordedLogEntry{message: "second failure", keyvals: []any{"error_id", "second"}}, <-entries)
+	assert.Nil(t, log.GetKeyVals(ctx))
+}
+
+type recordedLogEntry struct {
+	message string
+	keyvals []any
+}
+
+type recordingSDKLogger struct {
+	entries chan<- recordedLogEntry
+	keyvals []any
+}
+
+func (l *recordingSDKLogger) Debug(string, ...any) {}
+func (l *recordingSDKLogger) Info(string, ...any)  {}
+func (l *recordingSDKLogger) Warn(string, ...any)  {}
+
+func (l *recordingSDKLogger) Error(message string, keyvals ...any) {
+	allKeyvals := append(append([]any{}, l.keyvals...), keyvals...)
+	l.entries <- recordedLogEntry{message: message, keyvals: allKeyvals}
+}
+
+func (l *recordingSDKLogger) With(keyvals ...any) sdklog.Logger {
+	allKeyvals := append(append([]any{}, l.keyvals...), keyvals...)
+	return &recordingSDKLogger{entries: l.entries, keyvals: allKeyvals}
+}
+
+func (l *recordingSDKLogger) Impl() any { return l }
 
 // proof of concept for the panic mechanism used in the listen(...) function to panic when it takes too long to see new blocks
 func TestPanic(t *testing.T) {
