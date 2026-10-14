@@ -39,10 +39,22 @@ func handleKeygens(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 			continue
 		}
 
-		key := funcs.Must(keygen.Result())
+		completed := utils.RunCached(ctx, k, func(cachedCtx sdk.Context) (bool, error) {
+			key := funcs.Must(keygen.Result())
 
-		slices.ForEach(key.GetParticipants(), func(p sdk.ValAddress) { funcs.MustNoErr(pool.ReleaseRewards(p)) })
-		k.SetKey(ctx, key)
+			pool := rewarder.GetPool(cachedCtx, types.ModuleName)
+			slices.ForEach(key.GetParticipants(), func(p sdk.ValAddress) { funcs.MustNoErr(pool.ReleaseRewards(p)) })
+			k.SetKey(cachedCtx, key)
+
+			return true, nil
+		})
+
+		if !completed {
+			events.Emit(ctx, types.NewKeygenExpired(keygen.GetKeyID()))
+			k.Logger(ctx).Error("failed to handle completed keygen session",
+				"key_id", keygen.GetKeyID(),
+			)
+		}
 	}
 }
 
