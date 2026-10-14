@@ -77,7 +77,7 @@ func testConfig() ValdConfig {
 			Name:             "polygon",
 			RPCAddr:          "https://polygon.example.com",
 			WithBridge:       false,
-			FinalityOverride: rpc.NoOverride,
+			FinalityOverride: rpc.ConfirmationIfAhead,
 		},
 	}
 	return cfg

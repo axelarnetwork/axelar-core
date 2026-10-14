@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-//go:generate stringer -type=FinalityOverride
+//go:generate stringer -type=FinalityOverride -linecomment
 
 // Header represents a block header in any EVM blockchain
 type Header struct {
@@ -25,6 +25,8 @@ type FinalityOverride int
 const (
 	NoOverride FinalityOverride = iota
 	Confirmation
+	// ConfirmationIfAhead uses the confirmation height instead of the RPC finalized tag whenever it is ahead
+	ConfirmationIfAhead // confirmation_if_ahead
 )
 
 func ParseFinalityOverride(s string) (FinalityOverride, error) {
@@ -33,6 +35,8 @@ func ParseFinalityOverride(s string) (FinalityOverride, error) {
 		return NoOverride, nil
 	case strings.ToLower(Confirmation.String()):
 		return Confirmation, nil
+	case strings.ToLower(ConfirmationIfAhead.String()):
+		return ConfirmationIfAhead, nil
 	default:
 		return -1, fmt.Errorf("invalid finality override option")
 	}

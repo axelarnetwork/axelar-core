@@ -51,9 +51,14 @@ func NewClient(url string, override FinalityOverride) (Client, error) {
 		return ethereumClient, nil
 	}
 
-	if ethereum2Client, err := NewEthereum2Client(ethereumClient); err == nil {
-		return ethereum2Client, nil
+	ethereum2Client, err := NewEthereum2Client(ethereumClient)
+	if err != nil {
+		return ethereumClient, nil
 	}
 
-	return ethereumClient, nil
+	if override == ConfirmationIfAhead {
+		return NewConfirmationIfAheadClient(ethereum2Client), nil
+	}
+
+	return ethereum2Client, nil
 }

@@ -18,6 +18,7 @@ no_new_blocks_timeout = "2m0s"
   start-with-bridge = true
 
 [[axelar_bridge_evm]]
+  finality_override = "confirmation_if_ahead"
   name = "polygon"
   rpc_addr = "https://polygon.example.com"
   start-with-bridge = false
