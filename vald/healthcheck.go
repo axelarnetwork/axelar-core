@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"cosmossdk.io/math"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -27,12 +28,14 @@ const (
 	minBalance = 5000000
 	timeout    = time.Hour
 
-	flagSkipTofnd       = "skip-tofnd"
-	flagSkipBroadcaster = "skip-broadcaster"
-	flagSkipOperator    = "skip-operator"
-	flagOperatorAddr    = "operator-addr"
-	flagTofndHost       = "tofnd-host"
-	flagTofndPort       = "tofnd-port"
+	flagSkipTofnd         = "skip-tofnd"
+	flagSkipBroadcaster   = "skip-broadcaster"
+	flagSkipOperator      = "skip-operator"
+	flagSkipNode          = "skip-node"
+	flagMaxLatestBlockAge = "max-latest-block-age"
+	flagOperatorAddr      = "operator-addr"
+	flagTofndHost         = "tofnd-host"
+	flagTofndPort         = "tofnd-port"
 )
 
 // GetHealthCheckCommand returns the command to execute a node health check
@@ -40,6 +43,8 @@ func GetHealthCheckCommand() *cobra.Command {
 	var skipTofnd bool
 	var skipBroadcaster bool
 	var skipOperator bool
+	var skipNode bool
+	var maxLatestBlockAge time.Duration
 
 	cmd := &cobra.Command{
 		Use: "health-check",
@@ -50,7 +55,8 @@ func GetHealthCheckCommand() *cobra.Command {
 			}
 			serverCtx := server.GetServerContextFromCmd(cmd)
 
-			ok := execCheck(context.Background(), clientCtx, serverCtx, "tofnd", skipTofnd, checkTofnd) &&
+			ok := execCheck(cmd.Context(), clientCtx, serverCtx, "node", skipNode, checkNode(maxLatestBlockAge)) &&
+				execCheck(context.Background(), clientCtx, serverCtx, "tofnd", skipTofnd, checkTofnd) &&
 				execCheck(cmd.Context(), clientCtx, serverCtx, "broadcaster", skipBroadcaster, checkBroadcaster)
 
 			// enforce a non-zero exit code in case health checks fail without printing cobra output
@@ -63,12 +69,20 @@ func GetHealthCheckCommand() *cobra.Command {
 	}
 
 	defaultConf := tssTypes.DefaultConfig()
+	defaultValdConf := config.DefaultValdConfig()
 	cmd.PersistentFlags().String(flagTofndHost, defaultConf.Host, "host name for tss daemon")
 	cmd.PersistentFlags().String(flagTofndPort, defaultConf.Port, "port for tss daemon")
 	cmd.PersistentFlags().String(flagOperatorAddr, "", "operator address")
 	cmd.PersistentFlags().BoolVar(&skipTofnd, flagSkipTofnd, false, "skip tofnd check")
 	cmd.PersistentFlags().BoolVar(&skipBroadcaster, flagSkipBroadcaster, false, "skip broadcaster check")
 	cmd.PersistentFlags().BoolVar(&skipOperator, flagSkipOperator, false, "skip operator check")
+	cmd.PersistentFlags().BoolVar(&skipNode, flagSkipNode, false, "skip consensus node check")
+	cmd.PersistentFlags().DurationVar(
+		&maxLatestBlockAge,
+		flagMaxLatestBlockAge,
+		defaultValdConf.MaxLatestBlockAge,
+		"maximum accepted age of the latest consensus block",
+	)
 
 	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
@@ -90,6 +104,51 @@ func execCheck(ctx context.Context, clientCtx client.Context, serverCtx *server.
 
 	fmt.Printf("%s check: passed\n", name)
 	return true
+}
+
+func checkNode(maxLatestBlockAge time.Duration) checkCmd {
+	return func(ctx context.Context, clientCtx client.Context, _ *server.Context) error {
+		if clientCtx.Client == nil {
+			return fmt.Errorf("consensus RPC client is not configured")
+		}
+
+		status, err := clientCtx.Client.Status(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to query consensus status: %w", err)
+		}
+
+		return validateNodeStatus(status, maxLatestBlockAge, time.Now())
+	}
+}
+
+func validateNodeStatus(status *coretypes.ResultStatus, maxLatestBlockAge time.Duration, now time.Time) error {
+	if maxLatestBlockAge <= 0 {
+		return fmt.Errorf("maximum latest block age must be positive")
+	}
+	if status == nil {
+		return fmt.Errorf("consensus status response is empty")
+	}
+	if status.SyncInfo.CatchingUp {
+		return fmt.Errorf("consensus node is catching up")
+	}
+	if status.SyncInfo.LatestBlockHeight <= 0 {
+		return fmt.Errorf("consensus latest block height is not positive")
+	}
+	if status.SyncInfo.LatestBlockTime.IsZero() {
+		return fmt.Errorf("consensus latest block time is missing")
+	}
+
+	blockAge := now.Sub(status.SyncInfo.LatestBlockTime)
+	if blockAge > maxLatestBlockAge {
+		return fmt.Errorf(
+			"consensus latest block is stale (height %d, age %s, maximum %s)",
+			status.SyncInfo.LatestBlockHeight,
+			blockAge.Round(time.Second),
+			maxLatestBlockAge,
+		)
+	}
+
+	return nil
 }
 
 func checkTofnd(ctx context.Context, _ client.Context, serverCtx *server.Context) error {
