@@ -178,7 +178,7 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 				return fmt.Errorf("handler failed")
 			}
 		}).
-		Then("should roll back the handler, delete the poll and not halt", func(t *testing.T) {
+		Then("should roll back the handler, notify failure, delete the poll and not halt", func(t *testing.T) {
 			storeKey := store.NewKVStoreKey("cache")
 			handledKey := []byte("handled")
 			deletedKey := []byte("deleted")
@@ -186,6 +186,7 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 				ctx.MultiStore().GetKVStore(storeKey).Set(handledKey, []byte{})
 				return fmt.Errorf("handler failed")
 			}
+			voteHandler.HandleFailedPollFunc = func(sdk.Context, exported.Poll) error { return nil }
 			keeper.DeletePollFunc = func(ctx sdk.Context, _ exported.PollID) {
 				ctx.MultiStore().GetKVStore(storeKey).Set(deletedKey, []byte{})
 			}
@@ -196,6 +197,7 @@ func TestHandlePollsAtExpiry(t *testing.T) {
 			assert.False(t, ctx.MultiStore().GetKVStore(storeKey).Has(handledKey))
 			assert.True(t, ctx.MultiStore().GetKVStore(storeKey).Has(deletedKey))
 			assert.Len(t, keeper.DeletePollCalls(), 1)
+			assert.Len(t, voteHandler.HandleFailedPollCalls(), 1)
 		}).
 		Run(t, repeats)
 
