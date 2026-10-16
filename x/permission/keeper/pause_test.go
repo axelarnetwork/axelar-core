@@ -27,7 +27,7 @@ func setupPauseTest(t *testing.T) (sdk.Context, keeper.Keeper, types.MsgServer, 
 	encCfg := app.MakeEncodingConfig()
 	key := store.NewKVStoreKey("permission")
 	subspace := paramstypes.NewSubspace(encCfg.Codec, encCfg.Amino, key, store.NewKVStoreKey("tpermissionKey"), "permission")
-	k := keeper.NewKeeper(encCfg.Codec, key, subspace)
+	k := keeper.NewKeeper(0, encCfg.Codec, key, store.NewTransientStoreKey(types.TStoreKey), subspace)
 	ctx := sdk.NewContext(fake.NewMultiStore(), cmtproto.Header{Height: rand.I64Between(1, 1_000_000)}, false, log.NewTestLogger(t))
 
 	upgradeK := &mock.UpgradeKeeperMock{

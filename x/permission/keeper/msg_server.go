@@ -84,6 +84,10 @@ func (s msgServer) UpdateParams(c context.Context, req *types.UpdateParamsReques
 func (s msgServer) Pause(c context.Context, req *types.PauseRequest) (*types.PauseResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
 
+	if s.IsPauseSkipped(ctx) {
+		return nil, types.ErrPauseSkipped
+	}
+
 	previous := s.GetPauseLevel(ctx)
 	if previous == req.Level {
 		return nil, fmt.Errorf("chain is already paused at level %s", req.Level)
@@ -128,6 +132,10 @@ func (s msgServer) Unpause(c context.Context, req *types.UnpauseRequest) (*types
 // HaltChain schedules an upgrade plan at the next block height.
 func (s msgServer) HaltChain(c context.Context, req *types.HaltChainRequest) (*types.HaltChainResponse, error) {
 	ctx := sdk.UnwrapSDKContext(c)
+
+	if s.IsPauseSkipped(ctx) {
+		return nil, types.ErrPauseSkipped
+	}
 
 	pending, err := s.upgrade.GetUpgradePlan(ctx)
 	hasPending := err == nil

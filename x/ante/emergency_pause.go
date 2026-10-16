@@ -25,7 +25,7 @@ func NewEmergencyPause(permission types.Permission) EmergencyPause {
 // BatchRequest and authz MsgExec are already unwrapped by the BatchDecorator, RefundMsgRequest is unwrapped here.
 func (d EmergencyPause) AnteHandle(ctx sdk.Context, msgs []sdk.Msg, simulate bool, next MessageAnteHandler) (sdk.Context, error) {
 	level := d.permission.GetPauseLevel(ctx)
-	if !level.IsPaused() {
+	if !level.IsPaused() || d.permission.IsPauseSkipped(ctx) {
 		return next(ctx, msgs, simulate)
 	}
 

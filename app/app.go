@@ -146,6 +146,9 @@ const Name = "axelar"
 
 const WasmDirFlag = "wasm-dir"
 
+// FlagUnsafeSkipHaltPause is the height from which this validator wants to skip the emergency pause
+const FlagUnsafeSkipHaltPause = "unsafe-skip-halt-pause"
+
 var (
 	// DefaultNodeHome default home directories for the application daemon
 	DefaultNodeHome string
@@ -213,7 +216,7 @@ func NewAxelarApp(
 	baseAppOptions ...func(*bam.BaseApp),
 ) *AxelarApp {
 	keys := CreateStoreKeys()
-	tkeys := store.NewTransientStoreKeys(paramstypes.TStoreKey)
+	tkeys := store.NewTransientStoreKeys(paramstypes.TStoreKey, permissionTypes.TStoreKey)
 
 	keepers := NewKeeperCache()
 	appCodec := codec.NewProtoCodec(encodingConfig.InterfaceRegistry)
@@ -255,7 +258,9 @@ func NewAxelarApp(
 	SetKeeper(keepers, initMultisigKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initSnapshotKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initVoteKeeper(appCodec, keys, keepers))
-	SetKeeper(keepers, initPermissionKeeper(appCodec, keys, keepers))
+
+	skipPauseHeight := cast.ToInt64(appOpts.Get(FlagUnsafeSkipHaltPause))
+	SetKeeper(keepers, initPermissionKeeper(appCodec, keys, tkeys, keepers, skipPauseHeight))
 	SetKeeper(keepers, initFeePolicyKeeper(keepers))
 
 	// set up ibc/wasm keepers
@@ -357,6 +362,10 @@ func NewAxelarApp(
 	app.SetInitChainer(app.InitChainer)
 	app.SetPreBlocker(app.PreBlocker)
 	app.SetBeginBlocker(app.BeginBlocker)
+
+	proposalHandler := bam.NewDefaultProposalHandler(app.Mempool(), app.BaseApp)
+	app.SetPrepareProposal(GetKeeper[permissionKeeper.Keeper](keepers).PrepareProposalHandler(proposalHandler.PrepareProposalHandler()))
+	app.SetProcessProposal(GetKeeper[permissionKeeper.Keeper](keepers).ProcessProposalHandler(proposalHandler.ProcessProposalHandler()))
 	app.SetEndBlocker(app.EndBlocker)
 
 	app.SetAnteHandler(initAnteHandlers(encodingConfig, keys, keepers, appOpts))
@@ -968,9 +977,16 @@ func (app *AxelarApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (
 	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
-// PreBlocker checks if there is a scheduled upgrade and executes it if it is ready
-func (app *AxelarApp) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
-	return app.mm.PreBlock(ctx)
+// PreBlocker checks if there is a scheduled upgrade and executes it if it is ready, then checks the block for a pause skip marker
+func (app *AxelarApp) PreBlocker(ctx sdk.Context, req *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
+	res, err := app.mm.PreBlock(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	GetKeeper[permissionKeeper.Keeper](app.Keepers).PreBlock(ctx, req.Txs)
+
+	return res, nil
 }
 
 // BeginBlocker calls the BeginBlock() function of every module at the beginning of a new block

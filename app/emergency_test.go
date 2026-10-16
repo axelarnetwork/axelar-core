@@ -64,6 +64,8 @@ type testChain struct {
 	valSet *cmttypes.ValidatorSet
 	time   time.Time
 
+	useProposals bool
+
 	validatorOwner *testAccount
 	accessControl  *testAccount
 	chainManager   *testAccount
@@ -147,10 +149,10 @@ func newTestChain(t *testing.T) *testChain {
 	return c
 }
 
-func (c *testChain) newApp(skipUpgradeHeights []int) *app.AxelarApp {
+func (c *testChain) newApp(opts simtestutil.AppOptionsMap) *app.AxelarApp {
 	appOpts := simtestutil.AppOptionsMap{flags.FlagHome: c.home}
-	if len(skipUpgradeHeights) > 0 {
-		appOpts[server.FlagUnsafeSkipUpgrades] = skipUpgradeHeights
+	for k, v := range opts {
+		appOpts[k] = v
 	}
 
 	return app.NewAxelarApp(log.NewNopLogger(), c.db, nil, true, c.encCfg, appOpts, []wasm.Option{}, baseapp.SetChainID(testChainID))
@@ -162,6 +164,11 @@ func (c *testChain) height() int64 {
 
 // nextBlock finalizes and commits a block with the given txs and returns the tx results
 func (c *testChain) nextBlock(txs ...[]byte) []*abci.ExecTxResult {
+	if c.useProposals {
+		txs = c.prepareProposal(txs...)
+		require.Equal(c.t, abci.ResponseProcessProposal_ACCEPT, c.processProposal(txs))
+	}
+
 	res, err := c.finalizeBlock(txs...)
 	require.NoError(c.t, err)
 
@@ -169,6 +176,31 @@ func (c *testChain) nextBlock(txs ...[]byte) []*abci.ExecTxResult {
 	require.NoError(c.t, err)
 
 	return res.TxResults
+}
+
+func (c *testChain) prepareProposal(txs ...[]byte) [][]byte {
+	res, err := c.app.PrepareProposal(&abci.RequestPrepareProposal{
+		MaxTxBytes:      1 << 20,
+		Txs:             txs,
+		Height:          c.height() + 1,
+		Time:            c.time.Add(time.Second),
+		ProposerAddress: c.valSet.Proposer.Address,
+	})
+	require.NoError(c.t, err)
+
+	return res.Txs
+}
+
+func (c *testChain) processProposal(txs [][]byte) abci.ResponseProcessProposal_ProposalStatus {
+	res, err := c.app.ProcessProposal(&abci.RequestProcessProposal{
+		Txs:             txs,
+		Height:          c.height() + 1,
+		Time:            c.time.Add(time.Second),
+		ProposerAddress: c.valSet.Proposer.Address,
+	})
+	require.NoError(c.t, err)
+
+	return res.Status
 }
 
 func (c *testChain) finalizeBlock(txs ...[]byte) (*abci.ResponseFinalizeBlock, error) {
@@ -212,7 +244,9 @@ func (c *testChain) checkTx(tx []byte) *abci.ResponseCheckTx {
 
 // deliver delivers a single tx in its own block and returns its result
 func (c *testChain) deliver(signer *testAccount, msgs ...sdk.Msg) *abci.ExecTxResult {
-	return c.nextBlock(c.tx(signer, msgs...))[0]
+	results := c.nextBlock(c.tx(signer, msgs...))
+	// the tx comes after a pause skip marker, if there is one
+	return results[len(results)-1]
 }
 
 func (c *testChain) pauseLevel() permissionexported.PauseLevel {
@@ -227,6 +261,25 @@ func (c *testChain) pause(level permissionexported.PauseLevel) {
 	res := c.deliver(c.accessControl, permissiontypes.NewPauseRequest(c.accessControl.addr, level, "incident"))
 	require.Equal(c.t, uint32(0), res.Code, res.Log)
 	require.Equal(c.t, level, c.pauseLevel())
+}
+
+func (c *testChain) passProposal(msgs ...sdk.Msg) govv1.Proposal {
+	govKeeper := getKeeper[govkeeper.Keeper](c)
+	minDeposit := funcs.Must(govKeeper.Params.Get(c.ctx())).MinDeposit
+	proposal := funcs.Must(govv1.NewMsgSubmitProposal(msgs, minDeposit, c.user.addr.String(), "", "emergency", "emergency", false))
+	res := c.deliver(c.user, proposal)
+	require.Equal(c.t, uint32(0), res.Code, res.Log)
+
+	proposalID := funcs.Must(govKeeper.ProposalID.Peek(c.ctx())) - 1
+
+	res = c.deliver(c.validatorOwner, govv1.NewMsgVote(c.validatorOwner.addr, proposalID, govv1.OptionYes, ""))
+	require.Equal(c.t, uint32(0), res.Code, res.Log)
+
+	for range 12 {
+		c.nextBlock()
+	}
+
+	return funcs.Must(govKeeper.Proposals.Get(c.ctx(), proposalID))
 }
 
 func getKeeper[T any](c *testChain) *T {
@@ -535,7 +588,7 @@ func TestEmergencyHalt(t *testing.T) {
 		require.Error(t, err)
 
 		// a restarted node with --unsafe-skip-upgrades resumes block production, still paused
-		c.app = c.newApp([]int{int(haltHeight)})
+		c.app = c.newApp(simtestutil.AppOptionsMap{server.FlagUnsafeSkipUpgrades: []int{int(haltHeight)}})
 		c.nextBlock()
 		c.nextBlock()
 		assert.Equal(t, haltHeight+1, c.height())
@@ -546,6 +599,98 @@ func TestEmergencyHalt(t *testing.T) {
 		res = c.deliver(c.user, bankSend(c.user.addr, newTestAccount().addr))
 		require.Equal(t, uint32(0), res.Code, res.Log)
 	})
+}
+
+func TestEmergencyPause_SkipHaltPause(t *testing.T) {
+	c := newTestChain(t)
+	recipient := newTestAccount().addr
+	govAddr := authtypes.NewModuleAddress(govtypes.ModuleName)
+	marker := permissiontypes.PauseSkipMarker()
+
+	send := func() []byte { return c.tx(c.user, bankSend(c.user.addr, recipient)) }
+	withFlag := simtestutil.AppOptionsMap{app.FlagUnsafeSkipHaltPause: c.height() + 3}
+
+	// a validator with the flag only marks paused blocks from the flag height on
+	c.app = c.newApp(withFlag)
+	assert.NotContains(t, c.prepareProposal(send()), marker, "not paused")
+	c.pause(permissionexported.PAUSE_LEVEL_ALL)
+	assert.NotContains(t, c.prepareProposal(send()), marker, "below the flag height")
+	c.nextBlock()
+
+	// a validator without the flag does not mark its proposals
+	c.app = c.newApp(nil)
+	assert.NotContains(t, c.prepareProposal(send()), marker)
+
+	c.app = c.newApp(withFlag)
+	checkRes := c.checkTx(send())
+	assert.False(t, isChainPausedErr(checkRes.Codespace, checkRes.Code), "a node with the flag accepts txs into its mempool: %s", checkRes.Log)
+
+	marked := c.prepareProposal(send())
+	require.Len(t, marked, 2)
+	assert.Equal(t, marker, marked[0])
+	assert.Equal(t, abci.ResponseProcessProposal_ACCEPT, c.processProposal(marked))
+
+	// validators without the flag reject marked blocks
+	c.app = c.newApp(nil)
+	assert.Equal(t, abci.ResponseProcessProposal_REJECT, c.processProposal(marked))
+
+	// but once committed, a node without the flag executes the marked block like everyone else
+	res, err := c.finalizeBlock(marked...)
+	require.NoError(t, err)
+	_, err = c.app.Commit()
+	require.NoError(t, err)
+	assert.NotEqual(t, uint32(0), res.TxResults[0].Code, "the marker is not a tx")
+	assert.Equal(t, uint32(0), res.TxResults[1].Code, res.TxResults[1].Log)
+	assert.Equal(t, int64(1), c.balance(recipient).Int64())
+	assert.Equal(t, permissionexported.PAUSE_LEVEL_ALL, c.pauseLevel())
+
+	event := findEvent(res.Events, permissiontypes.EventTypeEmergencyPauseSkipped)
+	require.NotNil(t, event)
+	assert.Equal(t, sdk.ConsAddress(c.valSet.Proposer.Address).String(), eventAttribute(*event, permissiontypes.AttributeKeyProposer))
+
+	// an unmarked block still enforces the pause, and validators with the flag accept it
+	c.app = c.newApp(withFlag)
+	unmarked := [][]byte{send()}
+	assert.Equal(t, abci.ResponseProcessProposal_ACCEPT, c.processProposal(unmarked))
+	txRes := c.nextBlock(unmarked...)
+	assert.True(t, isChainPausedErr(txRes[0].Codespace, txRes[0].Code), txRes[0].Log)
+
+	// from now on blocks go through proposals, so they are marked
+	c.useProposals = true
+
+	// marked blocks reject pause and halt, from anyone
+	for _, msg := range []sdk.Msg{
+		permissiontypes.NewPauseRequest(c.accessControl.addr, permissionexported.PAUSE_LEVEL_EXCEPT_VALIDATORS, "re-pause"),
+		permissiontypes.NewHaltChainRequest(c.accessControl.addr, "halt", false),
+	} {
+		txRes := c.deliver(c.accessControl, msg)
+		assert.Equal(t, permissiontypes.ErrPauseSkipped.ABCICode(), txRes.Code, txRes.Log)
+	}
+	assert.Equal(t, permissionexported.PAUSE_LEVEL_ALL, c.pauseLevel())
+	_, err = getKeeper[upgradekeeper.Keeper](c).GetUpgradePlan(c.ctx())
+	assert.ErrorIs(t, err, upgradetypes.ErrNoUpgradePlanFound)
+
+	prop := c.passProposal(permissiontypes.NewHaltChainRequest(govAddr, "halt", false))
+	assert.Equal(t, govv1.StatusFailed, prop.Status)
+	assert.Contains(t, prop.FailedReason, permissiontypes.ErrPauseSkipped.Error())
+
+	// gov can submit, vote and unpause
+	prop = c.passProposal(permissiontypes.NewUnpauseRequest(govAddr, "gov override"))
+	require.Equal(t, govv1.StatusPassed, prop.Status, prop.FailedReason)
+	assert.False(t, c.pauseLevel().IsPaused())
+
+	// once unpaused, proposers stop adding the marker
+	assert.NotContains(t, c.prepareProposal(send()), marker)
+
+	// a validator that keeps the flag also skips a later pause, until it restarts without it
+	c.pause(permissionexported.PAUSE_LEVEL_ALL)
+	assert.Contains(t, c.prepareProposal(send()), marker)
+
+	c.useProposals = false
+	c.app = c.newApp(nil)
+	assert.NotContains(t, c.prepareProposal(send()), marker)
+	txRes = c.nextBlock(send())
+	assert.True(t, isChainPausedErr(txRes[0].Codespace, txRes[0].Code), txRes[0].Log)
 }
 
 func TestEmergencyPause_Events(t *testing.T) {

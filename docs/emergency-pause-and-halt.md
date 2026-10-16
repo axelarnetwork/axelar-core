@@ -87,7 +87,8 @@ on chain keeps going, unless processing it dispatches a message that the pause b
   Downtime jailing only depends on block signing, which continues.
 - **gov**: proposals whose voting period ends during the pause are tallied. Their messages run through the pause
   check, so a passed proposal fails permanently unless all its messages are allowlisted. A proposal containing
-  `UnpauseRequest` would unpause the chain. New proposals, deposits and votes are blocked.
+  `UnpauseRequest` would unpause the chain. New proposals, deposits and votes are blocked (see
+  [Overriding the governance key](#overriding-the-governance-key)).
 
 To also freeze cross-chain flows that are already queued, deactivate the affected chains
 (`axelard tx nexus deactivate-chain`, use `:all:` for every chain) before pausing. `DeactivateChainRequest` is not
@@ -170,6 +171,36 @@ a plan not yet due stops with `BINARY UPDATED BEFORE TRIGGER`.
 If the chain was paused before the halt, it is still paused. Check with `axelard query permission is-paused`
 and unpause once safe.
 
+## Overriding the governance key
+
+A pause blocks new gov proposals, so gov cannot unpause by itself. If validators want to override the governance
+key, they can skip the pause, as long as validators with more than 2/3 of the voting power do so. Restart each
+validator with the height from which it skips the pause:
+
+```bash
+axelard start --unsafe-skip-halt-pause <H>
+```
+
+- From height `H` on, while the chain is paused, the validator as proposer puts a marker first in its blocks. In
+  a marked block the pause is not enforced, and `PauseRequest` and `HaltChainRequest` are rejected, also from gov.
+- A validator without the flag rejects marked blocks. A marked block is only committed if validators with more
+  than 2/3 of the voting power have the flag. Validators with the flag also accept unmarked blocks, in which the
+  pause still applies.
+- Every node executes committed blocks the same way, so full nodes and nodes replaying the chain don't need the
+  flag to follow the chain.
+- Nodes without the flag still reject paused txs in CheckTx and don't gossip them. Start each validator's sentry
+  nodes with the same flag, and send the unpause proposal, its deposit and the votes through a node that has the
+  flag. Otherwise these txs never reach a validator.
+- Every marked block emits an `emergency_pause_skipped` event with `height`, `pause_level` and `proposer`.
+
+While support is below 2/3, rounds proposed by validators with the flag fail and blocks slow down. No one is jailed
+for it.
+
+Once marked blocks are committed, gov can submit and vote on a proposal that unpauses. Only after that proposal has
+executed do all nodes accept all messages again, and proposers stop adding the marker. Remove the flag at the next
+restart: a validator that keeps it also skips any later pause. A halt scheduled before the marked blocks, or in an
+unmarked block, still needs `--unsafe-skip-upgrades`.
+
 ## Testing
 
 `app/emergency_test.go` runs a single-validator chain in-process through ABCI with real signed transactions. It
@@ -179,7 +210,8 @@ covers:
 - the allowlist at each level;
 - the nested execution paths;
 - halting at `H+1`;
-- resuming with `--unsafe-skip-upgrades`.
+- resuming with `--unsafe-skip-upgrades`;
+- skipping the pause with `--unsafe-skip-halt-pause`, through proposals, and gov unpausing.
 
 There is no multi-node harness in this repo. Before relying on this on a live network, rehearse on a local
 multi-node testnet:

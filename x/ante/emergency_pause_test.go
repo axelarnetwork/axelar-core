@@ -27,7 +27,8 @@ func TestEmergencyPause(t *testing.T) {
 
 	handle := func(level exported.PauseLevel, msgs ...sdk.Msg) error {
 		decorator := ante.NewEmergencyPause(&mock.PermissionMock{
-			GetPauseLevelFunc: func(sdk.Context) exported.PauseLevel { return level },
+			GetPauseLevelFunc:  func(sdk.Context) exported.PauseLevel { return level },
+			IsPauseSkippedFunc: func(sdk.Context) bool { return false },
 		})
 		_, err := ante.ChainMessageAnteDecorators(decorator).ToAnteHandler()(sdk.Context{}, &mockTx{msgs: msgs}, false)
 		return err

@@ -7,6 +7,9 @@ const (
 	// StoreKey to be used when creating the KVStore
 	StoreKey = ModuleName
 
+	// TStoreKey to be used when creating the transient KVStore
+	TStoreKey = "transient_" + ModuleName
+
 	// RouterKey to be used for routing msgs
 	RouterKey = ModuleName
 
