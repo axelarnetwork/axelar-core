@@ -250,7 +250,7 @@ func NewSequenceKVQueue(prefixStore KVStore, maxSize uint64, logger log.Logger) 
 	return SequenceKVQueue{store: prefixStore, maxSize: maxSize, seqNo: seqNo, size: size, logger: logger}
 }
 
-// Enqueue pushes the given value onto the top of the queue and stores the value at given key. Returns queue position and status
+// Enqueue appends the given value to the queue. It returns an error if the queue is full.
 func (q *SequenceKVQueue) Enqueue(value codec.ProtoMarshaler) error {
 	if q.size >= q.maxSize {
 		return fmt.Errorf("queue is full")
@@ -282,7 +282,7 @@ func (q SequenceKVQueue) Size() uint64 {
 	return q.size
 }
 
-// Peek unmarshals the value into the given object at the given index and returns its sequence number, returns false if n is out of range
+// Peek unmarshals the value at the given index into the provided object and returns false if n is out of range.
 // n is 0-based
 func (q SequenceKVQueue) Peek(n uint64, value codec.ProtoMarshaler) bool {
 	_, ok := q.peek(n, value)
