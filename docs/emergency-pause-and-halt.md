@@ -1,7 +1,7 @@
 # Emergency pause and halt runbook
 
-Two emergency controls exist, both in the `permission` module and both gated on `ROLE_ACCESS_CONTROL`
-(the governance multisig key). A gov proposal can also execute them, as the gov module account.
+The permission module has two emergency controls: Pause and Halt. Both can be executed by the governance key
+(`ROLE_ACCESS_CONTROL`) or by a gov proposal.
 
 | Control | What it does | Undo |
 |---|---|---|
@@ -52,7 +52,6 @@ The allowlist is `EmergencyPauseAllowlist` in `x/permission/exported/pause.go`.
 | `vote.VoteRequest` | | ✓ |
 | `multisig.SubmitPubKeyRequest`, `multisig.SubmitSignatureRequest` | | ✓ |
 | `reward.RefundMsgRequest`, `auxiliary.BatchRequest` (vald's wrappers) | | ✓ (only if every inner message is allowed) |
-| everything else | | |
 
 Every message is checked, wherever it comes from:
 
@@ -73,10 +72,13 @@ A rejected message fails with `chain is paused` (codespace `permission`, code 3)
 
 ### What keeps running while paused
 
-The pause only stops new input. Every BeginBlocker and EndBlocker still runs, so anything already queued on chain
-keeps going:
+The pause only stops new transactions. Every BeginBlocker and EndBlocker still runs, so anything already queued
+on chain keeps going, unless processing it dispatches a message that the pause blocks:
 
-- **nexus**: routes queued general messages, including to the wasm gateway, and runs the chain maintainer checks.
+- **nexus**: routes queued general messages to EVM and Cosmos chains, and runs the chain maintainer checks.
+  Messages to the wasm gateway (amplifier) fail, because the gateway's call to the router contract hits the pause
+  check. They stay `approved` and are not retried automatically. After unpausing, route them with
+  `axelard tx axelarnet route-message`.
 - **axelarnet**: sends queued IBC transfers.
 - **evm**: processes already confirmed events and creates command batches. Batches already signed can still be
   relayed to EVM chains.
@@ -87,15 +89,19 @@ keeps going:
   check, so a passed proposal fails permanently unless all its messages are allowlisted. A proposal containing
   `UnpauseRequest` would unpause the chain. New proposals, deposits and votes are blocked.
 
-To also freeze cross-chain flows that are already queued, deactivate the affected chains separately
-(`axelard tx nexus deactivate-chain`, use `:all:` for every chain).
+To also freeze cross-chain flows that are already queued, deactivate the affected chains
+(`axelard tx nexus deactivate-chain`, use `:all:` for every chain) before pausing. `DeactivateChainRequest` is not
+allowlisted, so it is rejected while paused.
 
 ### Things to watch while paused
 
-- **Validator rewards and maintainer status.** At level `all`, vald's votes and signatures are rejected. Polls and
-  signing sessions that expire during the pause count those validators as missing. Their accrued rewards for those
-  polls are cleared, and the nexus chain-maintainer check runs on the missed votes. At level `except-validators`,
+- **Validator rewards.** At level `all`, vald's votes and signatures are rejected. Polls and
+  signing sessions that are open when a pause starts can expire during it. Validators that had not voted or signed
+  yet can no longer do so, and are counted as missing. They might lose the rewards they have accrued in that reward
+  pool since the last payout. This is usually small, but can be larger on chains with few polls. At level `except-validators`,
   validators keep participating normally.
+- **Amplifier verifiers.** ampd's votes and signatures are `MsgExecuteContract` txs, so they are rejected at both
+  levels. Amplifier polls and signing sessions that expire during the pause count those verifiers as missing.
 - **In-flight work at level `except-validators`.** Polls already open can still complete, so confirmed events get
   processed. Signing sessions already open can still complete, so command batches become executable on the
   destination chain. If that is part of the incident, use level `all` or deactivate the chain.
@@ -143,7 +149,7 @@ axelard start --unsafe-skip-upgrades <H+1>
 The node logs `UPGRADE "emergency-halt-<H+1>" SKIPPED`, clears the plan and produces block `H+1`. Without the
 flag, the node stops again at the same point. Keep the flag only for this restart.
 
-### Option B: patched binary with a handler for the halt plan
+### Option B: patched binary with a handler for the halt plan (recommended)
 
 Use this when the fix needs a state migration at the halt height. Add the plan to `chainUpgrades` in
 `app/upgrades.go`, like any other upgrade:
@@ -157,7 +163,7 @@ Use this when the fix needs a state migration at the halt height. Add the plan t
 
 Ship this binary to every validator and start it without `--unsafe-skip-upgrades`. The handler runs at `H+1` and
 the chain continues. Do not start the patched binary before the chain has halted: a node that has a handler for
-a plan not yet due stops with `BINARY UPDATED BEFORE TRIGGER`. Remove the entry in the next regular release.
+a plan not yet due stops with `BINARY UPDATED BEFORE TRIGGER`.
 
 ### After resuming
 
