@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	channeltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
 
 	"github.com/axelarnetwork/axelar-core/utils"
 	"github.com/axelarnetwork/axelar-core/utils/events"
@@ -127,6 +128,10 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 		return nil, fmt.Errorf("ibc path %s is already registered for chain %s", req.IBCPath, chain)
 	}
 
+	if err := s.validateIBCPathIsBound(ctx, req.IBCPath); err != nil {
+		return nil, err
+	}
+
 	chain := nexus.Chain{
 		Name:                  req.CosmosChain,
 		KeyType:               tss.None,
@@ -155,6 +160,27 @@ func (s msgServer) AddCosmosBasedChain(c context.Context, req *types.AddCosmosBa
 	}
 
 	return &types.AddCosmosBasedChainResponse{}, nil
+}
+
+// validateIBCPathIsBound checks that the given IBC path points at a channel that already exists and
+// is open.
+func (s msgServer) validateIBCPathIsBound(ctx sdk.Context, ibcPath string) error {
+	pathSplit := strings.SplitN(ibcPath, "/", 2)
+	if len(pathSplit) != 2 {
+		return fmt.Errorf("invalid IBC path %s", ibcPath)
+	}
+	portID, channelID := pathSplit[0], pathSplit[1]
+
+	channel, found := s.GetChannel(ctx, portID, channelID)
+	if !found {
+		return fmt.Errorf("channel %s on port %s does not exist", channelID, portID)
+	}
+
+	if channel.State != channeltypes.OPEN {
+		return fmt.Errorf("channel %s on port %s is in state %s, expected %s", channelID, portID, channel.State, channeltypes.OPEN)
+	}
+
+	return nil
 }
 
 // RegisterAsset handles register an asset to a cosmos based chain

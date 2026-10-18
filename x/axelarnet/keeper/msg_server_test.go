@@ -12,6 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	ibctypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	channeltypes "github.com/cosmos/ibc-go/v10/modules/core/04-channel/types"
 	ibcclient "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	"github.com/stretchr/testify/assert"
 
@@ -405,17 +406,21 @@ func TestRetryIBCTransfer(t *testing.T) {
 
 func TestAddCosmosBasedChain(t *testing.T) {
 	var (
-		server types.MsgServiceServer
-		k      keeper.Keeper
-		nexusK *mock.NexusMock
-		ctx    sdk.Context
-		req    *types.AddCosmosBasedChainRequest
+		server   types.MsgServiceServer
+		k        keeper.Keeper
+		nexusK   *mock.NexusMock
+		channelK *mock.ChannelKeeperMock
+		ctx      sdk.Context
+		req      *types.AddCosmosBasedChainRequest
 	)
 	repeats := 20
 
 	givenMsgServer := Given("an axelarnet msg server", func() {
-		ctx, k, _, _ = setup(t)
+		ctx, k, channelK, _ = setup(t)
 		k.InitGenesis(ctx, types.DefaultGenesisState())
+		channelK.GetChannelFunc = func(sdk.Context, string, string) (channeltypes.Channel, bool) {
+			return channeltypes.Channel{State: channeltypes.OPEN}, true
+		}
 		nexusK = &mock.NexusMock{
 			GetChainFunc:              func(ctx sdk.Context, chain nexus.ChainName) (nexus.Chain, bool) { return nexus.Chain{}, false },
 			GetChainByNativeAssetFunc: func(ctx sdk.Context, asset string) (nexus.Chain, bool) { return nexus.Chain{}, false },
@@ -508,6 +513,20 @@ func TestAddCosmosBasedChain(t *testing.T) {
 				}
 			}).
 				Then2(requestFails("asset already registered")),
+
+			When("the channel does not exist yet", func() {
+				channelK.GetChannelFunc = func(sdk.Context, string, string) (channeltypes.Channel, bool) {
+					return channeltypes.Channel{}, false
+				}
+			}).
+				Then2(requestFails("does not exist")),
+
+			When("the channel is not open", func() {
+				channelK.GetChannelFunc = func(sdk.Context, string, string) (channeltypes.Channel, bool) {
+					return channeltypes.Channel{State: channeltypes.INIT}, true
+				}
+			}).
+				Then2(requestFails("expected STATE_OPEN")),
 		).
 		Run(t, repeats)
 
