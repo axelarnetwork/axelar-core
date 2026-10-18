@@ -10,7 +10,6 @@ import (
 	"github.com/axelarnetwork/axelar-core/utils/events"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/keeper"
 	"github.com/axelarnetwork/axelar-core/x/axelarnet/types"
-	"github.com/axelarnetwork/utils/funcs"
 )
 
 // EndBlocker called every block, process inflation, update validator set.
@@ -56,19 +55,34 @@ func EndBlocker(ctx sdk.Context, bk types.BaseKeeper, ibcKeeper keeper.IBCKeeper
 
 	// re-lock tokens to escrow and set transfer as failed
 	for _, f := range failed {
-		lockableAsset, err := n.NewLockableAsset(ctx, ibcKeeper, bank, f.Token)
-		funcs.MustNoErr(err)
-		funcs.MustNoErr(lockableAsset.LockFrom(ctx, types.AxelarIBCAccount))
+		relocked := utils.RunCached(ctx, bk, func(cachedCtx sdk.Context) (bool, error) {
+			lockableAsset, err := n.NewLockableAsset(cachedCtx, ibcKeeper, bank, f.Token)
+			if err != nil {
+				return false, err
+			}
 
-		funcs.MustNoErr(bk.SetTransferFailed(ctx, f.ID))
+			if err := lockableAsset.LockFrom(cachedCtx, types.AxelarIBCAccount); err != nil {
+				return false, err
+			}
 
-		events.Emit(ctx,
-			&types.IBCTransferFailed{
-				ID:        f.ID,
-				Sequence:  f.Sequence,
-				PortID:    f.PortID,
-				ChannelID: f.ChannelID,
-			})
+			if err := bk.SetTransferFailed(cachedCtx, f.ID); err != nil {
+				return false, err
+			}
+
+			events.Emit(cachedCtx,
+				&types.IBCTransferFailed{
+					ID:        f.ID,
+					Sequence:  f.Sequence,
+					PortID:    f.PortID,
+					ChannelID: f.ChannelID,
+				})
+
+			return true, nil
+		})
+
+		if !relocked {
+			bk.Logger(ctx).Error(fmt.Sprintf("failed to re-lock tokens for failed IBC transfer %s with id %s to %s", f.Token, f.ID.String(), f.Receiver))
+		}
 	}
 
 	return nil, nil
