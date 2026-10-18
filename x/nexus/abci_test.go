@@ -13,8 +13,11 @@ import (
 	"github.com/axelarnetwork/axelar-core/testutils/rand"
 	"github.com/axelarnetwork/axelar-core/x/nexus"
 	"github.com/axelarnetwork/axelar-core/x/nexus/exported"
+	exportedmock "github.com/axelarnetwork/axelar-core/x/nexus/exported/mock"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types"
 	"github.com/axelarnetwork/axelar-core/x/nexus/types/mock"
+	rewardexported "github.com/axelarnetwork/axelar-core/x/reward/exported"
+	rewardmock "github.com/axelarnetwork/axelar-core/x/reward/exported/mock"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -112,6 +115,64 @@ func TestRouteQueuedMessages(t *testing.T) {
 			for i, call := range n.RouteMessageCalls() {
 				assert.Equal(t, msgs[i].ID, call.ID)
 			}
+		}).
+		Run(t)
+}
+
+func TestCheckChainMaintainers(t *testing.T) {
+	var (
+		ctx      sdk.Context
+		n        *mock.NexusMock
+		reward   *mock.RewardKeeperMock
+		snapshot *mock.SnapshotterMock
+	)
+
+	givenDeregisterableMaintainer := Given("a chain with a maintainer that must be deregistered", func() {
+		ctx = sdk.NewContext(fake.NewMultiStore(), tmproto.Header{}, false, log.NewTestLogger(t))
+		chain := exported.Chain{Name: exported.ChainName("ethereum")}
+		maintainer := rand.ValAddr()
+
+		maintainerState := &exportedmock.MaintainerStateMock{
+			GetAddressFunc:          func() sdk.ValAddress { return maintainer },
+			CountMissingVotesFunc:   func(int) uint64 { return 0 },
+			CountIncorrectVotesFunc: func(int) uint64 { return 0 },
+		}
+
+		n = &mock.NexusMock{
+			LoggerFunc:           func(_ sdk.Context) log.Logger { return log.NewTestLogger(t) },
+			GetChainsFunc:        func(sdk.Context) []exported.Chain { return []exported.Chain{chain} },
+			IsChainActivatedFunc: func(sdk.Context, exported.Chain) bool { return true },
+			GetParamsFunc:        func(sdk.Context) types.Params { return types.DefaultParams() },
+			GetChainMaintainerStatesFunc: func(sdk.Context, exported.Chain) []exported.MaintainerState {
+				return []exported.MaintainerState{maintainerState}
+			},
+			DequeueRouteMessageFunc: func(sdk.Context) (exported.GeneralMessage, bool) {
+				return exported.GeneralMessage{}, false
+			},
+		}
+		reward = &mock.RewardKeeperMock{
+			GetPoolFunc: func(sdk.Context, string) rewardexported.RewardPool {
+				return &rewardmock.RewardPoolMock{ClearRewardsFunc: func(sdk.ValAddress) {}}
+			},
+		}
+		// no active proxy => the maintainer must be deregistered
+		snapshot = &mock.SnapshotterMock{
+			GetProxyFunc: func(sdk.Context, sdk.ValAddress) (sdk.AccAddress, bool) { return nil, false },
+		}
+	})
+
+	givenDeregisterableMaintainer.
+		When("removing the maintainer fails", func() {
+			n.RemoveChainMaintainerFunc = func(sdk.Context, exported.Chain, sdk.ValAddress) error {
+				return fmt.Errorf("remove failed")
+			}
+		}).
+		Then("the end blocker recovers and does not halt", func(t *testing.T) {
+			assert.NotPanics(t, func() {
+				_, err := nexus.EndBlocker(ctx, n, reward, snapshot)
+				assert.NoError(t, err)
+			})
+			assert.Len(t, n.RemoveChainMaintainerCalls(), 1)
 		}).
 		Run(t)
 }
