@@ -302,8 +302,7 @@ func createJob(sub <-chan tmEvents.ABCIEventWithHeight, processor func(event tmE
 		processWithLog := func(e tmEvents.ABCIEventWithHeight) {
 			err := processor(tmEvents.Map(e))
 			if err != nil {
-				ctx = log.AppendKeyVals(ctx, errors2.KeyVals(err)...)
-				log.FromCtx(ctx).Error(err.Error())
+				logErrorWithContext(ctx, err)
 			}
 		}
 		consume := tmEvents.Consume(sub, processWithLog)
@@ -316,14 +315,18 @@ func createJob(sub <-chan tmEvents.ABCIEventWithHeight, processor func(event tmE
 	}
 }
 
+func logErrorWithContext(ctx context.Context, err error) {
+	logCtx := log.AppendKeyVals(ctx, errors2.KeyVals(err)...)
+	log.FromCtx(logCtx).Error(err.Error())
+}
+
 func createJobTyped[T proto.Message](sub <-chan tmEvents.ABCIEventWithHeight, processor func(event T) error, cancel context.CancelFunc) jobs.Job {
 	return func(ctx context.Context) error {
 		processWithLog := func(e tmEvents.ABCIEventWithHeight) {
 			event := funcs.Must(sdk.ParseTypedEvent(e.Event)).(T)
 			err := processor(event)
 			if err != nil {
-				ctx = log.AppendKeyVals(ctx, errors2.KeyVals(err)...)
-				log.FromCtx(ctx).Error(err.Error())
+				logErrorWithContext(ctx, err)
 			}
 		}
 
