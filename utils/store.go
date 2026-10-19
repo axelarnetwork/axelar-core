@@ -119,7 +119,7 @@ func (store KVStore) Has(key Key) bool {
 	return store.KVStore.Has(key.AsKey())
 }
 
-// HasNew deletes the value stored under the given key, if it exists
+// HasNew returns true if the key exists
 func (store KVStore) HasNew(k key.Key) bool {
 	return store.KVStore.Has(k.Bytes())
 }
