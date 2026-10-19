@@ -150,7 +150,7 @@ func (s msgServer) HaltChain(c context.Context, req *types.HaltChainRequest) (*t
 	plan := upgradetypes.Plan{
 		Name:   exported.EmergencyHaltPlanName(height),
 		Height: height,
-		Info:   req.Reason,
+		Info:   exported.EmergencyHaltPlanInfo(req.Reason),
 	}
 
 	if err := s.upgrade.ScheduleUpgrade(ctx, plan); err != nil {

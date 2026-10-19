@@ -115,7 +115,7 @@ func TestMsgServer_HaltChain(t *testing.T) {
 		require.NoError(t, err)
 
 		haltHeight := ctx.BlockHeight() + 1
-		expected := upgradetypes.Plan{Name: exported.EmergencyHaltPlanName(haltHeight), Height: haltHeight, Info: "incident"}
+		expected := upgradetypes.Plan{Name: exported.EmergencyHaltPlanName(haltHeight), Height: haltHeight, Info: exported.EmergencyHaltPlanInfo("incident")}
 		require.Len(t, upgradeK.ScheduleUpgradeCalls(), 1)
 		assert.Equal(t, expected, upgradeK.ScheduleUpgradeCalls()[0].Plan)
 		assert.Equal(t, &types.HaltChainResponse{HaltHeight: haltHeight, PlanName: expected.Name}, res)

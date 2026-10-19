@@ -614,7 +614,7 @@ func TestEmergencyHalt(t *testing.T) {
 		haltHeight := c.height() + 1
 		planName := permissionexported.EmergencyHaltPlanName(haltHeight)
 		plan := funcs.Must(getKeeper[upgradekeeper.Keeper](c).GetUpgradePlan(c.ctx()))
-		assert.Equal(t, upgradetypes.Plan{Name: planName, Height: haltHeight, Info: "incident"}, plan)
+		assert.Equal(t, upgradetypes.Plan{Name: planName, Height: haltHeight, Info: permissionexported.EmergencyHaltPlanInfo("incident")}, plan)
 
 		event := findEvent(res.Events, permissiontypes.EventTypeEmergencyHalt)
 		require.NotNil(t, event)

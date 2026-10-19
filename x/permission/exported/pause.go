@@ -12,6 +12,12 @@ func EmergencyHaltPlanName(height int64) string {
 	return fmt.Sprintf("%s%d", EmergencyHaltPlanPrefix, height)
 }
 
+// EmergencyHaltPlanInfo returns the info of the upgrade plan that halts the chain.
+// The reason for the prefix is so Cosmovisor doesn't parse it as a binaries map or a download URL
+func EmergencyHaltPlanInfo(reason string) string {
+	return "emergency halt: " + reason
+}
+
 var (
 	// messages needed to get out of a pause, change its level, or escalate it to a halt
 	emergencyControlMsgs = []string{

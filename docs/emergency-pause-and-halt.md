@@ -201,6 +201,18 @@ executed do all nodes accept all messages again, and proposers stop adding the m
 restart: a validator that keeps it also skips any later pause. A halt scheduled before the marked blocks, or in an
 unmarked block, still needs `--unsafe-skip-upgrades`.
 
+### Rogue governance key
+
+Skipping the pause is not enough if the governance key itself is compromised or acting against the network.
+
+In that case, stop the chain and replace the key in code:
+
+1. Stop the chain: validators with more than 1/3 of the voting power stop `axelard`. No block can be committed after
+   that
+2. Ship a patched release that rotates the key at `H+1`.
+3. Restart every validator on the patched release. Once the handler has run, the old key has no role, and its pending
+   txs fail the role check.
+
 ## Testing
 
 `app/emergency_test.go` runs a single-validator chain in-process through ABCI with real signed transactions. It
