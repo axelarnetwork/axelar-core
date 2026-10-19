@@ -23,6 +23,7 @@ func GetQueryCmd() *cobra.Command {
 	permissionQueryCmd.AddCommand(
 		GetCmdGovernanceKey(),
 		GetParams(),
+		GetCmdIsPaused(),
 	)
 
 	return permissionQueryCmd
@@ -71,6 +72,33 @@ func GetParams() *cobra.Command {
 			queryClient := types.NewQueryClient(clientCtx)
 
 			res, err := queryClient.Params(cmd.Context(), &types.ParamsRequest{})
+			if err != nil {
+				return err
+			}
+
+			return clientCtx.PrintProto(res)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+	return cmd
+}
+
+// GetCmdIsPaused returns whether the chain is under an emergency pause and at which level
+func GetCmdIsPaused() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "is-paused",
+		Short: "Returns whether the chain is under an emergency pause and at which level",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			res, err := queryClient.IsPaused(cmd.Context(), &types.IsPausedRequest{})
 			if err != nil {
 				return err
 			}

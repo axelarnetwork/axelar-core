@@ -23,8 +23,14 @@ var _ types.Permission = &PermissionMock{}
 //
 //		// make and configure a mocked types.Permission
 //		mockedPermission := &PermissionMock{
+//			GetPauseLevelFunc: func(ctx sdk.Context) permission.PauseLevel {
+//				panic("mock out the GetPauseLevel method")
+//			},
 //			GetRoleFunc: func(ctx sdk.Context, address sdk.AccAddress) permission.Role {
 //				panic("mock out the GetRole method")
+//			},
+//			IsPauseSkippedFunc: func(ctx sdk.Context) bool {
+//				panic("mock out the IsPauseSkipped method")
 //			},
 //		}
 //
@@ -33,11 +39,22 @@ var _ types.Permission = &PermissionMock{}
 //
 //	}
 type PermissionMock struct {
+	// GetPauseLevelFunc mocks the GetPauseLevel method.
+	GetPauseLevelFunc func(ctx sdk.Context) permission.PauseLevel
+
 	// GetRoleFunc mocks the GetRole method.
 	GetRoleFunc func(ctx sdk.Context, address sdk.AccAddress) permission.Role
 
+	// IsPauseSkippedFunc mocks the IsPauseSkipped method.
+	IsPauseSkippedFunc func(ctx sdk.Context) bool
+
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetPauseLevel holds details about calls to the GetPauseLevel method.
+		GetPauseLevel []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 		// GetRole holds details about calls to the GetRole method.
 		GetRole []struct {
 			// Ctx is the ctx argument value.
@@ -45,8 +62,47 @@ type PermissionMock struct {
 			// Address is the address argument value.
 			Address sdk.AccAddress
 		}
+		// IsPauseSkipped holds details about calls to the IsPauseSkipped method.
+		IsPauseSkipped []struct {
+			// Ctx is the ctx argument value.
+			Ctx sdk.Context
+		}
 	}
-	lockGetRole sync.RWMutex
+	lockGetPauseLevel  sync.RWMutex
+	lockGetRole        sync.RWMutex
+	lockIsPauseSkipped sync.RWMutex
+}
+
+// GetPauseLevel calls GetPauseLevelFunc.
+func (mock *PermissionMock) GetPauseLevel(ctx sdk.Context) permission.PauseLevel {
+	if mock.GetPauseLevelFunc == nil {
+		panic("PermissionMock.GetPauseLevelFunc: method is nil but Permission.GetPauseLevel was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockGetPauseLevel.Lock()
+	mock.calls.GetPauseLevel = append(mock.calls.GetPauseLevel, callInfo)
+	mock.lockGetPauseLevel.Unlock()
+	return mock.GetPauseLevelFunc(ctx)
+}
+
+// GetPauseLevelCalls gets all the calls that were made to GetPauseLevel.
+// Check the length with:
+//
+//	len(mockedPermission.GetPauseLevelCalls())
+func (mock *PermissionMock) GetPauseLevelCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockGetPauseLevel.RLock()
+	calls = mock.calls.GetPauseLevel
+	mock.lockGetPauseLevel.RUnlock()
+	return calls
 }
 
 // GetRole calls GetRoleFunc.
@@ -82,6 +138,38 @@ func (mock *PermissionMock) GetRoleCalls() []struct {
 	mock.lockGetRole.RLock()
 	calls = mock.calls.GetRole
 	mock.lockGetRole.RUnlock()
+	return calls
+}
+
+// IsPauseSkipped calls IsPauseSkippedFunc.
+func (mock *PermissionMock) IsPauseSkipped(ctx sdk.Context) bool {
+	if mock.IsPauseSkippedFunc == nil {
+		panic("PermissionMock.IsPauseSkippedFunc: method is nil but Permission.IsPauseSkipped was just called")
+	}
+	callInfo := struct {
+		Ctx sdk.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockIsPauseSkipped.Lock()
+	mock.calls.IsPauseSkipped = append(mock.calls.IsPauseSkipped, callInfo)
+	mock.lockIsPauseSkipped.Unlock()
+	return mock.IsPauseSkippedFunc(ctx)
+}
+
+// IsPauseSkippedCalls gets all the calls that were made to IsPauseSkipped.
+// Check the length with:
+//
+//	len(mockedPermission.IsPauseSkippedCalls())
+func (mock *PermissionMock) IsPauseSkippedCalls() []struct {
+	Ctx sdk.Context
+} {
+	var calls []struct {
+		Ctx sdk.Context
+	}
+	mock.lockIsPauseSkipped.RLock()
+	calls = mock.calls.IsPauseSkipped
+	mock.lockIsPauseSkipped.RUnlock()
 	return calls
 }
 

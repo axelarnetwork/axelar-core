@@ -34,7 +34,7 @@ func TestGenesis(t *testing.T) {
 	Given("a keeper",
 		func() {
 			subspace := paramstypes.NewSubspace(cfg.Codec, cfg.Amino, store.NewKVStoreKey("paramsKey"), store.NewKVStoreKey("tparamsKey"), "permission")
-			k = keeper.NewKeeper(cfg.Codec, store.NewKVStoreKey(types.StoreKey), subspace)
+			k = keeper.NewKeeper(0, cfg.Codec, store.NewKVStoreKey(types.StoreKey), store.NewTransientStoreKey(types.TStoreKey), subspace)
 
 		}).
 		When("the state is initialized from a genesis state",

@@ -245,8 +245,8 @@ func initFeePolicyKeeper(keepers *KeeperCache) *feepolicyKeeper.Keeper {
 	return &feePolicyK
 }
 
-func initPermissionKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, keepers *KeeperCache) *permissionKeeper.Keeper {
-	permissionK := permissionKeeper.NewKeeper(appCodec, keys[permissionTypes.StoreKey], keepers.getSubspace(permissionTypes.ModuleName))
+func initPermissionKeeper(appCodec codec.Codec, keys map[string]*store.KVStoreKey, tkeys map[string]*store.TransientStoreKey, keepers *KeeperCache, skipPauseHeight int64) *permissionKeeper.Keeper {
+	permissionK := permissionKeeper.NewKeeper(skipPauseHeight, appCodec, keys[permissionTypes.StoreKey], tkeys[permissionTypes.TStoreKey], keepers.getSubspace(permissionTypes.ModuleName))
 	return &permissionK
 }
 

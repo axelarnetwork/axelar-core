@@ -6,6 +6,7 @@ option go_package = "github.com/axelarnetwork/axelar-core/x/permission/types";
 import "gogoproto/gogo.proto";
 import "cosmos/crypto/multisig/keys.proto";
 import "axelar/permission/v1beta1/params.proto";
+import "axelar/permission/exported/v1beta1/types.proto";
 
 option (gogoproto.goproto_getters_all) = false;
 
@@ -24,3 +25,11 @@ message QueryGovernanceKeyResponse {
 message ParamsRequest {}
 
 message ParamsResponse { Params params = 1 [ (gogoproto.nullable) = false ]; }
+
+// IsPausedRequest represents a message that queries the emergency pause state
+message IsPausedRequest {}
+
+message IsPausedResponse {
+  bool paused = 1;
+  permission.exported.v1beta1.PauseLevel level = 2;
+}
