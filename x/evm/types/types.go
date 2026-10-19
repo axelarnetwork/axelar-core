@@ -759,7 +759,8 @@ func (c *CommandID) Unmarshal(data []byte) error {
 	return c.ValidateBasic()
 }
 
-// ValidateBasic returns an error if the given command ID is invalid
+// ValidateBasic always returns nil. A CommandID is a fixed-size 32-byte array,
+// so every value is structurally valid.
 func (c CommandID) ValidateBasic() error {
 	return nil
 }
