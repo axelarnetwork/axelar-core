@@ -1,6 +1,7 @@
 package app_test
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -29,6 +30,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil/mock"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
@@ -43,15 +45,22 @@ import (
 	"github.com/axelarnetwork/axelar-core/app"
 	"github.com/axelarnetwork/axelar-core/app/params"
 	auxiliarytypes "github.com/axelarnetwork/axelar-core/x/auxiliary/types"
+	evmtypes "github.com/axelarnetwork/axelar-core/x/evm/types"
 	multisigtypes "github.com/axelarnetwork/axelar-core/x/multisig/types"
+	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
 	permissionexported "github.com/axelarnetwork/axelar-core/x/permission/exported"
 	permissionkeeper "github.com/axelarnetwork/axelar-core/x/permission/keeper"
 	permissiontypes "github.com/axelarnetwork/axelar-core/x/permission/types"
 	rewardtypes "github.com/axelarnetwork/axelar-core/x/reward/types"
+	voteexported "github.com/axelarnetwork/axelar-core/x/vote/exported"
+	votetypes "github.com/axelarnetwork/axelar-core/x/vote/types"
 	"github.com/axelarnetwork/utils/funcs"
 )
 
-const testChainID = "axelar-emergency-test"
+const (
+	testChainID = "axelar-emergency-test"
+	feeDenom    = "uaxl" // the only fee denom feepolicy allows by default
+)
 
 // testChain runs a single-validator AxelarApp in-process: InitChain, FinalizeBlock, Commit and CheckTx are driven
 // directly through ABCI with real signed transactions, so the full ante handler and msg service router are exercised
@@ -109,7 +118,10 @@ func newTestChain(t *testing.T) *testChain {
 		genAccs = append(genAccs, authtypes.NewBaseAccount(acc.addr, acc.priv.PubKey(), uint64(i), 0))
 		balances = append(balances, banktypes.Balance{
 			Address: acc.addr.String(),
-			Coins:   sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1_000_000_000_000))),
+			Coins: sdk.NewCoins(
+				sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(1_000_000_000_000)),
+				sdk.NewCoin(feeDenom, sdkmath.NewInt(1_000_000_000_000)),
+			),
 		})
 	}
 
@@ -156,6 +168,22 @@ func (c *testChain) newApp(opts simtestutil.AppOptionsMap) *app.AxelarApp {
 	}
 
 	return app.NewAxelarApp(log.NewNopLogger(), c.db, nil, true, c.encCfg, appOpts, []wasm.Option{}, baseapp.SetChainID(testChainID))
+}
+
+// fork starts a second node on a copy of this node's committed state
+func (c *testChain) fork(opts simtestutil.AppOptionsMap) *testChain {
+	db := dbm.NewMemDB()
+	it := funcs.Must(c.db.Iterator(nil, nil))
+	for ; it.Valid(); it.Next() {
+		require.NoError(c.t, db.Set(it.Key(), it.Value()))
+	}
+	require.NoError(c.t, it.Close())
+
+	node := *c
+	node.db, node.home = db, c.t.TempDir()
+	node.app = node.newApp(opts)
+
+	return &node
 }
 
 func (c *testChain) height() int64 {
@@ -220,6 +248,10 @@ func (c *testChain) ctx() sdk.Context {
 
 // tx signs a tx with the signer's committed account number and sequence
 func (c *testChain) tx(signer *testAccount, msgs ...sdk.Msg) []byte {
+	return c.txWithFee(signer, sdk.Coins{}, msgs...)
+}
+
+func (c *testChain) txWithFee(signer *testAccount, fee sdk.Coins, msgs ...sdk.Msg) []byte {
 	acc := getKeeper[authkeeper.AccountKeeper](c).GetAccount(c.ctx(), signer.addr)
 	require.NotNil(c.t, acc)
 
@@ -227,7 +259,7 @@ func (c *testChain) tx(signer *testAccount, msgs ...sdk.Msg) []byte {
 		rand.New(rand.NewSource(time.Now().UnixNano())),
 		c.encCfg.TxConfig,
 		msgs,
-		sdk.Coins{},
+		fee,
 		10_000_000,
 		testChainID,
 		[]uint64{acc.GetAccountNumber()},
@@ -254,7 +286,11 @@ func (c *testChain) pauseLevel() permissionexported.PauseLevel {
 }
 
 func (c *testChain) balance(addr sdk.AccAddress) sdkmath.Int {
-	return getKeeper[bankkeeper.BaseKeeper](c).GetBalance(c.ctx(), addr, sdk.DefaultBondDenom).Amount
+	return c.balanceOf(addr, sdk.DefaultBondDenom)
+}
+
+func (c *testChain) balanceOf(addr sdk.AccAddress, denom string) sdkmath.Int {
+	return getKeeper[bankkeeper.BaseKeeper](c).GetBalance(c.ctx(), addr, denom).Amount
 }
 
 func (c *testChain) pause(level permissionexported.PauseLevel) {
@@ -264,6 +300,17 @@ func (c *testChain) pause(level permissionexported.PauseLevel) {
 }
 
 func (c *testChain) passProposal(msgs ...sdk.Msg) govv1.Proposal {
+	proposalID := c.submitProposal(msgs...)
+
+	for range 12 {
+		c.nextBlock()
+	}
+
+	return c.proposal(proposalID)
+}
+
+// submitProposal submits a gov proposal and votes yes with the validator
+func (c *testChain) submitProposal(msgs ...sdk.Msg) uint64 {
 	govKeeper := getKeeper[govkeeper.Keeper](c)
 	minDeposit := funcs.Must(govKeeper.Params.Get(c.ctx())).MinDeposit
 	proposal := funcs.Must(govv1.NewMsgSubmitProposal(msgs, minDeposit, c.user.addr.String(), "", "emergency", "emergency", false))
@@ -275,11 +322,11 @@ func (c *testChain) passProposal(msgs ...sdk.Msg) govv1.Proposal {
 	res = c.deliver(c.validatorOwner, govv1.NewMsgVote(c.validatorOwner.addr, proposalID, govv1.OptionYes, ""))
 	require.Equal(c.t, uint32(0), res.Code, res.Log)
 
-	for range 12 {
-		c.nextBlock()
-	}
+	return proposalID
+}
 
-	return funcs.Must(govKeeper.Proposals.Get(c.ctx(), proposalID))
+func (c *testChain) proposal(id uint64) govv1.Proposal {
+	return funcs.Must(getKeeper[govkeeper.Keeper](c).Proposals.Get(c.ctx(), id))
 }
 
 func getKeeper[T any](c *testChain) *T {
@@ -395,6 +442,7 @@ func TestEmergencyPause_AllowlistedMessagesStillPass(t *testing.T) {
 		c.pause(permissionexported.PAUSE_LEVEL_ALL)
 
 		assertRejectedAsPaused(t, c, c.user, rewardtypes.NewRefundMsgRequest(c.user.addr, submitSignature(c.user.addr)))
+		assertRejectedAsPaused(t, c, c.user, valdVote(c.user.addr))
 		assertRejectedAsPaused(t, c, c.accessControl, permissiontypes.NewRegisterControllerRequest(c.accessControl.addr, newTestAccount().addr))
 	})
 
@@ -407,6 +455,7 @@ func TestEmergencyPause_AllowlistedMessagesStillPass(t *testing.T) {
 		assertNotRejectedAsPaused(t, c, c.user, auxiliarytypes.NewBatchRequest(c.user.addr, []sdk.Msg{
 			rewardtypes.NewRefundMsgRequest(c.user.addr, submitSignature(c.user.addr)),
 		}))
+		assertNotRejectedAsPaused(t, c, c.user, valdVote(c.user.addr))
 
 		controller := newTestAccount().addr
 		res := assertNotRejectedAsPaused(t, c, c.accessControl, permissiontypes.NewRegisterControllerRequest(c.accessControl.addr, controller))
@@ -622,9 +671,6 @@ func TestEmergencyPause_SkipHaltPause(t *testing.T) {
 	assert.NotContains(t, c.prepareProposal(send()), marker)
 
 	c.app = c.newApp(withFlag)
-	checkRes := c.checkTx(send())
-	assert.False(t, isChainPausedErr(checkRes.Codespace, checkRes.Code), "a node with the flag accepts txs into its mempool: %s", checkRes.Log)
-
 	marked := c.prepareProposal(send())
 	require.Len(t, marked, 2)
 	assert.Equal(t, marker, marked[0])
@@ -693,6 +739,185 @@ func TestEmergencyPause_SkipHaltPause(t *testing.T) {
 	assert.True(t, isChainPausedErr(txRes[0].Codespace, txRes[0].Code), txRes[0].Log)
 }
 
+func TestEmergencyPause_SkipHaltPauseNodesAgree(t *testing.T) {
+	flagged := newTestChain(t)
+	flagged.pause(permissionexported.PAUSE_LEVEL_ALL)
+	flagged.app = flagged.newApp(simtestutil.AppOptionsMap{app.FlagUnsafeSkipHaltPause: flagged.height()})
+	unflagged := flagged.fork(nil)
+	nodes := []*testChain{flagged, unflagged}
+
+	marker := permissiontypes.PauseSkipMarker()
+	recipient := newTestAccount().addr
+	send := func() []byte { return flagged.tx(flagged.user, bankSend(flagged.user.addr, recipient)) }
+
+	// commits the block on both nodes, requires the same results and app hash, and returns the results
+	commit := func(txs [][]byte) []*abci.ExecTxResult {
+		var responses []*abci.ResponseFinalizeBlock
+		for _, node := range nodes {
+			res, err := node.finalizeBlock(txs...)
+			require.NoError(t, err)
+			_, err = node.app.Commit()
+			require.NoError(t, err)
+			responses = append(responses, res)
+		}
+
+		require.Equal(t, responses[0].TxResults, responses[1].TxResults)
+		require.Equal(t, responses[0].AppHash, responses[1].AppHash)
+
+		return responses[0].TxResults
+	}
+
+	// a block proposed by the node with the flag is marked, and only that node votes for it
+	marked := flagged.prepareProposal(send())
+	require.Equal(t, marker, marked[0])
+	assert.Equal(t, abci.ResponseProcessProposal_ACCEPT, flagged.processProposal(marked))
+	assert.Equal(t, abci.ResponseProcessProposal_REJECT, unflagged.processProposal(marked))
+
+	results := commit(marked)
+	assert.Equal(t, uint32(0), results[1].Code, results[1].Log)
+
+	// only the node with the flag accepts paused txs into its mempool
+	checkRes := flagged.checkTx(send())
+	assert.Equal(t, uint32(0), checkRes.Code, checkRes.Log)
+	checkRes = unflagged.checkTx(send())
+	assert.True(t, isChainPausedErr(checkRes.Codespace, checkRes.Code), checkRes.Log)
+
+	// a block proposed by the node without the flag is unmarked, both vote for it, and the pause applies
+	unmarked := unflagged.prepareProposal(send())
+	assert.NotContains(t, unmarked, marker)
+	for _, node := range nodes {
+		assert.Equal(t, abci.ResponseProcessProposal_ACCEPT, node.processProposal(unmarked))
+	}
+
+	results = commit(unmarked)
+	assert.True(t, isChainPausedErr(results[0].Codespace, results[0].Code), results[0].Log)
+
+	// pause is rejected in a marked block
+	marked = flagged.prepareProposal(flagged.tx(flagged.accessControl,
+		permissiontypes.NewPauseRequest(flagged.accessControl.addr, permissionexported.PAUSE_LEVEL_EXCEPT_VALIDATORS, "re-pause")))
+	require.Equal(t, marker, marked[0])
+	results = commit(marked)
+	assert.Equal(t, permissiontypes.ErrPauseSkipped.ABCICode(), results[1].Code, results[1].Log)
+
+	// unpausing in an unmarked block ends the override on both nodes
+	results = commit(unflagged.prepareProposal(flagged.tx(flagged.accessControl,
+		permissiontypes.NewUnpauseRequest(flagged.accessControl.addr, "resolved"))))
+	assert.Equal(t, uint32(0), results[0].Code, results[0].Log)
+
+	unmarked = flagged.prepareProposal(send())
+	assert.NotContains(t, unmarked, marker)
+	assert.Equal(t, abci.ResponseProcessProposal_ACCEPT, unflagged.processProposal(unmarked))
+	results = commit(unmarked)
+	assert.Equal(t, uint32(0), results[0].Code, results[0].Log)
+
+	for _, node := range nodes {
+		assert.False(t, node.pauseLevel().IsPaused())
+		assert.Equal(t, int64(2), node.balance(recipient).Int64())
+	}
+}
+
+func TestEmergencyHalt_ResumeWithPatchedBinary(t *testing.T) {
+	c := newTestChain(t)
+
+	res := c.deliver(c.accessControl, permissiontypes.NewHaltChainRequest(c.accessControl.addr, "incident", false))
+	require.Equal(t, uint32(0), res.Code, res.Log)
+	haltHeight := c.height() + 1
+	planName := permissionexported.EmergencyHaltPlanName(haltHeight)
+
+	_, err := c.finalizeBlock()
+	require.Error(t, err)
+
+	// a handler for the halt plan, like an entry in chainUpgrades
+	c.app = c.newApp(nil)
+	getKeeper[upgradekeeper.Keeper](c).SetUpgradeHandler(planName, func(_ context.Context, _ upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		return vm, nil
+	})
+	c.nextBlock()
+	c.nextBlock()
+	assert.Equal(t, haltHeight+1, c.height())
+
+	_, err = getKeeper[upgradekeeper.Keeper](c).GetUpgradePlan(c.ctx())
+	assert.ErrorIs(t, err, upgradetypes.ErrNoUpgradePlanFound)
+	name, height, err := getKeeper[upgradekeeper.Keeper](c).GetLastCompletedUpgrade(c.ctx())
+	require.NoError(t, err)
+	assert.Equal(t, planName, name)
+	assert.Equal(t, haltHeight, height)
+
+	// a binary without the handler refuses to continue, so the chainUpgrades entry has to stay
+	c.app = c.newApp(nil)
+	_, err = c.finalizeBlock()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), fmt.Sprintf("upgrade handler is missing for %s upgrade plan", planName))
+}
+
+func TestEmergencyPause_RejectedTxsPayNoFee(t *testing.T) {
+	c := newTestChain(t)
+	fee := sdk.NewCoins(sdk.NewInt64Coin(feeDenom, 1_000))
+	recipient := newTestAccount().addr
+
+	before := c.balanceOf(c.user.addr, feeDenom)
+	res := c.nextBlock(c.txWithFee(c.user, fee, bankSend(c.user.addr, recipient)))[0]
+	require.Equal(t, uint32(0), res.Code, res.Log)
+	require.Equal(t, before.Sub(fee.AmountOf(feeDenom)), c.balanceOf(c.user.addr, feeDenom))
+
+	c.pause(permissionexported.PAUSE_LEVEL_ALL)
+
+	before = c.balanceOf(c.user.addr, feeDenom)
+	tx := c.txWithFee(c.user, fee, bankSend(c.user.addr, recipient))
+	checkRes := c.checkTx(tx)
+	assert.True(t, isChainPausedErr(checkRes.Codespace, checkRes.Code), checkRes.Log)
+
+	// included anyway, it fails in the ante handler and the fee deduction is reverted
+	res = c.nextBlock(tx)[0]
+	assert.True(t, isChainPausedErr(res.Codespace, res.Code), res.Log)
+	assert.Equal(t, before, c.balanceOf(c.user.addr, feeDenom))
+}
+
+func TestEmergencyPause_ExecutedByGov(t *testing.T) {
+	govAddr := authtypes.NewModuleAddress(govtypes.ModuleName)
+
+	t.Run("pause and unpause", func(t *testing.T) {
+		c := newTestChain(t)
+
+		// both are submitted before the pause, which blocks new proposals
+		pauseID := c.submitProposal(permissiontypes.NewPauseRequest(govAddr, permissionexported.PAUSE_LEVEL_ALL, "gov pause"))
+		c.nextBlock()
+		c.nextBlock()
+		unpauseID := c.submitProposal(permissiontypes.NewUnpauseRequest(govAddr, "gov unpause"))
+
+		for c.proposal(pauseID).Status == govv1.StatusVotingPeriod {
+			c.nextBlock()
+		}
+		require.Equal(t, govv1.StatusPassed, c.proposal(pauseID).Status, c.proposal(pauseID).FailedReason)
+		assert.Equal(t, permissionexported.PAUSE_LEVEL_ALL, c.pauseLevel())
+		assertRejectedAsPaused(t, c, c.user, bankSend(c.user.addr, newTestAccount().addr))
+
+		for c.proposal(unpauseID).Status == govv1.StatusVotingPeriod {
+			c.nextBlock()
+		}
+		require.Equal(t, govv1.StatusPassed, c.proposal(unpauseID).Status, c.proposal(unpauseID).FailedReason)
+		assert.False(t, c.pauseLevel().IsPaused())
+	})
+
+	t.Run("halt", func(t *testing.T) {
+		c := newTestChain(t)
+		proposalID := c.submitProposal(permissiontypes.NewHaltChainRequest(govAddr, "gov halt", false))
+
+		var err error
+		for range 20 {
+			if _, err = c.finalizeBlock(); err != nil {
+				break
+			}
+			_, err = c.app.Commit()
+			require.NoError(t, err)
+		}
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), fmt.Sprintf("UPGRADE \"%s\" NEEDED", permissionexported.EmergencyHaltPlanName(c.height()+1)))
+		assert.Equal(t, govv1.StatusPassed, c.proposal(proposalID).Status)
+	})
+}
+
 func TestEmergencyPause_Events(t *testing.T) {
 	c := newTestChain(t)
 
@@ -712,6 +937,12 @@ func TestEmergencyPause_Events(t *testing.T) {
 	assert.Equal(t, c.accessControl.addr.String(), eventAttribute(*event, permissiontypes.AttributeKeySigner))
 	assert.Equal(t, "resolved", eventAttribute(*event, permissiontypes.AttributeKeyReason))
 	assert.Equal(t, fmt.Sprint(c.height()), eventAttribute(*event, permissiontypes.AttributeKeyHeight))
+}
+
+// valdVote is a vote in the shape vald sends it
+func valdVote(sender sdk.AccAddress) *auxiliarytypes.BatchRequest {
+	vote := votetypes.NewVoteRequest(sender, voteexported.PollID(1), evmtypes.NewVoteEvents(nexus.ChainName("Ethereum")))
+	return auxiliarytypes.NewBatchRequest(sender, []sdk.Msg{rewardtypes.NewRefundMsgRequest(sender, vote)})
 }
 
 func submitSignature(sender sdk.AccAddress) *multisigtypes.SubmitSignatureRequest {

@@ -206,12 +206,15 @@ unmarked block, still needs `--unsafe-skip-upgrades`.
 `app/emergency_test.go` runs a single-validator chain in-process through ABCI with real signed transactions. It
 covers:
 
-- the pause and unpause flow;
-- the allowlist at each level;
+- the pause and unpause flow, also through gov proposals;
+- the allowlist at each level, including vald's batched and refunded votes;
 - the nested execution paths;
-- halting at `H+1`;
-- resuming with `--unsafe-skip-upgrades`;
-- skipping the pause with `--unsafe-skip-halt-pause`, through proposals, and gov unpausing.
+- rejected txs paying no fee;
+- halting at `H+1`, also through a gov proposal;
+- resuming with `--unsafe-skip-upgrades` or with a handler for the halt plan;
+- skipping the pause with `--unsafe-skip-halt-pause`, through proposals, and gov unpausing;
+- a node with the flag and a node without it executing the same marked and unmarked blocks with the same results
+  and app hash.
 
 There is no multi-node harness in this repo. Before relying on this on a live network, rehearse on a local
 multi-node testnet:
