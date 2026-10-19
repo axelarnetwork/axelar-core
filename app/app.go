@@ -260,6 +260,9 @@ func NewAxelarApp(
 	SetKeeper(keepers, initVoteKeeper(appCodec, keys, keepers))
 
 	skipPauseHeight := cast.ToInt64(appOpts.Get(FlagUnsafeSkipHaltPause))
+	if skipPauseHeight != 0 {
+		logger.Warn(fmt.Sprintf("--%s is set: from height %d on, this node skips any emergency pause, remove the flag once the chain is unpaused", FlagUnsafeSkipHaltPause, skipPauseHeight))
+	}
 	SetKeeper(keepers, initPermissionKeeper(appCodec, keys, tkeys, keepers, skipPauseHeight))
 	SetKeeper(keepers, initFeePolicyKeeper(keepers))
 
