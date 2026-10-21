@@ -1,14 +1,12 @@
 package types
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"sort"
 	"strings"
 
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/address"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	ibctransfertypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
 	host "github.com/cosmos/ibc-go/v10/modules/core/24-host"
@@ -27,13 +25,6 @@ const (
 )
 
 const ZERO_X_PREFIX = "0x"
-
-// NewLinkedAddress creates a new address to make a deposit which can be transferred to another blockchain
-func NewLinkedAddress(ctx sdk.Context, chain nexus.ChainName, symbol, recipientAddr string) sdk.AccAddress {
-	nonce := utils.GetNonce(ctx.HeaderHash(), ctx.BlockGasMeter())
-	hash := sha256.Sum256([]byte(fmt.Sprintf("%s_%s_%s_%x", chain, symbol, recipientAddr, nonce)))
-	return hash[:address.Len]
-}
 
 // Validate checks the stateless validity of the transfer
 func (m IBCTransfer) Validate() error {

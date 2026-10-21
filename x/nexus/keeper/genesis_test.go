@@ -91,7 +91,6 @@ func assertChainStatesEqual(t *testing.T, expected, actual *types.GenesisState) 
 	assert.Equal(t, expected.Nonce, actual.Nonce)
 	assert.ElementsMatch(t, expected.Chains, actual.Chains)
 	assert.ElementsMatch(t, expected.ChainStates, actual.ChainStates)
-	assert.ElementsMatch(t, expected.LinkedAddresses, actual.LinkedAddresses)
 	assert.ElementsMatch(t, expected.Transfers, actual.Transfers)
 	assert.Equal(t, expected.Fee, actual.Fee)
 	assert.ElementsMatch(t, expected.FeeInfos, actual.FeeInfos)
@@ -121,37 +120,19 @@ func TestExportGenesisInitGenesis(t *testing.T) {
 		keeper.ActivateChain(ctx, chain)
 	}
 
-	linkedAddressesCount := rand.I64Between(100, 200)
-	expectedLinkedAddresses := make([]types.LinkedAddresses, linkedAddressesCount)
-	for i := 0; i < int(linkedAddressesCount); i++ {
-		depositAddress := getRandomAxelarnetAddress()
+	transferCount := rand.I64Between(100, 200)
+	expected.Nonce = uint64(transferCount)
+	for i := 0; i < int(transferCount); i++ {
 		recipientAddress := getRandomEthereumAddress()
 
-		if err := keeper.LinkAddresses(ctx, depositAddress, recipientAddress); err != nil {
-			panic(err)
-		}
-		expectedLinkedAddresses[i] = types.NewLinkedAddresses(depositAddress, recipientAddress)
-	}
-	expected.LinkedAddresses = expectedLinkedAddresses
-
-	expected.Nonce = uint64(linkedAddressesCount)
-	for i, linkedAddress := range expectedLinkedAddresses {
-		depositAddress := linkedAddress.DepositAddress
-		recipientAddress := linkedAddress.RecipientAddress
-
-		_, minFee, maxFee, err := keeper.getCrossChainFees(ctx, depositAddress.Chain, recipientAddress.Chain, axelarnet.NativeAsset)
+		_, minFee, maxFee, err := keeper.getCrossChainFees(ctx, axelarnet.Axelarnet, recipientAddress.Chain, axelarnet.NativeAsset)
 		assert.Nil(t, err)
 
 		asset := sdk.NewCoin(axelarnet.NativeAsset, testutils.RandInt(minFee.Int64()/2, maxFee.Int64()*2))
-		fees, err := keeper.ComputeTransferFee(ctx, depositAddress.Chain, recipientAddress.Chain, asset)
+		fees, err := keeper.ComputeTransferFee(ctx, axelarnet.Axelarnet, recipientAddress.Chain, asset)
 		assert.Nil(t, err)
 
-		_, err = keeper.EnqueueForTransfer(
-			ctx,
-			depositAddress,
-			asset,
-		)
-		if err != nil {
+		if _, err := keeper.EnqueueTransfer(ctx, axelarnet.Axelarnet, recipientAddress, asset); err != nil {
 			panic(err)
 		}
 
@@ -235,4 +216,17 @@ func TestInitGenesisRebuildsProcessingIndex(t *testing.T) {
 	if len(got) == 1 {
 		assert.Equal(t, msg.ID, got[0].ID)
 	}
+}
+
+// linked addresses were removed with the link-deposit protocol, so a genesis file that still carries them must not re-create state
+func TestInitGenesis_IgnoresDeprecatedLinkedAddresses(t *testing.T) {
+	ctx, keeper := setup(t)
+
+	genState := types.DefaultGenesisState()
+	genState.LinkedAddresses = []types.LinkedAddresses{
+		{DepositAddress: getRandomAxelarnetAddress(), RecipientAddress: getRandomEthereumAddress()},
+	}
+	keeper.InitGenesis(ctx, genState)
+
+	assert.Empty(t, keeper.ExportGenesis(ctx).LinkedAddresses)
 }

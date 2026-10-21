@@ -17,8 +17,11 @@ message GenesisState {
   repeated nexus.exported.v1beta1.Chain chains = 3
       [ (gogoproto.nullable) = false ];
   repeated ChainState chain_states = 4 [ (gogoproto.nullable) = false ];
+  // DEPRECATED: the link-deposit protocol was removed in v1.4. The field must
+  // remain so that existing genesis files still decode; it is ignored on import
+  // and never exported.
   repeated LinkedAddresses linked_addresses = 5
-      [ (gogoproto.nullable) = false ];
+      [ (gogoproto.nullable) = false, deprecated = true ];
   repeated nexus.exported.v1beta1.CrossChainTransfer transfers = 6
       [ (gogoproto.nullable) = false ];
   nexus.exported.v1beta1.TransferFee fee = 7 [ (gogoproto.nullable) = false ];

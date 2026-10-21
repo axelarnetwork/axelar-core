@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"fmt"
-	"math/big"
 	"strings"
 
 	"cosmossdk.io/math"
@@ -122,10 +121,12 @@ func RandomCommand() types.Command {
 		slices.Filter(
 			slices.TryCast[int32, types.CommandType](
 				maps.Keys(types.CommandType_name)),
-			func(t types.CommandType) bool { return t != types.COMMAND_TYPE_UNSPECIFIED })...)
+			// no constructor creates mint commands any more, historical ones are covered by the decoder tests
+			func(t types.CommandType) bool {
+				return t != types.COMMAND_TYPE_UNSPECIFIED && t != types.COMMAND_TYPE_MINT_TOKEN
+			})...)
 	chainID := math.NewIntFromUint64(uint64(rand.PosI64()))
 	asset := rand.Denom(5, 10)
-	amount := big.NewInt(rand.PosI64())
 
 	switch commandType {
 	case types.COMMAND_TYPE_APPROVE_CONTRACT_CALL:
@@ -136,8 +137,6 @@ func RandomCommand() types.Command {
 		return types.NewDeployTokenCommand(chainID, multisigTestutils.KeyID(), asset, RandomTokenDetails(), RandomAddress(), math.NewUint(uint64(rand.PosI64())))
 	case types.COMMAND_TYPE_BURN_TOKEN:
 		return types.NewBurnTokenCommand(chainID, multisigTestutils.KeyID(), rand.PosI64(), RandomBurnerInfo(), false)
-	case types.COMMAND_TYPE_MINT_TOKEN:
-		return types.NewMintTokenCommand(multisigTestutils.KeyID(), nexustestutils.RandomTransferID(), asset, common.Address(RandomAddress()), amount)
 	case types.COMMAND_TYPE_TRANSFER_OPERATORSHIP:
 		key := &mock.KeyMock{
 			GetPubKeyFunc: func(valAddress sdk.ValAddress) (exported.PublicKey, bool) {

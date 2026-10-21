@@ -63,7 +63,6 @@ type Nexus interface {
 	RemoveChainMaintainer(ctx sdk.Context, chain nexus.Chain, validator sdk.ValAddress) error
 	GetChainMaintainers(ctx sdk.Context, chain nexus.Chain) []sdk.ValAddress
 	GetChainMaintainerStates(ctx sdk.Context, chain nexus.Chain) []nexus.MaintainerState
-	LinkAddresses(ctx sdk.Context, sender nexus.CrossChainAddress, recipient nexus.CrossChainAddress) error
 	DeactivateChain(ctx sdk.Context, chain nexus.Chain)
 	RegisterFee(ctx sdk.Context, chain nexus.Chain, feeInfo nexus.FeeInfo) error
 	GetFeeInfo(ctx sdk.Context, chain nexus.Chain, asset string) nexus.FeeInfo
@@ -74,13 +73,11 @@ type Nexus interface {
 	DequeueRouteMessage(ctx sdk.Context) (nexus.GeneralMessage, bool)
 	IsAssetRegistered(ctx sdk.Context, chain nexus.Chain, denom string) bool
 	GetChainByNativeAsset(ctx sdk.Context, asset string) (chain nexus.Chain, ok bool)
-	EnqueueForTransfer(ctx sdk.Context, sender nexus.CrossChainAddress, amount sdk.Coin) (nexus.TransferID, error)
 	EnqueueTransfer(ctx sdk.Context, senderChain nexus.Chain, recipient nexus.CrossChainAddress, asset sdk.Coin) (nexus.TransferID, error)
 	GetTransfersForChainPaginated(ctx sdk.Context, chain nexus.Chain, state nexus.TransferState, pageRequest *query.PageRequest) ([]nexus.CrossChainTransfer, *query.PageResponse, error)
 	ArchivePendingTransfer(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	MarkTransferAsFailed(ctx sdk.Context, transfer nexus.CrossChainTransfer)
 	RegisterAsset(ctx sdk.Context, chain nexus.Chain, asset nexus.Asset) error
-	GetRecipient(ctx sdk.Context, sender nexus.CrossChainAddress) (nexus.CrossChainAddress, bool)
 	SetChain(ctx sdk.Context, chain nexus.Chain)
 	GetTransferFees(ctx sdk.Context) sdk.Coins
 	SubTransferFee(ctx sdk.Context, coin sdk.Coin)

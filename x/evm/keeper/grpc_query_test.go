@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"math/big"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -26,7 +25,6 @@ import (
 	multisig "github.com/axelarnetwork/axelar-core/x/multisig/exported"
 	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	. "github.com/axelarnetwork/utils/test"
 )
 
@@ -54,14 +52,13 @@ func TestQueryPendingCommands(t *testing.T) {
 		keyID = multisigTestutils.KeyID()
 		dailyMintLimit := math.NewUint(uint64(rand.PosI64()))
 		cmdDeploy := types.NewDeployTokenCommand(chainID, keyID, asset, createDetails(asset, symbol), types.ZeroAddress, dailyMintLimit)
-		cmdMint := types.NewMintTokenCommand(keyID, nexustestutils.RandomTransferID(), symbol, common.BytesToAddress(rand.Bytes(common.AddressLength)), big.NewInt(rand.I64Between(1000, 100000)))
 		cmdBurn := types.NewBurnTokenCommand(chainID, keyID, ctx.BlockHeight(), types.BurnerInfo{
 			BurnerAddress: types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			TokenAddress:  types.Address(common.BytesToAddress(rand.Bytes(common.AddressLength))),
 			Symbol:        symbol,
 			Salt:          types.Hash(common.BytesToHash(rand.Bytes(common.HashLength))),
 		}, false)
-		cmds = append(cmds, cmdDeploy, cmdMint, cmdBurn)
+		cmds = append(cmds, cmdDeploy, cmdBurn)
 
 		chainKeeper = &mock.ChainKeeperMock{
 			GetNameFunc: func() nexus.ChainName { return evmChain },
