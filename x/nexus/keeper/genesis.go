@@ -37,14 +37,6 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 		k.setChainState(ctx, chainState)
 	}
 
-	for _, linkedAddresses := range genState.LinkedAddresses {
-		if _, ok := k.getLinkedAddresses(ctx, linkedAddresses.DepositAddress); ok {
-			panic(fmt.Errorf("linked addresses for deposit address %s on chain %s already set", linkedAddresses.DepositAddress.Address, linkedAddresses.DepositAddress.Chain.Name))
-		}
-
-		k.setLinkedAddresses(ctx, linkedAddresses)
-	}
-
 	transferSeen := make(map[exported.TransferID]bool)
 	for _, transfer := range genState.Transfers {
 		if transferSeen[transfer.ID] {
@@ -91,7 +83,6 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		k.getNonce(ctx),
 		k.GetChains(ctx),
 		k.getChainStates(ctx),
-		k.getAllLinkedAddresses(ctx),
 		k.getTransfers(ctx),
 		k.getTransferFee(ctx),
 		k.getFeeInfos(ctx),

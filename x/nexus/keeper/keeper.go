@@ -21,7 +21,6 @@ var (
 	chainPrefix              = utils.KeyFromStr("chain")
 	chainStatePrefix         = utils.KeyFromStr("state")
 	chainByNativeAssetPrefix = utils.KeyFromStr("native_asset_chain")
-	linkedAddressesPrefix    = utils.KeyFromStr("linked_addresses")
 	transferPrefix           = utils.KeyFromStr("transfer")
 	transferFee              = utils.KeyFromStr("fee")
 	assetFeePrefix           = utils.KeyFromStr("asset_fee")
@@ -37,9 +36,7 @@ var (
 	processingMessageOrderPrefix = key.RegisterStaticKey(types.ModuleName, 9)
 	processingMessageSeqKey      = key.RegisterStaticKey(types.ModuleName, 10)
 
-	// temporary
-	// TODO: add description about what temporary means
-	latestDepositAddressPrefix = utils.KeyFromStr("latest_deposit_address")
+	// retired: "linked_addresses" and "latest_deposit_address" (link-deposit protocol, removed in v1.4); do not reuse
 )
 
 // Keeper represents a nexus keeper

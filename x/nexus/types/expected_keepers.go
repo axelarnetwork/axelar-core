@@ -40,7 +40,6 @@ type Nexus interface {
 	RemoveChainMaintainer(ctx sdk.Context, chain exported.Chain, validator sdk.ValAddress) error
 	GetChainMaintainers(ctx sdk.Context, chain exported.Chain) []sdk.ValAddress
 	GetChainMaintainerStates(ctx sdk.Context, chain exported.Chain) []exported.MaintainerState
-	LinkAddresses(ctx sdk.Context, sender exported.CrossChainAddress, recipient exported.CrossChainAddress) error
 	DeactivateChain(ctx sdk.Context, chain exported.Chain)
 	RegisterFee(ctx sdk.Context, chain exported.Chain, feeInfo exported.FeeInfo) error
 	GetFeeInfo(ctx sdk.Context, chain exported.Chain, asset string) exported.FeeInfo

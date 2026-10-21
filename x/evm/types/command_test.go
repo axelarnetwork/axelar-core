@@ -22,7 +22,6 @@ import (
 	multisigMock "github.com/axelarnetwork/axelar-core/x/multisig/exported/mock"
 	multisigTestutils "github.com/axelarnetwork/axelar-core/x/multisig/exported/testutils"
 	nexus "github.com/axelarnetwork/axelar-core/x/nexus/exported"
-	nexustestutils "github.com/axelarnetwork/axelar-core/x/nexus/exported/testutils"
 	"github.com/axelarnetwork/utils/funcs"
 	"github.com/axelarnetwork/utils/slices"
 )
@@ -106,9 +105,9 @@ func TestNewApproveContractCallWithMintCommand(t *testing.T) {
 	assert.Equal(t, index, actualSourceEventIndex.Uint64())
 }
 
-func TestNewMintTokenCommand(t *testing.T) {
-	keyID := multisigTestutils.KeyID()
-	transferID := nexustestutils.RandomTransferID()
+// MintToken batches created before v1.4 must still decode for queries, so the
+// call encoding is pinned here instead of being produced by the current code
+func TestDecodeHistoricalMintTokenCommand(t *testing.T) {
 	symbol := rand.Str(3)
 	address := common.BytesToAddress(rand.Bytes(common.AddressLength))
 	amount := big.NewInt(rand.I64Between(100, 100000))
@@ -122,14 +121,19 @@ func TestNewMintTokenCommand(t *testing.T) {
 		strings.Repeat("0", 64-len(amountHex))+amountHex,
 		hex.EncodeToString([]byte(symbol)),
 	)
-	actual := types.NewMintTokenCommand(keyID, transferID, symbol, address, amount)
+	params, err := hex.DecodeString(expectedParams)
+	assert.NoError(t, err)
 
-	assert.Equal(t, expectedParams, hex.EncodeToString(actual.Params))
-
-	decodedSymbol, decodedAddr, decodedAmount := types.DecodeMintTokenParams(actual.Params)
+	decodedSymbol, decodedAddr, decodedAmount := types.DecodeMintTokenParams(params)
 	assert.Equal(t, symbol, decodedSymbol)
 	assert.Equal(t, address, decodedAddr)
 	assert.Equal(t, amount, decodedAmount)
+
+	decoded, err := types.Command{Type: types.COMMAND_TYPE_MINT_TOKEN, Params: params}.DecodeParams()
+	assert.NoError(t, err)
+	assert.Equal(t, symbol, decoded["symbol"])
+	assert.Equal(t, address.Hex(), decoded["account"])
+	assert.Equal(t, amount.String(), decoded["amount"])
 }
 
 func TestNewBurnTokenCommand(t *testing.T) {
