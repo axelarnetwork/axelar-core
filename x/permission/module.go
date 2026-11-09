@@ -123,10 +123,15 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	msgServer := keeper.NewMsgServerImpl(am.keeper)
 	types.RegisterMsgServer(grpc.ServerWithSDKErrors{Server: cfg.MsgServer(), Err: types.ErrGov, Logger: am.keeper.Logger}, msgServer)
 	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+
+	err := cfg.RegisterMigration(types.ModuleName, 2, keeper.Migrate2to3(am.keeper))
+	if err != nil {
+		panic(err)
+	}
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 2 }
+func (AppModule) ConsensusVersion() uint64 { return 3 }
 
 // IsOnePerModuleType implements the depinject.OnePerModuleType interface.
 func (am AppModule) IsOnePerModuleType() { // marker
