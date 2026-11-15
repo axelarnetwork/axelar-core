@@ -21,7 +21,7 @@ To privately report a security vulnerability, please choose one of the following
 
 ### 1. Email
 
-Send your detailed vulnerability report to `security@interoplabs.io`.
+Send your detailed vulnerability report to `axelar-security@commonprefix.com`.
 
 ### 2. Bug Bounty Program
 
@@ -73,4 +73,4 @@ Our bug bounty program is managed by Immunefi. Please visit [Immunefi's website]
 
 ## Feedback on this Policy
 
-For recommendations on how to improve this policy, either submit a pull request or send an email to `security@axelar.network`.
+For recommendations on how to improve this policy, either submit a pull request or send an email to `axelar-security@commonprefix.com`.
