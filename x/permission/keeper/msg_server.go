@@ -27,15 +27,12 @@ func (s msgServer) UpdateGovernanceKey(c context.Context, req *types.UpdateGover
 		return nil, fmt.Errorf("account is already registered with a role")
 	}
 
-	s.setGovernanceKey(ctx, req.GovernanceKey)
-
-	// delete the existing governance account address
-	sender, err := sdk.AccAddressFromBech32(req.Sender)
-	if err != nil {
-		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid sender: %s", err)
+	// Delete the existing governance account address.
+	if oldKey, ok := s.GetGovernanceKey(ctx); ok {
+		s.deleteGovAccount(ctx, oldKey.Address().Bytes())
 	}
-	s.deleteGovAccount(ctx, sender)
 
+	s.setGovernanceKey(ctx, req.GovernanceKey)
 	s.setGovAccount(ctx, types.NewGovAccount(req.GovernanceKey.Address().Bytes(), exported.ROLE_ACCESS_CONTROL))
 
 	return &types.UpdateGovernanceKeyResponse{}, nil
