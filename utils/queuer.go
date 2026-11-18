@@ -18,11 +18,13 @@ import (
 type KVQueue interface {
 	// Enqueue pushes the given value into the queue with the given key
 	Enqueue(key Key, value codec.ProtoMarshaler)
-	// Dequeue pops the first item in queue and stores it in the given value
+	// Dequeue removes the first queue entry and decodes its stored value into value.
+	// The separately stored value is retained in the KVStore.
 	Dequeue(value codec.ProtoMarshaler) bool
 	// DequeueIf pops the first item in queue iff it matches the given filter and stores it in the given value
 	DequeueIf(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool
-	// DequeueUntil pops the first item in queue that matches the given filter and stores it in the given value
+	// DequeueUntil removes the first queue entry matching filter and decodes it into value.
+	// Non-matching entries remain queued, and the separately stored value is retained.
 	DequeueUntil(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool
 	// IsEmpty returns true if the queue is empty; false otherwise
 	IsEmpty() bool
@@ -62,7 +64,8 @@ func noopFilter(_ codec.ProtoMarshaler) bool {
 	return true
 }
 
-// Dequeue pops the first item in queue and stores it in the given value
+// Dequeue removes the first queue entry and decodes its stored value into value.
+// The separately stored value is retained in the KVStore.
 func (q GeneralKVQueue) Dequeue(value codec.ProtoMarshaler) bool {
 	iter := store.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
@@ -78,7 +81,8 @@ func (q GeneralKVQueue) DequeueIf(value codec.ProtoMarshaler, filter func(value 
 	return q.dequeue(value, iter, filter, false)
 }
 
-// DequeueUntil pops the first item in queue that matches the given filter and stores it in the given value
+// DequeueUntil removes the first queue entry matching filter and decodes it into value.
+// Non-matching entries remain queued, and the separately stored value is retained.
 func (q GeneralKVQueue) DequeueUntil(value codec.ProtoMarshaler, filter func(value codec.ProtoMarshaler) bool) bool {
 	iter := store.KVStorePrefixIterator(q.store.KVStore, q.name.AsKey())
 	defer CloseLogError(iter, q.logger)
