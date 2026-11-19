@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha3"
 	"fmt"
+	"slices"
 	"strings"
 
 	"golang.org/x/exp/constraints"
@@ -57,7 +58,7 @@ func (k basicKey) Append(suffix Key) Key {
 		bz = [][]byte{suffix.Bytes()}
 	}
 	return basicKey{
-		particles: append(k.particles, bz...),
+		particles: slices.Concat(k.particles, bz),
 	}
 }
 

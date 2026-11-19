@@ -64,3 +64,13 @@ func TestRegisterPrefix(t *testing.T) {
 	assert.Panics(t, func() { key.RegisterStaticKey("test_module", 2) })
 
 }
+
+func TestAppendDoesNotChangeSiblingKey(t *testing.T) {
+	prefix := key.FromStr("first").Append(key.FromStr("second")).Append(key.FromStr("third"))
+	left := prefix.Append(key.FromStr("left"))
+	leftBytes := bytes.Clone(left.Bytes())
+	right := prefix.Append(key.FromStr("right"))
+	assert.Equal(t, leftBytes, left.Bytes(), "appending another suffix must preserve the first derived key")
+	assert.Equal(t, []byte("first_second_third_right"), right.Bytes())
+	assert.Equal(t, []byte("first_second_third"), prefix.Bytes())
+}
