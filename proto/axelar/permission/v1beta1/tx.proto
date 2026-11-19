@@ -81,3 +81,48 @@ message UpdateParamsRequest {
 }
 
 message UpdateParamsResponse {}
+
+// PauseRequest pauses the chain at the given level: only the messages
+// allowlisted for that level are accepted, both as top-level messages and when
+// executed by another message (authz, batch, refund, wasm, gov)
+message PauseRequest {
+  option (amino.name) = "permission/Pause";
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+  option (cosmos.msg.v1.signer) = "sender";
+
+  string sender = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  permission.exported.v1beta1.PauseLevel level = 2;
+  string reason = 3;
+}
+
+message PauseResponse {}
+
+// UnpauseRequest lifts an emergency pause
+message UnpauseRequest {
+  option (amino.name) = "permission/Unpause";
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+  option (cosmos.msg.v1.signer) = "sender";
+
+  string sender = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string reason = 2;
+}
+
+message UnpauseResponse {}
+
+// HaltChainRequest schedules an upgrade plan at the next block height, which
+// stops every node deterministically before that block is executed
+message HaltChainRequest {
+  option (amino.name) = "permission/HaltChain";
+  option (permission.exported.v1beta1.permission_role) = ROLE_ACCESS_CONTROL;
+  option (cosmos.msg.v1.signer) = "sender";
+
+  string sender = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  string reason = 2;
+  // replace an already scheduled upgrade plan instead of failing
+  bool override_pending_upgrade = 3;
+}
+
+message HaltChainResponse {
+  int64 halt_height = 1;
+  string plan_name = 2;
+}

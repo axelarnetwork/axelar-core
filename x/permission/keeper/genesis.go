@@ -17,22 +17,30 @@ func (k Keeper) InitGenesis(ctx sdk.Context, genState *types.GenesisState) {
 	for _, account := range genState.GovAccounts {
 		k.setGovAccount(ctx, account)
 	}
+
+	k.setPauseLevel(ctx, genState.PauseLevel)
 }
 
 // ExportGenesis returns the permission module's genesis state.
 func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
+	var genState *types.GenesisState
+
 	governanceKey, ok := k.GetGovernanceKey(ctx)
 	if !ok {
-		return types.NewGenesisState(
+		genState = types.NewGenesisState(
 			k.GetParams(ctx),
 			nil,
 			k.getGovAccounts(ctx),
 		)
+	} else {
+		genState = types.NewGenesisState(
+			k.GetParams(ctx),
+			&governanceKey,
+			k.getGovAccounts(ctx),
+		)
 	}
 
-	return types.NewGenesisState(
-		k.GetParams(ctx),
-		&governanceKey,
-		k.getGovAccounts(ctx),
-	)
+	genState.PauseLevel = k.GetPauseLevel(ctx)
+
+	return genState
 }

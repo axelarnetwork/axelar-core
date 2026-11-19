@@ -1,0 +1,236 @@
+# Emergency pause and halt runbook
+
+The permission module has two emergency controls: Pause and Halt. Both can be executed by the governance key
+(`ROLE_ACCESS_CONTROL`) or by a gov proposal.
+
+| Control | What it does | Undo |
+|---|---|---|
+| **Pause** (`axelard tx permission pause`) | Blocks the chain's transaction input: only allowlisted messages are accepted. Blocks keep being produced. | `axelard tx permission unpause` |
+| **Halt** (`axelard tx permission halt-chain`) | Schedules an upgrade plan at the next height. Every node stops before executing it. | Restart the nodes (see [Resuming after a halt](#resuming-after-a-halt)) |
+
+Pause is a soft halt, meant for hours, not days (see [Things to watch](#things-to-watch-while-paused)). Escalate
+to a halt if block production itself must stop.
+
+## Sending the transactions
+
+The `ROLE_ACCESS_CONTROL` account is the governance multisig key, so every command below is generated, signed by
+the key holders and broadcast as a multisig tx:
+
+```bash
+# 1. generate the unsigned tx (from the multisig key name or address)
+axelard tx permission pause "<reason>" --level all --from <governance-multisig> --generate-only > tx.json
+
+# 2. every signer signs
+axelard tx sign tx.json --multisig <governance-multisig-address> --from <signer> --output-document sig-<signer>.json
+
+# 3. combine and broadcast
+axelard tx multisign tx.json <governance-multisig> sig-*.json > signed.json
+axelard tx broadcast signed.json
+```
+
+The `reason` argument is required. It is stored in the emitted event, and in the upgrade plan's `info` for a halt.
+
+## Pausing and unpausing
+
+```bash
+axelard tx permission pause "<reason>" --level all                # strictest level (default)
+axelard tx permission pause "<reason>" --level except-validators
+axelard tx permission unpause "<reason>"
+axelard query permission is-paused                                # {"paused": true, "level": "PAUSE_LEVEL_ALL"}
+```
+
+Running `pause` again with another level changes the level of the ongoing pause. Pausing at the current level fails.
+
+### Levels and allowlist
+
+The allowlist is `EmergencyPauseAllowlist` in `x/permission/exported/pause.go`.
+
+| Message | `all` | `except-validators` |
+|---|:-:|:-:|
+| `permission.PauseRequest`, `UnpauseRequest`, `HaltChainRequest` | ✓ | ✓ |
+| `permission.UpdateGovernanceKeyRequest`, `RegisterControllerRequest`, `DeregisterControllerRequest` | | ✓ |
+| `vote.VoteRequest` | | ✓ |
+| `multisig.SubmitPubKeyRequest`, `multisig.SubmitSignatureRequest` | | ✓ |
+| `reward.RefundMsgRequest`, `auxiliary.BatchRequest` (vald's wrappers) | | ✓ (only if every inner message is allowed) |
+
+Every message is checked, wherever it comes from:
+
+- top-level tx messages, in `CheckTx` (they never enter the mempool and pay no fee) and in block execution;
+- messages unwrapped from `BatchRequest`, `RefundMsgRequest` and authz `MsgExec`;
+- messages dispatched by CosmWasm contracts, including nexus custom messages;
+- messages executed by a gov proposal.
+
+A rejected message fails with `chain is paused` (codespace `permission`, code 3).
+
+### Events
+
+| Event | Attributes |
+|---|---|
+| `emergency_pause` | `signer`, `reason`, `height`, `pause_level`, `previous_pause_level` |
+| `emergency_unpause` | `signer`, `reason`, `height`, `previous_pause_level` |
+| `emergency_halt` | `signer`, `reason`, `height`, `halt_height`, `plan_name`, plus `replaced_plan_name`, `replaced_plan_height` and `replaced_plan_info` when a pending plan was overridden |
+
+### What keeps running while paused
+
+The pause only stops new transactions. Every BeginBlocker and EndBlocker still runs, so anything already queued
+on chain keeps going, unless processing it dispatches a message that the pause blocks:
+
+- **nexus**: routes queued general messages to EVM and Cosmos chains, and runs the chain maintainer checks.
+  Messages to the wasm gateway (amplifier) fail, because the gateway's call to the router contract hits the pause
+  check. They stay `approved` and are not retried automatically. After unpausing, route them with
+  `axelard tx axelarnet route-message`.
+- **axelarnet**: sends queued IBC transfers.
+- **evm**: processes already confirmed events and creates command batches. Batches already signed can still be
+  relayed to EVM chains.
+- **vote** and **multisig**: open polls and keygen or signing sessions expire as usual.
+- **reward, mint, distribution, staking, slashing**: inflation, rewards, unbonding and downtime jailing continue.
+  Downtime jailing only depends on block signing, which continues.
+- **gov**: proposals whose voting period ends during the pause are tallied. Their messages run through the pause
+  check, so a passed proposal fails permanently unless all its messages are allowlisted. A proposal containing
+  `UnpauseRequest` would unpause the chain. New proposals, deposits and votes are blocked (see
+  [Overriding the governance key](#overriding-the-governance-key)).
+
+To also freeze cross-chain flows that are already queued, deactivate the affected chains
+(`axelard tx nexus deactivate-chain`, use `:all:` for every chain) before pausing. `DeactivateChainRequest` is not
+allowlisted, so it is rejected while paused.
+
+### Things to watch while paused
+
+- **Validator rewards.** At level `all`, vald's votes and signatures are rejected. Polls and
+  signing sessions that are open when a pause starts can expire during it. Validators that had not voted or signed
+  yet can no longer do so, and are counted as missing. They might lose the rewards they have accrued in that reward
+  pool since the last payout. This is usually small, but can be larger on chains with few polls. At level `except-validators`,
+  validators keep participating normally.
+- **Amplifier verifiers.** ampd's votes and signatures are `MsgExecuteContract` txs, so they are rejected at both
+  levels. Amplifier polls and signing sessions that expire during the pause count those verifiers as missing.
+- **In-flight work at level `except-validators`.** Polls already open can still complete, so confirmed events get
+  processed. Signing sessions already open can still complete, so command batches become executable on the
+  destination chain. If that is part of the incident, use level `all` or deactivate the chain.
+- **IBC light clients.** `MsgUpdateClient` is blocked. A pause longer than a client's trusting period lets the
+  client expire, and recovering it needs a gov proposal.
+- **vald, ampd and relayers** keep retrying rejected txs. Expect error logs.
+
+## Halting the chain
+
+```bash
+axelard tx permission halt-chain "<reason>"
+axelard tx permission halt-chain "<reason>" --override-pending-upgrade   # replaces an already scheduled plan
+```
+
+The tx is included at height `H` and schedules the upgrade plan `emergency-halt-<H+1>` at height `H+1`. At `H+1`,
+before executing anything, every node:
+
+- logs `UPGRADE "emergency-halt-<H+1>" NEEDED at height: <H+1>: <reason>`;
+- writes `<home>/data/upgrade-info.json`;
+- stops.
+
+The last committed block is `H`. The halt works while the chain is paused, and the pause state is kept through the
+halt.
+
+- If an upgrade plan is already scheduled, the halt fails and names that plan, unless `--override-pending-upgrade`
+  is set. An overridden plan is gone for good: the `emergency_halt` event records it, and it has to be scheduled
+  again through gov after recovery.
+- **Cosmovisor.** Cosmovisor reacts to `upgrade-info.json` and looks for
+  `cosmovisor/upgrades/emergency-halt-<H+1>/bin`. With automatic binary download disabled and no such directory,
+  it cannot switch binaries. Check how your Cosmovisor setup behaves before an incident. Running `axelard`
+  directly for the restart avoids the question.
+
+## Resuming after a halt
+
+More than 2/3 of the voting power must restart for blocks to resume. Choose one option.
+
+### Option A: same binary, skip the halt plan
+
+Restart every node with the halt height:
+
+```bash
+axelard start --unsafe-skip-upgrades <H+1>
+```
+
+The node logs `UPGRADE "emergency-halt-<H+1>" SKIPPED`, clears the plan and produces block `H+1`. Without the
+flag, the node stops again at the same point. Keep the flag only for this restart.
+
+### Option B: patched binary with a handler for the halt plan (recommended)
+
+Use this when the fix needs a state migration at the halt height. Add the plan to `chainUpgrades` in
+`app/upgrades.go`, like any other upgrade:
+
+```go
+{
+	name: "emergency-halt-<H+1>",
+	// optional: storeUpgrades, createHandler
+},
+```
+
+Ship this binary to every validator and start it without `--unsafe-skip-upgrades`. The handler runs at `H+1` and
+the chain continues. Do not start the patched binary before the chain has halted: a node that has a handler for
+a plan not yet due stops with `BINARY UPDATED BEFORE TRIGGER`.
+
+### After resuming
+
+If the chain was paused before the halt, it is still paused. Check with `axelard query permission is-paused`
+and unpause once safe.
+
+## Overriding the governance key
+
+A pause blocks new gov proposals, so gov cannot unpause by itself. If validators want to override the governance
+key, they can skip the pause, as long as validators with more than 2/3 of the voting power do so. Restart each
+validator with the height from which it skips the pause:
+
+```bash
+axelard start --unsafe-skip-halt-pause <H>
+```
+
+- From height `H` on, while the chain is paused, the validator as proposer puts a marker first in its blocks. In
+  a marked block the pause is not enforced, and `PauseRequest` and `HaltChainRequest` are rejected, also from gov.
+- A validator without the flag rejects marked blocks. A marked block is only committed if validators with more
+  than 2/3 of the voting power have the flag. Validators with the flag also accept unmarked blocks, in which the
+  pause still applies.
+- Every node executes committed blocks the same way, so full nodes and nodes replaying the chain don't need the
+  flag to follow the chain.
+- Nodes without the flag still reject paused txs in CheckTx and don't gossip them. Start each validator's sentry
+  nodes with the same flag, and send the unpause proposal, its deposit and the votes through a node that has the
+  flag. Otherwise these txs never reach a validator.
+- Every marked block emits an `emergency_pause_skipped` event with `height`, `pause_level` and `proposer`.
+
+While support is below 2/3, rounds proposed by validators with the flag fail and blocks slow down. No one is jailed
+for it.
+
+Once marked blocks are committed, gov can submit and vote on a proposal that unpauses. Only after that proposal has
+executed do all nodes accept all messages again, and proposers stop adding the marker. Remove the flag at the next
+restart: a validator that keeps it also skips any later pause. A halt scheduled before the marked blocks, or in an
+unmarked block, still needs `--unsafe-skip-upgrades`.
+
+### Rogue governance key
+
+Skipping the pause is not enough if the governance key itself is compromised or acting against the network.
+
+In that case, stop the chain and replace the key in code:
+
+1. Stop the chain: validators with more than 1/3 of the voting power stop `axelard`. No block can be committed after
+   that
+2. Ship a patched release that rotates the key at `H+1`.
+3. Restart every validator on the patched release. Once the handler has run, the old key has no role, and its pending
+   txs fail the role check.
+
+## Testing
+
+`app/emergency_test.go` runs a single-validator chain in-process through ABCI with real signed transactions. It
+covers:
+
+- the pause and unpause flow, also through gov proposals;
+- the allowlist at each level, including vald's batched and refunded votes;
+- the nested execution paths;
+- rejected txs paying no fee;
+- halting at `H+1`, also through a gov proposal;
+- resuming with `--unsafe-skip-upgrades` or with a handler for the halt plan;
+- skipping the pause with `--unsafe-skip-halt-pause`, through proposals, and gov unpausing;
+- a node with the flag and a node without it executing the same marked and unmarked blocks with the same results
+  and app hash.
+
+There is no multi-node harness in this repo. Before relying on this on a live network, rehearse on a local
+multi-node testnet:
+
+1. pause, confirm a bank transfer fails, unpause, confirm it succeeds;
+2. halt, confirm every node stops with last height `H`;
+3. restart every node with `--unsafe-skip-upgrades <H+1>` and confirm blocks are produced.

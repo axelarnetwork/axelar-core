@@ -18,21 +18,31 @@ import (
 var (
 	governanceKey = utils.KeyFromStr("governance")
 	accountPrefix = utils.KeyFromStr("account")
+	pauseLevelKey = utils.KeyFromStr("pause_level")
+
+	// transient, set for the current block only
+	pauseSkippedKey = []byte("pause_skipped")
 )
 
 // Keeper provides access to all state changes regarding the gov module
 type Keeper struct {
-	storeKey store.StoreKey
-	cdc      codec.BinaryCodec
-	params   params.Subspace
+	storeKey  store.StoreKey
+	tstoreKey store.StoreKey
+	cdc       codec.BinaryCodec
+	params    params.Subspace
+
+	skipPauseHeight int64 // the pause is skipped from this height on, 0 disables it
 }
 
 // NewKeeper returns a new permission keeper
-func NewKeeper(cdc codec.BinaryCodec, storeKey store.StoreKey, paramSpace params.Subspace) Keeper {
+// skipPauseHeight - height from which this validator wants to skip the pause, 0 disables it
+func NewKeeper(skipPauseHeight int64, cdc codec.BinaryCodec, storeKey store.StoreKey, tstoreKey store.StoreKey, paramSpace params.Subspace) Keeper {
 	return Keeper{
-		cdc:      cdc,
-		storeKey: storeKey,
-		params:   paramSpace.WithKeyTable(types.KeyTable()),
+		cdc:             cdc,
+		storeKey:        storeKey,
+		tstoreKey:       tstoreKey,
+		params:          paramSpace.WithKeyTable(types.KeyTable()),
+		skipPauseHeight: skipPauseHeight,
 	}
 }
 

@@ -95,6 +95,7 @@ axelard start [flags]
       --trace                                             Provide full stack traces for errors in ABCI Log
       --trace-store string                                Enable KVStore tracing to an output file
       --transport string                                  Transport protocol: socket, grpc (default "socket")
+      --unsafe-skip-halt-pause int                        from this height on, skip the emergency pause: mark proposed blocks so the pause is not enforced and pause and halt are rejected in them, and accept marked blocks
       --unsafe-skip-upgrades ints                         Skip a set of upgrade heights to continue the old binary
       --wasm-dir string                                   path to the wasm directory, by default set to 'wasm' directory inside the '--db_dir' directory
       --wasm.memory_cache_size uint32                     Sets the size in MiB (NOT bytes) of an in-memory cache for Wasm modules. Set to 0 to disable. (default 100)

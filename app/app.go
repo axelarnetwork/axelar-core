@@ -146,6 +146,9 @@ const Name = "axelar"
 
 const WasmDirFlag = "wasm-dir"
 
+// FlagUnsafeSkipHaltPause is the height from which this validator wants to skip the emergency pause
+const FlagUnsafeSkipHaltPause = "unsafe-skip-halt-pause"
+
 var (
 	// DefaultNodeHome default home directories for the application daemon
 	DefaultNodeHome string
@@ -213,7 +216,7 @@ func NewAxelarApp(
 	baseAppOptions ...func(*bam.BaseApp),
 ) *AxelarApp {
 	keys := CreateStoreKeys()
-	tkeys := store.NewTransientStoreKeys(paramstypes.TStoreKey)
+	tkeys := store.NewTransientStoreKeys(paramstypes.TStoreKey, permissionTypes.TStoreKey)
 
 	keepers := NewKeeperCache()
 	appCodec := codec.NewProtoCodec(encodingConfig.InterfaceRegistry)
@@ -255,7 +258,12 @@ func NewAxelarApp(
 	SetKeeper(keepers, initMultisigKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initSnapshotKeeper(appCodec, keys, keepers))
 	SetKeeper(keepers, initVoteKeeper(appCodec, keys, keepers))
-	SetKeeper(keepers, initPermissionKeeper(appCodec, keys, keepers))
+
+	skipPauseHeight := cast.ToInt64(appOpts.Get(FlagUnsafeSkipHaltPause))
+	if skipPauseHeight != 0 {
+		logger.Warn(fmt.Sprintf("--%s is set: from height %d on, this node skips any emergency pause, remove the flag once the chain is unpaused", FlagUnsafeSkipHaltPause, skipPauseHeight))
+	}
+	SetKeeper(keepers, initPermissionKeeper(appCodec, keys, tkeys, keepers, skipPauseHeight))
 	SetKeeper(keepers, initFeePolicyKeeper(keepers))
 
 	// set up ibc/wasm keepers
@@ -333,6 +341,8 @@ func NewAxelarApp(
 	mm.SetOrderEndBlockers(orderEndBlockers()...)
 	mm.SetOrderInitGenesis(orderModulesForGenesis()...)
 
+	bApp.SetCircuitBreaker(permissionKeeper.NewCircuitBreaker(*GetKeeper[permissionKeeper.Keeper](keepers)))
+
 	configurator := module.NewConfigurator(appCodec, bApp.MsgServiceRouter(), bApp.GRPCQueryRouter())
 	mm.RegisterServices(configurator)
 
@@ -355,6 +365,10 @@ func NewAxelarApp(
 	app.SetInitChainer(app.InitChainer)
 	app.SetPreBlocker(app.PreBlocker)
 	app.SetBeginBlocker(app.BeginBlocker)
+
+	proposalHandler := bam.NewDefaultProposalHandler(app.Mempool(), app.BaseApp)
+	app.SetPrepareProposal(GetKeeper[permissionKeeper.Keeper](keepers).PrepareProposalHandler(proposalHandler.PrepareProposalHandler()))
+	app.SetProcessProposal(GetKeeper[permissionKeeper.Keeper](keepers).ProcessProposalHandler(proposalHandler.ProcessProposalHandler()))
 	app.SetEndBlocker(app.EndBlocker)
 
 	app.SetAnteHandler(initAnteHandlers(encodingConfig, keys, keepers, appOpts))
@@ -605,7 +619,7 @@ func initAppModules(keepers *KeeperCache, keys map[string]*store.KVStoreKey, bAp
 			bApp.MsgServiceRouter(),
 			encodingConfig.Codec,
 		),
-		permission.NewAppModule(*GetKeeper[permissionKeeper.Keeper](keepers)),
+		permission.NewAppModule(*GetKeeper[permissionKeeper.Keeper](keepers), GetKeeper[upgradekeeper.Keeper](keepers)),
 		feepolicy.NewAppModule(*GetKeeper[feepolicyKeeper.Keeper](keepers)),
 		auxiliary.NewAppModule(encodingConfig.Codec, bApp.MsgServiceRouter()),
 	)
@@ -664,6 +678,10 @@ func InitCustomAntePostDecorators(
 	// unwrap batch messages, must be done before any other custom decorators
 	anteDecorators = append(anteDecorators, ante.NewBatchDecorator(encodingConfig.Codec))
 
+	// reject messages that are not allowed during an emergency pause before any other custom decorator.
+	anteDecorators = append(anteDecorators, ante.NewAnteHandlerDecorator(
+		ante.ChainMessageAnteDecorators(ante.NewEmergencyPause(GetKeeper[permissionKeeper.Keeper](keepers))).ToAnteHandler()))
+
 	// enforce wasm limits earlier in the ante handler chain
 	if IsWasmEnabled() {
 		wasmConfig := mustReadWasmConfig(appOpts)
@@ -694,6 +712,7 @@ func InitCustomAntePostDecorators(
 
 func initMessageAnteDecorators(encodingConfig axelarParams.EncodingConfig, keepers *KeeperCache) ante.MessageAnteHandler {
 	return ante.ChainMessageAnteDecorators(
+		ante.NewEmergencyPause(GetKeeper[permissionKeeper.Keeper](keepers)),
 		ante.NewLogMsgDecorator(encodingConfig.Codec),
 		ante.NewCheckCommissionRate(GetKeeper[stakingkeeper.Keeper](keepers)),
 		ante.NewUndelegateDecorator(
@@ -961,9 +980,16 @@ func (app *AxelarApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (
 	return app.mm.InitGenesis(ctx, app.appCodec, genesisState)
 }
 
-// PreBlocker checks if there is a scheduled upgrade and executes it if it is ready
-func (app *AxelarApp) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
-	return app.mm.PreBlock(ctx)
+// PreBlocker checks if there is a scheduled upgrade and executes it if it is ready, then checks the block for a pause skip marker
+func (app *AxelarApp) PreBlocker(ctx sdk.Context, req *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
+	res, err := app.mm.PreBlock(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	GetKeeper[permissionKeeper.Keeper](app.Keepers).PreBlock(ctx, req.Txs)
+
+	return res, nil
 }
 
 // BeginBlocker calls the BeginBlock() function of every module at the beginning of a new block

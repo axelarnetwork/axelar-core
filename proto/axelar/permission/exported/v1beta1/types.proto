@@ -22,3 +22,20 @@ extend google.protobuf.MessageOptions {
   permission.exported.v1beta1.Role permission_role =
       50000; // 50000-99999 reserved for use withing individual organizations
 }
+
+// PauseLevel defines how much of the chain's transaction intake is blocked by
+// an emergency pause. Every level only allows the messages in its allowlist
+// (see EmergencyPauseAllowlist in x/permission/exported).
+enum PauseLevel {
+  option (gogoproto.goproto_enum_prefix) = false;
+  option (gogoproto.goproto_enum_stringer) = true;
+
+  // the chain is not paused (the zero value is required to be _UNSPECIFIED)
+  PAUSE_LEVEL_UNSPECIFIED = 0;
+  // only the messages needed to change the pause level, unpause or halt the
+  // chain are allowed
+  PAUSE_LEVEL_ALL = 1;
+  // like PAUSE_LEVEL_ALL, but validator liveness messages and permission key
+  // rotation are also allowed
+  PAUSE_LEVEL_EXCEPT_VALIDATORS = 2;
+}

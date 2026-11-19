@@ -218,6 +218,7 @@
       - [subspaces](axelard_query_params_subspaces.md) - Query for all registered subspaces and all keys for a subspace
     - [permission](axelard_query_permission.md) - Querying commands for the permission module
       - [governance-key](axelard_query_permission_governance-key.md) - Returns the governance key
+      - [is-paused](axelard_query_permission_is-paused.md) - Returns whether the chain is under an emergency pause and at which level
       - [params](axelard_query_permission_params.md) - Returns the params for the permission module
     - [reward](axelard_query_reward.md) - Querying commands for the reward module
       - [inflation-rate](axelard_query_reward_inflation-rate.md) - Returns the inflation rate on the network. If a validator is provided, query the inflation rate for that validator.
@@ -387,7 +388,10 @@
       - [retry-failed-message [message-id]](axelard_tx_nexus_retry-failed-message.md) - retry routing a failed general message
     - [permission](axelard_tx_permission.md) - permission transactions subcommands
       - [deregister-controller [controller]](axelard_tx_permission_deregister-controller.md) - Deregister controller account
+      - [halt-chain [reason]](axelard_tx_permission_halt-chain.md) - Schedule an upgrade plan at the next block height so that every node stops before executing it
+      - [pause [reason]](axelard_tx_permission_pause.md) - Pause the chain: only the messages allowlisted for the pause level are accepted until it is unpaused
       - [register-controller [controller]](axelard_tx_permission_register-controller.md) - Register controller account
+      - [unpause [reason]](axelard_tx_permission_unpause.md) - Lift the emergency pause
       - [update-governance-key [threshold] \[[pubKey]...\]](axelard_tx_permission_update-governance-key.md) - Update the multisig governance key for axelar network
     - [reward](axelard_tx_reward.md) - Transactions commands for the reward module
       - [refund-msg](axelard_tx_reward_refund-msg.md) - Execute the RefundMsg RPC method

@@ -26,4 +26,5 @@ axelard query permission [flags]
 
 - [axelard query](axelard_query.md) - Querying subcommands
 - [axelard query permission governance-key](axelard_query_permission_governance-key.md) - Returns the governance key
+- [axelard query permission is-paused](axelard_query_permission_is-paused.md) - Returns whether the chain is under an emergency pause and at which level
 - [axelard query permission params](axelard_query_permission_params.md) - Returns the params for the permission module

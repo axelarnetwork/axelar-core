@@ -61,6 +61,30 @@ service Msg {
       body : "*"
     };
   }
+
+  rpc Pause(axelar.permission.v1beta1.PauseRequest)
+      returns (axelar.permission.v1beta1.PauseResponse) {
+    option (google.api.http) = {
+      post : "/axelar/permission/v1beta1/pause"
+      body : "*"
+    };
+  }
+
+  rpc Unpause(axelar.permission.v1beta1.UnpauseRequest)
+      returns (axelar.permission.v1beta1.UnpauseResponse) {
+    option (google.api.http) = {
+      post : "/axelar/permission/v1beta1/unpause"
+      body : "*"
+    };
+  }
+
+  rpc HaltChain(axelar.permission.v1beta1.HaltChainRequest)
+      returns (axelar.permission.v1beta1.HaltChainResponse) {
+    option (google.api.http) = {
+      post : "/axelar/permission/v1beta1/halt_chain"
+      body : "*"
+    };
+  }
 }
 
 // Query defines the gRPC querier service.
@@ -75,5 +99,11 @@ service Query {
     option (google.api.http) = {
       get : "/axelar/permission/v1beta1/params"
     };
+  }
+
+  // IsPaused returns whether the chain is under an emergency pause and at
+  // which level
+  rpc IsPaused(IsPausedRequest) returns (IsPausedResponse) {
+    option (google.api.http).get = "/axelar/permission/v1beta1/is_paused";
   }
 }

@@ -152,6 +152,7 @@ func addModuleInitFlags(startCmd *cobra.Command) {
 	// no-op so validator start scripts that still pass it don't fail on upgrade
 	startCmd.Flags().Bool("x-crisis-skip-assert-invariants", false, "deprecated: x/crisis was removed, this flag has no effect")
 	wasm.AddModuleInitFlags(startCmd)
+	startCmd.Flags().Int64(app.FlagUnsafeSkipHaltPause, 0, "from this height on, skip the emergency pause: mark proposed blocks so the pause is not enforced and pause and halt are rejected in them, and accept marked blocks")
 	startCmd.Flags().String(app.WasmDirFlag, "", "path to the wasm directory, by default set to 'wasm' directory inside the '--db_dir' directory")
 }
 
