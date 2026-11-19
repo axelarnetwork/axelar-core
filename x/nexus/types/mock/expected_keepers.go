@@ -98,9 +98,6 @@ var _ nexustypes.Nexus = &NexusMock{}
 //			IsWasmConnectionActivatedFunc: func(ctx cosmossdktypes.Context) bool {
 //				panic("mock out the IsWasmConnectionActivated method")
 //			},
-//			LinkAddressesFunc: func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
-//				panic("mock out the LinkAddresses method")
-//			},
 //			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 //				panic("mock out the Logger method")
 //			},
@@ -197,9 +194,6 @@ type NexusMock struct {
 
 	// IsWasmConnectionActivatedFunc mocks the IsWasmConnectionActivated method.
 	IsWasmConnectionActivatedFunc func(ctx cosmossdktypes.Context) bool
-
-	// LinkAddressesFunc mocks the LinkAddresses method.
-	LinkAddressesFunc func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
@@ -375,15 +369,6 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
-		// LinkAddresses holds details about calls to the LinkAddresses method.
-		LinkAddresses []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Sender is the sender argument value.
-			Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-			// Recipient is the recipient argument value.
-			Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
 			// Ctx is the ctx argument value.
@@ -461,7 +446,6 @@ type NexusMock struct {
 	lockIsChainActivated          sync.RWMutex
 	lockIsChainMaintainer         sync.RWMutex
 	lockIsWasmConnectionActivated sync.RWMutex
-	lockLinkAddresses             sync.RWMutex
 	lockLogger                    sync.RWMutex
 	lockRegisterFee               sync.RWMutex
 	lockRemoveChainMaintainer     sync.RWMutex
@@ -1276,46 +1260,6 @@ func (mock *NexusMock) IsWasmConnectionActivatedCalls() []struct {
 	mock.lockIsWasmConnectionActivated.RLock()
 	calls = mock.calls.IsWasmConnectionActivated
 	mock.lockIsWasmConnectionActivated.RUnlock()
-	return calls
-}
-
-// LinkAddresses calls LinkAddressesFunc.
-func (mock *NexusMock) LinkAddresses(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
-	if mock.LinkAddressesFunc == nil {
-		panic("NexusMock.LinkAddressesFunc: method is nil but Nexus.LinkAddresses was just called")
-	}
-	callInfo := struct {
-		Ctx       cosmossdktypes.Context
-		Sender    github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	}{
-		Ctx:       ctx,
-		Sender:    sender,
-		Recipient: recipient,
-	}
-	mock.lockLinkAddresses.Lock()
-	mock.calls.LinkAddresses = append(mock.calls.LinkAddresses, callInfo)
-	mock.lockLinkAddresses.Unlock()
-	return mock.LinkAddressesFunc(ctx, sender, recipient)
-}
-
-// LinkAddressesCalls gets all the calls that were made to LinkAddresses.
-// Check the length with:
-//
-//	len(mockedNexus.LinkAddressesCalls())
-func (mock *NexusMock) LinkAddressesCalls() []struct {
-	Ctx       cosmossdktypes.Context
-	Sender    github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-} {
-	var calls []struct {
-		Ctx       cosmossdktypes.Context
-		Sender    github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	}
-	mock.lockLinkAddresses.RLock()
-	calls = mock.calls.LinkAddresses
-	mock.lockLinkAddresses.RUnlock()
 	return calls
 }
 

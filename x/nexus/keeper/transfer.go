@@ -187,16 +187,6 @@ func (k Keeper) validateAsset(ctx sdk.Context, chain exported.Chain, asset strin
 	return nil
 }
 
-// EnqueueForTransfer enqueues an asset transfer for the given deposit address
-func (k Keeper) EnqueueForTransfer(ctx sdk.Context, sender exported.CrossChainAddress, asset sdk.Coin) (exported.TransferID, error) {
-	recipient, ok := k.GetRecipient(ctx, sender)
-	if !ok {
-		return 0, fmt.Errorf("no recipient linked to sender %s", sender.String())
-	}
-
-	return k.EnqueueTransfer(ctx, sender.Chain, recipient, asset)
-}
-
 func (k Keeper) getTransfer(ctx sdk.Context, recipient exported.CrossChainAddress, denom string, state exported.TransferState) (exported.CrossChainTransfer, bool) {
 	iter := k.getStore(ctx).Iterator(getTransferPrefix(recipient.Chain.Name, state))
 	defer utils.CloseLogError(iter, k.Logger(ctx))

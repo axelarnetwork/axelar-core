@@ -20,7 +20,6 @@ import (
 )
 
 const (
-	mintTokenMaxGasCost                   = 100000
 	deployTokenMaxGasCost                 = 1400000
 	burnExternalTokenMaxGasCost           = 400000
 	burnInternalTokenMaxGasCost           = 120000
@@ -85,17 +84,6 @@ func NewDeployTokenCommand(chainID math.Int, keyID multisig.KeyID, asset string,
 		Params:     createDeployTokenParams(tokenDetails.TokenName, tokenDetails.Symbol, tokenDetails.Decimals, tokenDetails.Capacity, address, dailyMintLimit),
 		KeyID:      keyID,
 		MaxGasCost: deployTokenMaxGasCost,
-	}
-}
-
-// NewMintTokenCommand creates a command to mint token to the given address
-func NewMintTokenCommand(keyID multisig.KeyID, id nexus.TransferID, symbol string, address common.Address, amount *big.Int) Command {
-	return Command{
-		ID:         CommandIDFromTransferID(id),
-		Type:       COMMAND_TYPE_MINT_TOKEN,
-		Params:     createMintTokenParams(symbol, address, amount),
-		KeyID:      keyID,
-		MaxGasCost: mintTokenMaxGasCost,
 	}
 }
 
@@ -294,10 +282,6 @@ func createDeployTokenParams(tokenName string, symbol string, decimals uint8, ca
 		address,
 		dailyMintLimit.BigInt(),
 	))
-}
-
-func createMintTokenParams(symbol string, address common.Address, amount *big.Int) []byte {
-	return funcs.Must(mintTokenArguments.Pack(symbol, address, amount))
 }
 
 func createTransferMultisigParams(addresses []common.Address, weights []*big.Int, threshold *big.Int) []byte {

@@ -65,9 +65,7 @@ func init() {
 	k.SetAddressValidators(addressValidators())
 }
 
-func TestLinkAddress(t *testing.T) {
-	repeats := 20
-
+func TestValidateAddress(t *testing.T) {
 	var ctx sdk.Context
 	cfg := app.MakeEncodingConfig()
 	k, ctx = setup(cfg, t)
@@ -77,71 +75,19 @@ func TestLinkAddress(t *testing.T) {
 	axelarAddr := exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"}
 
 	t.Run("should pass address validation", testutils.Func(func(t *testing.T) {
-		err := k.LinkAddresses(ctx,
-			evmAddr,
-			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: "axelar1t66w8cazua870wu7t2hsffndmy2qy2v556ymndnczs83qpz2h45sq6lq9w"},
-		)
-		assert.NoError(t, err)
-
-		err = k.LinkAddresses(ctx,
-			evmAddr,
-			exported.CrossChainAddress{Chain: terra, Address: "terra18zhnqjv70v0d2f8v0s5lape0gr5ua94eqkk8ex"},
-		)
-		assert.NoError(t, err)
-
-		err = k.LinkAddresses(ctx,
-			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
-			axelarAddr,
-		)
-		assert.NoError(t, err)
+		assert.NoError(t, k.ValidateAddress(ctx, evmAddr))
+		assert.NoError(t, k.ValidateAddress(ctx, axelarAddr))
+		assert.NoError(t, k.ValidateAddress(ctx, exported.CrossChainAddress{Chain: terra, Address: "terra18zhnqjv70v0d2f8v0s5lape0gr5ua94eqkk8ex"}))
+		assert.NoError(t, k.ValidateAddress(ctx, exported.CrossChainAddress{Chain: evm.Ethereum, Address: "68B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"}))
 	}))
 
-	t.Run("should return error when linking invalid addresses", testutils.Func(func(t *testing.T) {
-		err := k.LinkAddresses(ctx,
-			exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0xZ8B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"},
-			axelarAddr,
-		)
+	t.Run("should return error when validating invalid addresses", testutils.Func(func(t *testing.T) {
+		err := k.ValidateAddress(ctx, exported.CrossChainAddress{Chain: evm.Ethereum, Address: "0xZ8B93045fe7D8794a7cAF327e7f855CD6Cd03BB8"})
 		assert.ErrorContains(t, err, "not an hex address")
 
-		err = k.LinkAddresses(ctx,
-			evmAddr,
-			exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: rand.StrBetween(10, 30)},
-		)
+		err = k.ValidateAddress(ctx, exported.CrossChainAddress{Chain: axelarnet.Axelarnet, Address: rand.StrBetween(10, 30)})
 		assert.ErrorContains(t, err, "decoding bech32 failed")
 	}))
-
-	t.Run("should return error when link chain does not support foreign asset", testutils.Func(func(t *testing.T) {
-		fromChain := exported.Chain{
-			Name:                  exported.ChainName(rand.Str(5)),
-			SupportsForeignAssets: false,
-			Module:                evmTypes.ModuleName,
-		}
-		k.SetChain(ctx, fromChain)
-		k.ActivateChain(ctx, fromChain)
-		sender, recipient := makeRandAddressesForChain(fromChain, evm.Ethereum)
-		err := k.LinkAddresses(ctx, sender, recipient)
-		assert.NoError(t, err)
-		_, err = k.EnqueueForTransfer(ctx, sender, makeRandAmount(makeRandomDenom()))
-		assert.Error(t, err)
-	}).Repeat(repeats))
-
-	t.Run("successfully link", testutils.Func(func(t *testing.T) {
-		sender, recipient := makeRandAddressesForChain(axelarnet.Axelarnet, evm.Ethereum)
-		err := k.LinkAddresses(ctx, sender, recipient)
-		assert.NoError(t, err)
-		_, err = k.EnqueueForTransfer(ctx, sender, makeRandAmount(axelarnet.NativeAsset))
-		assert.NoError(t, err)
-		recp, ok := k.GetRecipient(ctx, sender)
-		assert.True(t, ok)
-		assert.Equal(t, recipient, recp)
-
-		sender.Address = rand.Str(20)
-		_, err = k.EnqueueForTransfer(ctx, sender, makeRandAmount(axelarnet.NativeAsset))
-		assert.Error(t, err)
-		recp, ok = k.GetRecipient(ctx, sender)
-		assert.False(t, ok)
-		assert.NotEqual(t, recipient, recp)
-	}).Repeat(repeats))
 }
 
 func TestSetChainGetChain_MixCaseChainName(t *testing.T) {

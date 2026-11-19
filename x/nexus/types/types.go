@@ -34,27 +34,6 @@ func (m MaintainerState) ValidateBasic() error {
 	return nil
 }
 
-// NewLinkedAddresses is the constructor of LinkedAddresses
-func NewLinkedAddresses(depositAddress, recepientAddress exported.CrossChainAddress) LinkedAddresses {
-	return LinkedAddresses{
-		DepositAddress:   depositAddress,
-		RecipientAddress: recepientAddress,
-	}
-}
-
-// Validate validates the LinkedAddresses
-func (m LinkedAddresses) Validate() error {
-	if err := m.DepositAddress.Validate(); err != nil {
-		return err
-	}
-
-	if err := m.RecipientAddress.Validate(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (m ChainState) indexOfAsset(asset string) int {
 	for i := range m.Assets {
 		if m.Assets[i].Denom == asset {

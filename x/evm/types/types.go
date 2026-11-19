@@ -195,25 +195,6 @@ func (t *ERC20Token) CreateDeployCommand(keyID multisig.KeyID, dailyMintLimit ma
 	), nil
 }
 
-// CreateMintCommand returns a mint deployment command for the token
-func (t *ERC20Token) CreateMintCommand(keyID multisig.KeyID, transfer nexus.CrossChainTransfer) (Command, error) {
-	if !t.Is(Confirmed) {
-		return Command{}, fmt.Errorf("token %s not confirmed (current status: %s)",
-			t.metadata.Asset, t.metadata.Status.String())
-	}
-	if err := keyID.ValidateBasic(); err != nil {
-		return Command{}, err
-	}
-
-	return NewMintTokenCommand(
-		keyID,
-		transfer.ID,
-		t.metadata.Details.Symbol,
-		common.HexToAddress(transfer.Recipient.Address),
-		transfer.Asset.Amount.BigInt(),
-	), nil
-}
-
 // GetAddress returns the token's address
 func (t ERC20Token) GetAddress() Address {
 	return t.metadata.TokenAddress

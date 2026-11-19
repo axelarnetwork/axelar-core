@@ -17,7 +17,6 @@ func NewGenesisState(
 	nonce uint64,
 	chains []exported.Chain,
 	chainStates []ChainState,
-	linkedAddresses []LinkedAddresses,
 	transfers []exported.CrossChainTransfer,
 	fee exported.TransferFee,
 	feeInfos []exported.FeeInfo,
@@ -25,16 +24,15 @@ func NewGenesisState(
 	messageNonce uint64,
 ) *GenesisState {
 	return &GenesisState{
-		Params:          params,
-		Nonce:           nonce,
-		Chains:          chains,
-		ChainStates:     chainStates,
-		LinkedAddresses: linkedAddresses,
-		Transfers:       transfers,
-		Fee:             fee,
-		FeeInfos:        feeInfos,
-		Messages:        messages,
-		MessageNonce:    messageNonce,
+		Params:       params,
+		Nonce:        nonce,
+		Chains:       chains,
+		ChainStates:  chainStates,
+		Transfers:    transfers,
+		Fee:          fee,
+		FeeInfos:     feeInfos,
+		Messages:     messages,
+		MessageNonce: messageNonce,
 	}
 }
 
@@ -48,7 +46,6 @@ func DefaultGenesisState() *GenesisState {
 			Chain:  axelarnet.Axelarnet,
 			Assets: []exported.Asset{exported.NewAsset(axelarnet.NativeAsset, true)},
 		}},
-		[]LinkedAddresses{},
 		[]exported.CrossChainTransfer{},
 		exported.TransferFee{},
 		[]exported.FeeInfo{},
@@ -71,12 +68,6 @@ func (m GenesisState) Validate() error {
 
 	for _, chainState := range m.ChainStates {
 		if err := chainState.Validate(); err != nil {
-			return getValidateError(err)
-		}
-	}
-
-	for _, linkedAddresses := range m.LinkedAddresses {
-		if err := linkedAddresses.Validate(); err != nil {
 			return getValidateError(err)
 		}
 	}

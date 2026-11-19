@@ -168,18 +168,6 @@ func TestTransfer(t *testing.T) {
 		asset = rand.Denom(5, 10)
 	})
 
-	givenKeeper.
-		When("no recipient linked to sender",
-			func() {
-				sender, _ = makeRandAddresses(k, ctx)
-			}).
-		Then("enqueue transfer should return error",
-			func(t *testing.T) {
-				_, err := k.EnqueueForTransfer(ctx, sender, makeRandAmount(randAsset()))
-				assert.Error(t, err)
-			},
-		).Run(t, repeated)
-
 	whenAssetIsRegisteredOnSource := When("asset is registered on source chain", func() {
 		k.SetChain(ctx, source)
 		funcs.MustNoErr(k.RegisterAsset(ctx, source, nexus.Asset{Denom: asset, IsNativeAsset: true}))
@@ -224,14 +212,11 @@ func TestTransfer(t *testing.T) {
 			transfers = nil
 			expectedTransfers = nil
 		}).
-		When("senders and recipients are linked", func() {
+		When("senders and recipients are generated", func() {
 			for i := 0; i < linkedAddr; i++ {
 				s, r := makeRandAddresses(k, ctx)
 				senders = append(senders, s)
 				recipients = append(recipients, r)
-
-				err := k.LinkAddresses(ctx, s, r)
-				assert.NoError(t, err)
 			}
 		}).Branch(
 		When("transfer amounts are smaller than min fee", func() {
@@ -245,7 +230,7 @@ func TestTransfer(t *testing.T) {
 		}).
 			When("enqueue all transfers", func() {
 				for i, transfer := range transfers {
-					_, err := k.EnqueueForTransfer(ctx, senders[i], transfer)
+					_, err := k.EnqueueTransfer(ctx, senders[i].Chain, recipients[i], transfer)
 					assert.NoError(t, err)
 
 					// count transfers
@@ -286,7 +271,7 @@ func TestTransfer(t *testing.T) {
 		}).
 			When("enqueue all transfers", func() {
 				for i, transfer := range transfers {
-					_, err := k.EnqueueForTransfer(ctx, senders[i], transfer)
+					_, err := k.EnqueueTransfer(ctx, senders[i].Chain, recipients[i], transfer)
 					assert.NoError(t, err)
 
 					// count transfers
@@ -326,17 +311,11 @@ func TestTransfer(t *testing.T) {
 		When("enqueue transfer first time",
 			func() {
 				sender, recipient = makeRandAddresses(k, ctx)
-				err := k.LinkAddresses(ctx, sender, recipient)
-				assert.NoError(t, err)
 
 				asset = randAsset()
 				firstAmount := makeAmountAboveMin(asset)
-				_, err = k.EnqueueForTransfer(ctx, sender, firstAmount)
+				_, err := k.EnqueueTransfer(ctx, sender.Chain, recipient, firstAmount)
 				assert.NoError(t, err)
-
-				actualRecipient, ok := k.GetRecipient(ctx, sender)
-				assert.True(t, ok)
-				assert.Equal(t, recipient, actualRecipient)
 
 				actualTransfers := k.GetTransfersForChain(ctx, recipient.Chain, nexus.Pending)
 				assert.Len(t, actualTransfers, 1)
@@ -344,15 +323,11 @@ func TestTransfer(t *testing.T) {
 		When("enqueue transfer second time",
 			func() {
 				secondAmount := makeAmountAboveMin(asset)
-				_, err := k.EnqueueForTransfer(ctx, sender, secondAmount)
+				_, err := k.EnqueueTransfer(ctx, sender.Chain, recipient, secondAmount)
 				assert.NoError(t, err)
 			}).
 		Then("should merge transfers to the same recipient",
 			func(t *testing.T) {
-				actualRecipient, ok := k.GetRecipient(ctx, sender)
-				assert.True(t, ok)
-				assert.Equal(t, recipient, actualRecipient)
-
 				actualTransfers := k.GetTransfersForChain(ctx, recipient.Chain, nexus.Pending)
 				assert.Len(t, actualTransfers, 1)
 			},
@@ -363,17 +338,11 @@ func TestTransfer(t *testing.T) {
 			func() {
 				sender, _ = makeRandAddresses(k, ctx)
 				recipient := nexus.CrossChainAddress{Chain: terra2, Address: genCosmosAddr(terra2.Name.String())}
-				err := k.LinkAddresses(ctx, sender, recipient)
-				assert.NoError(t, err)
 
 				asset = randAsset()
 				firstAmount := makeAmountAboveMin(asset)
-				_, err = k.EnqueueForTransfer(ctx, sender, firstAmount)
+				_, err := k.EnqueueTransfer(ctx, sender.Chain, recipient, firstAmount)
 				assert.NoError(t, err)
-
-				actualRecipient, ok := k.GetRecipient(ctx, sender)
-				assert.True(t, ok)
-				assert.Equal(t, recipient, actualRecipient)
 
 				actualTransfers, _, err := k.GetTransfersForChainPaginated(ctx, recipient.Chain, nexus.Pending, &query.PageRequest{Limit: 100})
 				assert.NoError(t, err)
@@ -397,10 +366,7 @@ func TestTransfer(t *testing.T) {
 				for i := 0; i < linkedAddr; i++ {
 					s, r := makeRandAddresses(k, ctx)
 
-					err := k.LinkAddresses(ctx, s, r)
-					assert.NoError(t, err)
-
-					_, err = k.EnqueueForTransfer(ctx, s, makeAmountAboveMin(randAsset()))
+					_, err := k.EnqueueTransfer(ctx, s.Chain, r, makeAmountAboveMin(randAsset()))
 					assert.NoError(t, err)
 
 					c := expectedTransfers[recipients[i].Chain.Name]

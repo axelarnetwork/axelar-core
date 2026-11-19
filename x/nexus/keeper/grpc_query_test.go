@@ -75,20 +75,11 @@ func TestKeeper_TransfersForChain(t *testing.T) {
 		When("there are some pending transfers", func() {
 			totalTransfers = rand.I64Between(10, 50)
 			for i := int64(0); i < totalTransfers; i++ {
-				sender := exported.CrossChainAddress{
-					Chain:   evm.Ethereum,
-					Address: rand.Str(20),
+				recipient := exported.CrossChainAddress{
+					Chain:   axelarnet.Axelarnet,
+					Address: rand.AccAddr().String(),
 				}
-				assert.NoError(t,
-					k.LinkAddresses(
-						ctx,
-						sender,
-						exported.CrossChainAddress{
-							Chain:   axelarnet.Axelarnet,
-							Address: rand.AccAddr().String(),
-						},
-					))
-				_, err := k.EnqueueForTransfer(ctx, sender, sdk.NewCoin(axelarnet.NativeAsset, math.NewInt(rand.PosI64())))
+				_, err := k.EnqueueTransfer(ctx, evm.Ethereum, recipient, sdk.NewCoin(axelarnet.NativeAsset, math.NewInt(rand.PosI64())))
 				assert.NoError(t, err)
 			}
 		}).

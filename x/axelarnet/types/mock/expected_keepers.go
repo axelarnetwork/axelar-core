@@ -686,9 +686,6 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			DequeueRouteMessageFunc: func(ctx cosmossdktypes.Context) (github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage, bool) {
 //				panic("mock out the DequeueRouteMessage method")
 //			},
-//			EnqueueForTransferFunc: func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
-//				panic("mock out the EnqueueForTransfer method")
-//			},
 //			EnqueueTransferFunc: func(ctx cosmossdktypes.Context, senderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
 //				panic("mock out the EnqueueTransfer method")
 //			},
@@ -722,9 +719,6 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			GetParamsFunc: func(ctx cosmossdktypes.Context) nexustypes.Params {
 //				panic("mock out the GetParams method")
 //			},
-//			GetRecipientFunc: func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool) {
-//				panic("mock out the GetRecipient method")
-//			},
 //			GetTransferFeesFunc: func(ctx cosmossdktypes.Context) cosmossdktypes.Coins {
 //				panic("mock out the GetTransferFees method")
 //			},
@@ -745,9 +739,6 @@ var _ axelarnettypes.Nexus = &NexusMock{}
 //			},
 //			IsWasmConnectionActivatedFunc: func(ctx cosmossdktypes.Context) bool {
 //				panic("mock out the IsWasmConnectionActivated method")
-//			},
-//			LinkAddressesFunc: func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
-//				panic("mock out the LinkAddresses method")
 //			},
 //			LoggerFunc: func(ctx cosmossdktypes.Context) log.Logger {
 //				panic("mock out the Logger method")
@@ -819,9 +810,6 @@ type NexusMock struct {
 	// DequeueRouteMessageFunc mocks the DequeueRouteMessage method.
 	DequeueRouteMessageFunc func(ctx cosmossdktypes.Context) (github_com_axelarnetwork_axelar_core_x_nexus_exported.GeneralMessage, bool)
 
-	// EnqueueForTransferFunc mocks the EnqueueForTransfer method.
-	EnqueueForTransferFunc func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error)
-
 	// EnqueueTransferFunc mocks the EnqueueTransfer method.
 	EnqueueTransferFunc func(ctx cosmossdktypes.Context, senderChain github_com_axelarnetwork_axelar_core_x_nexus_exported.Chain, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, asset cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error)
 
@@ -855,9 +843,6 @@ type NexusMock struct {
 	// GetParamsFunc mocks the GetParams method.
 	GetParamsFunc func(ctx cosmossdktypes.Context) nexustypes.Params
 
-	// GetRecipientFunc mocks the GetRecipient method.
-	GetRecipientFunc func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool)
-
 	// GetTransferFeesFunc mocks the GetTransferFees method.
 	GetTransferFeesFunc func(ctx cosmossdktypes.Context) cosmossdktypes.Coins
 
@@ -878,9 +863,6 @@ type NexusMock struct {
 
 	// IsWasmConnectionActivatedFunc mocks the IsWasmConnectionActivated method.
 	IsWasmConnectionActivatedFunc func(ctx cosmossdktypes.Context) bool
-
-	// LinkAddressesFunc mocks the LinkAddresses method.
-	LinkAddressesFunc func(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error
 
 	// LoggerFunc mocks the Logger method.
 	LoggerFunc func(ctx cosmossdktypes.Context) log.Logger
@@ -971,15 +953,6 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
-		// EnqueueForTransfer holds details about calls to the EnqueueForTransfer method.
-		EnqueueForTransfer []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Sender is the sender argument value.
-			Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-			// Amount is the amount argument value.
-			Amount cosmossdktypes.Coin
-		}
 		// EnqueueTransfer holds details about calls to the EnqueueTransfer method.
 		EnqueueTransfer []struct {
 			// Ctx is the ctx argument value.
@@ -1055,13 +1028,6 @@ type NexusMock struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
 		}
-		// GetRecipient holds details about calls to the GetRecipient method.
-		GetRecipient []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Sender is the sender argument value.
-			Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		}
 		// GetTransferFees holds details about calls to the GetTransferFees method.
 		GetTransferFees []struct {
 			// Ctx is the ctx argument value.
@@ -1114,15 +1080,6 @@ type NexusMock struct {
 		IsWasmConnectionActivated []struct {
 			// Ctx is the ctx argument value.
 			Ctx cosmossdktypes.Context
-		}
-		// LinkAddresses holds details about calls to the LinkAddresses method.
-		LinkAddresses []struct {
-			// Ctx is the ctx argument value.
-			Ctx cosmossdktypes.Context
-			// Sender is the sender argument value.
-			Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-			// Recipient is the recipient argument value.
-			Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
 		}
 		// Logger holds details about calls to the Logger method.
 		Logger []struct {
@@ -1240,7 +1197,6 @@ type NexusMock struct {
 	lockDeactivateChain               sync.RWMutex
 	lockDeactivateWasmConnection      sync.RWMutex
 	lockDequeueRouteMessage           sync.RWMutex
-	lockEnqueueForTransfer            sync.RWMutex
 	lockEnqueueTransfer               sync.RWMutex
 	lockExportGenesis                 sync.RWMutex
 	lockGenerateMessageID             sync.RWMutex
@@ -1252,7 +1208,6 @@ type NexusMock struct {
 	lockGetFeeInfo                    sync.RWMutex
 	lockGetMessage                    sync.RWMutex
 	lockGetParams                     sync.RWMutex
-	lockGetRecipient                  sync.RWMutex
 	lockGetTransferFees               sync.RWMutex
 	lockGetTransfersForChainPaginated sync.RWMutex
 	lockInitGenesis                   sync.RWMutex
@@ -1260,7 +1215,6 @@ type NexusMock struct {
 	lockIsChainActivated              sync.RWMutex
 	lockIsChainMaintainer             sync.RWMutex
 	lockIsWasmConnectionActivated     sync.RWMutex
-	lockLinkAddresses                 sync.RWMutex
 	lockLogger                        sync.RWMutex
 	lockMarkTransferAsFailed          sync.RWMutex
 	lockNewLockableAsset              sync.RWMutex
@@ -1518,46 +1472,6 @@ func (mock *NexusMock) DequeueRouteMessageCalls() []struct {
 	mock.lockDequeueRouteMessage.RLock()
 	calls = mock.calls.DequeueRouteMessage
 	mock.lockDequeueRouteMessage.RUnlock()
-	return calls
-}
-
-// EnqueueForTransfer calls EnqueueForTransferFunc.
-func (mock *NexusMock) EnqueueForTransfer(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, amount cosmossdktypes.Coin) (github_com_axelarnetwork_axelar_core_x_nexus_exported.TransferID, error) {
-	if mock.EnqueueForTransferFunc == nil {
-		panic("NexusMock.EnqueueForTransferFunc: method is nil but Nexus.EnqueueForTransfer was just called")
-	}
-	callInfo := struct {
-		Ctx    cosmossdktypes.Context
-		Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		Amount cosmossdktypes.Coin
-	}{
-		Ctx:    ctx,
-		Sender: sender,
-		Amount: amount,
-	}
-	mock.lockEnqueueForTransfer.Lock()
-	mock.calls.EnqueueForTransfer = append(mock.calls.EnqueueForTransfer, callInfo)
-	mock.lockEnqueueForTransfer.Unlock()
-	return mock.EnqueueForTransferFunc(ctx, sender, amount)
-}
-
-// EnqueueForTransferCalls gets all the calls that were made to EnqueueForTransfer.
-// Check the length with:
-//
-//	len(mockedNexus.EnqueueForTransferCalls())
-func (mock *NexusMock) EnqueueForTransferCalls() []struct {
-	Ctx    cosmossdktypes.Context
-	Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	Amount cosmossdktypes.Coin
-} {
-	var calls []struct {
-		Ctx    cosmossdktypes.Context
-		Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		Amount cosmossdktypes.Coin
-	}
-	mock.lockEnqueueForTransfer.RLock()
-	calls = mock.calls.EnqueueForTransfer
-	mock.lockEnqueueForTransfer.RUnlock()
 	return calls
 }
 
@@ -1953,42 +1867,6 @@ func (mock *NexusMock) GetParamsCalls() []struct {
 	return calls
 }
 
-// GetRecipient calls GetRecipientFunc.
-func (mock *NexusMock) GetRecipient(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) (github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, bool) {
-	if mock.GetRecipientFunc == nil {
-		panic("NexusMock.GetRecipientFunc: method is nil but Nexus.GetRecipient was just called")
-	}
-	callInfo := struct {
-		Ctx    cosmossdktypes.Context
-		Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	}{
-		Ctx:    ctx,
-		Sender: sender,
-	}
-	mock.lockGetRecipient.Lock()
-	mock.calls.GetRecipient = append(mock.calls.GetRecipient, callInfo)
-	mock.lockGetRecipient.Unlock()
-	return mock.GetRecipientFunc(ctx, sender)
-}
-
-// GetRecipientCalls gets all the calls that were made to GetRecipient.
-// Check the length with:
-//
-//	len(mockedNexus.GetRecipientCalls())
-func (mock *NexusMock) GetRecipientCalls() []struct {
-	Ctx    cosmossdktypes.Context
-	Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-} {
-	var calls []struct {
-		Ctx    cosmossdktypes.Context
-		Sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	}
-	mock.lockGetRecipient.RLock()
-	calls = mock.calls.GetRecipient
-	mock.lockGetRecipient.RUnlock()
-	return calls
-}
-
 // GetTransferFees calls GetTransferFeesFunc.
 func (mock *NexusMock) GetTransferFees(ctx cosmossdktypes.Context) cosmossdktypes.Coins {
 	if mock.GetTransferFeesFunc == nil {
@@ -2246,46 +2124,6 @@ func (mock *NexusMock) IsWasmConnectionActivatedCalls() []struct {
 	mock.lockIsWasmConnectionActivated.RLock()
 	calls = mock.calls.IsWasmConnectionActivated
 	mock.lockIsWasmConnectionActivated.RUnlock()
-	return calls
-}
-
-// LinkAddresses calls LinkAddressesFunc.
-func (mock *NexusMock) LinkAddresses(ctx cosmossdktypes.Context, sender github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress, recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress) error {
-	if mock.LinkAddressesFunc == nil {
-		panic("NexusMock.LinkAddressesFunc: method is nil but Nexus.LinkAddresses was just called")
-	}
-	callInfo := struct {
-		Ctx       cosmossdktypes.Context
-		Sender    github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	}{
-		Ctx:       ctx,
-		Sender:    sender,
-		Recipient: recipient,
-	}
-	mock.lockLinkAddresses.Lock()
-	mock.calls.LinkAddresses = append(mock.calls.LinkAddresses, callInfo)
-	mock.lockLinkAddresses.Unlock()
-	return mock.LinkAddressesFunc(ctx, sender, recipient)
-}
-
-// LinkAddressesCalls gets all the calls that were made to LinkAddresses.
-// Check the length with:
-//
-//	len(mockedNexus.LinkAddressesCalls())
-func (mock *NexusMock) LinkAddressesCalls() []struct {
-	Ctx       cosmossdktypes.Context
-	Sender    github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-} {
-	var calls []struct {
-		Ctx       cosmossdktypes.Context
-		Sender    github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-		Recipient github_com_axelarnetwork_axelar_core_x_nexus_exported.CrossChainAddress
-	}
-	mock.lockLinkAddresses.RLock()
-	calls = mock.calls.LinkAddresses
-	mock.lockLinkAddresses.RUnlock()
 	return calls
 }
 
