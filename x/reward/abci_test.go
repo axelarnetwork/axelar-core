@@ -182,3 +182,15 @@ func (s *endBlockerTestSetup) runEndBlocker() error {
 	_, err := reward.EndBlocker(s.ctx, s.rewarder, s.nexusKeeper, s.mintK, s.staker, s.slasher, s.msig, s.snapshotter)
 	return err
 }
+
+func TestEndBlocker_DoesNotHaltOnInflationFailure(t *testing.T) {
+	s := newEndBlockerTestSetup(t)
+	s.rewarder.LoggerFunc = func(sdk.Context) log.Logger { return log.NewTestLogger(t) }
+	s.staker.IterateBondedValidatorsByPowerFunc = func(ctx context.Context, fn func(index int64, validator stakingtypes.ValidatorI) (stop bool)) error {
+		return errors.New("staking iteration failed")
+	}
+
+	assert.NotPanics(t, func() {
+		assert.NoError(t, s.runEndBlocker())
+	})
+}
