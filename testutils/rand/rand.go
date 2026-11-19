@@ -48,7 +48,7 @@ func IntBetween(lower sdkmath.Int, upper sdkmath.Int) sdkmath.Int {
 }
 
 // UintBetween returns a random integer between lower (inclusive) and upper (exclusive).
-// It panics if upper <= loweror or if (upper - lower) doesn't fit int64.
+// It panics if upper <= lower or if (upper - lower) doesn't fit int64.
 func UintBetween(lower sdkmath.Uint, upper sdkmath.Uint) sdkmath.Uint {
 	return sdkmath.NewUint(uint64(rand.Int63n(upper.Sub(lower).BigInt().Int64()))).Add(lower)
 }
@@ -73,7 +73,7 @@ func NormalizedStr(len int) string {
 	return NormalizedStrBetween(len, len+1)
 }
 
-// NormalizedStrBetween creates a random normalized string in the provided range (exclusive uper limit)
+// NormalizedStrBetween creates a random normalized string in the provided range (exclusive upper limit)
 func NormalizedStrBetween(min, shorterThan int) string {
 	return strings.ReplaceAll(NormalizeString(StrBetween(min, shorterThan)), defaultDelimiter, "-")
 }
