@@ -237,6 +237,35 @@ func TestEndBlocker(t *testing.T) {
 			assert.Equal(t, ibcTransferErrors, len(bk.SetTransferFailedCalls()))
 		}).
 		Run(t, repeats)
+
+	lockFromCalls := 0
+	givenTransferQueue.
+		When("all ibc transfers fail and re-locking the first one fails", func() {
+			queueSize = int(rand.I64Between(3, 10))
+			ibcTransferErrors = queueSize
+			lockFromCalls = 0
+
+			nexusK.NewLockableAssetFunc = func(ctx sdk.Context, ibc nexustypes.IBCKeeper, bank nexustypes.BankKeeper, coin sdk.Coin) (nexus.LockableAsset, error) {
+				return &nexusmock.LockableAssetMock{
+					LockFromFunc: func(ctx sdk.Context, fromAddr sdk.AccAddress) error {
+						lockFromCalls++
+						if lockFromCalls == 1 {
+							return fmt.Errorf("lock failed")
+						}
+						return nil
+					},
+				}, nil
+			}
+		}).
+		Then("should not halt and still re-lock the remaining failed transfers", func(t *testing.T) {
+			assert.NotPanics(t, func() {
+				_, err := EndBlocker(ctx, bk, ibcK, nexusK, bankK)
+				assert.NoError(t, err)
+			})
+			assert.Equal(t, queueSize, lockFromCalls)
+			assert.Equal(t, queueSize-1, len(bk.SetTransferFailedCalls()))
+		}).
+		Run(t, repeats)
 }
 
 // TestEndBlocker_RelocksTokensOnFailure verifies that EndBlocker calls LockFrom
