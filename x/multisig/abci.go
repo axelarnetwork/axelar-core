@@ -50,28 +50,30 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 	// we handle sessions that'll expire on the next block,
 	// to avoid waiting for an additional block
 	for _, signing := range k.GetSigningSessionsByExpiry(ctx, ctx.BlockHeight()+1) {
-		_ = utils.RunCached(ctx, k, func(cachedCtx sdk.Context) ([]abci.ValidatorUpdate, error) {
-			k.DeleteSigningSession(cachedCtx, signing.GetID())
-			module := signing.GetModule()
+		k.DeleteSigningSession(ctx, signing.GetID())
+		module := signing.GetModule()
 
-			pool := rewarder.GetPool(cachedCtx, types.ModuleName)
-			slices.ForEach(signing.GetMissingParticipants(), pool.ClearRewards)
+		pool := rewarder.GetPool(ctx, types.ModuleName)
+		slices.ForEach(signing.GetMissingParticipants(), pool.ClearRewards)
 
-			if signing.State != exported.Completed {
-				events.Emit(cachedCtx, types.NewSigningExpired(signing.GetID()))
-				k.Logger(cachedCtx).Info("signing session expired",
-					"sig_id", signing.GetID(),
-				)
+		if signing.State != exported.Completed {
+			events.Emit(ctx, types.NewSigningExpired(signing.GetID()))
+			k.Logger(ctx).Info("signing session expired",
+				"sig_id", signing.GetID(),
+			)
 
-				funcs.MustNoErr(k.GetSigRouter().GetHandler(module).HandleFailed(cachedCtx, signing.GetMetadata()))
-				return nil, nil
-			}
+			abortSigning(ctx, k, signing)
+			continue
+		}
 
+		completed := utils.RunCached(ctx, k, func(cachedCtx sdk.Context) (bool, error) {
 			sig := funcs.Must(signing.Result())
 
-			slices.ForEach(sig.GetParticipants(), func(p sdk.ValAddress) { funcs.MustNoErr(pool.ReleaseRewards(p)) })
+			cachedPool := rewarder.GetPool(cachedCtx, types.ModuleName)
+			slices.ForEach(sig.GetParticipants(), func(p sdk.ValAddress) { funcs.MustNoErr(cachedPool.ReleaseRewards(p)) })
+
 			if err := k.GetSigRouter().GetHandler(module).HandleCompleted(cachedCtx, &sig, signing.GetMetadata()); err != nil {
-				return nil, errors.Wrap(err, "failed to handle completed signature")
+				return false, errors.Wrap(err, "failed to handle completed signature")
 			}
 
 			events.Emit(cachedCtx, types.NewSigningCompleted(signing.GetID()))
@@ -81,7 +83,21 @@ func handleSignings(ctx sdk.Context, k types.Keeper, rewarder types.Rewarder) {
 				"module", module,
 			)
 
-			return nil, nil
+			return true, nil
 		})
+
+		if !completed {
+			k.Logger(ctx).Error("failed to handle completed signing session, aborting signing",
+				"sig_id", signing.GetID(),
+				"module", module,
+			)
+			abortSigning(ctx, k, signing)
+		}
 	}
+}
+
+func abortSigning(ctx sdk.Context, k types.Keeper, signing types.SigningSession) {
+	_ = utils.RunCached(ctx, k, func(cachedCtx sdk.Context) (struct{}, error) {
+		return struct{}{}, k.GetSigRouter().GetHandler(signing.GetModule()).HandleFailed(cachedCtx, signing.GetMetadata())
+	})
 }
