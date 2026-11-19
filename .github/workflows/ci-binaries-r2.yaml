@@ -25,11 +25,14 @@ jobs:
         steps:
             - name: Determine checkout ref
               id: get-checkout-ref
+              env:
+                EVENT_NAME: ${{ github.event_name }}
+                BRANCH: ${{ inputs.branch }}
               run: |
-                if [ "${{ github.event_name }}" == "push" ]; then
+                if [ "$EVENT_NAME" == "push" ]; then
                   ref="main"
                 else
-                  ref="${{ inputs.branch }}"
+                  ref="$BRANCH"
                 fi
                 echo "ref=$ref" >> $GITHUB_OUTPUT
 

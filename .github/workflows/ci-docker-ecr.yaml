@@ -58,11 +58,13 @@ jobs:
         env:
           WASM: "true"
           IBC_WASM_HOOKS: "false"
+          WASM_INPUT: ${{ github.event.inputs.wasm }}
+          IBC_WASM_HOOKS_INPUT: ${{ github.event.inputs.ibc-wasm-hooks }}
         run: |
-          if [ "${{ github.event.inputs.wasm }}" == "false" ]; then
+          if [ "$WASM_INPUT" == "false" ]; then
             export WASM="false"
           fi
-          if [ "${{ github.event.inputs.ibc-wasm-hooks }}" == "true" ]; then
+          if [ "$IBC_WASM_HOOKS_INPUT" == "true" ]; then
             export IBC_WASM_HOOKS="true"
           fi
           make docker-image
@@ -80,12 +82,14 @@ jobs:
         env:
           WASM: "true"
           IBC_WASM_HOOKS: "false"
+          WASM_INPUT: ${{ github.event.inputs.wasm }}
+          IBC_WASM_HOOKS_INPUT: ${{ github.event.inputs.ibc-wasm-hooks }}
         if: github.event.inputs.buildDebug != 'false'
         run: |
-          if [ "${{ github.event.inputs.wasm }}" == "false" ]; then
+          if [ "$WASM_INPUT" == "false" ]; then
             export WASM="false"
           fi
-          if [ "${{ github.event.inputs.ibc-wasm-hooks }}" == "true" ]; then
+          if [ "$IBC_WASM_HOOKS_INPUT" == "true" ]; then
             export IBC_WASM_HOOKS="true"
           fi
           make docker-image-debug
