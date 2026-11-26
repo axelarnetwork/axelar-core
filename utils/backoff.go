@@ -8,7 +8,8 @@ import (
 // BackOff computes the next back-off duration
 type BackOff func(currentRetryCount int) time.Duration
 
-// ExponentialBackOff computes an exponential back-off
+// ExponentialBackOff returns a back-off with uniform jitter between minTimeout
+// and minTimeout*(1+2^currentRetryCount). Retry counts start at zero.
 func ExponentialBackOff(minTimeout time.Duration) BackOff {
 	return func(currentRetryCount int) time.Duration {
 		jitter := rand.Float64()
@@ -19,7 +20,8 @@ func ExponentialBackOff(minTimeout time.Duration) BackOff {
 	}
 }
 
-// LinearBackOff computes a linear back-off
+// LinearBackOff returns a back-off with uniform jitter between minTimeout
+// and minTimeout*(1+currentRetryCount). Retry counts start at zero.
 func LinearBackOff(minTimeout time.Duration) BackOff {
 	return func(currentRetryCount int) time.Duration {
 		jitter := rand.Float64()
